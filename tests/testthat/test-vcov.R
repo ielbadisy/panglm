@@ -50,6 +50,28 @@ test_that("two-way FE gaussian matches plm(effect = 'twoways')", {
   expect_equal(f$df.residual, unname(df.residual(p)))
 })
 
+test_that("two-way FE gaussian cluster vcov matches plm's Stata-style (sss) correction", {
+  skip_if_missing("plm")
+  data(Grunfeld, package = "plm")
+  f <- panglm(inv ~ value + capital, data = Grunfeld, index = c("firm", "year"),
+              model = "within", family = "gaussian", effect = "twoways")
+  p <- plm::plm(inv ~ value + capital, data = Grunfeld, index = c("firm", "year"),
+                model = "within", effect = "twoways")
+  expect_equal(sqrt(diag(vcov(f, type = "cluster"))),
+               sqrt(diag(plm::vcovHC(p, method = "arellano", type = "sss", cluster = "group"))),
+               tolerance = 1e-8, ignore_attr = TRUE)
+})
+
+test_that("robust/cluster vcov errors informatively for within negbin (not yet implemented)", {
+  skip_if_missing("plm")
+  data(Grunfeld, package = "plm")
+  set.seed(2)
+  u <- rep(rnorm(10, sd = 0.5), each = 20)
+  Grunfeld$count <- rnbinom(nrow(Grunfeld), size = 4, mu = exp(1 + 0.0002 * Grunfeld$value + u))
+  f <- panglm(count ~ value + capital, data = Grunfeld, index = c("firm", "year"), model = "within", family = "negbin")
+  expect_error(vcov(f, type = "cluster"), "not yet implemented")
+})
+
 test_that("Hausman test matches plm::phtest", {
   skip_if_missing("plm")
   data(Grunfeld, package = "plm")
