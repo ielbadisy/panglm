@@ -5,6 +5,10 @@ irls_fit_cpp <- function(X, y, family_id, link_id, maxit = 100L, tol = 1e-10) {
     .Call(`_panglm_irls_fit_cpp`, X, y, family_id, link_id, maxit, tol)
 }
 
+negbin_irls_fit_cpp <- function(X, y, maxit = 100L, tol = 1e-10) {
+    .Call(`_panglm_negbin_irls_fit_cpp`, X, y, maxit, tol)
+}
+
 random_binomial_loglik_grad_cpp <- function(beta, sigma, X, y, group_start, group_size, nodes, weights, link_id) {
     .Call(`_panglm_random_binomial_loglik_grad_cpp`, beta, sigma, X, y, group_start, group_size, nodes, weights, link_id)
 }
@@ -17,8 +21,12 @@ quasi_demean_cpp <- function(X, y, group_start, group_size, theta) {
     .Call(`_panglm_quasi_demean_cpp`, X, y, group_start, group_size, theta)
 }
 
-random_poisson_fit_cpp <- function(X, y, group_start, group_size, maxit = 100L, tol = 1e-10) {
-    .Call(`_panglm_random_poisson_fit_cpp`, X, y, group_start, group_size, maxit, tol)
+random_negbin_fit_cpp <- function(X, y, group_start, group_size, maxit = 100L, tol = 1e-10) {
+    .Call(`_panglm_random_negbin_fit_cpp`, X, y, group_start, group_size, maxit, tol)
+}
+
+random_poisson_fit_cpp <- function(X, y, group_start, group_size, maxit = 100L, tol = 1e-10, beta_start = NULL, d_start = 1.0) {
+    .Call(`_panglm_random_poisson_fit_cpp`, X, y, group_start, group_size, maxit, tol, beta_start, d_start)
 }
 
 twoway_demean_cpp <- function(M, id_code, time_code, n_id, n_time, maxit = 10000L, tol = 1e-10) {
