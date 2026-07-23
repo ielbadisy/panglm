@@ -22,10 +22,11 @@ vcov.panglm <- function(object, type = c("classical", "HC1", "cluster"), cluster
 
   if (!object$model %in% c("pooling", "within")) {
     stop("type = '", type, "' is only available for model = 'pooling' or 'within'; ",
-         "random-effects models report model-based standard errors", call. = FALSE)
-  }
-  if (object$effect == "twoways") {
-    stop("robust/cluster vcov for effect = 'twoways' is not yet implemented", call. = FALSE)
+         "random-effects models already integrate out the individual-level ",
+         "correlation via the likelihood, so a sandwich correction on top of ",
+         "that isn't a well-motivated correction here -- they report ",
+         "model-based (information-matrix) standard errors, matching the ",
+         "convention used by lme4/glmmTMB", call. = FALSE)
   }
 
   score <- panglm_score(object)
@@ -70,13 +71,19 @@ panglm_score <- function(object) {
     return((y - mu) * mu_eta_r(eta, object$family$link_id) / variance_r(mu, object$family$family_id) * X)
   }
 
+  if (object$model == "within" && object$family$family == "gaussian" && object$effect == "twoways") {
+    dm <- demean_twoway(X, y, object$group_start, object$group_size, object$time_id, tol = 1e-10)
+    resid <- as.numeric(dm$y - dm$X %*% beta)
+    return(resid * dm$X)
+  }
+
   if (object$model == "within" && object$family$family == "gaussian") {
     dm <- within_demean_cpp(X, y, object$group_start, object$group_size)
     resid <- as.numeric(dm$y - dm$X %*% beta)
     return(resid * dm$X)
   }
 
-  if (object$model == "within" && object$family$family %in% c("poisson", "negbin")) {
+  if (object$model == "within" && object$family$family == "poisson") {
     eta <- as.numeric(X %*% beta)
     lit <- exp(eta)
     group <- rep(seq_along(object$group_size), object$group_size)
@@ -85,6 +92,12 @@ panglm_score <- function(object) {
     w_obs <- (Yi / Li)[group]
     gradi <- y - w_obs * lit
     return(gradi * X)
+  }
+
+  if (object$model == "within" && object$family$family == "negbin") {
+    stop("robust/cluster vcov is not yet implemented for model = 'within', family = 'negbin' ",
+         "(the Allison-Waterman dummy-variable estimator needs the full covariate+dummy score, ",
+         "not the Poisson conditional-MLE score); use type = 'classical' for now", call. = FALSE)
   }
 
   stop("robust/cluster vcov is not implemented for this model/family combination", call. = FALSE)
