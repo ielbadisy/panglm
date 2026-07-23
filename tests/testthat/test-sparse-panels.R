@@ -67,5 +67,9 @@ test_that("within negbin (Allison-Waterman) handles a sparse, unbalanced count p
   fit <- panglm(y ~ x1, data = d, index = c("id", "time"), model = "within", family = "negbin")
   expect_true(is.finite(fit$loglik))
   expect_true(fit$theta > 0)
-  expect_length(fit$individual_effects, n_id)
+  # All-zero groups are dropped before fitting (their fixed effect is
+  # unbounded under the dummy-variable NB2 MLE); individual_effects should
+  # cover exactly the retained groups.
+  expect_length(fit$individual_effects, fit$n_used_groups)
+  expect_equal(fit$n_used_groups + fit$n_dropped_groups, n_id)
 })
