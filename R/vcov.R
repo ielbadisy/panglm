@@ -29,6 +29,10 @@ vcov.panglm <- function(object, type = c("classical", "HC1", "cluster"), cluster
          "convention used by lme4/glmmTMB", call. = FALSE)
   }
 
+  if (object$model == "within" && object$family$family == "negbin") {
+    return(robust_vcov_within_negbin(object, type, cluster))
+  }
+
   score <- panglm_score(object)
   bread <- object$bread
 
@@ -94,13 +98,62 @@ panglm_score <- function(object) {
     return(gradi * X)
   }
 
-  if (object$model == "within" && object$family$family == "negbin") {
-    stop("robust/cluster vcov is not yet implemented for model = 'within', family = 'negbin' ",
-         "(the Allison-Waterman dummy-variable estimator needs the full covariate+dummy score, ",
-         "not the Poisson conditional-MLE score); use type = 'classical' for now", call. = FALSE)
+  stop("robust/cluster vcov is not implemented for this model/family combination", call. = FALSE)
+}
+
+#' Sandwich vcov for the Allison-Waterman dummy-variable FE-NB2 estimator
+#'
+#' The shared covariate coefficients and the per-group dummy intercepts are
+#' estimated jointly, so a proper sandwich correction needs the score and
+#' bread of the *full* (covariates + dummies) parameter vector, not just the
+#' covariate block -- otherwise the correction ignores the sampling
+#' variability the dummy intercepts contribute. This computes the full
+#' (k+G)-dimensional sandwich and returns only the top-left k x k block
+#' (the covariates), which is the only part `panglm` reports coefficients
+#' for.
+#'
+#' @keywords internal
+#' @noRd
+robust_vcov_within_negbin <- function(object, type, cluster) {
+  if (is.null(object$X_aug)) {
+    stop("robust/cluster vcov is unavailable: this fit predates X_aug being stored ",
+         "(re-fit the model)", call. = FALSE)
+  }
+  Xa <- object$X_aug
+  keep_rows <- object$keep_rows
+  y <- object$y[keep_rows]
+  k <- ncol(object$X)
+
+  beta_full <- c(object$coefficients, object$individual_effects)
+  eta <- as.numeric(Xa %*% beta_full)
+  mu <- exp(eta)
+  theta <- object$theta
+  w <- theta / (theta + mu)
+  score <- ((y - mu) * w) * Xa
+
+  bread_full <- object$vcov_full_aug
+
+  if (type == "HC1") {
+    n <- nrow(score); kk <- ncol(score)
+    meat <- crossprod(score)
+    v_full <- bread_full %*% meat %*% bread_full
+    v_full <- v_full * n / (n - kk)
+  } else {
+    cl <- if (is.null(cluster)) object$cluster_id else cluster
+    if (length(cl) != length(keep_rows)) {
+      stop("'cluster' must have one value per observation in the fitted data", call. = FALSE)
+    }
+    cl <- cl[keep_rows]
+    score_sum <- rowsum(score, cl)
+    G <- nrow(score_sum); n <- nrow(score); kk <- ncol(score)
+    meat <- crossprod(score_sum)
+    v_full <- bread_full %*% meat %*% bread_full
+    v_full <- v_full * (G / (G - 1)) * ((n - 1) / (n - kk))
   }
 
-  stop("robust/cluster vcov is not implemented for this model/family combination", call. = FALSE)
+  v <- v_full[seq_len(k), seq_len(k), drop = FALSE]
+  dimnames(v) <- dimnames(object$vcov)
+  v
 }
 
 linkinv_r <- function(eta, link_id) {
