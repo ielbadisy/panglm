@@ -5,11 +5,15 @@ Initial release.
 ## Estimators
 
 * `model = "pooling"`: gaussian/poisson/binomial GLM via IRLS.
-* `model = "within"`: gaussian (exact demeaning) and poisson (conditional
-  MLE) fixed effects; `effect = "twoways"` adds a time fixed effect for
-  gaussian.
+* `model = "within"`: gaussian (exact demeaning), poisson (conditional
+  MLE), and binomial (exact conditional logistic regression, Chamberlain
+  1980) fixed effects; `effect = "twoways"` adds a time fixed effect for
+  gaussian, parallelized in C++ (RcppParallel).
 * `model = "random"`: gaussian (Swamy-Arora), poisson (Poisson-Gamma), and
   binomial (Gauss-Hermite quadrature) random effects.
+
+Fixed-effects binomial has no equivalent in `pglm`; it's validated against
+`survival::clogit(method = "exact")`.
 
 ## Inference
 
@@ -21,6 +25,5 @@ Initial release.
 ## Known limitations
 
 * No between/twoways effects for poisson/binomial.
-* No fixed-effects (conditional) binomial.
 * No ordinal/tobit families.
 * Not yet on CRAN.
