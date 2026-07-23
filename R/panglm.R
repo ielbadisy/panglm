@@ -14,7 +14,9 @@
 #'   [binomial_family()] / [negbin_family()]
 #' @param effect one of `"individual"` or `"twoways"` (individual + time
 #'   fixed effects). `"twoways"` is currently only implemented for
-#'   `model = "within", family = "gaussian"`.
+#'   `model = "within"`, `family = "gaussian"` (exact alternating-projections
+#'   demeaning) or `"poisson"` (outer-IRLS / inner-weighted-FWL, the
+#'   algorithm behind `fixest::feglm()`); not yet for `"negbin"`/`"binomial"`.
 #' @param vcov one of `"classical"`, `"HC1"` (heteroskedasticity-robust) or
 #'   `"cluster"` (cluster-robust, clustered by the panel individual by
 #'   default). Only applies to `model = "pooling"`/`"within"`; random-effects
@@ -38,9 +40,9 @@ panglm <- function(formula, data, index,
   family <- resolve_family(family)
 
   if (missing(index)) stop("'index' is required, e.g. index = c(\"id\", \"time\")", call. = FALSE)
-  if (effect == "twoways" && !(model == "within" && family$family == "gaussian")) {
+  if (effect == "twoways" && !(model == "within" && family$family %in% c("gaussian", "poisson"))) {
     stop("effect = 'twoways' is currently only implemented for ",
-         "model = 'within', family = 'gaussian'", call. = FALSE)
+         "model = 'within', family = 'gaussian' or 'poisson'", call. = FALSE)
   }
 
   mf <- stats::model.frame(formula, data = data)
@@ -64,8 +66,10 @@ panglm <- function(formula, data, index,
 
   fit <- switch(model,
     pooling = fit_pooled(X_full, y, family, maxit, tol),
-    within  = if (effect == "twoways") {
+    within  = if (effect == "twoways" && family$family == "gaussian") {
       fit_within_twoways_gaussian(X_noint, y, group_start, group_size, time_id, maxit, tol)
+    } else if (effect == "twoways" && family$family == "poisson") {
+      fit_within_twoways_poisson(X_noint, y, group_start, group_size, time_id, maxit, tol)
     } else {
       fit_within(X_noint, y, family, group_start, group_size, maxit, tol)
     },
