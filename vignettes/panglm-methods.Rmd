@@ -38,13 +38,24 @@ data(UnionWage, package = "pglm")
 
 `model = "pooling"` fits a standard GLM (gaussian/poisson/binomial, any of
 the canonical links) via IRLS in C++, ignoring the panel structure entirely
--- this is the `glm()` model, just faster.
+-- this is the `glm()` model, just faster. `family = "negbin"` fits a
+genuine NB2 model (alternating IRLS-for-beta / Newton-for-theta, the same
+algorithm `MASS::glm.nb()` uses), not an alias for Poisson.
 
 ```{r pooled}
 f_pool <- panglm(inv ~ value + capital, data = Grunfeld,
                   index = c("firm", "year"), model = "pooling", family = "gaussian")
 g_pool <- glm(inv ~ value + capital, data = Grunfeld, family = gaussian())
 rbind(panglm = coef(f_pool), glm = coef(g_pool))
+```
+
+```{r pooled-negbin, eval = requireNamespace("MASS", quietly = TRUE)}
+set.seed(1)
+Grunfeld$count <- rnbinom(nrow(Grunfeld), size = 3, mu = exp(0.5 + 0.0002 * Grunfeld$value))
+f_nb <- panglm(count ~ value + capital, data = Grunfeld,
+               index = c("firm", "year"), model = "pooling", family = "negbin")
+g_nb <- MASS::glm.nb(count ~ value + capital, data = Grunfeld)
+rbind(panglm = coef(f_nb), glm.nb = coef(g_nb))
 ```
 
 ## 2. Fixed effects ("within")
@@ -55,6 +66,16 @@ rbind(panglm = coef(f_pool), glm = coef(g_pool))
   profiles out the individual fixed effect in closed form -- this is exactly
   `pglm`'s `model = "within", family = poisson` estimator (Hausman, Hall &
   Griliches 1984), not an approximation.
+- **negbin**: the Allison & Waterman (2002) unconditional dummy-variable
+  estimator -- one intercept dummy per individual, estimated jointly with
+  the covariate slopes and NB2 dispersion by exact MLE. Unlike the
+  conditional (Hausman-Hall-Griliches 1984) FE-NB estimator, this doesn't
+  suffer the "fake fixed effects" critique (Guimaraes 2008): the
+  incidental-parameters bias that would contaminate a fixed-effects
+  *logit* dummy-variable estimator does not carry over to NB2 (Allison &
+  Waterman 2002). Matches `fixest::fenegbin()` exactly. Tractable for
+  small-to-moderate N (the design matrix grows with N); not intended for
+  very large panels.
 - **binomial**: the exact conditional logistic regression that profiles out
   the individual fixed effect by conditioning on each unit's total number of
   successes (Chamberlain 1980) -- the same estimator as
@@ -69,6 +90,15 @@ p_fe <- plm(inv ~ value + capital, data = Grunfeld, index = c("firm", "year"), m
 rbind(panglm = coef(f_fe), plm = coef(p_fe))
 ```
 
+```{r within-negbin, eval = requireNamespace("fixest", quietly = TRUE)}
+u <- rep(rnorm(10, sd = 0.5), each = 20)
+Grunfeld$count_fe <- rnbinom(nrow(Grunfeld), size = 4, mu = exp(1 + 0.0002 * Grunfeld$value + u))
+f_fenb <- panglm(count_fe ~ value + capital, data = Grunfeld,
+                  index = c("firm", "year"), model = "within", family = "negbin")
+fx_fenb <- fixest::fenegbin(count_fe ~ value + capital | firm, data = Grunfeld, notes = FALSE)
+rbind(panglm = coef(f_fenb), fixest = coef(fx_fenb))
+```
+
 ```{r within-binomial}
 UnionWage$union01 <- as.numeric(UnionWage$union) - 1
 f_clogit <- panglm(union ~ wage + exper + rural, data = UnionWage,
@@ -79,9 +109,10 @@ rbind(panglm = coef(f_clogit), clogit = coef(cl))
 
 ### Two-way fixed effects
 
-`effect = "twoways"` adds a time fixed effect via the standard
-Guimaraes & Portugal (2010) alternating-projections algorithm (exact for
-unbalanced panels), currently for `family = "gaussian"` only:
+`effect = "twoways"` adds a time fixed effect for **gaussian** (exact
+alternating-projections demeaning, Guimaraes & Portugal 2010) and
+**poisson** (outer-IRLS / inner-weighted-FWL -- the algorithm behind
+`fixest::feglm()`'s multi-way fixed effects); not yet for negbin/binomial.
 
 ```{r twoways}
 f_tw <- panglm(inv ~ value + capital, data = Grunfeld, index = c("firm", "year"),
@@ -91,13 +122,30 @@ p_tw <- plm(inv ~ value + capital, data = Grunfeld, index = c("firm", "year"),
 rbind(panglm = coef(f_tw), plm = coef(p_tw))
 ```
 
+```{r twoways-poisson, eval = requireNamespace("fixest", quietly = TRUE)}
+set.seed(1)
+Grunfeld$count2 <- rpois(nrow(Grunfeld), lambda = exp(0.5 + 0.0001 * Grunfeld$value))
+f_twp <- panglm(count2 ~ value + capital, data = Grunfeld, index = c("firm", "year"),
+                 model = "within", family = "poisson", effect = "twoways")
+fx_twp <- fixest::feglm(count2 ~ value + capital | firm + year, data = Grunfeld, family = poisson())
+rbind(panglm = coef(f_twp), fixest = coef(fx_twp))
+```
+
 ## 3. Random effects
 
 - **gaussian**: the Swamy-Arora quasi-demeaning (feasible GLS) estimator,
   identical to `plm(model = "random")`'s default.
 - **poisson**: the Poisson-Gamma (negative-binomial marginal) closed-form
   likelihood -- `pglm`'s `model = "random", family = poisson` estimator. The
-  fitted dispersion parameter is the Gamma frailty shape.
+  fitted dispersion parameter is the Gamma frailty shape. Seeded from the
+  pooled-Poisson MLE plus a method-of-moments dispersion estimate, with
+  Levenberg-Marquardt/ridge damping (and a warning) instead of erroring if
+  the Hessian is ill-conditioned -- verified stable on heavily
+  zero-inflated, extremely skewed panels.
+- **negbin**: a *different* closed-form mixture from `poisson` above -- a
+  2-parameter beta-negative-binomial marginal (`pglm`'s `lnl.negbin.R`
+  "random" branch exactly, with independent shape parameters `a`/`b` rather
+  than Poisson-Gamma's single dispersion).
 - **binomial**: the individual random intercept is integrated out via
   Gauss-Hermite quadrature (`R` nodes, default 21), matching `pglm`'s
   `model = "random", family = binomial(...)`.
@@ -111,6 +159,16 @@ f_re <- panglm(count ~ value + capital, data = Grunfeld,
 p_re <- pglm(count ~ value + capital, data = Grunfeld, index = c("firm", "year"),
              model = "random", family = poisson, method = "bfgs", print.level = 0, R = 5)
 rbind(panglm = coef(f_re), pglm = coef(p_re)[1:3])
+```
+
+```{r random-negbin}
+set.seed(3)
+Grunfeld$u2 <- rep(rgamma(10, shape = 6, rate = 6), each = 20)
+Grunfeld$count3 <- rnbinom(nrow(Grunfeld), size = 8, mu = Grunfeld$u2 * exp(1 + 0.0002 * Grunfeld$value))
+f_renb <- panglm(count3 ~ value + capital, data = Grunfeld,
+                  index = c("firm", "year"), model = "random", family = "negbin")
+coef(f_renb)
+c(a = f_renb$negbin_a, b = f_renb$negbin_b)
 ```
 
 ```{r random-binomial}
@@ -141,6 +199,19 @@ likelihood, matching the convention used by `lme4`/`glmmTMB`.
 You can also request a non-classical vcov directly when fitting:
 `panglm(..., vcov = "cluster")`.
 
+## 4b. Confidence intervals and overdispersion
+
+`confint()` gives Wald intervals from whichever vcov the fit currently
+carries. `panglm_dispersiontest()` is a quick Pearson chi-squared/df
+overdispersion diagnostic for poisson/negbin fits with available
+`fitted.values` (values well above 1 suggest a negative binomial
+specification instead):
+
+```{r confint-dispersion}
+confint(f_fe)
+panglm_dispersiontest(f_nb)
+```
+
 ## 5. Hausman test
 
 `panglm_hausman()` compares a `"within"` and a `"random"` fit of the same
@@ -165,8 +236,8 @@ broom::tidy(f_pool)
 
 - Between and random-effects `ordinal`/`tobit` models (`pglm` has these via
   Gauss-Hermite quadrature; `panglm` doesn't yet).
-- Multi-way fixed effects for `poisson`/`binomial` (only gaussian).
-- Cluster/HC1-robust vcov for fixed-effects binomial (classical,
+- `effect = "twoways"` for negbin/binomial (gaussian and poisson only).
+- Cluster/HC1-robust vcov for fixed-effects negbin/binomial (classical,
   Hessian-based SEs only for now).
 
-See the package's `plan` history and `NEWS.md` for what's planned next.
+See `NEWS.md` for what's planned next.
