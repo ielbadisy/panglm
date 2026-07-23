@@ -1,0 +1,157 @@
+---
+title: "panglm: models, likelihoods, and validation"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{panglm: models, likelihoods, and validation}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE, comment = "#>",
+  eval = requireNamespace("plm", quietly = TRUE) && requireNamespace("pglm", quietly = TRUE)
+)
+```
+
+## Why this vignette exists
+
+`panglm` re-implements a specific, checkable set of panel-GLM likelihoods in
+Rcpp/RcppArmadillo/RcppParallel instead of R-level `maxLik` optimization
+(`pglm`) or symbolic differentiation frameworks (`glmmTMB`). Every estimator
+below is validated against a reference implementation in the package's test
+suite (`tests/testthat/`), not just benchmarked for speed. This document
+states exactly which likelihood each `model`/`family` combination solves, so
+results can be trusted rather than treated as a black box.
+
+```{r setup}
+library(panglm)
+library(plm)
+library(pglm)
+data(Grunfeld, package = "plm")
+data(UnionWage, package = "pglm")
+```
+
+## 1. Pooled models
+
+`model = "pooling"` fits a standard GLM (gaussian/poisson/binomial, any of
+the canonical links) via IRLS in C++, ignoring the panel structure entirely
+-- this is the `glm()` model, just faster.
+
+```{r pooled}
+f_pool <- panglm(inv ~ value + capital, data = Grunfeld,
+                  index = c("firm", "year"), model = "pooling", family = "gaussian")
+g_pool <- glm(inv ~ value + capital, data = Grunfeld, family = gaussian())
+rbind(panglm = coef(f_pool), glm = coef(g_pool))
+```
+
+## 2. Fixed effects ("within")
+
+- **gaussian**: exact within (group-demeaned) OLS, identical to `plm(model =
+  "within")`.
+- **poisson**: the *conditional* (concentrated) Poisson likelihood that
+  profiles out the individual fixed effect in closed form -- this is exactly
+  `pglm`'s `model = "within", family = poisson` estimator (Hausman, Hall &
+  Griliches 1984), not an approximation.
+- **binomial**: not yet implemented (conditional logit fixed effects needs a
+  separate estimator; requesting it raises an informative error).
+
+```{r within}
+f_fe <- panglm(inv ~ value + capital, data = Grunfeld,
+                index = c("firm", "year"), model = "within", family = "gaussian")
+p_fe <- plm(inv ~ value + capital, data = Grunfeld, index = c("firm", "year"), model = "within")
+rbind(panglm = coef(f_fe), plm = coef(p_fe))
+```
+
+### Two-way fixed effects
+
+`effect = "twoways"` adds a time fixed effect via the standard
+Guimaraes & Portugal (2010) alternating-projections algorithm (exact for
+unbalanced panels), currently for `family = "gaussian"` only:
+
+```{r twoways}
+f_tw <- panglm(inv ~ value + capital, data = Grunfeld, index = c("firm", "year"),
+                model = "within", family = "gaussian", effect = "twoways")
+p_tw <- plm(inv ~ value + capital, data = Grunfeld, index = c("firm", "year"),
+            model = "within", effect = "twoways")
+rbind(panglm = coef(f_tw), plm = coef(p_tw))
+```
+
+## 3. Random effects
+
+- **gaussian**: the Swamy-Arora quasi-demeaning (feasible GLS) estimator,
+  identical to `plm(model = "random")`'s default.
+- **poisson**: the Poisson-Gamma (negative-binomial marginal) closed-form
+  likelihood -- `pglm`'s `model = "random", family = poisson` estimator. The
+  fitted dispersion parameter is the Gamma frailty shape.
+- **binomial**: the individual random intercept is integrated out via
+  Gauss-Hermite quadrature (`R` nodes, default 21), matching `pglm`'s
+  `model = "random", family = binomial(...)`.
+
+```{r random-poisson}
+set.seed(42)
+Grunfeld$u <- rep(rgamma(10, shape = 5, rate = 5), each = 20)
+Grunfeld$count <- rpois(nrow(Grunfeld), lambda = Grunfeld$u * exp(1 + 0.0002 * Grunfeld$value))
+f_re <- panglm(count ~ value + capital, data = Grunfeld,
+                index = c("firm", "year"), model = "random", family = "poisson")
+p_re <- pglm(count ~ value + capital, data = Grunfeld, index = c("firm", "year"),
+             model = "random", family = poisson, method = "bfgs", print.level = 0, R = 5)
+rbind(panglm = coef(f_re), pglm = coef(p_re)[1:3])
+```
+
+```{r random-binomial}
+f_bin <- panglm(union ~ wage + exper + rural, data = UnionWage,
+                 index = c("id", "year"), model = "random", family = "binomial", R = 15)
+p_bin <- pglm(union ~ wage + exper + rural, UnionWage, index = c("id", "year"),
+              family = binomial("logit"), model = "random", method = "bfgs",
+              print.level = 0, R = 15)
+rbind(panglm = coef(f_bin), pglm = coef(p_bin)[1:4])
+```
+
+## 4. Standard errors
+
+Model-based (classical) SEs are always available. `vcov(fit, type = "HC1")`
+and `vcov(fit, type = "cluster")` add heteroskedasticity-robust and
+cluster-robust (Stata-style CR1, clustered by the panel individual by
+default) sandwich covariances for `model = "pooling"`/`"within"`:
+
+```{r robust}
+sqrt(diag(vcov(f_fe)))                       # classical
+sqrt(diag(vcov(f_fe, type = "cluster")))     # cluster-robust
+```
+
+Random-effects models report model-based (information-matrix) SEs only --
+the individual-level correlation is already accounted for in the
+likelihood, matching the convention used by `lme4`/`glmmTMB`.
+
+You can also request a non-classical vcov directly when fitting:
+`panglm(..., vcov = "cluster")`.
+
+## 5. Hausman test
+
+`panglm_hausman()` compares a `"within"` and a `"random"` fit of the same
+formula/family, replicating `plm::phtest()`:
+
+```{r hausman}
+panglm_hausman(f_fe, panglm(inv ~ value + capital, data = Grunfeld,
+                             index = c("firm", "year"), model = "random", family = "gaussian"))
+```
+
+## 6. broom / modelsummary
+
+`tidy()` and `glance()` methods are registered for the `generics` package's
+generics, so `panglm` fits work directly with `broom`- and
+`modelsummary`-based table pipelines:
+
+```{r broom}
+broom::tidy(f_pool)
+```
+
+## What's not (yet) covered
+
+- Between and random-effects `ordinal`/`tobit` models (`pglm` has these via
+  Gauss-Hermite quadrature; `panglm` doesn't yet).
+- Multi-way fixed effects for `poisson`/`binomial` (only gaussian).
+- Fixed-effects (conditional) binomial.
+
+See the package's `plan` history and `NEWS.md` for what's planned next.
