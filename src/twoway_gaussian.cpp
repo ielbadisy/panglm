@@ -74,6 +74,58 @@ void demean_by(NumericMatrix& M, const IntegerVector& code, int n_groups) {
   parallelFor(0, M.nrow(), applier);
 }
 
+// Weighted analogue: group_mean = sum(w_i * M_i) / sum(w_i). Used by the
+// IRLS-nested weighted two-way demeaning that non-gaussian twoways models
+// (currently poisson) need -- the IRLS weight changes every outer
+// iteration, so this is re-run from scratch each time rather than reusing
+// state across iterations.
+struct GroupSumWorkerW : public Worker {
+  const RMatrix<double> M;
+  const RVector<double> w;
+  const RVector<int> code;
+  std::size_t n_groups, p;
+  std::vector<double> sums;
+  std::vector<double> wsums;
+
+  GroupSumWorkerW(const NumericMatrix& M, const NumericVector& w, const IntegerVector& code, std::size_t n_groups)
+    : M(M), w(w), code(code), n_groups(n_groups), p(M.ncol()),
+      sums(n_groups * M.ncol(), 0.0), wsums(n_groups, 0.0) {}
+
+  GroupSumWorkerW(const GroupSumWorkerW& other, Split)
+    : M(other.M), w(other.w), code(other.code), n_groups(other.n_groups), p(other.p),
+      sums(other.n_groups * other.p, 0.0), wsums(other.n_groups, 0.0) {}
+
+  void operator()(std::size_t begin, std::size_t end) {
+    for (std::size_t i = begin; i < end; ++i) {
+      int g = code[i];
+      wsums[g] += w[i];
+      for (std::size_t j = 0; j < p; ++j) sums[g * p + j] += w[i] * M(i, j);
+    }
+  }
+
+  void join(const GroupSumWorkerW& rhs) {
+    for (std::size_t g = 0; g < n_groups; ++g) {
+      wsums[g] += rhs.wsums[g];
+      for (std::size_t j = 0; j < p; ++j) sums[g * p + j] += rhs.sums[g * p + j];
+    }
+  }
+};
+
+void demean_by_weighted(NumericMatrix& M, const NumericVector& w, const IntegerVector& code, int n_groups) {
+  GroupSumWorkerW worker(M, w, code, n_groups);
+  parallelReduce(0, M.nrow(), worker);
+
+  std::vector<double> means(worker.sums.size());
+  std::size_t p = M.ncol();
+  for (int g = 0; g < n_groups; ++g) {
+    double wg = std::max(worker.wsums[g], 1e-12);
+    for (std::size_t j = 0; j < p; ++j) means[g * p + j] = worker.sums[g * p + j] / wg;
+  }
+
+  DemeanApplyWorker applier(M, code, means);
+  parallelFor(0, M.nrow(), applier);
+}
+
 } // namespace
 
 // Two-way (individual + time) demeaning via alternating projections
@@ -93,6 +145,33 @@ List twoway_demean_cpp(NumericMatrix M, IntegerVector id_code, IntegerVector tim
     std::copy(cur.begin(), cur.end(), prev.begin());
     demean_by(cur, id_code, n_id);
     demean_by(cur, time_code, n_time);
+
+    double maxdiff = 0.0;
+    for (int i = 0; i < n * p; ++i) maxdiff = std::max(maxdiff, std::fabs(cur[i] - prev[i]));
+    if (maxdiff < tol) { iter++; break; }
+  }
+
+  return List::create(Named("M") = cur, Named("iterations") = iter);
+}
+
+// Weighted two-way demeaning: the same alternating-projections algorithm,
+// but each group mean is an IRLS-weighted mean. This is the inner step of
+// the outer-IRLS / inner-FWL algorithm used for non-gaussian two-way FE
+// (poisson, currently) -- see fit_within_twoways_poisson() in R.
+//
+// [[Rcpp::export]]
+List twoway_demean_weighted_cpp(NumericMatrix M, NumericVector w,
+                                IntegerVector id_code, IntegerVector time_code,
+                                int n_id, int n_time, int maxit = 10000, double tol = 1e-10) {
+  int n = M.nrow(), p = M.ncol();
+  NumericMatrix cur = Rcpp::clone(M);
+  NumericMatrix prev(n, p);
+
+  int iter = 0;
+  for (iter = 0; iter < maxit; ++iter) {
+    std::copy(cur.begin(), cur.end(), prev.begin());
+    demean_by_weighted(cur, w, id_code, n_id);
+    demean_by_weighted(cur, w, time_code, n_time);
 
     double maxdiff = 0.0;
     for (int i = 0; i < n * p; ++i) maxdiff = std::max(maxdiff, std::fabs(cur[i] - prev[i]));
