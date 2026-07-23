@@ -3,16 +3,64 @@
 using namespace Rcpp;
 using panglm::compute_group_agg;
 
+namespace {
+
+// Levenberg-Marquardt-style damped solve: try solving (H + lambda*I) x = g
+// with escalating ridge lambda until it succeeds, rather than throwing on a
+// singular/near-singular Hessian (common on sparse/skewed panels where the
+// dispersion parameter is weakly identified). Returns the damping actually
+// used (0 if none was needed) so callers can warn when it engages.
+double damped_solve(const arma::mat& H, const arma::vec& g, arma::vec& x) {
+  double diag_scale = std::max(1e-8, arma::mean(arma::abs(H.diag())));
+  double lambda = 0.0;
+  arma::mat I = arma::eye(H.n_rows, H.n_cols);
+  for (int attempt = 0; attempt < 20; ++attempt) {
+    bool ok = arma::solve(x, H - lambda * I, g, arma::solve_opts::no_approx + arma::solve_opts::likely_sympd);
+    if (ok && x.is_finite()) return lambda;
+    lambda = (lambda == 0.0) ? (1e-6 * diag_scale) : (lambda * 10.0);
+  }
+  x = arma::solve(H - lambda * I, g, arma::solve_opts::likely_sympd); // last resort, may throw
+  return lambda;
+}
+
+// Same idea for the final covariance inversion: damp (-Hessian) toward
+// positive-definiteness rather than erroring, and fall back to a
+// pseudo-inverse if damping alone doesn't suffice.
+double damped_inv_sympd(const arma::mat& negH, arma::mat& out) {
+  double diag_scale = std::max(1e-8, arma::mean(arma::abs(negH.diag())));
+  double lambda = 0.0;
+  arma::mat I = arma::eye(negH.n_rows, negH.n_cols);
+  for (int attempt = 0; attempt < 20; ++attempt) {
+    bool ok = arma::inv_sympd(out, negH + lambda * I);
+    if (ok) return lambda;
+    lambda = (lambda == 0.0) ? (1e-6 * diag_scale) : (lambda * 10.0);
+  }
+  out = arma::pinv(negH); // last resort
+  return lambda;
+}
+
+} // namespace
+
 // Poisson random-effects (Poisson-Gamma / negative-binomial marginal)
 // panel model, ported from pglm's lnl.poisson "random" branch. Jointly
 // estimates the K regression coefficients beta and the Gamma dispersion
 // parameter d > 0 (frailty variance is 1/d) by Newton-Raphson with step
 // halving; per-group sufficient statistics computed in parallel.
 //
+// beta_start/d_start let the caller seed the optimizer with the pooled
+// Poisson MLE and a method-of-moments dispersion estimate rather than
+// zeros/1, which matters on sparse or skewed panels where the plain
+// zero-start Newton path can wander into a near-singular Hessian region.
+// Hessian solves are Levenberg-Marquardt damped instead of throwing on
+// (near-)singularity; `damping_used` reports the largest ridge applied,
+// so R can warn the user rather than silently degrading precision.
+//
 // [[Rcpp::export]]
 List random_poisson_fit_cpp(const arma::mat& X, const arma::vec& y,
                              IntegerVector group_start, IntegerVector group_size,
-                             int maxit = 100, double tol = 1e-10) {
+                             int maxit = 100, double tol = 1e-10,
+                             Rcpp::Nullable<Rcpp::NumericVector> beta_start = R_NilValue,
+                             double d_start = 1.0) {
   int n = X.n_rows, k = X.n_cols, G = group_start.size();
 
   arma::vec group_id(n);
@@ -24,7 +72,11 @@ List random_poisson_fit_cpp(const arma::mat& X, const arma::vec& y,
   for (int i = 0; i < n; ++i) Yi[(int)group_id[i]] += y[i];
 
   arma::vec beta = arma::zeros<arma::vec>(k);
-  double d = 1.0; // dispersion, param k
+  if (beta_start.isNotNull()) {
+    NumericVector bs(beta_start);
+    if ((int)bs.size() == k) for (int j = 0; j < k; ++j) beta[j] = bs[j];
+  }
+  double d = (d_start > 0 && std::isfinite(d_start)) ? d_start : 1.0;
 
   auto eval = [&](const arma::vec& b, double dd,
                   arma::vec& grad, arma::mat& hess, double& ll) {
@@ -91,11 +143,14 @@ List random_poisson_fit_cpp(const arma::mat& X, const arma::vec& y,
   arma::vec grad; arma::mat hess; double ll, ll_old = -arma::datum::inf;
   arma::vec theta(k + 1);
   theta.subvec(0, k - 1) = beta; theta[k] = d;
+  double max_damping = 0.0;
 
   int iter = 0;
   for (iter = 0; iter < maxit; ++iter) {
     eval(theta.subvec(0, k - 1), theta[k], grad, hess, ll);
-    arma::vec step = arma::solve(hess, grad, arma::solve_opts::likely_sympd);
+    arma::vec step;
+    double damping = damped_solve(-hess, -grad, step); // Newton step on -hess (neg-definite -> pos-definite)
+    max_damping = std::max(max_damping, damping);
 
     double lambda = 1.0;
     arma::vec theta_new = theta - lambda * step;
@@ -118,13 +173,16 @@ List random_poisson_fit_cpp(const arma::mat& X, const arma::vec& y,
   }
 
   eval(theta.subvec(0, k - 1), theta[k], grad, hess, ll_old); // Hessian at converged theta
-  arma::mat vcov = arma::inv_sympd(-hess); // hess is negative-definite (concave loglik)
+  arma::mat vcov;
+  double vcov_damping = damped_inv_sympd(-hess, vcov); // hess is negative-definite (concave loglik)
+  max_damping = std::max(max_damping, vcov_damping);
 
   return List::create(
     Named("coefficients") = theta.subvec(0, k - 1),
     Named("dispersion_param") = theta[k],
     Named("vcov_unscaled") = vcov,
     Named("loglik") = ll_old,
-    Named("iterations") = iter
+    Named("iterations") = iter,
+    Named("damping_used") = max_damping
   );
 }
