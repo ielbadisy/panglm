@@ -140,6 +140,24 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// twoway_demean_weighted_cpp
+List twoway_demean_weighted_cpp(NumericMatrix M, NumericVector w, IntegerVector id_code, IntegerVector time_code, int n_id, int n_time, int maxit, double tol);
+RcppExport SEXP _panglm_twoway_demean_weighted_cpp(SEXP MSEXP, SEXP wSEXP, SEXP id_codeSEXP, SEXP time_codeSEXP, SEXP n_idSEXP, SEXP n_timeSEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type M(MSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type w(wSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type id_code(id_codeSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type time_code(time_codeSEXP);
+    Rcpp::traits::input_parameter< int >::type n_id(n_idSEXP);
+    Rcpp::traits::input_parameter< int >::type n_time(n_timeSEXP);
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    rcpp_result_gen = Rcpp::wrap(twoway_demean_weighted_cpp(M, w, id_code, time_code, n_id, n_time, maxit, tol));
+    return rcpp_result_gen;
+END_RCPP
+}
 // conditional_logit_loglik_grad_cpp
 List conditional_logit_loglik_grad_cpp(const arma::vec& beta, const arma::mat& X, const arma::vec& y, IntegerVector group_start, IntegerVector group_size);
 RcppExport SEXP _panglm_conditional_logit_loglik_grad_cpp(SEXP betaSEXP, SEXP XSEXP, SEXP ySEXP, SEXP group_startSEXP, SEXP group_sizeSEXP) {
@@ -195,6 +213,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_panglm_random_negbin_fit_cpp", (DL_FUNC) &_panglm_random_negbin_fit_cpp, 6},
     {"_panglm_random_poisson_fit_cpp", (DL_FUNC) &_panglm_random_poisson_fit_cpp, 8},
     {"_panglm_twoway_demean_cpp", (DL_FUNC) &_panglm_twoway_demean_cpp, 7},
+    {"_panglm_twoway_demean_weighted_cpp", (DL_FUNC) &_panglm_twoway_demean_weighted_cpp, 8},
     {"_panglm_conditional_logit_loglik_grad_cpp", (DL_FUNC) &_panglm_conditional_logit_loglik_grad_cpp, 5},
     {"_panglm_within_demean_cpp", (DL_FUNC) &_panglm_within_demean_cpp, 4},
     {"_panglm_within_poisson_fit_cpp", (DL_FUNC) &_panglm_within_poisson_fit_cpp, 6},
