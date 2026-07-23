@@ -19,6 +19,27 @@ test_that("within poisson matches pglm() conditional MLE", {
   expect_equal(unname(coef(f)), unname(pglm_ref), tolerance = 1e-4)
 })
 
+test_that("two-way FE poisson (outer-IRLS/inner-weighted-FWL) matches fixest::feglm exactly", {
+  skip_if_missing("plm")
+  skip_if_missing("fixest")
+  data(Grunfeld, package = "plm")
+  set.seed(1)
+  Grunfeld$count <- rpois(nrow(Grunfeld), lambda = exp(0.5 + 0.0001 * Grunfeld$value))
+
+  f <- panglm(count ~ value + capital, data = Grunfeld, index = c("firm", "year"),
+              model = "within", family = "poisson", effect = "twoways")
+  fx <- fixest::feglm(count ~ value + capital | firm + year, data = Grunfeld, family = poisson())
+
+  expect_equal(unname(coef(f)), unname(coef(fx)), tolerance = 1e-6)
+  expect_equal(f$loglik, as.numeric(stats::logLik(fx)), tolerance = 1e-6)
+  # panglm's classical SE is the raw (uncorrected) Fisher-information
+  # convention, matching glm()/the rest of the package; fixest's default
+  # applies an additional (n-1)/(n-K) small-sample correction on top, so
+  # compare against fixest's uncorrected variant specifically.
+  se_fixest_raw <- sqrt(diag(stats::vcov(fx, type = "iid", ssc = fixest::ssc(adj = FALSE))))
+  expect_equal(unname(sqrt(diag(vcov(f)))), unname(se_fixest_raw), tolerance = 1e-4)
+})
+
 test_that("within binomial (conditional logit) matches survival::clogit exactly", {
   skip_if_missing("survival")
   skip_if_missing("pglm")
