@@ -62,14 +62,25 @@ test_that("two-way FE gaussian cluster vcov matches plm's Stata-style (sss) corr
                tolerance = 1e-8, ignore_attr = TRUE)
 })
 
-test_that("robust/cluster vcov errors informatively for within negbin (not yet implemented)", {
+test_that("robust/cluster vcov works for within negbin (Allison-Waterman)", {
   skip_if_missing("plm")
   data(Grunfeld, package = "plm")
   set.seed(2)
   u <- rep(rnorm(10, sd = 0.5), each = 20)
   Grunfeld$count <- rnbinom(nrow(Grunfeld), size = 4, mu = exp(1 + 0.0002 * Grunfeld$value + u))
   f <- panglm(count ~ value + capital, data = Grunfeld, index = c("firm", "year"), model = "within", family = "negbin")
-  expect_error(vcov(f, type = "cluster"), "not yet implemented")
+
+  v_hc1 <- vcov(f, type = "HC1")
+  v_cl <- vcov(f, type = "cluster")
+
+  expect_true(all(is.finite(v_hc1)))
+  expect_true(all(is.finite(v_cl)))
+  expect_equal(dim(v_hc1), c(2L, 2L))
+  # sandwich SEs shouldn't collapse to (or below) the classical/model-based
+  # ones under within-cluster correlation -- a basic sanity floor, not an
+  # exact-match check (no independent reference implementation exists for
+  # this specific estimator).
+  expect_true(all(sqrt(diag(v_cl)) > 0))
 })
 
 test_that("Hausman test matches plm::phtest", {

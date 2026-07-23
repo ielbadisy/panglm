@@ -40,6 +40,25 @@ test_that("two-way FE poisson (outer-IRLS/inner-weighted-FWL) matches fixest::fe
   expect_equal(unname(sqrt(diag(vcov(f)))), unname(se_fixest_raw), tolerance = 1e-4)
 })
 
+test_that("two-way FE negbin matches fixest::fenegbin exactly", {
+  skip_if_missing("MASS")
+  skip_if_missing("fixest")
+  set.seed(3)
+  N <- 40; Tt <- 8
+  d <- data.frame(id = rep(1:N, each = Tt), time = rep(1:Tt, N))
+  d$x1 <- rnorm(N * Tt)
+  a_i <- rep(rnorm(N, sd = 0.6), each = Tt)
+  g_t <- rep(rnorm(Tt, sd = 0.3), N)
+  d$y <- MASS::rnegbin(N * Tt, mu = exp(0.4 + 0.5 * d$x1 + a_i + g_t), theta = 4)
+
+  f <- panglm(y ~ x1, data = d, index = c("id", "time"), model = "within",
+              family = "negbin", effect = "twoways")
+  fx <- fixest::fenegbin(y ~ x1 | id + time, data = d)
+
+  expect_equal(unname(coef(f)), unname(coef(fx)), tolerance = 1e-4)
+  expect_equal(unname(f$theta), unname(fx$theta), tolerance = 1e-3)
+})
+
 test_that("within binomial (conditional logit) matches survival::clogit exactly", {
   skip_if_missing("survival")
   skip_if_missing("pglm")

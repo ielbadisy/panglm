@@ -11,8 +11,11 @@ panglm_dispersiontest(object)
 }
 \value{
 a list of class `"panglm_dispersiontest"` with the Pearson
-  statistic, its degrees of freedom, the ratio (statistic/df), and a
-  one-sided p-value against `chisq(df)`
+  statistic, its degrees of freedom, the ratio (statistic/df), a
+  one-sided p-value against `chisq(df)`, and `n_excluded`: the number of
+  observations dropped from the statistic because their fitted value was
+  exactly zero or unavailable (e.g. rows in a structurally-zero panel
+  individual screened out of a fixed-effects negbin fit)
 }
 \description{
 A quick diagnostic for count models: the Pearson goodness-of-fit
