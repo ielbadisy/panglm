@@ -26,6 +26,31 @@ logLik.panglm <- function(object, ...) {
 #' @export
 nobs.panglm <- function(object, ...) object$nobs
 
+#' Confidence intervals for panglm coefficients
+#'
+#' Wald-type intervals `estimate +/- z * se`, using whichever `vcov()` the
+#' object currently carries (classical by default; HC1/cluster if the fit
+#' or a prior [vcov.panglm()] call set it).
+#'
+#' @param object a `"panglm"` fit
+#' @param parm which parameters (names or indices); defaults to all
+#' @param level confidence level
+#' @param ... unused
+#' @export
+confint.panglm <- function(object, parm, level = 0.95, ...) {
+  coefs <- object$coefficients
+  if (missing(parm)) parm <- names(coefs)
+  se <- sqrt(diag(object$vcov))[parm]
+  crit <- stats::qnorm(1 - (1 - level) / 2)
+  lo <- coefs[parm] - crit * se
+  hi <- coefs[parm] + crit * se
+  out <- cbind(lo, hi)
+  pct <- c((1 - level) / 2, 1 - (1 - level) / 2) * 100
+  colnames(out) <- sprintf("%.1f %%", pct)
+  rownames(out) <- parm
+  out
+}
+
 #' @export
 predict.panglm <- function(object, newdata = NULL, type = c("link", "response"), ...) {
   type <- match.arg(type)
