@@ -96,6 +96,17 @@ panglm <- function(formula, data, index,
 }
 
 fit_pooled <- function(X, y, family, maxit, tol) {
+  if (family$family == "negbin") {
+    res <- negbin_irls_fit_cpp(X, y, maxit, tol)
+    coefs <- as.numeric(res$coefficients)
+    names(coefs) <- colnames(X)
+    vcov <- res$vcov_unscaled
+    dimnames(vcov) <- list(colnames(X), colnames(X))
+    fitted <- as.numeric(exp(X %*% res$coefficients))
+    return(list(coefficients = coefs, vcov = vcov, bread = vcov, fitted.values = fitted,
+                loglik = res$loglik, theta = res$theta, dispersion = 1,
+                df.residual = nrow(X) - ncol(X) - 1, iterations = res$iterations))
+  }
   res <- irls_fit_cpp(X, y, family$family_id, family$link_id, maxit, tol)
   vcov <- res$vcov_unscaled * res$dispersion
   bread <- res$vcov_unscaled
@@ -128,7 +139,7 @@ fit_within <- function(X, y, family, group_start, group_size, maxit, tol) {
                 loglik = NA_real_, dispersion = sigma2, df.residual = df_resid,
                 iterations = res$iterations))
   }
-  if (family$family %in% c("poisson", "negbin")) {
+  if (family$family == "poisson") {
     scale <- apply(X, 2, function(col) { s <- stats::sd(col); if (s > 0) s else 1 })
     Xs <- sweep(X, 2, scale, "/")
     res <- within_poisson_fit_cpp(Xs, y, group_start, group_size, maxit, tol)
@@ -136,12 +147,63 @@ fit_within <- function(X, y, family, group_start, group_size, maxit, tol) {
     names(coefs) <- colnames(X)
     vcov <- res$vcov_unscaled / outer(scale, scale)
     dimnames(vcov) <- list(colnames(X), colnames(X))
-    return(list(coefficients = coefs, vcov = vcov, bread = vcov, fitted.values = NULL,
+
+    # Closed-form group intercept for the conditional Poisson MLE:
+    # alpha_i = log(sum(y_i) / sum(exp(x_it'beta))), so mu_it = (Yi/Li) * exp(x_it'beta).
+    eta <- as.numeric(X %*% coefs)
+    lit <- exp(eta)
+    group <- rep(seq_along(group_size), group_size)
+    Li <- as.numeric(rowsum(lit, group))
+    Yi <- as.numeric(rowsum(y, group))
+    fitted <- (Yi / Li)[group] * lit
+
+    return(list(coefficients = coefs, vcov = vcov, bread = vcov, fitted.values = fitted,
                 loglik = res$loglik, dispersion = 1, df.residual = nrow(X) - ncol(X) - length(group_start),
                 iterations = res$iterations))
   }
+  if (family$family == "negbin") return(fit_within_negbin_dummy(X, y, group_start, group_size, maxit, tol))
   if (family$family == "binomial") return(fit_within_binomial(X, y, group_start, group_size, maxit, tol))
   stop("model = 'within' is not yet implemented for family '", family$family, "'", call. = FALSE)
+}
+
+#' Allison-Waterman (2002) unconditional fixed-effects negative binomial
+#'
+#' Augments the design matrix with one dummy column per panel individual
+#' and jointly estimates (covariate slopes, individual intercepts, NB2
+#' dispersion) by exact NB2 MLE. Unlike the conditional (Hausman-Hall-
+#' Griliches) FE-NB estimator, this does not suffer the "fake fixed
+#' effects" critique (Guimaraes 2008): the individual intercepts are
+#' estimated directly, not conditioned out via a shared dispersion trick.
+#' The incidental-parameters problem that would bias a fixed-effects
+#' *logit* dummy-variable estimator does not carry over to NB2 (Allison &
+#' Waterman 2002), so this is consistent for moderate N (tractable up to
+#' a few hundred individuals; the dummy design matrix grows with N, so it
+#' is not intended for very large panels -- see [panglm()]'s vignette).
+#'
+#' @keywords internal
+#' @noRd
+fit_within_negbin_dummy <- function(X, y, group_start, group_size, maxit, tol) {
+  n <- nrow(X); k <- ncol(X); G <- length(group_start)
+  group <- rep(seq_along(group_size), group_size)
+  dummies <- matrix(0, n, G)
+  dummies[cbind(seq_len(n), group)] <- 1
+  X_aug <- cbind(X, dummies)
+
+  res <- negbin_irls_fit_cpp(X_aug, y, maxit, tol)
+  coefs <- as.numeric(res$coefficients[seq_len(k)])
+  alpha_i <- as.numeric(res$coefficients[k + seq_len(G)])
+  names(coefs) <- colnames(X)
+
+  vcov_full <- res$vcov_unscaled
+  vcov <- vcov_full[seq_len(k), seq_len(k), drop = FALSE]
+  dimnames(vcov) <- list(colnames(X), colnames(X))
+
+  fitted <- as.numeric(exp(X_aug %*% res$coefficients))
+
+  list(coefficients = coefs, vcov = vcov, bread = vcov, fitted.values = fitted,
+       loglik = res$loglik, theta = res$theta, dispersion = 1,
+       individual_effects = stats::setNames(alpha_i, seq_len(G)),
+       df.residual = n - k - G - 1, iterations = res$iterations)
 }
 
 fit_within_binomial <- function(X, y, group_start, group_size, maxit, tol) {
@@ -188,10 +250,32 @@ fit_within_binomial <- function(X, y, group_start, group_size, maxit, tol) {
 
 fit_random <- function(X, y, family, group_start, group_size, R, maxit, tol) {
   if (family$family == "gaussian") return(fit_random_gaussian(X, y, group_start, group_size, maxit, tol))
-  if (family$family %in% c("poisson", "negbin")) {
+  if (family$family == "poisson") {
     scale <- apply(X, 2, function(col) { s <- stats::sd(col); if (s > 0) s else 1 })
     Xs <- sweep(X, 2, scale, "/")
-    res <- random_poisson_fit_cpp(Xs, y, group_start, group_size, maxit, tol)
+
+    # Better starting values than zeros/1: pooled Poisson MLE for beta (on
+    # the scaled design, matching the units random_poisson_fit_cpp works
+    # in), and a method-of-moments dispersion from the pooled residual
+    # over/under-dispersion. Both are cheap and make the Newton path much
+    # less likely to wander into a near-singular Hessian region on sparse
+    # or skewed panels.
+    pooled <- irls_fit_cpp(Xs, y, 1L, 1L, maxit, tol)
+    beta_start <- as.numeric(pooled$coefficients)
+    mu_pooled <- as.numeric(pooled$fitted.values)
+    resid_var <- mean((y - mu_pooled)^2)
+    mu_bar <- mean(mu_pooled)
+    d_start <- if (resid_var > mu_bar && mu_bar > 0) mu_bar^2 / (resid_var - mu_bar) else 1.0
+    if (!is.finite(d_start) || d_start <= 0) d_start <- 1.0
+
+    res <- random_poisson_fit_cpp(Xs, y, group_start, group_size, maxit, tol, beta_start, d_start)
+    if (!is.null(res$damping_used) && res$damping_used > 0) {
+      warning("random-effects Poisson fit: the Hessian was ill-conditioned and ",
+              "required Levenberg-Marquardt damping (max ridge = ",
+              format(res$damping_used, digits = 3), "); standard errors may be ",
+              "less reliable than usual -- check for sparse or highly skewed panels.",
+              call. = FALSE)
+    }
     coefs <- as.numeric(res$coefficients) / scale
     names(coefs) <- colnames(X)
     scale_full <- c(scale, 1) # dispersion parameter is unscaled
@@ -200,7 +284,22 @@ fit_random <- function(X, y, family, group_start, group_size, R, maxit, tol) {
     dimnames(vcov) <- list(colnames(X), colnames(X))
     return(list(coefficients = coefs, vcov = vcov, fitted.values = NULL,
                 loglik = res$loglik, dispersion_param = res$dispersion_param,
+                damping_used = res$damping_used,
                 df.residual = nrow(X) - ncol(X) - 1, iterations = res$iterations))
+  }
+  if (family$family == "negbin") {
+    scale <- apply(X, 2, function(col) { s <- stats::sd(col); if (s > 0) s else 1 })
+    Xs <- sweep(X, 2, scale, "/")
+    res <- random_negbin_fit_cpp(Xs, y, group_start, group_size, maxit, tol)
+    coefs <- as.numeric(res$coefficients) / scale
+    names(coefs) <- colnames(X)
+    scale_full <- c(scale, 1, 1) # a, b are unscaled
+    vcov_full <- res$vcov_unscaled / outer(scale_full, scale_full)
+    vcov <- vcov_full[seq_len(ncol(X)), seq_len(ncol(X)), drop = FALSE]
+    dimnames(vcov) <- list(colnames(X), colnames(X))
+    return(list(coefficients = coefs, vcov = vcov, fitted.values = NULL,
+                loglik = res$loglik, negbin_a = res$a, negbin_b = res$b,
+                df.residual = nrow(X) - ncol(X) - 2, iterations = res$iterations))
   }
   if (family$family == "binomial") return(fit_random_binomial(X, y, family, group_start, group_size, R, maxit, tol))
   stop("model = 'random' is not yet implemented for family '", family$family, "'", call. = FALSE)
