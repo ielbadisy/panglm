@@ -4,25 +4,22 @@
 #' simultaneously ~0 (the standard Gauss-Seidel / method-of-alternating-
 #' projections algorithm for exact two-way fixed-effects demeaning; see
 #' Guimaraes & Portugal 2010). Exact for both balanced and unbalanced
-#' panels.
+#' panels. The group-sum reduction and the demeaning step are parallelized
+#' across observations in C++ (RcppParallel), the same hot-path treatment
+#' as the rest of the package's estimators.
 #'
 #' @keywords internal
 #' @noRd
 demean_twoway <- function(X, y, id, time, tol = 1e-10, maxit = 10000) {
-  xnames <- colnames(X)
-  cols <- c(".y", xnames)
-  dt <- data.table::data.table(.id = id, .time = time, .y = y)
-  dt[, (xnames) := as.data.frame(X)]
+  id_code <- as.integer(factor(id)) - 1L
+  time_code <- as.integer(factor(time)) - 1L
+  n_id <- length(unique(id_code))
+  n_time <- length(unique(time_code))
 
-  for (iter in seq_len(maxit)) {
-    before <- as.matrix(dt[, ..cols])
-    dt[, (cols) := lapply(.SD, function(v) v - mean(v)), by = .id, .SDcols = cols]
-    dt[, (cols) := lapply(.SD, function(v) v - mean(v)), by = .time, .SDcols = cols]
-    after <- as.matrix(dt[, ..cols])
-    if (max(abs(after - before)) < tol) break
-  }
+  M <- cbind(y, X)
+  dm <- twoway_demean_cpp(M, id_code, time_code, n_id, n_time, maxit, tol)
 
-  list(y = dt$.y, X = as.matrix(dt[, ..xnames]), iterations = iter)
+  list(y = dm$M[, 1], X = dm$M[, -1, drop = FALSE], iterations = dm$iterations)
 }
 
 fit_within_twoways_gaussian <- function(X, y, id, time, maxit, tol) {
