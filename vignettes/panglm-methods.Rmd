@@ -236,8 +236,12 @@ broom::tidy(f_pool)
 
 - Between and random-effects `ordinal`/`tobit` models (`pglm` has these via
   Gauss-Hermite quadrature; `panglm` doesn't yet).
-- `effect = "twoways"` for negbin/binomial (gaussian and poisson only).
-- Cluster/HC1-robust vcov for fixed-effects negbin/binomial (classical,
-  Hessian-based SEs only for now).
+- `effect = "twoways"` for binomial (no general closed-form two-way
+  conditional logit exists; gaussian, poisson, and negbin are covered).
+- Cluster/HC1-robust vcov for fixed-effects binomial (classical,
+  Hessian-based SEs only for now; negbin is covered via the full
+  covariate+dummy score, see `?vcov.panglm`).
+- `panglm_hurdle()`'s count part is zero-truncated Poisson only; a
+  zero-truncated NB2 count part is not yet implemented.
 
 See `NEWS.md` for what's planned next.
