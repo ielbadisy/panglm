@@ -12,6 +12,14 @@
 #' @param family one of `"gaussian"`, `"poisson"`, `"binomial"`, `"negbin"`,
 #'   or a family spec from [gaussian_family()] / [poisson_family()] /
 #'   [binomial_family()] / [negbin_family()]
+#' @param effect one of `"individual"` or `"twoways"` (individual + time
+#'   fixed effects). `"twoways"` is currently only implemented for
+#'   `model = "within", family = "gaussian"`.
+#' @param vcov one of `"classical"`, `"HC1"` (heteroskedasticity-robust) or
+#'   `"cluster"` (cluster-robust, clustered by the panel individual by
+#'   default). Only applies to `model = "pooling"`/`"within"`; random-effects
+#'   models always report model-based (information-matrix) standard errors.
+#'   See [vcov.panglm()] to recompute a different type after fitting.
 #' @param R number of Gauss-Hermite quadrature nodes (random-effects
 #'   binomial models only)
 #' @param maxit maximum IRLS/Newton iterations
@@ -21,11 +29,19 @@
 panglm <- function(formula, data, index,
                     model = c("pooling", "within", "random"),
                     family = "gaussian",
+                    effect = c("individual", "twoways"),
+                    vcov = c("classical", "HC1", "cluster"),
                     R = 21, maxit = 100, tol = 1e-10) {
   model <- match.arg(model)
+  effect <- match.arg(effect)
+  vcov <- match.arg(vcov)
   family <- resolve_family(family)
 
   if (missing(index)) stop("'index' is required, e.g. index = c(\"id\", \"time\")", call. = FALSE)
+  if (effect == "twoways" && !(model == "within" && family$family == "gaussian")) {
+    stop("effect = 'twoways' is currently only implemented for ",
+         "model = 'within', family = 'gaussian'", call. = FALSE)
+  }
 
   mf <- stats::model.frame(formula, data = data)
   y <- stats::model.response(mf)
@@ -41,35 +57,53 @@ panglm <- function(formula, data, index,
   X_full <- X_full[ord, , drop = FALSE]
   group_start <- panel$group_start
   group_size <- panel$group_size
+  time_id <- if (length(index) > 1) panel$data[[index[2]]] else NULL
 
   has_intercept <- "(Intercept)" %in% colnames(X_full)
   X_noint <- if (has_intercept) X_full[, setdiff(colnames(X_full), "(Intercept)"), drop = FALSE] else X_full
 
   fit <- switch(model,
     pooling = fit_pooled(X_full, y, family, maxit, tol),
-    within  = fit_within(X_noint, y, family, group_start, group_size, maxit, tol),
+    within  = if (effect == "twoways") {
+      fit_within_twoways_gaussian(X_noint, y, panel$group_id[rep(seq_along(group_size), group_size)],
+                                   time_id, maxit, tol)
+    } else {
+      fit_within(X_noint, y, family, group_start, group_size, maxit, tol)
+    },
     random  = fit_random(X_full, y, family, group_start, group_size, R, maxit, tol)
   )
 
+  fit$X <- if (model == "pooling" || model == "random") X_full else X_noint
   fit$y <- y
+  fit$group_start <- group_start
+  fit$group_size <- group_size
+  fit$cluster_id <- rep(panel$group_id, group_size)
   fit$call <- match.call()
   fit$formula <- formula
   fit$model <- model
+  fit$effect <- effect
   fit$family <- family
   fit$index <- index
   fit$nobs <- length(y)
   fit$n_groups <- panel$n_groups
+  fit$vcov_type <- "classical"
   class(fit) <- "panglm"
+
+  if (vcov != "classical") {
+    fit$vcov <- vcov.panglm(fit, type = vcov)
+    fit$vcov_type <- vcov
+  }
   fit
 }
 
 fit_pooled <- function(X, y, family, maxit, tol) {
   res <- irls_fit_cpp(X, y, family$family_id, family$link_id, maxit, tol)
   vcov <- res$vcov_unscaled * res$dispersion
+  bread <- res$vcov_unscaled
   coefs <- as.numeric(res$coefficients)
   names(coefs) <- colnames(X)
-  dimnames(vcov) <- list(colnames(X), colnames(X))
-  list(coefficients = coefs, vcov = vcov, fitted.values = as.numeric(res$fitted.values),
+  dimnames(vcov) <- dimnames(bread) <- list(colnames(X), colnames(X))
+  list(coefficients = coefs, vcov = vcov, bread = bread, fitted.values = as.numeric(res$fitted.values),
        loglik = res$loglik, dispersion = res$dispersion, df.residual = nrow(X) - ncol(X),
        iterations = res$iterations)
 }
@@ -83,14 +117,15 @@ fit_within <- function(X, y, family, group_start, group_size, maxit, tol) {
     resid <- dm$y - dm$X %*% res$coefficients
     sigma2 <- sum(resid^2) / max(1, df_resid)
     vcov <- res$vcov_unscaled * sigma2
+    bread <- res$vcov_unscaled
     coefs <- as.numeric(res$coefficients)
     names(coefs) <- colnames(X)
-    dimnames(vcov) <- list(colnames(X), colnames(X))
+    dimnames(vcov) <- dimnames(bread) <- list(colnames(X), colnames(X))
     gm <- group_means_cpp(X, y, group_start, group_size)
     alpha_i <- gm$ybar - as.numeric(gm$Xbar %*% res$coefficients)
     alpha_obs <- rep(alpha_i, group_size)
     fitted <- alpha_obs + as.numeric(X %*% res$coefficients)
-    return(list(coefficients = coefs, vcov = vcov, fitted.values = fitted,
+    return(list(coefficients = coefs, vcov = vcov, bread = bread, fitted.values = fitted,
                 loglik = NA_real_, dispersion = sigma2, df.residual = df_resid,
                 iterations = res$iterations))
   }
@@ -102,7 +137,7 @@ fit_within <- function(X, y, family, group_start, group_size, maxit, tol) {
     names(coefs) <- colnames(X)
     vcov <- res$vcov_unscaled / outer(scale, scale)
     dimnames(vcov) <- list(colnames(X), colnames(X))
-    return(list(coefficients = coefs, vcov = vcov, fitted.values = NULL,
+    return(list(coefficients = coefs, vcov = vcov, bread = vcov, fitted.values = NULL,
                 loglik = res$loglik, dispersion = 1, df.residual = nrow(X) - ncol(X) - length(group_start),
                 iterations = res$iterations))
   }
