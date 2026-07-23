@@ -25,13 +25,15 @@ build_panel_index <- function(data, index) {
   }
   dt <- dt[ord, ]
 
-  id <- dt[[id_col]]
-  rle_id <- rle(as.character(id))
-  group_size <- as.integer(rle_id$lengths)
+  # data.table::rleidv groups by value without the as.character() coercion
+  # and R-level rle() that dominate build_panel_index's cost on large panels
+  run_id <- data.table::rleidv(dt[[id_col]])
+  group_size <- as.integer(tabulate(run_id))
   group_start <- as.integer(c(0L, cumsum(group_size)[-length(group_size)]))
+  group_values <- dt[[id_col]][group_start + 1L]
 
   list(data = dt, order = ord, group_start = group_start,
-       group_size = group_size, group_id = rle_id$values,
+       group_size = group_size, group_id = group_values,
        n_groups = length(group_size))
 }
 
