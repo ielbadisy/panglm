@@ -12,8 +12,11 @@
 #'
 #' @param object a `"panglm"` fit with `family` `"poisson"` or `"negbin"`
 #' @return a list of class `"panglm_dispersiontest"` with the Pearson
-#'   statistic, its degrees of freedom, the ratio (statistic/df), and a
-#'   one-sided p-value against `chisq(df)`
+#'   statistic, its degrees of freedom, the ratio (statistic/df), a
+#'   one-sided p-value against `chisq(df)`, and `n_excluded`: the number of
+#'   observations dropped from the statistic because their fitted value was
+#'   exactly zero or unavailable (e.g. rows in a structurally-zero panel
+#'   individual screened out of a fixed-effects negbin fit)
 #' @export
 panglm_dispersiontest <- function(object) {
   if (!inherits(object, "panglm")) stop("'object' must be a panglm fit", call. = FALSE)
@@ -27,12 +30,23 @@ panglm_dispersiontest <- function(object) {
 
   mu <- object$fitted.values
   y <- object$y
+
+  # Structurally-zero groups under a closed-form fixed-effects fit (e.g. an
+  # all-zero panel individual under fit_within_negbin_dummy()) can produce
+  # mu == 0 exactly (or NA, if the row was screened out of the fit
+  # entirely), which turns a single Pearson term into 0/0 = NaN and poisons
+  # the whole statistic. Exclude those observations and report how many.
+  usable <- !is.na(mu) & mu > .Machine$double.eps
+  n_excluded <- sum(!usable)
+  mu <- mu[usable]; y <- y[usable]
+
   pearson_chisq <- sum((y - mu)^2 / mu)
-  df <- object$df.residual
+  df <- object$df.residual - n_excluded
   ratio <- pearson_chisq / df
   pval <- stats::pchisq(pearson_chisq, df, lower.tail = FALSE)
 
-  out <- list(statistic = pearson_chisq, parameter = df, ratio = ratio, p.value = pval)
+  out <- list(statistic = pearson_chisq, parameter = df, ratio = ratio, p.value = pval,
+              n_excluded = n_excluded)
   class(out) <- "panglm_dispersiontest"
   out
 }
@@ -44,6 +58,10 @@ print.panglm_dispersiontest <- function(x, digits = max(3, getOption("digits") -
       ", df =", x$parameter,
       ", ratio =", format(x$ratio, digits = digits),
       ", p-value =", format.pval(x$p.value, digits = digits), "\n")
-  cat("alternative hypothesis: overdispersion (ratio > 1)\n\n")
+  cat("alternative hypothesis: overdispersion (ratio > 1)\n")
+  if (!is.null(x$n_excluded) && x$n_excluded > 0) {
+    cat(x$n_excluded, "observation(s) with a zero or unavailable fitted value excluded\n")
+  }
+  cat("\n")
   invisible(x)
 }
