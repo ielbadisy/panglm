@@ -27,6 +27,8 @@ Suggests:
     fixest,
     sandwich,
     survival,
+    MASS,
+    AER,
     generics,
     broom,
     knitr,
