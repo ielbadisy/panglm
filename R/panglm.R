@@ -15,8 +15,9 @@
 #' @param effect one of `"individual"` or `"twoways"` (individual + time
 #'   fixed effects). `"twoways"` is currently only implemented for
 #'   `model = "within"`, `family = "gaussian"` (exact alternating-projections
-#'   demeaning) or `"poisson"` (outer-IRLS / inner-weighted-FWL, the
-#'   algorithm behind `fixest::feglm()`); not yet for `"negbin"`/`"binomial"`.
+#'   demeaning), `"poisson"`, or `"negbin"` (both via outer-IRLS /
+#'   inner-weighted-FWL, the algorithm behind `fixest::feglm()`); not yet for
+#'   `"binomial"` (no general closed-form two-way conditional logit exists).
 #' @param vcov one of `"classical"`, `"HC1"` (heteroskedasticity-robust) or
 #'   `"cluster"` (cluster-robust, clustered by the panel individual by
 #'   default). Only applies to `model = "pooling"`/`"within"`; random-effects
@@ -40,9 +41,9 @@ panglm <- function(formula, data, index,
   family <- resolve_family(family)
 
   if (missing(index)) stop("'index' is required, e.g. index = c(\"id\", \"time\")", call. = FALSE)
-  if (effect == "twoways" && !(model == "within" && family$family %in% c("gaussian", "poisson"))) {
+  if (effect == "twoways" && !(model == "within" && family$family %in% c("gaussian", "poisson", "negbin"))) {
     stop("effect = 'twoways' is currently only implemented for ",
-         "model = 'within', family = 'gaussian' or 'poisson'", call. = FALSE)
+         "model = 'within', family = 'gaussian', 'poisson', or 'negbin'", call. = FALSE)
   }
 
   mf <- stats::model.frame(formula, data = data)
@@ -70,6 +71,8 @@ panglm <- function(formula, data, index,
       fit_within_twoways_gaussian(X_noint, y, group_start, group_size, time_id, maxit, tol)
     } else if (effect == "twoways" && family$family == "poisson") {
       fit_within_twoways_poisson(X_noint, y, group_start, group_size, time_id, maxit, tol)
+    } else if (effect == "twoways" && family$family == "negbin") {
+      fit_within_twoways_negbin(X_noint, y, group_start, group_size, time_id, maxit, tol)
     } else {
       fit_within(X_noint, y, family, group_start, group_size, maxit, tol)
     },
@@ -188,8 +191,29 @@ fit_within <- function(X, y, family, group_start, group_size, maxit, tol) {
 #' @keywords internal
 #' @noRd
 fit_within_negbin_dummy <- function(X, y, group_start, group_size, maxit, tol) {
-  n <- nrow(X); k <- ncol(X); G <- length(group_start)
+  n0 <- nrow(X); k <- ncol(X); G0 <- length(group_size)
   group <- rep(seq_along(group_size), group_size)
+  colnames_X <- colnames(X)
+
+  # Groups with an all-zero outcome have an unbounded dummy-variable MLE
+  # (the intercept diverges to -Inf under the log link), the same boundary
+  # case fit_within_binomial() screens out for the conditional logit. Left
+  # in, the divergent direction can contaminate the shared beta via the
+  # joint Newton/IRLS solve, not just that group's own intercept.
+  zero_group <- vapply(seq_len(G0), function(g) all(y[group == g] == 0), logical(1))
+  n_dropped <- sum(zero_group)
+  kept_groups <- which(!zero_group)
+  keep_rows <- !zero_group[group]
+  if (n_dropped > 0) {
+    message(n_dropped, " group(s) with all-zero outcomes dropped -- their fixed effect ",
+            "is unbounded under the dummy-variable NB2 MLE and carries no information ",
+            "about the shared slope.")
+    X <- X[keep_rows, , drop = FALSE]
+    y <- y[keep_rows]
+    group <- match(group[keep_rows], kept_groups)
+  }
+  n <- length(y); G <- length(kept_groups)
+
   dummies <- matrix(0, n, G)
   dummies[cbind(seq_len(n), group)] <- 1
   X_aug <- cbind(X, dummies)
@@ -197,17 +221,26 @@ fit_within_negbin_dummy <- function(X, y, group_start, group_size, maxit, tol) {
   res <- negbin_irls_fit_cpp(X_aug, y, maxit, tol)
   coefs <- as.numeric(res$coefficients[seq_len(k)])
   alpha_i <- as.numeric(res$coefficients[k + seq_len(G)])
-  names(coefs) <- colnames(X)
+  names(coefs) <- colnames_X
 
   vcov_full <- res$vcov_unscaled
   vcov <- vcov_full[seq_len(k), seq_len(k), drop = FALSE]
-  dimnames(vcov) <- list(colnames(X), colnames(X))
+  dimnames(vcov) <- list(colnames_X, colnames_X)
 
-  fitted <- as.numeric(exp(X_aug %*% res$coefficients))
+  # Pad back to the original (pre-screening) row count with NA for dropped
+  # rows, so fitted.values stays aligned with the full-length y stored on
+  # the panglm object (residuals.panglm() does object$y - fitted.values).
+  fitted <- rep(NA_real_, n0)
+  fitted[keep_rows] <- as.numeric(exp(X_aug %*% res$coefficients))
 
   list(coefficients = coefs, vcov = vcov, bread = vcov, fitted.values = fitted,
        loglik = res$loglik, theta = res$theta, dispersion = 1,
-       individual_effects = stats::setNames(alpha_i, seq_len(G)),
+       individual_effects = stats::setNames(alpha_i, kept_groups),
+       n_used_groups = G, n_dropped_groups = n_dropped,
+       # Kept for robust/cluster vcov (see robust_vcov_within_negbin() in
+       # vcov.R): the full (k+G)-parameter augmented design/bread, and
+       # keep_rows to align a full-length cluster/offset vector to it.
+       X_aug = X_aug, keep_rows = keep_rows, vcov_full_aug = vcov_full,
        df.residual = n - k - G - 1, iterations = res$iterations)
 }
 
