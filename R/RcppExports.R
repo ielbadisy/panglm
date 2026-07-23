@@ -2,30 +2,34 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 irls_fit_cpp <- function(X, y, family_id, link_id, maxit = 100L, tol = 1e-10) {
-    .Call('_panglm_irls_fit_cpp', PACKAGE = 'panglm', X, y, family_id, link_id, maxit, tol)
+    .Call(`_panglm_irls_fit_cpp`, X, y, family_id, link_id, maxit, tol)
 }
 
 random_binomial_loglik_grad_cpp <- function(beta, sigma, X, y, group_start, group_size, nodes, weights, link_id) {
-    .Call('_panglm_random_binomial_loglik_grad_cpp', PACKAGE = 'panglm', beta, sigma, X, y, group_start, group_size, nodes, weights, link_id)
+    .Call(`_panglm_random_binomial_loglik_grad_cpp`, beta, sigma, X, y, group_start, group_size, nodes, weights, link_id)
 }
 
 group_means_cpp <- function(X, y, group_start, group_size) {
-    .Call('_panglm_group_means_cpp', PACKAGE = 'panglm', X, y, group_start, group_size)
+    .Call(`_panglm_group_means_cpp`, X, y, group_start, group_size)
 }
 
 quasi_demean_cpp <- function(X, y, group_start, group_size, theta) {
-    .Call('_panglm_quasi_demean_cpp', PACKAGE = 'panglm', X, y, group_start, group_size, theta)
+    .Call(`_panglm_quasi_demean_cpp`, X, y, group_start, group_size, theta)
 }
 
 random_poisson_fit_cpp <- function(X, y, group_start, group_size, maxit = 100L, tol = 1e-10) {
-    .Call('_panglm_random_poisson_fit_cpp', PACKAGE = 'panglm', X, y, group_start, group_size, maxit, tol)
+    .Call(`_panglm_random_poisson_fit_cpp`, X, y, group_start, group_size, maxit, tol)
+}
+
+twoway_demean_cpp <- function(M, id_code, time_code, n_id, n_time, maxit = 10000L, tol = 1e-10) {
+    .Call(`_panglm_twoway_demean_cpp`, M, id_code, time_code, n_id, n_time, maxit, tol)
 }
 
 within_demean_cpp <- function(X, y, group_start, group_size) {
-    .Call('_panglm_within_demean_cpp', PACKAGE = 'panglm', X, y, group_start, group_size)
+    .Call(`_panglm_within_demean_cpp`, X, y, group_start, group_size)
 }
 
 within_poisson_fit_cpp <- function(X, y, group_start, group_size, maxit = 100L, tol = 1e-10) {
-    .Call('_panglm_within_poisson_fit_cpp', PACKAGE = 'panglm', X, y, group_start, group_size, maxit, tol)
+    .Call(`_panglm_within_poisson_fit_cpp`, X, y, group_start, group_size, maxit, tol)
 }
 
