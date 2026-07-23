@@ -1,0 +1,29 @@
+Package: panglm
+Type: Package
+Title: Fast Generalized Linear Models for Panel Data
+Version: 0.1.0
+Authors@R: person("Imad", "El Badisy", email = "elbadisyimad@gmail.com", role = c("aut", "cre"))
+Description: Fast estimation of pooled, fixed-effects (within), and
+    random-effects generalized linear models for panel data, using
+    'Rcpp', 'RcppArmadillo' and 'RcppParallel' for the numerical core
+    and 'data.table' for panel bookkeeping. Provides classic summary()
+    tables (estimate, standard error, z value, p-value) comparable to
+    stats::glm().
+License: MIT + file LICENSE
+Encoding: UTF-8
+Depends: R (>= 3.6.0)
+Imports:
+    Rcpp,
+    data.table,
+    stats
+LinkingTo:
+    Rcpp,
+    RcppArmadillo,
+    RcppParallel
+Suggests:
+    testthat (>= 3.0.0),
+    plm,
+    pglm
+Config/testthat/edition: 3
+SystemRequirements: GNU make
+RoxygenNote: 7.3.3
