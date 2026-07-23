@@ -3,3 +3,5 @@
 ^\.Rproj\.user$
 ^panglm\.Rcheck$
 ^panglm_.*\.tar\.gz$
+^doc$
+^Meta$
