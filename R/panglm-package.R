@@ -6,3 +6,5 @@
 #' @importFrom data.table as.data.table setDT setkeyv
 #' @importFrom stats model.frame model.matrix model.response pnorm printCoefmat nobs
 "_PACKAGE"
+
+utils::globalVariables(c(".id", ".time", ".SD", "..cols", "..xnames", ":="))
