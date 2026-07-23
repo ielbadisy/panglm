@@ -1,0 +1,9 @@
+*.o
+*.so
+*.dll
+panglm.Rcheck/
+panglm_*.tar.gz
+reference/
+.Rproj.user/
+.Rhistory
+.RData
