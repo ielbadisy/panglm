@@ -16,8 +16,17 @@ Initial release.
   exactly; tractable for small-to-moderate N, not intended for very large
   panels), and binomial (exact conditional logistic regression, Chamberlain
   1980 -- matches `survival::clogit(method = "exact")`, no `pglm`
-  equivalent). `effect = "twoways"` for poisson/gaussian is parallelized in
-  C++ (RcppParallel); not yet available for negbin/binomial.
+  equivalent). `effect = "twoways"` is available for gaussian, poisson, and
+  negbin (the latter two via outer-IRLS/inner-weighted-FWL, matching
+  `fixest::fenegbin()` exactly); not yet for binomial (no general
+  closed-form two-way conditional logit exists).
+* Groups with an all-zero outcome are now dropped (with an informative
+  `message()`) before fitting the Allison-Waterman FE-NB2 estimator -- their
+  dummy-variable intercept is unbounded under the log link, the same
+  boundary case `model = "within", family = "binomial"` already screened
+  for. Previously left in, this could contaminate the shared covariate
+  coefficients via the joint solve, not just the offending group's own
+  intercept.
 * `model = "random"`: gaussian (Swamy-Arora), poisson (Poisson-Gamma, a
   single dispersion parameter), negative binomial (a genuinely different,
   2-parameter beta-negative-binomial mixture matching `pglm`'s
@@ -32,23 +41,29 @@ Initial release.
 ## Inference
 
 * `vcov(fit, type = "HC1" | "cluster")` for pooled/within models, including
-  `effect = "twoways"` (gaussian); not yet for within negbin (the
-  Allison-Waterman dummy-variable score isn't wired up for this yet --
-  raises an informative error rather than a silently wrong answer).
-  Random-effects models intentionally keep model-based (information-matrix)
-  SEs only, matching `lme4`/`glmmTMB` convention.
+  `effect = "twoways"` (gaussian) and within negbin (Allison-Waterman): the
+  sandwich correction uses the full covariate+dummy score and bread (all
+  (k+G) parameters), not just the covariate block, since the dummy
+  intercepts are jointly estimated and contribute sampling variability of
+  their own. Random-effects models intentionally keep model-based
+  (information-matrix) SEs only, matching `lme4`/`glmmTMB` convention.
 * `confint.panglm()` -- Wald intervals using whichever vcov the fit
   currently carries.
 * `panglm_dispersiontest()` -- Pearson chi-squared/df overdispersion test
-  for poisson/negbin fits with available `fitted.values`.
+  for poisson/negbin fits with available `fitted.values`. Observations with
+  a zero or unavailable fitted value (e.g. rows in an all-zero group
+  screened out of a fixed-effects negbin fit) are excluded from the
+  statistic rather than producing a `0/0` = `NaN`; the excluded count is
+  reported as `n_excluded` on the returned object.
 * `panglm_hausman()` for FE-vs-RE specification testing.
 * `tidy()`/`glance()` methods registered against `generics::tidy`/`glance`
   for `broom`/`modelsummary` compatibility.
 
 ## Known limitations
 
-* `effect = "twoways"` not yet available for negbin/binomial.
+* `effect = "twoways"` not yet available for binomial (no general
+  closed-form two-way conditional logit exists).
+* No zero-inflated/hurdle count model yet.
 * No between effects.
 * No ordinal/tobit families.
-* No cluster/HC1 vcov for within negbin.
 * Not yet on CRAN.
