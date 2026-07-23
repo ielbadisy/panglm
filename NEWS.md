@@ -59,11 +59,25 @@ Initial release.
 * `tidy()`/`glance()` methods registered against `generics::tidy`/`glance`
   for `broom`/`modelsummary` compatibility.
 
+## Zero-inflated counts
+
+* `panglm_hurdle()`: a fixed-effects hurdle model for panels with
+  structural zeros (a pattern that shows up as extreme, family-invariant
+  overdispersion under either `family = "poisson"` or `family = "negbin"`
+  in `panglm()`). Fits `1(y>0)` via the existing conditional-logit FE
+  estimator, and a zero-truncated Poisson FE model (an
+  Allison-Waterman-style dummy-variable estimator, Newton-Raphson with
+  exact Fisher information) on the `y>0` subsample. The truncated-Poisson
+  math (no fixed effects) matches `pscl::hurdle()`'s count part exactly.
+  Truncated NB2 for the count part is not yet implemented (documented as a
+  known limitation below, not silently unsupported).
+
 ## Known limitations
 
 * `effect = "twoways"` not yet available for binomial (no general
   closed-form two-way conditional logit exists).
-* No zero-inflated/hurdle count model yet.
+* `panglm_hurdle()`'s count part is zero-truncated Poisson only; a
+  zero-truncated NB2 count part is not yet implemented.
 * No between effects.
 * No ordinal/tobit families.
 * Not yet on CRAN.
