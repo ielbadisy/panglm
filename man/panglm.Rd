@@ -34,8 +34,9 @@ or a family spec from [gaussian_family()] / [poisson_family()] /
 \item{effect}{one of `"individual"` or `"twoways"` (individual + time
 fixed effects). `"twoways"` is currently only implemented for
 `model = "within"`, `family = "gaussian"` (exact alternating-projections
-demeaning) or `"poisson"` (outer-IRLS / inner-weighted-FWL, the
-algorithm behind `fixest::feglm()`); not yet for `"negbin"`/`"binomial"`.}
+demeaning), `"poisson"`, or `"negbin"` (both via outer-IRLS /
+inner-weighted-FWL, the algorithm behind `fixest::feglm()`); not yet for
+`"binomial"` (no general closed-form two-way conditional logit exists).}
 
 \item{vcov}{one of `"classical"`, `"HC1"` (heteroskedasticity-robust) or
 `"cluster"` (cluster-robust, clustered by the panel individual by
