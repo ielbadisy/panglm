@@ -1,0 +1,8 @@
+CXX_STD = CXX17
+# Force RcppParallel's header-only tinythread backend: the TBB shared
+# libraries bundled with this RcppParallel build are ABI-incompatible with
+# its own RcppParallel.so (missing tbb::task::note_affinity), so linking
+# against them fails at load time. tinythread avoids that dependency.
+PKG_CPPFLAGS = -DRCPP_PARALLEL_USE_TBB=0
+PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS)
+PKG_LIBS = $(SHLIB_OPENMP_CXXFLAGS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
