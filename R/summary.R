@@ -16,10 +16,11 @@ summary.panglm <- function(object, ...) {
                       `z value` = zval, `Pr(>|z|)` = pval)
   rownames(coeftable) <- names(coefs)
 
-  out <- list(call = object$call, model = object$model, family = object$family,
+  out <- list(call = object$call, model = object$model, effect = object$effect, family = object$family,
               coefficients = coeftable, nobs = object$nobs, n_groups = object$n_groups,
               df.residual = object$df.residual, loglik = object$loglik,
-              dispersion = object$dispersion, iterations = object$iterations)
+              dispersion = object$dispersion, iterations = object$iterations,
+              vcov_type = object$vcov_type)
   class(out) <- "summary.panglm"
   out
 }
@@ -29,8 +30,9 @@ print.summary.panglm <- function(x, digits = max(3, getOption("digits") - 3), ..
   cat("\nCall:\n")
   print(x$call)
   cat("\nFamily:", x$family$family, " Link:", x$family$link,
-      " Model:", x$model, "\n")
-  cat("N =", x$nobs, " groups =", x$n_groups, "\n\n")
+      " Model:", x$model, " Effect:", x$effect, "\n")
+  cat("N =", x$nobs, " groups =", x$n_groups,
+      " vcov:", x$vcov_type, "\n\n")
   cat("Coefficients:\n")
   stats::printCoefmat(x$coefficients, digits = digits, signif.stars = TRUE, has.Pvalue = TRUE)
   cat("\n")
