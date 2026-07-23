@@ -33,6 +33,10 @@ twoway_demean_cpp <- function(M, id_code, time_code, n_id, n_time, maxit = 10000
     .Call(`_panglm_twoway_demean_cpp`, M, id_code, time_code, n_id, n_time, maxit, tol)
 }
 
+twoway_demean_weighted_cpp <- function(M, w, id_code, time_code, n_id, n_time, maxit = 10000L, tol = 1e-10) {
+    .Call(`_panglm_twoway_demean_weighted_cpp`, M, w, id_code, time_code, n_id, n_time, maxit, tol)
+}
+
 conditional_logit_loglik_grad_cpp <- function(beta, X, y, group_start, group_size) {
     .Call(`_panglm_conditional_logit_loglik_grad_cpp`, beta, X, y, group_start, group_size)
 }
