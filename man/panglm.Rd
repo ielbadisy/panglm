@@ -10,6 +10,8 @@ panglm(
   index,
   model = c("pooling", "within", "random"),
   family = "gaussian",
+  effect = c("individual", "twoways"),
+  vcov = c("classical", "HC1", "cluster"),
   R = 21,
   maxit = 100,
   tol = 1e-10
@@ -28,6 +30,16 @@ individual (and optionally time) columns, e.g. `c("id", "time")`}
 \item{family}{one of `"gaussian"`, `"poisson"`, `"binomial"`, `"negbin"`,
 or a family spec from [gaussian_family()] / [poisson_family()] /
 [binomial_family()] / [negbin_family()]}
+
+\item{effect}{one of `"individual"` or `"twoways"` (individual + time
+fixed effects). `"twoways"` is currently only implemented for
+`model = "within", family = "gaussian"`.}
+
+\item{vcov}{one of `"classical"`, `"HC1"` (heteroskedasticity-robust) or
+`"cluster"` (cluster-robust, clustered by the panel individual by
+default). Only applies to `model = "pooling"`/`"within"`; random-effects
+models always report model-based (information-matrix) standard errors.
+See [vcov.panglm()] to recompute a different type after fitting.}
 
 \item{R}{number of Gauss-Hermite quadrature nodes (random-effects
 binomial models only)}
