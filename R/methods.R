@@ -2,9 +2,6 @@
 coef.panglm <- function(object, ...) object$coefficients
 
 #' @export
-vcov.panglm <- function(object, ...) object$vcov
-
-#' @export
 fitted.panglm <- function(object, ...) object$fitted.values
 
 #' @export
@@ -39,12 +36,5 @@ predict.panglm <- function(object, newdata = NULL, type = c("link", "response"),
   common <- intersect(colnames(X), names(object$coefficients))
   eta <- as.numeric(X[, common, drop = FALSE] %*% object$coefficients[common])
   if (type == "link") return(eta)
-
-  link_id <- object$family$link_id
-  switch(link_id + 1L,
-    eta,                              # 1: identity
-    exp(eta),                         # 2: log
-    1 / (1 + exp(-eta)),              # 3: logit
-    stats::pnorm(eta)                 # 4: probit
-  )
+  linkinv_r(eta, object$family$link_id)
 }
