@@ -65,8 +65,7 @@ panglm <- function(formula, data, index,
   fit <- switch(model,
     pooling = fit_pooled(X_full, y, family, maxit, tol),
     within  = if (effect == "twoways") {
-      fit_within_twoways_gaussian(X_noint, y, panel$group_id[rep(seq_along(group_size), group_size)],
-                                   time_id, maxit, tol)
+      fit_within_twoways_gaussian(X_noint, y, group_start, group_size, time_id, maxit, tol)
     } else {
       fit_within(X_noint, y, family, group_start, group_size, maxit, tol)
     },
