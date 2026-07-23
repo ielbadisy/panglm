@@ -108,6 +108,21 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// conditional_logit_loglik_grad_cpp
+List conditional_logit_loglik_grad_cpp(const arma::vec& beta, const arma::mat& X, const arma::vec& y, IntegerVector group_start, IntegerVector group_size);
+RcppExport SEXP _panglm_conditional_logit_loglik_grad_cpp(SEXP betaSEXP, SEXP XSEXP, SEXP ySEXP, SEXP group_startSEXP, SEXP group_sizeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::vec& >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type group_start(group_startSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type group_size(group_sizeSEXP);
+    rcpp_result_gen = Rcpp::wrap(conditional_logit_loglik_grad_cpp(beta, X, y, group_start, group_size));
+    return rcpp_result_gen;
+END_RCPP
+}
 // within_demean_cpp
 List within_demean_cpp(NumericMatrix X, NumericVector y, IntegerVector group_start, IntegerVector group_size);
 RcppExport SEXP _panglm_within_demean_cpp(SEXP XSEXP, SEXP ySEXP, SEXP group_startSEXP, SEXP group_sizeSEXP) {
@@ -146,6 +161,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_panglm_quasi_demean_cpp", (DL_FUNC) &_panglm_quasi_demean_cpp, 5},
     {"_panglm_random_poisson_fit_cpp", (DL_FUNC) &_panglm_random_poisson_fit_cpp, 6},
     {"_panglm_twoway_demean_cpp", (DL_FUNC) &_panglm_twoway_demean_cpp, 7},
+    {"_panglm_conditional_logit_loglik_grad_cpp", (DL_FUNC) &_panglm_conditional_logit_loglik_grad_cpp, 5},
     {"_panglm_within_demean_cpp", (DL_FUNC) &_panglm_within_demean_cpp, 4},
     {"_panglm_within_poisson_fit_cpp", (DL_FUNC) &_panglm_within_poisson_fit_cpp, 6},
     {NULL, NULL, 0}
