@@ -29,6 +29,7 @@ Suggests:
     survival,
     MASS,
     AER,
+    glmmTMB,
     generics,
     broom,
     knitr,
