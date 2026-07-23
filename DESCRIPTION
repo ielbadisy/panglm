@@ -23,7 +23,14 @@ LinkingTo:
 Suggests:
     testthat (>= 3.0.0),
     plm,
-    pglm
+    pglm,
+    fixest,
+    sandwich,
+    generics,
+    broom,
+    knitr,
+    rmarkdown
 Config/testthat/edition: 3
 SystemRequirements: GNU make
 RoxygenNote: 7.3.3
+VignetteBuilder: knitr
