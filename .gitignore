@@ -9,3 +9,5 @@ reference/
 .RData
 /doc/
 /Meta/
+README.html
+README.knit.md
