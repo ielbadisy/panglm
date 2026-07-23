@@ -1,0 +1,5 @@
+^reference$
+^.*\.Rproj$
+^\.Rproj\.user$
+^panglm\.Rcheck$
+^panglm_.*\.tar\.gz$
