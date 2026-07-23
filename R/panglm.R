@@ -76,6 +76,7 @@ panglm <- function(formula, data, index,
   fit$y <- y
   fit$group_start <- group_start
   fit$group_size <- group_size
+  fit$time_id <- time_id
   fit$cluster_id <- rep(panel$group_id, group_size)
   fit$call <- match.call()
   fit$formula <- formula
