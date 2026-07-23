@@ -10,7 +10,8 @@ vignette: >
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE, comment = "#>",
-  eval = requireNamespace("plm", quietly = TRUE) && requireNamespace("pglm", quietly = TRUE)
+  eval = requireNamespace("plm", quietly = TRUE) && requireNamespace("pglm", quietly = TRUE) &&
+    requireNamespace("survival", quietly = TRUE)
 )
 ```
 
@@ -28,6 +29,7 @@ results can be trusted rather than treated as a black box.
 library(panglm)
 library(plm)
 library(pglm)
+library(survival)
 data(Grunfeld, package = "plm")
 data(UnionWage, package = "pglm")
 ```
@@ -53,14 +55,26 @@ rbind(panglm = coef(f_pool), glm = coef(g_pool))
   profiles out the individual fixed effect in closed form -- this is exactly
   `pglm`'s `model = "within", family = poisson` estimator (Hausman, Hall &
   Griliches 1984), not an approximation.
-- **binomial**: not yet implemented (conditional logit fixed effects needs a
-  separate estimator; requesting it raises an informative error).
+- **binomial**: the exact conditional logistic regression that profiles out
+  the individual fixed effect by conditioning on each unit's total number of
+  successes (Chamberlain 1980) -- the same estimator as
+  `survival::clogit(method = "exact")`. Units with no within-group outcome
+  variation (all-0 or all-1) carry no information and are dropped, with a
+  message reporting how many.
 
 ```{r within}
 f_fe <- panglm(inv ~ value + capital, data = Grunfeld,
                 index = c("firm", "year"), model = "within", family = "gaussian")
 p_fe <- plm(inv ~ value + capital, data = Grunfeld, index = c("firm", "year"), model = "within")
 rbind(panglm = coef(f_fe), plm = coef(p_fe))
+```
+
+```{r within-binomial}
+UnionWage$union01 <- as.numeric(UnionWage$union) - 1
+f_clogit <- panglm(union ~ wage + exper + rural, data = UnionWage,
+                    index = c("id", "year"), model = "within", family = "binomial")
+cl <- survival::clogit(union01 ~ wage + exper + rural + strata(id), data = UnionWage, method = "exact")
+rbind(panglm = coef(f_clogit), clogit = coef(cl))
 ```
 
 ### Two-way fixed effects
@@ -152,6 +166,7 @@ broom::tidy(f_pool)
 - Between and random-effects `ordinal`/`tobit` models (`pglm` has these via
   Gauss-Hermite quadrature; `panglm` doesn't yet).
 - Multi-way fixed effects for `poisson`/`binomial` (only gaussian).
-- Fixed-effects (conditional) binomial.
+- Cluster/HC1-robust vcov for fixed-effects binomial (classical,
+  Hessian-based SEs only for now).
 
 See the package's `plan` history and `NEWS.md` for what's planned next.
