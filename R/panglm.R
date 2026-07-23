@@ -140,8 +140,50 @@ fit_within <- function(X, y, family, group_start, group_size, maxit, tol) {
                 loglik = res$loglik, dispersion = 1, df.residual = nrow(X) - ncol(X) - length(group_start),
                 iterations = res$iterations))
   }
-  stop("model = 'within' is not yet implemented for family '", family$family,
-       "' (conditional/fixed-effects binomial requires a separate estimator)", call. = FALSE)
+  if (family$family == "binomial") return(fit_within_binomial(X, y, group_start, group_size, maxit, tol))
+  stop("model = 'within' is not yet implemented for family '", family$family, "'", call. = FALSE)
+}
+
+fit_within_binomial <- function(X, y, group_start, group_size, maxit, tol) {
+  k <- ncol(X)
+
+  # BFGS calls the objective and gradient separately at (usually) the same
+  # beta; cache the last evaluation so the O(sum T_i^2) DP isn't run twice
+  # per iteration.
+  cache <- new.env(parent = emptyenv())
+  eval_at <- function(beta) {
+    if (is.null(cache$beta) || !identical(cache$beta, beta)) {
+      cache$beta <- beta
+      cache$res <- conditional_logit_loglik_grad_cpp(beta, X, y, group_start, group_size)
+    }
+    cache$res
+  }
+  objective <- function(beta) -eval_at(beta)$loglik
+  gradient <- function(beta) -eval_at(beta)$gradient
+
+  opt <- stats::optim(rep(0, k), objective, gradient, method = "BFGS",
+                       control = list(maxit = maxit, reltol = tol), hessian = TRUE)
+
+  info <- conditional_logit_loglik_grad_cpp(opt$par, X, y, group_start, group_size)
+  n_dropped <- length(group_size) - info$n_used_groups
+  if (n_dropped > 0) {
+    message(n_dropped, " group(s) with no within-group outcome variation dropped ",
+            "(all-0 or all-1) -- they carry no information for the conditional likelihood.")
+  }
+
+  coefs <- as.numeric(opt$par)
+  names(coefs) <- colnames(X)
+  vcov <- tryCatch(solve(opt$hessian), error = function(e) matrix(NA_real_, k, k))
+  bread <- vcov
+  dimnames(vcov) <- dimnames(bread) <- list(colnames(X), colnames(X))
+
+  # df.residual isn't well-defined for conditional logistic regression (the
+  # per-group fixed effects are never estimated, only conditioned out), so
+  # it's left NA; see n_used_groups/n_dropped_groups instead.
+  list(coefficients = coefs, vcov = vcov, bread = bread, fitted.values = NULL,
+       loglik = -opt$value, dispersion = 1, df.residual = NA_real_,
+       n_used_groups = info$n_used_groups, n_dropped_groups = n_dropped,
+       iterations = opt$counts[[1]], convergence = opt$convergence)
 }
 
 fit_random <- function(X, y, family, group_start, group_size, R, maxit, tol) {
@@ -209,20 +251,25 @@ fit_random_binomial <- function(X, y, family, group_start, group_size, R, maxit,
   start <- irls_fit_cpp(X, y, 2L, family$link_id, maxit, tol)
   theta0 <- c(as.numeric(start$coefficients), log(0.5))
 
-  objective <- function(theta) {
-    beta <- theta[seq_len(k)]
-    sigma <- exp(theta[k + 1])
-    res <- random_binomial_loglik_grad_cpp(beta, sigma, X, y, group_start, group_size,
-                                            gh$nodes, gh$weights, family$link_id)
-    -res$loglik
+  # BFGS calls the objective and gradient separately at (usually) the same
+  # theta; cache the last quadrature evaluation to avoid running it twice.
+  cache <- new.env(parent = emptyenv())
+  eval_at <- function(theta) {
+    if (is.null(cache$theta) || !identical(cache$theta, theta)) {
+      cache$theta <- theta
+      beta <- theta[seq_len(k)]
+      sigma <- exp(theta[k + 1])
+      cache$res <- random_binomial_loglik_grad_cpp(beta, sigma, X, y, group_start, group_size,
+                                                     gh$nodes, gh$weights, family$link_id)
+      cache$sigma <- sigma
+    }
+    cache
   }
+  objective <- function(theta) -eval_at(theta)$res$loglik
   gradient <- function(theta) {
-    beta <- theta[seq_len(k)]
-    sigma <- exp(theta[k + 1])
-    res <- random_binomial_loglik_grad_cpp(beta, sigma, X, y, group_start, group_size,
-                                            gh$nodes, gh$weights, family$link_id)
-    g <- res$gradient
-    g[k + 1] <- g[k + 1] * sigma # chain rule: d/d(log sigma) = d/dsigma * sigma
+    c <- eval_at(theta)
+    g <- c$res$gradient
+    g[k + 1] <- g[k + 1] * c$sigma # chain rule: d/d(log sigma) = d/dsigma * sigma
     -g
   }
 
