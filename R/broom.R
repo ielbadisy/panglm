@@ -8,6 +8,13 @@
 #' @param conf.level confidence level for the interval
 #' @param ... unused
 #' @return a `data.frame` with one row per coefficient
+#' @examples
+#' data(copd)
+#' fit <- panglm(fev1 ~ treatment + age + smoker + crp, data = copd,
+#'               index = c("id", "visit"), model = "pooling", family = "gaussian")
+#' if (requireNamespace("generics", quietly = TRUE)) {
+#'   generics::tidy(fit, conf.int = TRUE)
+#' }
 #' @exportS3Method generics::tidy
 tidy.panglm <- function(x, conf.int = FALSE, conf.level = 0.95, ...) {
   coefs <- x$coefficients
@@ -40,6 +47,13 @@ tidy.panglm <- function(x, conf.int = FALSE, conf.level = 0.95, ...) {
 #' @param x a `"panglm"` fit
 #' @param ... unused
 #' @return a one-row `data.frame`
+#' @examples
+#' data(copd)
+#' fit <- panglm(fev1 ~ treatment + age + smoker + crp, data = copd,
+#'               index = c("id", "visit"), model = "pooling", family = "gaussian")
+#' if (requireNamespace("generics", quietly = TRUE)) {
+#'   generics::glance(fit)
+#' }
 #' @exportS3Method generics::glance
 glance.panglm <- function(x, ...) {
   data.frame(

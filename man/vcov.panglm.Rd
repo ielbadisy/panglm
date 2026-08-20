@@ -27,3 +27,10 @@ already integrate out the individual-level correlation via the
 likelihood, so they report model-based (information-matrix) standard
 errors, matching the convention used by `lme4`/`glmmTMB`.
 }
+\examples{
+data(copd)
+fit <- panglm(fev1 ~ crp, data = copd, index = c("id", "visit"),
+              model = "within", family = "gaussian")
+vcov(fit)
+vcov(fit, type = "cluster")
+}

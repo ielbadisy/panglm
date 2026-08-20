@@ -17,6 +17,11 @@
 #'   observations dropped from the statistic because their fitted value was
 #'   exactly zero or unavailable (e.g. rows in a structurally-zero panel
 #'   individual screened out of a fixed-effects negbin fit)
+#' @examples
+#' data(copd)
+#' fit <- panglm(exacerbations ~ treatment + age + smoker + crp, data = copd,
+#'               index = c("id", "visit"), model = "pooling", family = "poisson")
+#' panglm_dispersiontest(fit)
 #' @export
 panglm_dispersiontest <- function(object) {
   if (!inherits(object, "panglm")) stop("'object' must be a panglm fit", call. = FALSE)

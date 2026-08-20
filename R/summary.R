@@ -5,6 +5,11 @@
 #'
 #' @param object a `"panglm"` object
 #' @param ... unused
+#' @examples
+#' data(copd)
+#' fit <- panglm(fev1 ~ treatment + age + smoker + crp, data = copd,
+#'               index = c("id", "visit"), model = "pooling", family = "gaussian")
+#' summary(fit)
 #' @export
 summary.panglm <- function(object, ...) {
   coefs <- object$coefficients

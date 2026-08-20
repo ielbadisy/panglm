@@ -1,4 +1,7 @@
 ^reference$
+^README\.Rmd$
+^cran-comments\.md$
+^data-raw$
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^panglm\.Rcheck$
@@ -6,3 +9,4 @@
 ^doc$
 ^Meta$
 ^\.claude$
+^\.github$

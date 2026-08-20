@@ -243,5 +243,3 @@ broom::tidy(f_pool)
   covariate+dummy score, see `?vcov.panglm`).
 - `panglm_hurdle()`'s count part is zero-truncated Poisson only; a
   zero-truncated NB2 count part is not yet implemented.
-
-See `NEWS.md` for what's planned next.

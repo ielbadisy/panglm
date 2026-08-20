@@ -59,3 +59,28 @@ Fast pooled, fixed-effects ("within") and random-effects panel GLMs,
 backed by an Rcpp/RcppArmadillo/RcppParallel numerical core. See the
 package vignette for the estimators currently implemented per family.
 }
+\examples{
+data(copd)
+
+# pooled OLS on lung function (ignores the panel structure)
+fit_pool <- panglm(fev1 ~ treatment + age + smoker + crp, data = copd,
+                    index = c("id", "visit"), model = "pooling", family = "gaussian")
+summary(fit_pool)
+
+# fixed-effects ("within") estimator -- only the time-varying regressor
+# (crp) survives demeaning; time-invariant covariates like treatment
+# or age are not identified by a fixed-effects estimator
+fit_fe <- panglm(fev1 ~ crp, data = copd,
+                  index = c("id", "visit"), model = "within", family = "gaussian")
+coef(fit_fe)
+
+# random-effects (Swamy-Arora) estimator
+fit_re <- panglm(fev1 ~ treatment + age + smoker + crp, data = copd,
+                  index = c("id", "visit"), model = "random", family = "gaussian")
+coef(fit_re)
+
+# fixed-effects Poisson on exacerbation counts
+fit_pois <- panglm(exacerbations ~ crp, data = copd,
+                    index = c("id", "visit"), model = "within", family = "poisson")
+coef(fit_pois)
+}

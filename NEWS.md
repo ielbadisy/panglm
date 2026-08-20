@@ -1,3 +1,18 @@
+# panglm 0.6.0
+
+CRAN submission candidate. Adds a bundled synthetic dataset, `copd` (a
+simulated COPD follow-up panel), and runnable `@examples` to every exported
+function and documented method -- previously undocumented, which is a CRAN
+submission blocker. No functional changes to the estimators.
+
+# panglm 0.5.0
+
+First CRAN submission candidate. Consolidates the estimators, inference, and
+zero-inflated-count support added since 0.1.0 (see below); no functional
+changes since the last version bump beyond package-metadata and
+documentation cleanup for submission (`URL`/`BugReports` fields, vignette
+housekeeping).
+
 # panglm 0.1.0
 
 Initial release.

@@ -36,6 +36,11 @@ nobs.panglm <- function(object, ...) object$nobs
 #' @param parm which parameters (names or indices); defaults to all
 #' @param level confidence level
 #' @param ... unused
+#' @examples
+#' data(copd)
+#' fit <- panglm(fev1 ~ crp, data = copd, index = c("id", "visit"),
+#'               model = "within", family = "gaussian")
+#' confint(fit)
 #' @export
 confint.panglm <- function(object, parm, level = 0.95, ...) {
   coefs <- object$coefficients

@@ -20,3 +20,9 @@ Wald-type intervals `estimate +/- z * se`, using whichever `vcov()` the
 object currently carries (classical by default; HC1/cluster if the fit
 or a prior [vcov.panglm()] call set it).
 }
+\examples{
+data(copd)
+fit <- panglm(fev1 ~ crp, data = copd, index = c("id", "visit"),
+              model = "within", family = "gaussian")
+confint(fit)
+}

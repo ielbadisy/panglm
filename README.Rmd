@@ -1,5 +1,7 @@
 ---
-output: github_document
+output:
+  github_document:
+    md_extensions: -smart
 ---
 
 ```{r, include = FALSE}
@@ -13,6 +15,12 @@ options(width = 100)
 ```
 
 # panglm
+
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/ielbadisy/panglm/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ielbadisy/panglm/actions/workflows/R-CMD-check.yaml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+<!-- badges: end -->
 
 Fast generalized linear models for panel data: pooled, fixed-effects
 ("within"), and random-effects estimators for gaussian, poisson, binomial,

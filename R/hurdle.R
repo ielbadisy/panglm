@@ -40,6 +40,10 @@
 #' @return an object of class `"panglm_hurdle"`: a list with `zero` (the
 #'   `panglm` binomial fit for the zero-vs-positive part) and `count` (the
 #'   truncated-Poisson fixed-effects fit for the count part)
+#' @examples
+#' data(copd)
+#' fit <- panglm_hurdle(exacerbations ~ crp, data = copd, index = c("id", "visit"))
+#' fit
 #' @export
 panglm_hurdle <- function(formula, data, index, maxit = 100, tol = 1e-10) {
   if (missing(index) || length(index) != 2) {

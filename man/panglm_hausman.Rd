@@ -24,3 +24,11 @@ the classic Hausman (1978) statistic
 computed over the coefficients common to both models (the random-effects
 model's intercept is dropped, since the within/FE model has none).
 }
+\examples{
+data(copd)
+fit_fe <- panglm(fev1 ~ crp, data = copd, index = c("id", "visit"),
+                  model = "within", family = "gaussian")
+fit_re <- panglm(fev1 ~ crp, data = copd, index = c("id", "visit"),
+                  model = "random", family = "gaussian")
+panglm_hausman(fit_fe, fit_re)
+}

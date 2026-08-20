@@ -15,3 +15,9 @@
 Produces a classic coefficient table (Estimate, Std. Error, z value,
 Pr(>|z|)) in the style of [summary.glm()].
 }
+\examples{
+data(copd)
+fit <- panglm(fev1 ~ treatment + age + smoker + crp, data = copd,
+              index = c("id", "visit"), model = "pooling", family = "gaussian")
+summary(fit)
+}

@@ -15,6 +15,12 @@
 #'   per original observation, i.e. `nrow(data)` long); defaults to the
 #'   panel individual identifier used to fit the model
 #' @param ... unused
+#' @examples
+#' data(copd)
+#' fit <- panglm(fev1 ~ crp, data = copd, index = c("id", "visit"),
+#'               model = "within", family = "gaussian")
+#' vcov(fit)
+#' vcov(fit, type = "cluster")
 #' @export
 vcov.panglm <- function(object, type = c("classical", "HC1", "cluster"), cluster = NULL, ...) {
   type <- match.arg(type)

@@ -28,3 +28,9 @@ available for `model = "pooling"`/`"within"` (poisson/negbin) and
 binomial fits don't currently expose `fitted.values` (see the package
 vignette) so the test isn't available there.
 }
+\examples{
+data(copd)
+fit <- panglm(exacerbations ~ treatment + age + smoker + crp, data = copd,
+              index = c("id", "visit"), model = "pooling", family = "poisson")
+panglm_dispersiontest(fit)
+}
