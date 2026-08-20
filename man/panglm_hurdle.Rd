@@ -56,3 +56,8 @@ fixed-effects estimators in this package; they are not dropped
 explicitly since a perfectly-fit singleton doesn't diverge, it simply
 carries zero weight.
 }
+\examples{
+data(copd)
+fit <- panglm_hurdle(exacerbations ~ crp, data = copd, index = c("id", "visit"))
+fit
+}

@@ -1,7 +1,11 @@
 ^reference$
+^README\.Rmd$
+^cran-comments\.md$
+^data-raw$
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^panglm\.Rcheck$
 ^panglm_.*\.tar\.gz$
 ^doc$
 ^Meta$
+^\.github$

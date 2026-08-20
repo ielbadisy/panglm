@@ -22,3 +22,11 @@ a `data.frame` with one row per coefficient
 Implements the `generics::tidy()` generic so `panglm` results work with
 `broom`/`modelsummary` table-building workflows.
 }
+\examples{
+data(copd)
+fit <- panglm(fev1 ~ treatment + age + smoker + crp, data = copd,
+              index = c("id", "visit"), model = "pooling", family = "gaussian")
+if (requireNamespace("generics", quietly = TRUE)) {
+  generics::tidy(fit, conf.int = TRUE)
+}
+}

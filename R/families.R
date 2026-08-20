@@ -6,6 +6,16 @@
 #'
 #' @param link canonical link name
 #' @return a list with `family`, `link`, `family_id`, `link_id`
+#' @examples
+#' gaussian_family()
+#' poisson_family()
+#' binomial_family("probit")
+#' negbin_family()
+#'
+#' data(copd)
+#' fit <- panglm(hospitalized ~ crp, data = copd, index = c("id", "visit"),
+#'               model = "within", family = binomial_family("logit"))
+#' coef(fit)
 #' @name panglm-families
 NULL
 

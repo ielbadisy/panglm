@@ -17,3 +17,11 @@ a one-row `data.frame`
 \description{
 Implements the `generics::glance()` generic.
 }
+\examples{
+data(copd)
+fit <- panglm(fev1 ~ treatment + age + smoker + crp, data = copd,
+              index = c("id", "visit"), model = "pooling", family = "gaussian")
+if (requireNamespace("generics", quietly = TRUE)) {
+  generics::glance(fit)
+}
+}

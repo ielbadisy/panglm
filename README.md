@@ -1,13 +1,22 @@
 
 # panglm
 
+<!-- badges: start -->
+
+[![R-CMD-check](https://github.com/ielbadisy/panglm/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ielbadisy/panglm/actions/workflows/R-CMD-check.yaml)
+[![License:
+MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Lifecycle:
+experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+<!-- badges: end -->
+
 Fast generalized linear models for panel data: pooled, fixed-effects
-(“within”), and random-effects estimators for gaussian, poisson,
+("within"), and random-effects estimators for gaussian, poisson,
 binomial, and negative binomial outcomes, backed by an
 Rcpp/RcppArmadillo/RcppParallel numerical core. Every estimator here is
 validated against an external reference implementation (`plm`, `pglm`,
 `fixest`, `MASS::glm.nb`, `survival::clogit`, `pscl::hurdle`, or
-`glmmTMB`), not just checked for “it runs” – see the Validation section
+`glmmTMB`), not just checked for "it runs" -- see the Validation section
 below and `vignette("panglm-methods")`.
 
 ## Installation
@@ -79,9 +88,9 @@ ggplot2::ggplot(est, ggplot2::aes(x = estimate, y = term, color = fit)) +
 
 <img src="man/figures/README-coef-plot-1.png" alt="" width="100%" />
 
-The two estimates are indistinguishable, as they should be: `panglm`’s
+The two estimates are indistinguishable, as they should be: `panglm`'s
 `model = "within"` is an exact, closed-form demeaning estimator, not an
-approximation of `plm`’s.
+approximation of `plm`'s.
 
 ## Count panels: fixed-effects Poisson and negative binomial
 
@@ -122,8 +131,8 @@ Hall & Griliches 1984), matching
 
 ## Structural zeros: a fixed-effects hurdle model
 
-Ordinary Poisson/NB can’t distinguish a *structural* zero (a group that
-never has the event) from an *ordinary* sampling zero at low mean – it
+Ordinary Poisson/NB can't distinguish a *structural* zero (a group that
+never has the event) from an *ordinary* sampling zero at low mean -- it
 just shows up as extreme overdispersion regardless of family.
 `panglm_hurdle()` decomposes the two:
 
@@ -168,7 +177,7 @@ sqrt(diag(vcov(f_panglm, type = "cluster")))
 #> 0.01515608 0.05261839
 ```
 
-## What’s estimated, and against what
+## What's estimated, and against what
 
 | `model`   | `family`                  | Method                                                        | Validated against                                      |
 |-----------|---------------------------|---------------------------------------------------------------|--------------------------------------------------------|
@@ -180,9 +189,9 @@ sqrt(diag(vcov(f_panglm, type = "cluster")))
 | `within`  | binomial                  | exact conditional logit (Chamberlain 1980)                    | `survival::clogit(method="exact")`                     |
 | `random`  | gaussian                  | Swamy-Arora                                                   | `plm(model="random")`                                  |
 | `random`  | poisson                   | Poisson-Gamma marginal                                        | `pglm(model="random")`                                 |
-| `random`  | negbin                    | 2-parameter beta-negative-binomial marginal                   | `pglm()`’s `lnl.negbin.R`                              |
+| `random`  | negbin                    | 2-parameter beta-negative-binomial marginal                   | `pglm()`'s `lnl.negbin.R`                              |
 | `random`  | binomial                  | Gauss-Hermite quadrature                                      | `glmmTMB` (approximate, different mixing distribution) |
-| –         | –                         | `panglm_hurdle()`: conditional logit + zero-truncated Poisson | `pscl::hurdle()`                                       |
+| --        | --                        | `panglm_hurdle()`: conditional logit + zero-truncated Poisson | `pscl::hurdle()`                                       |
 
 Also included: `panglm_hausman()` (FE-vs-RE specification test),
 `panglm_dispersiontest()` (Pearson chi-squared/df overdispersion test),

@@ -7,6 +7,14 @@
 \description{
 Fast estimation of pooled, fixed-effects (within), and random-effects generalized linear models for panel data, using 'Rcpp', 'RcppArmadillo' and 'RcppParallel' for the numerical core and 'data.table' for panel bookkeeping. Provides classic summary() tables (estimate, standard error, z value, p-value) comparable to stats::glm().
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/ielbadisy/panglm}
+  \item Report bugs at \url{https://github.com/ielbadisy/panglm/issues}
+}
+
+}
 \author{
 \strong{Maintainer}: Imad El Badisy \email{elbadisyimad@gmail.com}
 

@@ -12,6 +12,13 @@
 #' @param re a `"panglm"` fit with `model = "random"`, same formula/data/family
 #' @return a list with class `"panglm_hausman"`: `statistic`, `parameter`
 #'   (df), `p.value`, and the compared coefficient vectors
+#' @examples
+#' data(copd)
+#' fit_fe <- panglm(fev1 ~ crp, data = copd, index = c("id", "visit"),
+#'                   model = "within", family = "gaussian")
+#' fit_re <- panglm(fev1 ~ crp, data = copd, index = c("id", "visit"),
+#'                   model = "random", family = "gaussian")
+#' panglm_hausman(fit_fe, fit_re)
 #' @export
 panglm_hausman <- function(fe, re) {
   if (!inherits(fe, "panglm") || fe$model != "within") {

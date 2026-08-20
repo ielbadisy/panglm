@@ -27,3 +27,14 @@ Lightweight family objects used by [panglm()], analogous in spirit to
 [stats::family] objects but keyed to the integer codes the C++ backend
 expects (see `src/families.h`).
 }
+\examples{
+gaussian_family()
+poisson_family()
+binomial_family("probit")
+negbin_family()
+
+data(copd)
+fit <- panglm(hospitalized ~ crp, data = copd, index = c("id", "visit"),
+              model = "within", family = binomial_family("logit"))
+coef(fit)
+}

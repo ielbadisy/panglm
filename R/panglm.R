@@ -28,6 +28,30 @@
 #' @param maxit maximum IRLS/Newton iterations
 #' @param tol convergence tolerance
 #' @return an object of class `"panglm"`
+#' @examples
+#' data(copd)
+#'
+#' # pooled OLS on lung function (ignores the panel structure)
+#' fit_pool <- panglm(fev1 ~ treatment + age + smoker + crp, data = copd,
+#'                     index = c("id", "visit"), model = "pooling", family = "gaussian")
+#' summary(fit_pool)
+#'
+#' # fixed-effects ("within") estimator -- only the time-varying regressor
+#' # (crp) survives demeaning; time-invariant covariates like treatment
+#' # or age are not identified by a fixed-effects estimator
+#' fit_fe <- panglm(fev1 ~ crp, data = copd,
+#'                   index = c("id", "visit"), model = "within", family = "gaussian")
+#' coef(fit_fe)
+#'
+#' # random-effects (Swamy-Arora) estimator
+#' fit_re <- panglm(fev1 ~ treatment + age + smoker + crp, data = copd,
+#'                   index = c("id", "visit"), model = "random", family = "gaussian")
+#' coef(fit_re)
+#'
+#' # fixed-effects Poisson on exacerbation counts
+#' fit_pois <- panglm(exacerbations ~ crp, data = copd,
+#'                     index = c("id", "visit"), model = "within", family = "poisson")
+#' coef(fit_pois)
 #' @export
 panglm <- function(formula, data, index,
                     model = c("pooling", "within", "random"),
