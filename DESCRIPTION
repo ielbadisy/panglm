@@ -2,7 +2,7 @@ Package: panglm
 Type: Package
 Title: Fast Generalized Linear Models for Panel Data
 Version: 0.6.0
-Authors@R: person("Imad", "EL BADISY", email = "elbadisyimad@gmail.com", role = c("aut", "cre"))
+Authors@R: person("Imad", "El Badisy", email = "elbadisyimad@gmail.com", role = c("aut", "cre"))
 Description: Fast estimation of pooled, fixed-effects (within), and
     random-effects generalized linear models for panel data, using
     'Rcpp', 'RcppArmadillo' and 'RcppParallel' for the numerical core
