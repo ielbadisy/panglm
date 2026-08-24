@@ -1,5 +1,6 @@
 ^reference$
 ^README\.Rmd$
+^README\.html$
 ^cran-comments\.md$
 ^data-raw$
 ^.*\.Rproj$
@@ -10,3 +11,4 @@
 ^Meta$
 ^\.github$
 ^paper$
+^vignettes/panglm-methods\.pdf$
