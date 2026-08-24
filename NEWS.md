@@ -18,6 +18,12 @@ function and documented method.
   exact conditional binomial fits expose conditional inclusion
   probabilities. Fitted values and residuals now preserve the input row
   order for unsorted panels.
+* Corrected likelihood parameter accounting. `logLik()` now counts fitted
+  dispersion, shape, variance, and absorbed fixed-effect parameters where
+  they belong to the reported likelihood. Gaussian pooled likelihoods use
+  the maximum-likelihood variance while retaining the unbiased residual
+  variance for covariance estimation. `glance()` now reports AIC, BIC, and
+  the likelihood degrees of freedom.
 
 # panglm 0.5.0
 

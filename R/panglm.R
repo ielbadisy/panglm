@@ -151,6 +151,11 @@ panglm <- function(formula, data, index,
   fit$index <- index
   fit$nobs <- length(y)
   fit$n_groups <- panel$n_groups
+  fit$npar <- panglm_parameter_count(
+    fit, model, family$family, effect, panel$n_groups,
+    if (is.null(time_id)) 0L else length(unique(time_id))
+  )
+  fit$nobs_likelihood <- if (!is.null(fit$keep_rows)) sum(fit$keep_rows) else length(y)
   fit$vcov_type <- "classical"
   class(fit) <- "panglm"
 
@@ -159,6 +164,25 @@ panglm <- function(formula, data, index,
     fit$vcov_type <- vcov
   }
   fit
+}
+
+panglm_parameter_count <- function(fit, model, family, effect, n_groups, n_time) {
+  k <- length(fit$coefficients)
+  if (model == "pooling") {
+    return(k + as.integer(family %in% c("gaussian", "negbin")))
+  }
+  if (model == "random") {
+    extra <- switch(family, gaussian = 2L, poisson = 1L, negbin = 2L,
+                    binomial = 1L, 0L)
+    return(k + extra)
+  }
+  if (effect == "twoways") {
+    fixed_effect_rank <- n_groups + n_time - 1L
+    return(k + fixed_effect_rank + as.integer(family %in% c("gaussian", "negbin")))
+  }
+  if (family %in% c("poisson", "binomial")) return(k)
+  used_groups <- fit$n_used_groups %||% n_groups
+  k + used_groups + as.integer(family %in% c("gaussian", "negbin"))
 }
 
 fit_pooled <- function(X, y, family, maxit, tol) {

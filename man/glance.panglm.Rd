@@ -12,7 +12,8 @@
 \item{...}{unused}
 }
 \value{
-a one-row `data.frame`
+a one-row `data.frame` including log-likelihood, AIC, BIC, and
+  the likelihood parameter count when a likelihood is available
 }
 \description{
 Implements the `generics::glance()` generic.

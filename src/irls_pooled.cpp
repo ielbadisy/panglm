@@ -87,9 +87,11 @@ List irls_fit_cpp(const arma::mat& X, const arma::vec& y,
   if (family == GAUSSIAN) {
     arma::vec resid = y - mu_final;
     phi = arma::dot(resid, resid) / std::max(1, n - k);
+    double phi_mle = arma::dot(resid, resid) / std::max(1, n);
     loglik = 0.0;
     for (int i = 0; i < n; ++i)
-      loglik += -0.5 * std::log(2.0 * M_PI * phi) - 0.5 * (y[i] - mu_final[i]) * (y[i] - mu_final[i]) / phi;
+      loglik += -0.5 * std::log(2.0 * M_PI * phi_mle) -
+                0.5 * (y[i] - mu_final[i]) * (y[i] - mu_final[i]) / phi_mle;
   }
 
   return List::create(
