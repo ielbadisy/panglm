@@ -99,6 +99,28 @@ test_that("robust and cluster vcov are available for conditional binomial FE", {
   expect_true(all(is.finite(v_cluster)))
   expect_equal(v_hc1, t(v_hc1), tolerance = 1e-10)
   expect_equal(v_cluster, t(v_cluster), tolerance = 1e-10)
+  expect_equal(v_hc1, v_cluster, tolerance = 1e-10)
+
+  split_cluster <- rep(seq_len(2), length.out = fit$nobs)
+  expect_error(
+    vcov(fit, type = "cluster", cluster = split_cluster),
+    "must not split observations"
+  )
+})
+
+test_that("custom cluster vectors are interpreted in original data order", {
+  skip_if_missing("plm")
+  data(Grunfeld, package = "plm")
+  set.seed(205)
+  shuffled <- Grunfeld[sample(seq_len(nrow(Grunfeld))), ]
+  fit <- panglm(inv ~ value + capital, shuffled,
+                index = c("firm", "year"), model = "pooling",
+                family = "gaussian")
+
+  expect_equal(
+    vcov(fit, type = "cluster", cluster = shuffled$firm),
+    vcov(fit, type = "cluster"), tolerance = 1e-12
+  )
 })
 
 test_that("Hausman test matches plm::phtest", {

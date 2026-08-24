@@ -104,6 +104,11 @@ dummy-variable estimator and matches `fixest::fenegbin()` exactly, including
 uses the conditional (concentrated) MLE (Hausman, Hall & Griliches 1984),
 matching `pglm(model = "within", family = poisson)`.
 
+The negative binomial dummy-variable model remains an unconditional
+nonlinear fixed-effects estimator. Finite-T incidental-parameter bias can be
+relevant in short panels, so agreement with another implementation should
+not be interpreted as eliminating that statistical concern.
+
 ## Structural zeros: a fixed-effects hurdle model
 
 Ordinary Poisson/NB can't distinguish a *structural* zero (a group that
@@ -158,9 +163,9 @@ Also included: `panglm_hausman()` (FE-vs-RE specification test),
 `confint.panglm()`, and `tidy()`/`glance()` methods for `broom`/`modelsummary`
 pipelines.
 
-Not yet covered: `effect = "twoways"` for binomial (no general closed-form
-two-way conditional logit exists), between effects, ordinal/tobit families,
-and a zero-truncated NB2 count part for `panglm_hurdle()`. See `NEWS.md`.
+Not covered: `effect = "twoways"` for binomial (no general closed-form
+two-way conditional logit exists), between effects, and ordinal/tobit
+families. See `NEWS.md`.
 
 ## Validation
 

@@ -26,6 +26,10 @@ individual unless `cluster` is given) are only available for
 already integrate out the individual-level correlation via the
 likelihood, so they report model-based (information-matrix) standard
 errors, matching the convention used by `lme4`/`glmmTMB`.
+For exact conditional binomial models, the independent likelihood units
+are panel strata rather than observations. Their HC1 covariance therefore
+uses stratum-level scores. A custom cluster may combine complete strata,
+but it may not split observations from one conditioned stratum.
 }
 \examples{
 data(copd)
