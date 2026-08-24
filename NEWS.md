@@ -31,6 +31,12 @@ function and documented method.
 * Revised the fixed-effects NB2 description to state that the
   dummy-variable estimator remains subject to finite-T incidental-parameter
   concerns in short panels.
+* Hardened model-frame handling. Factor interactions are retained,
+  unidentified columns are reported and removed before numerical fitting,
+  `na.exclude` restores fitted values and residuals to the input length, and
+  panel indexes are checked for missing or duplicate individual-time keys.
+  Nontrivial weights and nonzero offsets now fail explicitly instead of
+  risking an apparently successful fit that ignores them.
 
 # panglm 0.5.0
 

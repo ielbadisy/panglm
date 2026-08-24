@@ -13,7 +13,8 @@ coef.panglm <- function(object, ...) object$coefficients
 #' @export
 fitted.panglm <- function(object, ...) {
   if (is.null(object$fitted.values)) return(NULL)
-  object$fitted.values[object$inverse_order %||% seq_along(object$fitted.values)]
+  values <- object$fitted.values[object$inverse_order %||% seq_along(object$fitted.values)]
+  stats::napredict(object$na.action, values)
 }
 
 #' @export
@@ -22,7 +23,8 @@ residuals.panglm <- function(object, ...) {
     stop("residuals are not available for this fitted model", call. = FALSE)
   }
   values <- object$y - object$fitted.values
-  values[object$inverse_order %||% seq_along(values)]
+  values <- values[object$inverse_order %||% seq_along(values)]
+  stats::naresid(object$na.action, values)
 }
 
 #' Extract the model log-likelihood
@@ -120,7 +122,8 @@ predict.panglm <- function(object, newdata = NULL,
   if (is.null(newdata)) {
     values <- if (type == "response") object$fitted.values else object$linear.predictors
     if (is.null(values)) stop("in-sample predictions are unavailable for this fit", call. = FALSE)
-    return(values[object$inverse_order %||% seq_along(values)])
+    values <- values[object$inverse_order %||% seq_along(values)]
+    return(stats::napredict(object$na.action, values))
   }
 
   if (object$model == "within" && object$family$family == "binomial") {

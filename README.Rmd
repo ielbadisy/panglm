@@ -142,6 +142,12 @@ sqrt(diag(vcov(f_panglm, type = "classical")))
 sqrt(diag(vcov(f_panglm, type = "cluster")))
 ```
 
+R formula factors and interactions are supported. Rank-deficient columns
+are reported and omitted before fitting, and `na.exclude` is respected by
+fitted values and residuals. Nontrivial observation weights and nonzero
+offsets are rejected explicitly because the corresponding weighted
+conditional panel estimators are not currently implemented.
+
 ## What's estimated, and against what
 
 | `model` | `family` | Method | Validated against |

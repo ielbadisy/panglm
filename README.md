@@ -162,7 +162,7 @@ fit
 #>        x1 
 #> 0.1394545 
 #> 
-#> Count part (zero-truncated Poisson, N = 186 positive obs of 480 ):
+#> Count part (zero-truncated Poisson, N = 186 positive obs of 480):
 #>        x1 
 #> 0.4847225
 ```
@@ -182,6 +182,12 @@ sqrt(diag(vcov(f_panglm, type = "cluster")))
 #>      value    capital 
 #> 0.01515608 0.05261839
 ```
+
+R formula factors and interactions are supported. Rank-deficient columns
+are reported and omitted before fitting, and `na.exclude` is respected
+by fitted values and residuals. Nontrivial observation weights and
+nonzero offsets are rejected explicitly because the corresponding
+weighted conditional panel estimators are not currently implemented.
 
 ## What's estimated, and against what
 
@@ -220,7 +226,7 @@ res <- testthat::test_local(reporter = testthat::SilentReporter$new())
 df  <- as.data.frame(res)
 c(pass = sum(df$passed), fail = sum(df$failed), warn = sum(df$warning), skip = sum(df$skipped))
 #> pass fail warn skip 
-#>  138    0    0    0
+#>  158    0    0    0
 ```
 
 See `vignette("panglm-methods")` for the full walkthrough (33+

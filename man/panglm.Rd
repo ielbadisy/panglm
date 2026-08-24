@@ -10,6 +10,9 @@ panglm(
   index,
   model = c("pooling", "within", "random"),
   family = "gaussian",
+  weights = NULL,
+  offset = NULL,
+  na.action = stats::na.omit,
   effect = c("individual", "twoways"),
   vcov = c("classical", "HC1", "cluster"),
   R = 21,
@@ -30,6 +33,16 @@ individual (and optionally time) columns, e.g. `c("id", "time")`}
 \item{family}{one of `"gaussian"`, `"poisson"`, `"binomial"`, `"negbin"`,
 or a family spec from [gaussian_family()] / [poisson_family()] /
 [binomial_family()] / [negbin_family()]}
+
+\item{weights}{optional observation weights. Only `NULL` or a vector of
+ones is currently accepted; nontrivial weights are rejected explicitly
+because weighted conditional panel likelihoods require different
+estimators.}
+
+\item{offset}{optional model offset. Nonzero offsets, including offsets
+specified in `formula`, are rejected explicitly rather than ignored.}
+
+\item{na.action}{missing-data action passed to [stats::model.frame()]}
 
 \item{effect}{one of `"individual"` or `"twoways"` (individual + time
 fixed effects). `"twoways"` is currently only implemented for
