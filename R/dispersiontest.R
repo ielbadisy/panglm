@@ -4,11 +4,11 @@
 #' statistic `sum((y - mu)^2 / mu)` divided by its residual degrees of
 #' freedom should be close to 1 under a correctly-specified Poisson model;
 #' values well above 1 indicate overdispersion (evidence for a negative
-#' binomial specification instead). Requires `fitted.values`, so it's
-#' available for `model = "pooling"`/`"within"` (poisson/negbin) and
-#' `model = "random", family = "gaussian"`; random-effects poisson/negbin/
-#' binomial fits don't currently expose `fitted.values` (see the package
-#' vignette) so the test isn't available there.
+#' binomial specification instead). The diagnostic is available for pooled
+#' and fixed-effects Poisson or negative binomial models. It is not applied
+#' to random-effects models because their marginal variance includes the
+#' fitted mixing distribution and is not equal to the observation-level
+#' Poisson variance used by this statistic.
 #'
 #' @param object a `"panglm"` fit with `family` `"poisson"` or `"negbin"`
 #' @return a list of class `"panglm_dispersiontest"` with the Pearson
@@ -27,6 +27,11 @@ panglm_dispersiontest <- function(object) {
   if (!inherits(object, "panglm")) stop("'object' must be a panglm fit", call. = FALSE)
   if (!object$family$family %in% c("poisson", "negbin")) {
     stop("panglm_dispersiontest() only applies to family = 'poisson' or 'negbin'", call. = FALSE)
+  }
+  if (object$model == "random") {
+    stop("panglm_dispersiontest() is not defined for random-effects models; ",
+         "their marginal variance includes the fitted mixing distribution",
+         call. = FALSE)
   }
   if (is.null(object$fitted.values)) {
     stop("fitted.values are not available for this fit (model = '", object$model,

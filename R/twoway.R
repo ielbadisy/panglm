@@ -44,8 +44,14 @@ fit_within_twoways_gaussian <- function(X, y, group_start, group_size, time, max
   coefs <- as.numeric(res$coefficients)
   names(coefs) <- colnames(X)
   dimnames(vcov) <- dimnames(bread) <- list(colnames(X), colnames(X))
+  effects <- recover_twoway_effects(
+    y - as.numeric(X %*% coefs), group_size, time, tol = tol
+  )
+  fitted <- as.numeric(X %*% coefs) + effects$observation_effect
 
-  list(coefficients = coefs, vcov = vcov, bread = bread, fitted.values = NULL,
+  list(coefficients = coefs, vcov = vcov, bread = bread, fitted.values = fitted,
+       individual_effects = effects$individual,
+       time_effects = effects$time,
        loglik = NA_real_, dispersion = sigma2, df.residual = df_resid,
        iterations = res$iterations, demean_iterations = dm$iterations)
 }
@@ -131,8 +137,13 @@ fit_within_twoways_poisson <- function(X, y, group_start, group_size, time, maxi
   dimnames(vcov) <- list(colnames(X), colnames(X))
 
   df_resid <- n - k - (n_id - 1) - (n_time - 1) - 1
+  effects <- recover_twoway_effects(
+    eta - as.numeric(Xs %*% beta), group_size, time, tol = tol
+  )
 
   list(coefficients = coefs, vcov = vcov, bread = vcov, fitted.values = exp(eta),
+       individual_effects = effects$individual,
+       time_effects = effects$time,
        loglik = ll_old, dispersion = 1, df.residual = df_resid,
        iterations = iter, demean_iterations = demean_iters)
 }
@@ -236,8 +247,43 @@ fit_within_twoways_negbin <- function(X, y, group_start, group_size, time, maxit
   dimnames(vcov) <- list(colnames(X), colnames(X))
 
   df_resid <- n - k - (n_id - 1) - (n_time - 1) - 1
+  effects <- recover_twoway_effects(
+    eta - as.numeric(Xs %*% beta), group_size, time, tol = tol
+  )
 
   list(coefficients = coefs, vcov = vcov, bread = vcov, fitted.values = exp(eta),
+       individual_effects = effects$individual,
+       time_effects = effects$time,
        loglik = ll_old, theta = theta, dispersion = 1, df.residual = df_resid,
        iterations = iter, demean_iterations = demean_iters)
+}
+
+recover_twoway_effects <- function(effect_observation, group_size, time,
+                                   tol = 1e-10, maxit = 10000L) {
+  id <- rep.int(seq_along(group_size), group_size)
+  time_code <- match(time, sort(unique(time)))
+  n_id <- length(group_size)
+  n_time <- max(time_code)
+  alpha <- numeric(n_id)
+  gamma <- numeric(n_time)
+
+  for (iteration in seq_len(maxit)) {
+    alpha_new <- as.numeric(rowsum(effect_observation - gamma[time_code], id)) /
+      group_size
+    gamma_new <- as.numeric(rowsum(effect_observation - alpha_new[id], time_code)) /
+      as.numeric(tabulate(time_code, nbins = n_time))
+    shift <- mean(gamma_new)
+    gamma_new <- gamma_new - shift
+    alpha_new <- alpha_new + shift
+    change <- max(abs(c(alpha_new - alpha, gamma_new - gamma)))
+    alpha <- alpha_new
+    gamma <- gamma_new
+    if (change < tol) break
+  }
+
+  list(
+    individual = alpha,
+    time = gamma,
+    observation_effect = alpha[id] + gamma[time_code]
+  )
 }
