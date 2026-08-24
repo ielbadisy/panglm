@@ -1,4 +1,4 @@
-# panglm 0.6.0
+# panglm 1.1.0
 
 CRAN submission candidate. Adds a bundled synthetic dataset, `copd` (a
 simulated COPD follow-up panel), and runnable `@examples` to every exported
