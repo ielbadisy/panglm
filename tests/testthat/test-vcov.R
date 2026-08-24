@@ -83,6 +83,24 @@ test_that("robust/cluster vcov works for within negbin (Allison-Waterman)", {
   expect_true(all(sqrt(diag(v_cl)) > 0))
 })
 
+test_that("robust and cluster vcov are available for conditional binomial FE", {
+  skip_if_missing("pglm")
+  data(UnionWage, package = "pglm")
+  fit <- suppressMessages(
+    panglm(union ~ wage + exper + rural, data = UnionWage,
+           index = c("id", "year"), model = "within", family = "binomial")
+  )
+
+  v_hc1 <- vcov(fit, type = "HC1")
+  v_cluster <- vcov(fit, type = "cluster")
+  expect_equal(dim(v_hc1), c(3L, 3L))
+  expect_equal(dim(v_cluster), c(3L, 3L))
+  expect_true(all(is.finite(v_hc1)))
+  expect_true(all(is.finite(v_cluster)))
+  expect_equal(v_hc1, t(v_hc1), tolerance = 1e-10)
+  expect_equal(v_cluster, t(v_cluster), tolerance = 1e-10)
+})
+
 test_that("Hausman test matches plm::phtest", {
   skip_if_missing("plm")
   data(Grunfeld, package = "plm")

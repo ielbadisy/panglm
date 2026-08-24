@@ -1,245 +1,291 @@
 ---
-title: "panglm: models, likelihoods, and validation"
+title: "Panel generalized linear models with panglm"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{panglm: models, likelihoods, and validation}
+  %\VignetteIndexEntry{Panel generalized linear models with panglm}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
-  collapse = TRUE, comment = "#>",
-  eval = requireNamespace("plm", quietly = TRUE) && requireNamespace("pglm", quietly = TRUE) &&
-    requireNamespace("survival", quietly = TRUE)
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 6,
+  fig.height = 4,
+  eval = requireNamespace("plm", quietly = TRUE)
 )
 ```
 
-## Why this vignette exists
+## Introduction
 
-`panglm` re-implements a specific, checkable set of panel-GLM likelihoods in
-Rcpp/RcppArmadillo/RcppParallel instead of R-level `maxLik` optimization
-(`pglm`) or symbolic differentiation frameworks (`glmmTMB`). Every estimator
-below is validated against a reference implementation in the package's test
-suite (`tests/testthat/`), not just benchmarked for speed. This document
-states exactly which likelihood each `model`/`family` combination solves, so
-results can be trusted rather than treated as a black box.
+Longitudinal and panel data contain repeated observations for each sampling
+unit. Dependence within units must therefore be represented either through
+unit-specific effects or through an appropriate covariance estimator. The
+`panglm` package provides a common interface for pooled, fixed-effects, and
+random-effects generalized linear models for continuous, binary, and count
+outcomes.
+
+This vignette defines the models fitted by the package, describes their
+estimating equations, and illustrates the associated inferential methods.
+The emphasis is on the statistical specification of each estimator. The
+numerical routines use Rcpp, RcppArmadillo, and RcppParallel.
 
 ```{r setup}
 library(panglm)
-library(plm)
-library(pglm)
-library(survival)
 data(Grunfeld, package = "plm")
-data(UnionWage, package = "pglm")
 ```
 
-## 1. Pooled models
+## Notation and data organization
 
-`model = "pooling"` fits a standard GLM (gaussian/poisson/binomial, any of
-the canonical links) via IRLS in C++, ignoring the panel structure entirely
--- this is the `glm()` model, just faster. `family = "negbin"` fits a
-genuine NB2 model (alternating IRLS-for-beta / Newton-for-theta, the same
-algorithm `MASS::glm.nb()` uses), not an alias for Poisson.
+Let $y_{it}$ denote the response for unit $i$ at occasion $t$, and let
+$x_{it}$ be a vector of observed covariates. The conditional mean is linked
+to a linear predictor by
+
+$$
+g\{E(y_{it} \mid x_{it}, \alpha_i, \gamma_t)\}
+= x_{it}^{\mathsf T}\beta + \alpha_i + \gamma_t,
+$$
+
+where $\alpha_i$ is an individual effect and $\gamma_t$ is an optional time
+effect. The `index` argument identifies the individual and time variables.
+The `model` argument determines how the individual effect is treated:
+
+* `"pooling"` omits $\alpha_i$ from the mean model;
+* `"within"` treats $\alpha_i$ as a fixed nuisance parameter;
+* `"random"` assigns a distribution to $\alpha_i$ and integrates it out.
+
+The optional `effect = "twoways"` includes both individual and time effects
+for supported fixed-effects models.
+
+## Pooled models
+
+For Gaussian, Poisson, and binomial responses, pooled models maximize the
+ordinary generalized linear model likelihood by iteratively reweighted
+least squares. The negative binomial model uses the NB2 variance function
+
+$$
+\operatorname{Var}(y_{it} \mid x_{it}) = \mu_{it} +
+\frac{\mu_{it}^2}{\theta},
+$$
+
+and alternates coefficient updates with estimation of the shape parameter
+$\theta$.
 
 ```{r pooled}
-f_pool <- panglm(inv ~ value + capital, data = Grunfeld,
-                  index = c("firm", "year"), model = "pooling", family = "gaussian")
-g_pool <- glm(inv ~ value + capital, data = Grunfeld, family = gaussian())
-rbind(panglm = coef(f_pool), glm = coef(g_pool))
+fit_pool <- panglm(
+  inv ~ value + capital,
+  data = Grunfeld,
+  index = c("firm", "year"),
+  model = "pooling",
+  family = "gaussian"
+)
+coef(fit_pool)
 ```
 
-```{r pooled-negbin, eval = requireNamespace("MASS", quietly = TRUE)}
-set.seed(1)
-Grunfeld$count <- rnbinom(nrow(Grunfeld), size = 3, mu = exp(0.5 + 0.0002 * Grunfeld$value))
-f_nb <- panglm(count ~ value + capital, data = Grunfeld,
-               index = c("firm", "year"), model = "pooling", family = "negbin")
-g_nb <- MASS::glm.nb(count ~ value + capital, data = Grunfeld)
-rbind(panglm = coef(f_nb), glm.nb = coef(g_nb))
+Because pooling does not model within-unit dependence, inference should
+usually use a covariance estimator that is robust to clustering by unit.
+
+```{r pooled-cluster}
+sqrt(diag(vcov(fit_pool, type = "cluster")))
 ```
 
-## 2. Fixed effects ("within")
+## Fixed-effects models
 
-- **gaussian**: exact within (group-demeaned) OLS, identical to `plm(model =
-  "within")`.
-- **poisson**: the *conditional* (concentrated) Poisson likelihood that
-  profiles out the individual fixed effect in closed form -- this is exactly
-  `pglm`'s `model = "within", family = poisson` estimator (Hausman, Hall &
-  Griliches 1984), not an approximation.
-- **negbin**: the Allison & Waterman (2002) unconditional dummy-variable
-  estimator -- one intercept dummy per individual, estimated jointly with
-  the covariate slopes and NB2 dispersion by exact MLE. Unlike the
-  conditional (Hausman-Hall-Griliches 1984) FE-NB estimator, this doesn't
-  suffer the "fake fixed effects" critique (Guimaraes 2008): the
-  incidental-parameters bias that would contaminate a fixed-effects
-  *logit* dummy-variable estimator does not carry over to NB2 (Allison &
-  Waterman 2002). Matches `fixest::fenegbin()` exactly. Tractable for
-  small-to-moderate N (the design matrix grows with N); not intended for
-  very large panels.
-- **binomial**: the exact conditional logistic regression that profiles out
-  the individual fixed effect by conditioning on each unit's total number of
-  successes (Chamberlain 1980) -- the same estimator as
-  `survival::clogit(method = "exact")`. Units with no within-group outcome
-  variation (all-0 or all-1) carry no information and are dropped, with a
-  message reporting how many.
+### Gaussian response
 
-```{r within}
-f_fe <- panglm(inv ~ value + capital, data = Grunfeld,
-                index = c("firm", "year"), model = "within", family = "gaussian")
-p_fe <- plm(inv ~ value + capital, data = Grunfeld, index = c("firm", "year"), model = "within")
-rbind(panglm = coef(f_fe), plm = coef(p_fe))
+The one-way Gaussian estimator applies the within transformation
+
+$$
+\widetilde y_{it} = y_{it} - \overline y_i, \qquad
+\widetilde x_{it} = x_{it} - \overline x_i,
+$$
+
+and estimates $\beta$ by least squares using the transformed variables.
+Time-invariant regressors are removed by this transformation and cannot be
+identified. With `effect = "twoways"`, alternating projections remove both
+individual and time means. This procedure also accommodates unbalanced
+panels.
+
+```{r within-gaussian}
+fit_fe <- panglm(
+  inv ~ value + capital,
+  data = Grunfeld,
+  index = c("firm", "year"),
+  model = "within",
+  family = "gaussian"
+)
+coef(fit_fe)
 ```
 
-```{r within-negbin, eval = requireNamespace("fixest", quietly = TRUE)}
-u <- rep(rnorm(10, sd = 0.5), each = 20)
-Grunfeld$count_fe <- rnbinom(nrow(Grunfeld), size = 4, mu = exp(1 + 0.0002 * Grunfeld$value + u))
-f_fenb <- panglm(count_fe ~ value + capital, data = Grunfeld,
-                  index = c("firm", "year"), model = "within", family = "negbin")
-fx_fenb <- fixest::fenegbin(count_fe ~ value + capital | firm, data = Grunfeld, notes = FALSE)
-rbind(panglm = coef(f_fenb), fixest = coef(fx_fenb))
+### Poisson response
+
+For a one-way Poisson model, the individual intercept has a closed-form
+profile solution. If $Y_i = \sum_t y_{it}$ and
+$L_i(\beta) = \sum_t \exp(x_{it}^{\mathsf T}\beta)$, then
+
+$$
+\widehat\alpha_i(\beta) = \log\{Y_i/L_i(\beta)\}.
+$$
+
+Substitution into the likelihood gives the conditional Poisson estimator.
+For two-way Poisson models, `panglm` uses an outer iteratively reweighted
+least-squares loop and weighted alternating projections to absorb the two
+sets of fixed effects.
+
+### Negative binomial response
+
+The one-way fixed-effects NB2 estimator jointly estimates the covariate
+coefficients, one intercept for each individual, and the shape parameter.
+Groups for which every count is zero have an unbounded intercept and are
+excluded with an informative message. The two-way model absorbs individual
+and time effects through weighted alternating projections while updating
+the NB2 shape parameter.
+
+### Binomial response
+
+The one-way binomial estimator is the exact conditional logistic model. For
+unit $i$, inference is conditional on the observed number of successes
+$S_i = \sum_t y_{it}$. The contribution to the conditional likelihood is
+
+$$
+L_i(\beta \mid S_i) =
+\frac{\exp\left(\sum_t y_{it}x_{it}^{\mathsf T}\beta\right)}
+{\sum_{a:\,\sum_t a_t=S_i}
+ \exp\left(\sum_t a_tx_{it}^{\mathsf T}\beta\right)}.
+$$
+
+The denominator and score are evaluated by a forward and backward dynamic
+program. Units with all-zero or all-one responses do not contribute to this
+conditional likelihood and are excluded.
+
+## Random-effects models
+
+Random-effects models retain time-invariant regressors and account for
+within-unit dependence by integrating over a latent individual effect. The
+implemented specifications are:
+
+* Gaussian responses use the Swamy-Arora feasible generalized least-squares
+  estimator;
+* Poisson responses use a Poisson-Gamma mixture, which yields a closed-form
+  marginal likelihood;
+* negative binomial responses use a two-parameter beta-negative-binomial
+  marginal likelihood;
+* binomial responses use a Gaussian random intercept integrated by
+  Gauss-Hermite quadrature.
+
+The number of quadrature nodes for the binomial model is controlled by `R`.
+Random-effects covariance matrices are based on the observed information.
+
+```{r random-gaussian}
+fit_re <- panglm(
+  inv ~ value + capital,
+  data = Grunfeld,
+  index = c("firm", "year"),
+  model = "random",
+  family = "gaussian"
+)
+coef(fit_re)
 ```
 
-```{r within-binomial}
-UnionWage$union01 <- as.numeric(UnionWage$union) - 1
-f_clogit <- panglm(union ~ wage + exper + rural, data = UnionWage,
-                    index = c("id", "year"), model = "within", family = "binomial")
-cl <- survival::clogit(union01 ~ wage + exper + rural + strata(id), data = UnionWage, method = "exact")
-rbind(panglm = coef(f_clogit), clogit = coef(cl))
+## Covariance estimation and confidence intervals
+
+The default covariance matrix is model based. Pooled and fixed-effects
+models also support `type = "HC1"` and `type = "cluster"`. Let $s_j(\beta)$
+be a score contribution and let $B$ be the inverse information matrix. The
+sandwich estimator has the form
+
+$$
+\widehat V(\widehat\beta) = B
+\left(\sum_j s_j(\widehat\beta)s_j(\widehat\beta)^{\mathsf T}\right)B.
+$$
+
+For cluster-robust inference, observation scores are first summed within
+clusters. The panel individual is used as the default cluster. Gaussian,
+Poisson, negative binomial, and conditional binomial fixed-effects fits all
+provide the score information required by these estimators.
+
+```{r inference}
+vcov(fit_fe, type = "cluster")
+confint(fit_fe)
 ```
 
-### Two-way fixed effects
+## Model assessment
 
-`effect = "twoways"` adds a time fixed effect for **gaussian** (exact
-alternating-projections demeaning, Guimaraes & Portugal 2010) and
-**poisson** (outer-IRLS / inner-weighted-FWL -- the algorithm behind
-`fixest::feglm()`'s multi-way fixed effects); not yet for negbin/binomial.
+For models that store fitted values, `plot()` provides coefficient,
+residual, and observed-versus-fitted displays. Coefficient plots are
+available for every `panglm` fit.
 
-```{r twoways}
-f_tw <- panglm(inv ~ value + capital, data = Grunfeld, index = c("firm", "year"),
-                model = "within", family = "gaussian", effect = "twoways")
-p_tw <- plm(inv ~ value + capital, data = Grunfeld, index = c("firm", "year"),
-            model = "within", effect = "twoways")
-rbind(panglm = coef(f_tw), plm = coef(p_tw))
+```{r plots, fig.alt = "Coefficient estimates with confidence intervals"}
+plot(fit_fe, which = "coefficients")
 ```
 
-```{r twoways-poisson, eval = requireNamespace("fixest", quietly = TRUE)}
-set.seed(1)
-Grunfeld$count2 <- rpois(nrow(Grunfeld), lambda = exp(0.5 + 0.0001 * Grunfeld$value))
-f_twp <- panglm(count2 ~ value + capital, data = Grunfeld, index = c("firm", "year"),
-                 model = "within", family = "poisson", effect = "twoways")
-fx_twp <- fixest::feglm(count2 ~ value + capital | firm + year, data = Grunfeld, family = poisson())
-rbind(panglm = coef(f_twp), fixest = coef(fx_twp))
-```
-
-## 3. Random effects
-
-- **gaussian**: the Swamy-Arora quasi-demeaning (feasible GLS) estimator,
-  identical to `plm(model = "random")`'s default.
-- **poisson**: the Poisson-Gamma (negative-binomial marginal) closed-form
-  likelihood -- `pglm`'s `model = "random", family = poisson` estimator. The
-  fitted dispersion parameter is the Gamma frailty shape. Seeded from the
-  pooled-Poisson MLE plus a method-of-moments dispersion estimate, with
-  Levenberg-Marquardt/ridge damping (and a warning) instead of erroring if
-  the Hessian is ill-conditioned -- verified stable on heavily
-  zero-inflated, extremely skewed panels.
-- **negbin**: a *different* closed-form mixture from `poisson` above -- a
-  2-parameter beta-negative-binomial marginal (`pglm`'s `lnl.negbin.R`
-  "random" branch exactly, with independent shape parameters `a`/`b` rather
-  than Poisson-Gamma's single dispersion).
-- **binomial**: the individual random intercept is integrated out via
-  Gauss-Hermite quadrature (`R` nodes, default 21), matching `pglm`'s
-  `model = "random", family = binomial(...)`.
-
-```{r random-poisson}
-set.seed(42)
-Grunfeld$u <- rep(rgamma(10, shape = 5, rate = 5), each = 20)
-Grunfeld$count <- rpois(nrow(Grunfeld), lambda = Grunfeld$u * exp(1 + 0.0002 * Grunfeld$value))
-f_re <- panglm(count ~ value + capital, data = Grunfeld,
-                index = c("firm", "year"), model = "random", family = "poisson")
-p_re <- pglm(count ~ value + capital, data = Grunfeld, index = c("firm", "year"),
-             model = "random", family = poisson, method = "bfgs", print.level = 0, R = 5)
-rbind(panglm = coef(f_re), pglm = coef(p_re)[1:3])
-```
-
-```{r random-negbin}
-set.seed(3)
-Grunfeld$u2 <- rep(rgamma(10, shape = 6, rate = 6), each = 20)
-Grunfeld$count3 <- rnbinom(nrow(Grunfeld), size = 8, mu = Grunfeld$u2 * exp(1 + 0.0002 * Grunfeld$value))
-f_renb <- panglm(count3 ~ value + capital, data = Grunfeld,
-                  index = c("firm", "year"), model = "random", family = "negbin")
-coef(f_renb)
-c(a = f_renb$negbin_a, b = f_renb$negbin_b)
-```
-
-```{r random-binomial}
-f_bin <- panglm(union ~ wage + exper + rural, data = UnionWage,
-                 index = c("id", "year"), model = "random", family = "binomial", R = 15)
-p_bin <- pglm(union ~ wage + exper + rural, UnionWage, index = c("id", "year"),
-              family = binomial("logit"), model = "random", method = "bfgs",
-              print.level = 0, R = 15)
-rbind(panglm = coef(f_bin), pglm = coef(p_bin)[1:4])
-```
-
-## 4. Standard errors
-
-Model-based (classical) SEs are always available. `vcov(fit, type = "HC1")`
-and `vcov(fit, type = "cluster")` add heteroskedasticity-robust and
-cluster-robust (Stata-style CR1, clustered by the panel individual by
-default) sandwich covariances for `model = "pooling"`/`"within"`:
-
-```{r robust}
-sqrt(diag(vcov(f_fe)))                       # classical
-sqrt(diag(vcov(f_fe, type = "cluster")))     # cluster-robust
-```
-
-Random-effects models report model-based (information-matrix) SEs only --
-the individual-level correlation is already accounted for in the
-likelihood, matching the convention used by `lme4`/`glmmTMB`.
-
-You can also request a non-classical vcov directly when fitting:
-`panglm(..., vcov = "cluster")`.
-
-## 4b. Confidence intervals and overdispersion
-
-`confint()` gives Wald intervals from whichever vcov the fit currently
-carries. `panglm_dispersiontest()` is a quick Pearson chi-squared/df
-overdispersion diagnostic for poisson/negbin fits with available
-`fitted.values` (values well above 1 suggest a negative binomial
-specification instead):
-
-```{r confint-dispersion}
-confint(f_fe)
-panglm_dispersiontest(f_nb)
-```
-
-## 5. Hausman test
-
-`panglm_hausman()` compares a `"within"` and a `"random"` fit of the same
-formula/family, replicating `plm::phtest()`:
+`panglm_dispersiontest()` reports the Pearson statistic divided by its
+residual degrees of freedom for Poisson and negative binomial fits.
+`panglm_hausman()` compares compatible fixed-effects and random-effects
+estimates using their covariance difference.
 
 ```{r hausman}
-panglm_hausman(f_fe, panglm(inv ~ value + capital, data = Grunfeld,
-                             index = c("firm", "year"), model = "random", family = "gaussian"))
+panglm_hausman(fit_fe, fit_re)
 ```
 
-## 6. broom / modelsummary
+## Hurdle models for panel counts
 
-`tidy()` and `glance()` methods are registered for the `generics` package's
-generics, so `panglm` fits work directly with `broom`- and
-`modelsummary`-based table pipelines:
+For outcomes with a distinct zero-generating process, `panglm_hurdle()`
+fits two fixed-effects components. The first is an exact conditional
+logistic model for $I(y_{it}>0)$. The second is a zero-truncated Poisson or
+NB2 model for positive counts. Its density is
 
-```{r broom}
-broom::tidy(f_pool)
+$$
+f_+(y \mid \mu, \theta) =
+\frac{f(y \mid \mu, \theta)}{1-f(0 \mid \mu, \theta)}, \qquad y>0.
+$$
+
+The count distribution is selected with `count_family`. Both positive-count
+models jointly estimate covariate coefficients and individual intercepts;
+the NB2 model also estimates $\theta$.
+
+```{r hurdle}
+data(copd)
+fit_hurdle <- panglm_hurdle(
+  exacerbations ~ crp,
+  data = copd,
+  index = c("id", "visit"),
+  count_family = "negbin"
+)
+plot(fit_hurdle)
 ```
 
-## What's not (yet) covered
+## Computational validation
 
-- Between and random-effects `ordinal`/`tobit` models (`pglm` has these via
-  Gauss-Hermite quadrature; `panglm` doesn't yet).
-- `effect = "twoways"` for binomial (no general closed-form two-way
-  conditional logit exists; gaussian, poisson, and negbin are covered).
-- Cluster/HC1-robust vcov for fixed-effects binomial (classical,
-  Hessian-based SEs only for now; negbin is covered via the full
-  covariate+dummy score, see `?vcov.panglm`).
-- `panglm_hurdle()`'s count part is zero-truncated Poisson only; a
-  zero-truncated NB2 count part is not yet implemented.
+The test suite compares estimators with established implementations where
+the statistical models coincide. Comparisons include `stats::glm()` for
+pooled generalized linear models, `MASS::glm.nb()` for pooled NB2,
+`plm::plm()` for Gaussian panel models, `survival::clogit()` for exact
+conditional logistic regression, `fixest` for absorbed fixed-effects count
+models, `pglm` for compatible random-effects likelihoods, and
+`pscl::hurdle()` for zero-truncated count likelihoods.
+
+## Model scope
+
+The package focuses on Gaussian, Poisson, binomial, and NB2 panel models.
+It does not provide ordinal, Tobit, or between estimators. A general
+two-way exact conditional logistic likelihood is not available, so the
+binomial fixed-effects model is restricted to individual effects. These
+restrictions define the current statistical scope and prevent unlike
+estimators from being presented under a common option.
+
+## References
+
+Allison, P. D., and Waterman, R. P. (2002). Fixed-effects negative binomial
+regression models. *Sociological Methodology*, 32, 247-265.
+
+Chamberlain, G. (1980). Analysis of covariance with qualitative data.
+*Review of Economic Studies*, 47, 225-238.
+
+Guimaraes, P., and Portugal, P. (2010). A simple feasible procedure to fit
+models with high-dimensional fixed effects. *Stata Journal*, 10, 628-649.
+
+Hausman, J., Hall, B. H., and Griliches, Z. (1984). Econometric models for
+count data with an application to the patents-R&D relationship.
+*Econometrica*, 52, 909-938.
