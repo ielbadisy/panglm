@@ -12,6 +12,12 @@ function and documented method.
   binomial fixed-effects models.
 * Reorganized the package vignette as a methodological account of model
   specification, estimation, inference, diagnostics, and scope.
+* Completed fitted-value and prediction semantics across estimators.
+  Random-effects response predictions integrate over the fitted mixing
+  distribution, fixed-effects predictions include known panel effects, and
+  exact conditional binomial fits expose conditional inclusion
+  probabilities. Fitted values and residuals now preserve the input row
+  order for unsorted panels.
 
 # panglm 0.5.0
 

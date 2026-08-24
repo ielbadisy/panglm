@@ -189,6 +189,15 @@ linkinv_r <- function(eta, link_id) {
   )
 }
 
+linkfun_r <- function(mu, link_id) {
+  switch(link_id + 1L,
+    mu,
+    log(mu),
+    stats::qlogis(mu),
+    stats::qnorm(mu)
+  )
+}
+
 mu_eta_r <- function(eta, link_id) {
   switch(link_id + 1L,
     rep(1, length(eta)),

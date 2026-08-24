@@ -74,6 +74,9 @@ panglm <- function(formula, data, index,
   y <- stats::model.response(mf)
   if (family$family == "binomial") y <- binomial_response_to_numeric(y)
   X_full <- stats::model.matrix(formula, data = mf)
+  terms_object <- stats::terms(mf)
+  xlevels <- stats::.getXlevels(terms_object, mf)
+  contrasts <- attr(X_full, "contrasts")
 
   panel_cols <- data[index]
   panel_cols <- panel_cols[match(rownames(mf), rownames(data)), , drop = FALSE]
@@ -109,6 +112,37 @@ panglm <- function(formula, data, index,
   fit$group_size <- group_size
   fit$time_id <- time_id
   fit$cluster_id <- rep(panel$group_id, group_size)
+  fit$group_levels <- panel$group_id
+  fit$time_levels <- if (is.null(time_id)) NULL else sort(unique(time_id))
+  fit$panel_order <- ord
+  fit$inverse_order <- order(ord)
+  fit$terms <- terms_object
+  fit$xlevels <- xlevels
+  fit$contrasts <- contrasts
+  if (!is.null(fit$individual_effects)) {
+    effect_index <- if (!is.null(names(fit$individual_effects))) {
+      suppressWarnings(as.integer(names(fit$individual_effects)))
+    } else {
+      seq_along(fit$individual_effects)
+    }
+    if (all(is.finite(effect_index)) && all(effect_index %in% seq_along(panel$group_id))) {
+      names(fit$individual_effects) <- as.character(panel$group_id[effect_index])
+    }
+  }
+  if (!is.null(fit$time_effects) && length(fit$time_effects) == length(fit$time_levels)) {
+    names(fit$time_effects) <- as.character(fit$time_levels)
+  }
+  if (is.null(fit$linear.predictors)) {
+    fit$linear.predictors <- if (model == "random") {
+      as.numeric(X_full %*% fit$coefficients)
+    } else if (family$family == "gaussian") {
+      fit$fitted.values
+    } else if (!is.null(fit$fitted.values)) {
+      linkfun_r(fit$fitted.values, family$link_id)
+    } else {
+      NULL
+    }
+  }
   fit$call <- match.call()
   fit$formula <- formula
   fit$model <- model
@@ -168,6 +202,7 @@ fit_within <- function(X, y, family, group_start, group_size, maxit, tol) {
     alpha_obs <- rep(alpha_i, group_size)
     fitted <- alpha_obs + as.numeric(X %*% res$coefficients)
     return(list(coefficients = coefs, vcov = vcov, bread = bread, fitted.values = fitted,
+                individual_effects = alpha_i,
                 loglik = NA_real_, dispersion = sigma2, df.residual = df_resid,
                 iterations = res$iterations))
   }
@@ -188,8 +223,10 @@ fit_within <- function(X, y, family, group_start, group_size, maxit, tol) {
     Li <- as.numeric(rowsum(lit, group))
     Yi <- as.numeric(rowsum(y, group))
     fitted <- (Yi / Li)[group] * lit
+    alpha_i <- log(Yi / Li)
 
     return(list(coefficients = coefs, vcov = vcov, bread = vcov, fitted.values = fitted,
+                individual_effects = alpha_i,
                 loglik = res$loglik, dispersion = 1, df.residual = nrow(X) - ncol(X) - length(group_start),
                 iterations = res$iterations))
   }
@@ -304,7 +341,9 @@ fit_within_binomial <- function(X, y, group_start, group_size, maxit, tol) {
   # df.residual isn't well-defined for conditional logistic regression (the
   # per-group fixed effects are never estimated, only conditioned out), so
   # it's left NA; see n_used_groups/n_dropped_groups instead.
-  list(coefficients = coefs, vcov = vcov, bread = bread, fitted.values = NULL,
+  conditional_fitted <- y - as.numeric(info$score_eta)
+  list(coefficients = coefs, vcov = vcov, bread = bread,
+       fitted.values = conditional_fitted,
        loglik = -opt$value, dispersion = 1, df.residual = NA_real_,
        n_used_groups = info$n_used_groups, n_dropped_groups = n_dropped,
        iterations = opt$counts[[1]], convergence = opt$convergence)
@@ -344,7 +383,8 @@ fit_random <- function(X, y, family, group_start, group_size, R, maxit, tol) {
     vcov_full <- res$vcov_unscaled / outer(scale_full, scale_full)
     vcov <- vcov_full[seq_len(ncol(X)), seq_len(ncol(X)), drop = FALSE]
     dimnames(vcov) <- list(colnames(X), colnames(X))
-    return(list(coefficients = coefs, vcov = vcov, fitted.values = NULL,
+    fitted <- as.numeric(exp(X %*% coefs))
+    return(list(coefficients = coefs, vcov = vcov, fitted.values = fitted,
                 loglik = res$loglik, dispersion_param = res$dispersion_param,
                 damping_used = res$damping_used,
                 df.residual = nrow(X) - ncol(X) - 1, iterations = res$iterations))
@@ -359,8 +399,11 @@ fit_random <- function(X, y, family, group_start, group_size, R, maxit, tol) {
     vcov_full <- res$vcov_unscaled / outer(scale_full, scale_full)
     vcov <- vcov_full[seq_len(ncol(X)), seq_len(ncol(X)), drop = FALSE]
     dimnames(vcov) <- list(colnames(X), colnames(X))
-    return(list(coefficients = coefs, vcov = vcov, fitted.values = NULL,
+    mean_multiplier <- if (res$a > 1) res$b / (res$a - 1) else NA_real_
+    fitted <- mean_multiplier * as.numeric(exp(X %*% coefs))
+    return(list(coefficients = coefs, vcov = vcov, fitted.values = fitted,
                 loglik = res$loglik, negbin_a = res$a, negbin_b = res$b,
+                marginal_mean_multiplier = mean_multiplier,
                 df.residual = nrow(X) - ncol(X) - 2, iterations = res$iterations))
   }
   if (family$family == "binomial") return(fit_random_binomial(X, y, family, group_start, group_size, R, maxit, tol))
@@ -445,7 +488,21 @@ fit_random_binomial <- function(X, y, family, group_start, group_size, R, maxit,
   vcov <- vcov_full[seq_len(k), seq_len(k), drop = FALSE]
   dimnames(vcov) <- list(colnames(X), colnames(X))
 
-  list(coefficients = coefs, vcov = vcov, fitted.values = NULL,
+  eta <- as.numeric(X %*% coefs)
+  fitted <- random_binomial_marginal_mean(eta, sigma, family, gh)
+  list(coefficients = coefs, vcov = vcov, fitted.values = fitted,
        loglik = -opt$value, sigma = sigma, dispersion = 1,
+       quadrature_nodes = R,
        df.residual = nrow(X) - k - 1, iterations = opt$counts[[1]], convergence = opt$convergence)
+}
+
+random_binomial_marginal_mean <- function(eta, sigma, family, quadrature = 21L) {
+  gh <- if (is.list(quadrature)) quadrature else gauss_hermite_quadrature(quadrature)
+  shifts <- sqrt(2) * sigma * gh$nodes
+  values <- vapply(
+    eta,
+    function(value) sum(gh$weights * linkinv_r(value + shifts, family$link_id)),
+    numeric(1)
+  )
+  as.numeric(values)
 }

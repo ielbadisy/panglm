@@ -22,11 +22,11 @@ A quick diagnostic for count models: the Pearson goodness-of-fit
 statistic `sum((y - mu)^2 / mu)` divided by its residual degrees of
 freedom should be close to 1 under a correctly-specified Poisson model;
 values well above 1 indicate overdispersion (evidence for a negative
-binomial specification instead). Requires `fitted.values`, so it's
-available for `model = "pooling"`/`"within"` (poisson/negbin) and
-`model = "random", family = "gaussian"`; random-effects poisson/negbin/
-binomial fits don't currently expose `fitted.values` (see the package
-vignette) so the test isn't available there.
+binomial specification instead). The diagnostic is available for pooled
+and fixed-effects Poisson or negative binomial models. It is not applied
+to random-effects models because their marginal variance includes the
+fitted mixing distribution and is not equal to the observation-level
+Poisson variance used by this statistic.
 }
 \examples{
 data(copd)
