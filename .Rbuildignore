@@ -8,5 +8,5 @@
 ^panglm_.*\.tar\.gz$
 ^doc$
 ^Meta$
-^\.claude$
 ^\.github$
+^paper$
