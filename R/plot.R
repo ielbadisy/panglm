@@ -120,5 +120,3 @@ plot.panglm_hurdle <- function(x, which = c("both", "zero", "count"),
   graphics::axis(2, at = positions, labels = names(coefficients), las = 1)
   graphics::abline(v = 0, lty = 2, col = "grey40")
 }
-
-`%||%` <- function(x, y) if (is.null(x)) y else x

@@ -216,6 +216,15 @@ For models that store fitted values, `plot()` provides coefficient,
 residual, and observed-versus-fitted displays. Coefficient plots are
 available for every `panglm` fit.
 
+`fitted()` and in-sample `predict()` return values in the original data row
+order. Random-effects response predictions are marginal over the fitted
+latent-effect distribution. Fixed-effects predictions for new data include
+estimated effects for known panel levels; unseen levels are rejected unless
+`allow.new.levels = TRUE`. For exact conditional logistic regression,
+in-sample fitted values are probabilities conditional on each unit's
+observed success total. Arbitrary new-data probabilities are not identified
+because the individual intercept has been conditioned out.
+
 ```{r plots, fig.alt = "Coefficient estimates with confidence intervals"}
 plot(fit_fe, which = "coefficients")
 ```

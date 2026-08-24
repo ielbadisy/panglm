@@ -11,7 +11,7 @@ test_that("plot.panglm supports coefficient and stored-value diagnostics", {
   testthat::expect_identical(invisible(plot(fit)), fit)
 })
 
-test_that("plot.panglm reports unavailable diagnostics", {
+test_that("plot.panglm supports conditional-binomial diagnostics", {
   grDevices::pdf(tempfile(fileext = ".pdf"))
   on.exit(grDevices::dev.off(), add = TRUE)
   skip_if_missing("pglm")
@@ -21,7 +21,8 @@ test_that("plot.panglm reports unavailable diagnostics", {
            index = c("id", "year"), model = "within", family = "binomial")
   )
 
-  expect_error(plot(fit, which = "residuals"), "require stored fitted values")
+  expect_no_error(plot(fit, which = "residuals"))
+  expect_no_error(plot(fit, which = "fitted"))
 })
 
 test_that("plot.panglm_hurdle displays either or both components", {
