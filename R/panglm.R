@@ -12,6 +12,13 @@
 #' @param family one of `"gaussian"`, `"poisson"`, `"binomial"`, `"negbin"`,
 #'   or a family spec from [gaussian_family()] / [poisson_family()] /
 #'   [binomial_family()] / [negbin_family()]
+#' @param weights optional observation weights. Only `NULL` or a vector of
+#'   ones is currently accepted; nontrivial weights are rejected explicitly
+#'   because weighted conditional panel likelihoods require different
+#'   estimators.
+#' @param offset optional model offset. Nonzero offsets, including offsets
+#'   specified in `formula`, are rejected explicitly rather than ignored.
+#' @param na.action missing-data action passed to [stats::model.frame()]
 #' @param effect one of `"individual"` or `"twoways"` (individual + time
 #'   fixed effects). `"twoways"` is currently only implemented for
 #'   `model = "within"`, `family = "gaussian"` (exact alternating-projections
@@ -56,6 +63,8 @@
 panglm <- function(formula, data, index,
                     model = c("pooling", "within", "random"),
                     family = "gaussian",
+                    weights = NULL, offset = NULL,
+                    na.action = stats::na.omit,
                     effect = c("individual", "twoways"),
                     vcov = c("classical", "HC1", "cluster"),
                     R = 21, maxit = 100, tol = 1e-10) {
@@ -65,21 +74,60 @@ panglm <- function(formula, data, index,
   family <- resolve_family(family)
 
   if (missing(index)) stop("'index' is required, e.g. index = c(\"id\", \"time\")", call. = FALSE)
+  if (!is.character(index) || !length(index) %in% 1:2 || anyDuplicated(index)) {
+    stop("'index' must contain one or two distinct column names", call. = FALSE)
+  }
+  missing_index <- setdiff(index, names(data))
+  if (length(missing_index)) {
+    stop("index column(s) not found in data: ", paste(missing_index, collapse = ", "),
+         call. = FALSE)
+  }
   if (effect == "twoways" && !(model == "within" && family$family %in% c("gaussian", "poisson", "negbin"))) {
     stop("effect = 'twoways' is currently only implemented for ",
          "model = 'within', family = 'gaussian', 'poisson', or 'negbin'", call. = FALSE)
   }
 
-  mf <- stats::model.frame(formula, data = data)
+  mf <- stats::model.frame(formula, data = data, na.action = na.action)
+  model_rows <- match(rownames(mf), rownames(data))
+  if (anyNA(model_rows)) stop("could not align model-frame rows with data", call. = FALSE)
+
+  if (!is.null(weights)) {
+    if (!is.numeric(weights) || length(weights) != nrow(data) ||
+        any(!is.finite(weights)) || any(weights < 0)) {
+      stop("'weights' must be a finite nonnegative numeric vector with nrow(data) values",
+           call. = FALSE)
+    }
+    used_weights <- weights[model_rows]
+    if (any(used_weights != 1)) {
+      stop("nontrivial observation weights are not supported", call. = FALSE)
+    }
+  }
+  formula_offset <- stats::model.offset(mf)
+  if (!is.null(offset)) {
+    if (!is.numeric(offset) || length(offset) != nrow(data) || any(!is.finite(offset))) {
+      stop("'offset' must be a finite numeric vector with nrow(data) values",
+           call. = FALSE)
+    }
+    formula_offset <- (formula_offset %||% 0) + offset[model_rows]
+  }
+  if (!is.null(formula_offset) && any(formula_offset != 0)) {
+    stop("nonzero offsets are not supported", call. = FALSE)
+  }
   y <- stats::model.response(mf)
   if (family$family == "binomial") y <- binomial_response_to_numeric(y)
+  if (!is.numeric(y) || any(!is.finite(y))) {
+    stop("the response must be finite and numeric", call. = FALSE)
+  }
+  if (family$family %in% c("poisson", "negbin") && any(y < 0)) {
+    stop("count-family responses must be nonnegative", call. = FALSE)
+  }
   X_full <- stats::model.matrix(formula, data = mf)
   terms_object <- stats::terms(mf)
   xlevels <- stats::.getXlevels(terms_object, mf)
   contrasts <- attr(X_full, "contrasts")
 
-  panel_cols <- data[index]
-  panel_cols <- panel_cols[match(rownames(mf), rownames(data)), , drop = FALSE]
+  panel_cols <- data[model_rows, index, drop = FALSE]
+  if (anyNA(panel_cols)) stop("panel index columns must not contain missing values", call. = FALSE)
   panel <- build_panel_index(cbind(panel_cols, .panglm_row = seq_len(nrow(mf))), index)
   ord <- panel$data$.panglm_row
 
@@ -91,6 +139,21 @@ panglm <- function(formula, data, index,
 
   has_intercept <- "(Intercept)" %in% colnames(X_full)
   X_noint <- if (has_intercept) X_full[, setdiff(colnames(X_full), "(Intercept)"), drop = FALSE] else X_full
+
+  candidate_X <- if (model %in% c("pooling", "random")) X_full else X_noint
+  estimable <- panglm_estimable_columns(
+    candidate_X, model, effect, group_start, group_size, time_id
+  )
+  aliased <- setdiff(colnames(candidate_X), colnames(candidate_X)[estimable])
+  if (length(aliased)) {
+    warning("rank-deficient model matrix: dropping unidentified column(s): ",
+            paste(aliased, collapse = ", "), call. = FALSE)
+  }
+  if (model %in% c("pooling", "random")) {
+    X_full <- X_full[, estimable, drop = FALSE]
+  } else {
+    X_noint <- X_noint[, estimable, drop = FALSE]
+  }
 
   fit <- switch(model,
     pooling = fit_pooled(X_full, y, family, maxit, tol),
@@ -119,6 +182,8 @@ panglm <- function(formula, data, index,
   fit$terms <- terms_object
   fit$xlevels <- xlevels
   fit$contrasts <- contrasts
+  fit$aliased <- aliased
+  fit$na.action <- attr(mf, "na.action")
   if (!is.null(fit$individual_effects)) {
     effect_index <- if (!is.null(names(fit$individual_effects))) {
       suppressWarnings(as.integer(names(fit$individual_effects)))
@@ -164,6 +229,23 @@ panglm <- function(formula, data, index,
     fit$vcov_type <- vcov
   }
   fit
+}
+
+panglm_estimable_columns <- function(X, model, effect, group_start, group_size, time) {
+  if (!ncol(X)) stop("the model contains no estimable covariates", call. = FALSE)
+  transformed <- if (model != "within") {
+    X
+  } else if (effect == "twoways") {
+    demean_twoway(X, rep(0, nrow(X)), group_start, group_size, time)$X
+  } else {
+    within_demean_cpp(X, rep(0, nrow(X)), group_start, group_size)$X
+  }
+  decomposition <- qr(transformed, tol = 1e-7)
+  if (decomposition$rank == 0L) {
+    stop("the model contains no covariates identified by the requested estimator",
+         call. = FALSE)
+  }
+  sort(decomposition$pivot[seq_len(decomposition$rank)])
 }
 
 panglm_parameter_count <- function(fit, model, family, effect, n_groups, n_time) {

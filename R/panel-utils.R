@@ -25,6 +25,11 @@ build_panel_index <- function(data, index) {
   }
   dt <- dt[ord, ]
 
+  if (!is.null(time_col) && anyDuplicated(dt[, c(id_col, time_col), with = FALSE])) {
+    stop("each individual-time index pair must identify a unique observation",
+         call. = FALSE)
+  }
+
   # data.table::rleidv groups by value without the as.character() coercion
   # and R-level rle() that dominate build_panel_index's cost on large panels
   run_id <- data.table::rleidv(dt[[id_col]])

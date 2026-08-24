@@ -58,6 +58,15 @@ The `model` argument determines how the individual effect is treated:
 The optional `effect = "twoways"` includes both individual and time effects
 for supported fixed-effects models.
 
+Model matrices follow the usual R formula rules, including factors and
+interactions. Before estimation, `panglm` checks rank after applying the
+transformation associated with the requested estimator. Unidentified
+columns, including time-invariant regressors in a within model, are reported
+and omitted. Missing responses or covariates follow `na.action`; missing or
+duplicate panel index pairs are errors. Nontrivial observation weights and
+nonzero offsets are outside the current estimator definitions and are
+rejected explicitly.
+
 ## Pooled models
 
 For Gaussian, Poisson, and binomial responses, pooled models maximize the
