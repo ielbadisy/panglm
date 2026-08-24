@@ -234,6 +234,14 @@ residual degrees of freedom for Poisson and negative binomial fits.
 `panglm_hausman()` compares compatible fixed-effects and random-effects
 estimates using their covariance difference.
 
+For likelihood-based estimators, `logLik()`, `AIC()`, and `BIC()` include
+estimated shape, dispersion, variance, and absorbed fixed-effect parameters
+when these parameters belong to the reported likelihood. Conditional
+Poisson and conditional logistic likelihoods count only the regression
+parameters that remain after conditioning. Gaussian within and
+Swamy-Arora random-effects estimators do not report a likelihood, so their
+information criteria are undefined.
+
 ```{r hausman}
 panglm_hausman(fit_fe, fit_re)
 ```
