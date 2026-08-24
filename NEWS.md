@@ -24,6 +24,13 @@ function and documented method.
   the maximum-likelihood variance while retaining the unbiased residual
   variance for covariance estimation. `glance()` now reports AIC, BIC, and
   the likelihood degrees of freedom.
+* Corrected sandwich inference for exact conditional binomial models. HC1
+  now operates on independent stratum scores, and custom clusters are
+  required to preserve complete conditioned strata. Custom cluster vectors
+  are now correctly reordered when a panel was supplied out of index order.
+* Revised the fixed-effects NB2 description to state that the
+  dummy-variable estimator remains subject to finite-T incidental-parameter
+  concerns in short panels.
 
 # panglm 0.5.0
 
