@@ -4,7 +4,14 @@
 \alias{panglm_hurdle}
 \title{Fixed-effects hurdle model for panel count data}
 \usage{
-panglm_hurdle(formula, data, index, maxit = 100, tol = 1e-10)
+panglm_hurdle(
+  formula,
+  data,
+  index,
+  count_family = c("poisson", "negbin"),
+  maxit = 100,
+  tol = 1e-10
+)
 }
 \arguments{
 \item{formula}{a model formula, e.g. `y ~ x1 + x2`}
@@ -14,6 +21,9 @@ panglm_hurdle(formula, data, index, maxit = 100, tol = 1e-10)
 \item{index}{length-2 character vector identifying the individual and
 time columns, e.g. `c("id", "time")`}
 
+\item{count_family}{count distribution for positive observations, either
+`"poisson"` or `"negbin"` (NB2 parameterization)}
+
 \item{maxit}{maximum IRLS/Newton iterations}
 
 \item{tol}{convergence tolerance}
@@ -21,7 +31,7 @@ time columns, e.g. `c("id", "time")`}
 \value{
 an object of class `"panglm_hurdle"`: a list with `zero` (the
   `panglm` binomial fit for the zero-vs-positive part) and `count` (the
-  truncated-Poisson fixed-effects fit for the count part)
+  zero-truncated fixed-effects fit for the count part)
 }
 \description{
 A hurdle decomposition for panels where a large fraction of groups report
@@ -41,12 +51,12 @@ drops the zeros):
     logistic regression already used for `panglm(..., family =
     "binomial")` (Chamberlain 1980) -- no new estimator, just a new
     outcome vector.
-  \item **Count given `y > 0`.** A zero-truncated Poisson fixed-effects
-    model (Allison-Waterman-style dummy-variable intercepts, the same
-    unconditional approach used for FE-NB2) on the subsample where
-    `y > 0`. The log-density is the usual Poisson log-density minus
-    `log(1 - P(Y = 0))`; see e.g. `pscl::hurdle()` for the reference form
-    of the truncated-count log-likelihood.
+  \item **Count given `y > 0`.** A zero-truncated Poisson or NB2
+    fixed-effects model (Allison-Waterman-style dummy-variable
+    intercepts, the same unconditional approach used for FE-NB2) on the
+    subsample where `y > 0`. The log-density is the ordinary count
+    log-density minus `log(1 - P(Y = 0))`; see `pscl::hurdle()` for the
+    reference form of the truncated-count likelihood.
 }
 
 Groups with no remaining within-group variation after truncation (a

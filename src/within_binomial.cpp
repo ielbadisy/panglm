@@ -79,16 +79,17 @@ struct ConditionalLogitWorker : public Worker {
   const RVector<int> group_size;
   double ll;
   std::vector<double> grad;
+  std::vector<double> score_eta;
   int n_used_groups;
 
   ConditionalLogitWorker(const NumericMatrix& X, const NumericVector& eta, const NumericVector& y,
                          const IntegerVector& group_start, const IntegerVector& group_size)
     : X(X), eta(eta), y(y), group_start(group_start), group_size(group_size),
-      ll(0.0), grad(X.ncol(), 0.0), n_used_groups(0) {}
+      ll(0.0), grad(X.ncol(), 0.0), score_eta(X.nrow(), 0.0), n_used_groups(0) {}
 
   ConditionalLogitWorker(const ConditionalLogitWorker& other, Split)
     : X(other.X), eta(other.eta), y(other.y), group_start(other.group_start), group_size(other.group_size),
-      ll(0.0), grad(other.X.ncol(), 0.0), n_used_groups(0) {}
+      ll(0.0), grad(other.X.ncol(), 0.0), score_eta(other.X.nrow(), 0.0), n_used_groups(0) {}
 
   void operator()(std::size_t begin, std::size_t end) {
     std::size_t k = X.ncol();
@@ -101,9 +102,11 @@ struct ConditionalLogitWorker : public Worker {
       if (!res.used) continue;
       n_used_groups++;
       ll += res.ll;
-      for (int t = 0; t < size; ++t)
+      for (int t = 0; t < size; ++t) {
+        score_eta[start + t] = res.grad_eta[t];
         for (std::size_t j = 0; j < k; ++j)
           grad[j] += res.grad_eta[t] * X(start + t, j);
+      }
     }
   }
 
@@ -111,6 +114,7 @@ struct ConditionalLogitWorker : public Worker {
     ll += rhs.ll;
     n_used_groups += rhs.n_used_groups;
     for (std::size_t j = 0; j < grad.size(); ++j) grad[j] += rhs.grad[j];
+    for (std::size_t i = 0; i < score_eta.size(); ++i) score_eta[i] += rhs.score_eta[i];
   }
 };
 
@@ -135,6 +139,7 @@ List conditional_logit_loglik_grad_cpp(const arma::vec& beta, const arma::mat& X
   return List::create(
     Named("loglik") = worker.ll,
     Named("gradient") = worker.grad,
+    Named("score_eta") = worker.score_eta,
     Named("n_used_groups") = worker.n_used_groups
   );
 }

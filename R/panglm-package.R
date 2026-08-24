@@ -1,4 +1,4 @@
-#' panglm: Fast Generalized Linear Models for Panel Data
+#' panglm: Generalized Linear Models for Panel Data
 #'
 #' @keywords internal
 #' @useDynLib panglm, .registration = TRUE

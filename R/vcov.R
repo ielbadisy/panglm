@@ -41,6 +41,14 @@ vcov.panglm <- function(object, type = c("classical", "HC1", "cluster"), cluster
 
   score <- panglm_score(object)
   bread <- object$bread
+  keep_score <- rep(TRUE, nrow(score))
+  if (object$model == "within" && object$family$family == "binomial") {
+    group <- rep(seq_along(object$group_size), object$group_size)
+    successes <- as.numeric(rowsum(object$y, group))
+    used_group <- successes > 0 & successes < object$group_size
+    keep_score <- used_group[group]
+    score <- score[keep_score, , drop = FALSE]
+  }
 
   if (type == "HC1") {
     n <- nrow(score); k <- ncol(score)
@@ -49,7 +57,8 @@ vcov.panglm <- function(object, type = c("classical", "HC1", "cluster"), cluster
     v <- v * n / (n - k)
   } else {
     cl <- if (is.null(cluster)) object$cluster_id else cluster
-    if (length(cl) != nrow(score)) stop("'cluster' must have one value per observation in the fitted data", call. = FALSE)
+    if (length(cl) != length(keep_score)) stop("'cluster' must have one value per observation in the fitted data", call. = FALSE)
+    cl <- cl[keep_score]
     score_sum <- rowsum(score, cl)
     G <- nrow(score_sum); n <- nrow(score); k <- ncol(score)
     meat <- crossprod(score_sum)
@@ -65,8 +74,10 @@ vcov.panglm <- function(object, type = c("classical", "HC1", "cluster"), cluster
 #' The building block for sandwich/cluster-robust vcov: for pooled GLMs this
 #' is the usual `(y - mu) * dmu/deta / V(mu) * X` score; for gaussian
 #' "within" it is the OLS score on demeaned data; for poisson "within" it is
-#' the score of the conditional (concentrated) likelihood, evaluated at the
-#' original (non-demeaned) `X`.
+#' the score of the conditional (concentrated) likelihood; for binomial
+#' "within" it is the exact conditional-logit score obtained from the
+#' dynamic-programming inclusion probabilities. Conditional scores are
+#' evaluated at the original (non-demeaned) `X`.
 #'
 #' @keywords internal
 #' @noRd
@@ -102,6 +113,13 @@ panglm_score <- function(object) {
     w_obs <- (Yi / Li)[group]
     gradi <- y - w_obs * lit
     return(gradi * X)
+  }
+
+  if (object$model == "within" && object$family$family == "binomial") {
+    info <- conditional_logit_loglik_grad_cpp(
+      beta, X, y, object$group_start, object$group_size
+    )
+    return(as.numeric(info$score_eta) * X)
   }
 
   stop("robust/cluster vcov is not implemented for this model/family combination", call. = FALSE)
