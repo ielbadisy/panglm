@@ -2,8 +2,16 @@
 
 CRAN submission candidate. Adds a bundled synthetic dataset, `copd` (a
 simulated COPD follow-up panel), and runnable `@examples` to every exported
-function and documented method -- previously undocumented, which is a CRAN
-submission blocker. No functional changes to the estimators.
+function and documented method.
+
+* Added `plot.panglm()` for coefficient, residual, and fitted-value views,
+  and `plot.panglm_hurdle()` for the two hurdle components.
+* Added zero-truncated NB2 positive-count models to `panglm_hurdle()` through
+  `count_family = "negbin"`.
+* Added HC1 and cluster-robust covariance estimates for one-way conditional
+  binomial fixed-effects models.
+* Reorganized the package vignette as a methodological account of model
+  specification, estimation, inference, diagnostics, and scope.
 
 # panglm 0.5.0
 
@@ -80,19 +88,16 @@ Initial release.
   structural zeros (a pattern that shows up as extreme, family-invariant
   overdispersion under either `family = "poisson"` or `family = "negbin"`
   in `panglm()`). Fits `1(y>0)` via the existing conditional-logit FE
-  estimator, and a zero-truncated Poisson FE model (an
+  estimator, and a zero-truncated Poisson or NB2 FE model (an
   Allison-Waterman-style dummy-variable estimator, Newton-Raphson with
   exact Fisher information) on the `y>0` subsample. The truncated-Poisson
   math (no fixed effects) matches `pscl::hurdle()`'s count part exactly.
-  Truncated NB2 for the count part is not yet implemented (documented as a
-  known limitation below, not silently unsupported).
+  Both zero-truncated likelihoods are validated against `pscl::hurdle()`.
 
 ## Known limitations
 
 * `effect = "twoways"` not yet available for binomial (no general
   closed-form two-way conditional logit exists).
-* `panglm_hurdle()`'s count part is zero-truncated Poisson only; a
-  zero-truncated NB2 count part is not yet implemented.
 * No between effects.
 * No ordinal/tobit families.
 * Not yet on CRAN.
