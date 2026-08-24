@@ -3,13 +3,14 @@
 \docType{package}
 \name{panglm-package}
 \alias{panglm-package}
-\title{panglm: Fast Generalized Linear Models for Panel Data}
+\title{panglm: Generalized Linear Models for Panel Data}
 \description{
-Fast estimation of pooled, fixed-effects (within), and random-effects generalized linear models for panel data, using 'Rcpp', 'RcppArmadillo' and 'RcppParallel' for the numerical core and 'data.table' for panel bookkeeping. Provides classic summary() tables (estimate, standard error, z value, p-value) comparable to stats::glm().
+Provides generalized linear models for panel data, including pooled, fixed-effects, and random-effects estimators for continuous, binary, and count outcomes. Offers a unified interface for fitting and analysing panel regression models, with efficient computation for large datasets. Core numerical routines are implemented using 'Rcpp', 'RcppArmadillo', and 'RcppParallel'.
 }
 \seealso{
 Useful links:
 \itemize{
+  \item \url{https://CRAN.R-project.org/package=panglm}
   \item \url{https://github.com/ielbadisy/panglm}
   \item Report bugs at \url{https://github.com/ielbadisy/panglm/issues}
 }
