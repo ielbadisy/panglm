@@ -24,11 +24,12 @@ test_that("panglm_dispersiontest detects simulated overdispersion and equidisper
   expect_true(d_nb$p.value < 0.01)
 })
 
-test_that("panglm_dispersiontest errors informatively when fitted.values are unavailable", {
+test_that("panglm_dispersiontest rejects random-effects marginal variance", {
   skip_if_missing("plm")
   data(Grunfeld, package = "plm")
   set.seed(1)
   Grunfeld$count <- rpois(nrow(Grunfeld), lambda = exp(0.5 + 0.0002 * Grunfeld$value))
   f <- suppressWarnings(panglm(count ~ value + capital, data = Grunfeld, index = c("firm", "year"), model = "random", family = "poisson"))
-  expect_error(panglm_dispersiontest(f), "fitted.values are not available")
+  expect_true(all(is.finite(fitted(f))))
+  expect_error(panglm_dispersiontest(f), "not defined for random-effects")
 })
