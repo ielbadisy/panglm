@@ -259,19 +259,18 @@ fit_within <- function(X, y, family, group_start, group_size, maxit, tol) {
   stop("model = 'within' is not yet implemented for family '", family$family, "'", call. = FALSE)
 }
 
-#' Allison-Waterman (2002) unconditional fixed-effects negative binomial
+#' Unconditional dummy-variable fixed-effects negative binomial
 #'
 #' Augments the design matrix with one dummy column per panel individual
 #' and jointly estimates (covariate slopes, individual intercepts, NB2
-#' dispersion) by exact NB2 MLE. Unlike the conditional (Hausman-Hall-
-#' Griliches) FE-NB estimator, this does not suffer the "fake fixed
-#' effects" critique (Guimaraes 2008): the individual intercepts are
-#' estimated directly, not conditioned out via a shared dispersion trick.
-#' The incidental-parameters problem that would bias a fixed-effects
-#' *logit* dummy-variable estimator does not carry over to NB2 (Allison &
-#' Waterman 2002), so this is consistent for moderate N (tractable up to
-#' a few hundred individuals; the dummy design matrix grows with N, so it
-#' is not intended for very large panels -- see [panglm()]'s vignette).
+#' dispersion) by NB2 maximum likelihood. This is the unconditional
+#' dummy-variable specification discussed by Allison and Waterman (2002),
+#' not the Hausman-Hall-Griliches conditional negative binomial model. It
+#' represents individual heterogeneity through explicit intercepts, but it
+#' remains a nonlinear fixed-effects estimator. With short panels, finite-T
+#' incidental-parameter bias can therefore be relevant. The augmented
+#' design also grows with the number of individuals, so the estimator is
+#' intended for small-to-moderate panels.
 #'
 #' @keywords internal
 #' @noRd

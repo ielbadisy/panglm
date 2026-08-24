@@ -129,6 +129,12 @@ including `effect = "twoways"` (individual + time fixed effects);
 Hall & Griliches 1984), matching
 `pglm(model = "within", family = poisson)`.
 
+The negative binomial dummy-variable model remains an unconditional
+nonlinear fixed-effects estimator. Finite-T incidental-parameter bias
+can be relevant in short panels, so agreement with another
+implementation should not be interpreted as eliminating that statistical
+concern.
+
 ## Structural zeros: a fixed-effects hurdle model
 
 Ordinary Poisson/NB can't distinguish a *structural* zero (a group that
@@ -198,10 +204,9 @@ Also included: `panglm_hausman()` (FE-vs-RE specification test),
 `confint.panglm()`, and `tidy()`/`glance()` methods for
 `broom`/`modelsummary` pipelines.
 
-Not yet covered: `effect = "twoways"` for binomial (no general
-closed-form two-way conditional logit exists), between effects,
-ordinal/tobit families, and a zero-truncated NB2 count part for
-`panglm_hurdle()`. See `NEWS.md`.
+Not covered: `effect = "twoways"` for binomial (no general closed-form
+two-way conditional logit exists), between effects, and ordinal/tobit
+families. See `NEWS.md`.
 
 ## Validation
 
@@ -215,7 +220,7 @@ res <- testthat::test_local(reporter = testthat::SilentReporter$new())
 df  <- as.data.frame(res)
 c(pass = sum(df$passed), fail = sum(df$failed), warn = sum(df$warning), skip = sum(df$skipped))
 #> pass fail warn skip 
-#>   82    0    0    0
+#>  138    0    0    0
 ```
 
 See `vignette("panglm-methods")` for the full walkthrough (33+
