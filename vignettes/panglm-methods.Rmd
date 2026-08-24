@@ -142,6 +142,13 @@ excluded with an informative message. The two-way model absorbs individual
 and time effects through weighted alternating projections while updating
 the NB2 shape parameter.
 
+The one-way specification is an unconditional nonlinear fixed-effects
+estimator. It is distinct from the Hausman-Hall-Griliches conditional
+negative binomial model and avoids interpreting that model's scale
+restriction as an individual intercept. Explicit dummy intercepts do not,
+however, remove the general finite-T incidental-parameter concern. Results
+from short panels should therefore be interpreted with appropriate caution.
+
 ### Binomial response
 
 The one-way binomial estimator is the exact conditional logistic model. For
@@ -201,7 +208,10 @@ $$
 $$
 
 For cluster-robust inference, observation scores are first summed within
-clusters. The panel individual is used as the default cluster. Gaussian,
+clusters. The panel individual is used as the default cluster. For exact
+conditional binomial models, the independent likelihood contribution is a
+complete panel stratum. HC1 therefore uses stratum-level scores, and a
+custom clustering variable may combine but cannot split strata. Gaussian,
 Poisson, negative binomial, and conditional binomial fixed-effects fits all
 provide the score information required by these estimators.
 

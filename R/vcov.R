@@ -8,6 +8,10 @@
 #' already integrate out the individual-level correlation via the
 #' likelihood, so they report model-based (information-matrix) standard
 #' errors, matching the convention used by `lme4`/`glmmTMB`.
+#' For exact conditional binomial models, the independent likelihood units
+#' are panel strata rather than observations. Their HC1 covariance therefore
+#' uses stratum-level scores. A custom cluster may combine complete strata,
+#' but it may not split observations from one conditioned stratum.
 #'
 #' @param object a `"panglm"` fit
 #' @param type one of `"classical"`, `"HC1"`, `"cluster"`
@@ -38,17 +42,12 @@ vcov.panglm <- function(object, type = c("classical", "HC1", "cluster"), cluster
   if (object$model == "within" && object$family$family == "negbin") {
     return(robust_vcov_within_negbin(object, type, cluster))
   }
+  if (object$model == "within" && object$family$family == "binomial") {
+    return(robust_vcov_within_binomial(object, type, cluster))
+  }
 
   score <- panglm_score(object)
   bread <- object$bread
-  keep_score <- rep(TRUE, nrow(score))
-  if (object$model == "within" && object$family$family == "binomial") {
-    group <- rep(seq_along(object$group_size), object$group_size)
-    successes <- as.numeric(rowsum(object$y, group))
-    used_group <- successes > 0 & successes < object$group_size
-    keep_score <- used_group[group]
-    score <- score[keep_score, , drop = FALSE]
-  }
 
   if (type == "HC1") {
     n <- nrow(score); k <- ncol(score)
@@ -56,9 +55,7 @@ vcov.panglm <- function(object, type = c("classical", "HC1", "cluster"), cluster
     v <- bread %*% meat %*% bread
     v <- v * n / (n - k)
   } else {
-    cl <- if (is.null(cluster)) object$cluster_id else cluster
-    if (length(cl) != length(keep_score)) stop("'cluster' must have one value per observation in the fitted data", call. = FALSE)
-    cl <- cl[keep_score]
+    cl <- panglm_cluster_vector(object, cluster)
     score_sum <- rowsum(score, cl)
     G <- nrow(score_sum); n <- nrow(score); k <- ncol(score)
     meat <- crossprod(score_sum)
@@ -69,15 +66,65 @@ vcov.panglm <- function(object, type = c("classical", "HC1", "cluster"), cluster
   v
 }
 
-#' Per-observation score (estimating-function) contributions
+panglm_cluster_vector <- function(object, cluster) {
+  if (is.null(cluster)) return(object$cluster_id)
+  if (length(cluster) != object$nobs) {
+    stop("'cluster' must have one value per observation in the fitted data", call. = FALSE)
+  }
+  cluster[object$panel_order %||% seq_along(cluster)]
+}
+
+robust_vcov_within_binomial <- function(object, type, cluster) {
+  score <- panglm_score(object)
+  panel <- rep(seq_along(object$group_size), object$group_size)
+  successes <- as.numeric(rowsum(object$y, panel))
+  used <- successes > 0 & successes < object$group_size
+  score_group <- rowsum(score, panel)[used, , drop = FALSE]
+  m <- nrow(score_group)
+  k <- ncol(score_group)
+  if (m <= k) {
+    stop("too few informative panel strata for a sandwich covariance", call. = FALSE)
+  }
+
+  if (type == "HC1") {
+    meat <- crossprod(score_group) * m / (m - k)
+  } else {
+    cluster_observation <- panglm_cluster_vector(object, cluster)
+    cluster_by_panel <- vapply(
+      split(cluster_observation, panel),
+      function(values) {
+        levels <- unique(values[!is.na(values)])
+        if (length(levels) == 1L && !anyNA(values)) as.character(levels) else NA_character_
+      },
+      character(1)
+    )
+    if (anyNA(cluster_by_panel)) {
+      stop("a cluster must not split observations from one conditional-likelihood stratum",
+           call. = FALSE)
+    }
+    score_cluster <- rowsum(score_group, cluster_by_panel[used])
+    n_cluster <- nrow(score_cluster)
+    if (n_cluster <= 1L) stop("cluster covariance requires at least two clusters", call. = FALSE)
+    meat <- crossprod(score_cluster)
+    meat <- meat * (n_cluster / (n_cluster - 1)) * ((m - 1) / (m - k))
+  }
+
+  value <- object$bread %*% meat %*% object$bread
+  dimnames(value) <- dimnames(object$vcov)
+  value
+}
+
+#' Score (estimating-function) contributions
 #'
 #' The building block for sandwich/cluster-robust vcov: for pooled GLMs this
 #' is the usual `(y - mu) * dmu/deta / V(mu) * X` score; for gaussian
 #' "within" it is the OLS score on demeaned data; for poisson "within" it is
 #' the score of the conditional (concentrated) likelihood; for binomial
 #' "within" it is the exact conditional-logit score obtained from the
-#' dynamic-programming inclusion probabilities. Conditional scores are
-#' evaluated at the original (non-demeaned) `X`.
+#' dynamic-programming inclusion probabilities. The binomial observation
+#' components are always summed to the independent stratum level before
+#' constructing a sandwich covariance. Conditional scores are evaluated at
+#' the original (non-demeaned) `X`.
 #'
 #' @keywords internal
 #' @noRd
@@ -163,10 +210,7 @@ robust_vcov_within_negbin <- function(object, type, cluster) {
     v_full <- bread_full %*% meat %*% bread_full
     v_full <- v_full * n / (n - kk)
   } else {
-    cl <- if (is.null(cluster)) object$cluster_id else cluster
-    if (length(cl) != length(keep_rows)) {
-      stop("'cluster' must have one value per observation in the fitted data", call. = FALSE)
-    }
+    cl <- panglm_cluster_vector(object, cluster)
     cl <- cl[keep_rows]
     score_sum <- rowsum(score, cl)
     G <- nrow(score_sum); n <- nrow(score); kk <- ncol(score)
