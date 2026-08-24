@@ -25,11 +25,30 @@ residuals.panglm <- function(object, ...) {
   values[object$inverse_order %||% seq_along(values)]
 }
 
+#' Extract the model log-likelihood
+#'
+#' The `df` attribute counts every parameter associated with the reported
+#' likelihood, including fitted shape, dispersion, variance, and explicit
+#' fixed-effect parameters. For conditional Poisson and conditional logistic
+#' likelihoods, only parameters remaining in the conditional likelihood are
+#' counted. Models estimated without a likelihood return `NA`.
+#'
+#' @param object a fitted `"panglm"` object
+#' @param ... unused
+#' @return an object of class `"logLik"`
+#' @examples
+#' data(copd)
+#' fit <- panglm(exacerbations ~ crp, data = copd,
+#'               index = c("id", "visit"), model = "pooling",
+#'               family = "poisson")
+#' logLik(fit)
+#' AIC(fit)
+#' BIC(fit)
 #' @export
 logLik.panglm <- function(object, ...) {
   val <- object$loglik
-  attr(val, "df") <- length(object$coefficients)
-  attr(val, "nobs") <- object$nobs
+  attr(val, "df") <- object$npar %||% length(object$coefficients)
+  attr(val, "nobs") <- object$nobs_likelihood %||% object$nobs
   class(val) <- "logLik"
   val
 }

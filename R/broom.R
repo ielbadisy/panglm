@@ -46,7 +46,8 @@ tidy.panglm <- function(x, conf.int = FALSE, conf.level = 0.95, ...) {
 #'
 #' @param x a `"panglm"` fit
 #' @param ... unused
-#' @return a one-row `data.frame`
+#' @return a one-row `data.frame` including log-likelihood, AIC, BIC, and
+#'   the likelihood parameter count when a likelihood is available
 #' @examples
 #' data(copd)
 #' fit <- panglm(fev1 ~ treatment + age + smoker + crp, data = copd,
@@ -56,13 +57,18 @@ tidy.panglm <- function(x, conf.int = FALSE, conf.level = 0.95, ...) {
 #' }
 #' @exportS3Method generics::glance
 glance.panglm <- function(x, ...) {
+  ll <- stats::logLik(x)
+  has_likelihood <- length(ll) == 1L && is.finite(as.numeric(ll))
   data.frame(
     model = x$model,
     effect = x$effect,
     family = x$family$family,
     link = x$family$link,
     vcov.type = x$vcov_type,
-    logLik = if (is.null(x$loglik)) NA_real_ else x$loglik,
+    logLik = if (has_likelihood) as.numeric(ll) else NA_real_,
+    AIC = if (has_likelihood) stats::AIC(x) else NA_real_,
+    BIC = if (has_likelihood) stats::BIC(x) else NA_real_,
+    df.logLik = attr(ll, "df"),
     df.residual = x$df.residual,
     nobs = x$nobs,
     n.groups = x$n_groups,
