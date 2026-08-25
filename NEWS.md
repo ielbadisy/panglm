@@ -1,3 +1,20 @@
+# panglm 1.1.1
+
+## Bug fixes
+
+* `panglm(model = "random", effect = "individual", family = "gaussian")`
+  printed a raw `solve(): system is singular; attempting approx solution`
+  from Armadillo whenever a covariate was time-invariant (e.g. baseline sex
+  alongside a pre/post indicator) or the panel was balanced with a
+  deterministic time indicator (e.g. any two-wave pre/post design) - both
+  make the intermediate within/between regressions used to estimate the
+  Swamy-Arora variance components exactly rank-deficient. The estimates
+  were already correct (verified against `lme4::lmer`), but the warning
+  bypassed R's condition system entirely. Switched those two intermediate
+  regressions to `stats::lm.fit()`, which handles rank deficiency via
+  pivoted QR the same way `lm()` does, with no near-singular solve and no
+  raw stderr output.
+
 # panglm 1.1.0
 
 CRAN submission candidate. Adds a bundled synthetic dataset, `copd` (a
