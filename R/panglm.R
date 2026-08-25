@@ -521,17 +521,26 @@ fit_random_gaussian <- function(X, y, group_start, group_size, maxit, tol) {
   k <- ncol(Xk); n <- nrow(X); G <- length(group_start)
   Ti <- group_size
 
+  # The within (FE) and between (BW) regressions below only feed the
+  # Swamy-Arora variance-component estimate (sigma_v2, sigma_mu2), not the
+  # final reported coefficients. They're exactly rank-deficient at common
+  # panel shapes: a time-invariant covariate (e.g. baseline sex alongside a
+  # pre/post indicator) demeans to a column of zeros in the within
+  # regression, and a balanced/deterministic covariate (e.g. a 0/1 time
+  # indicator present in every group) has an identical group mean
+  # everywhere - collinear with the intercept - in the between regression.
+  # stats::lm.fit() handles rank deficiency the same way lm() does (QR with
+  # pivoting, aliased coefficients dropped), giving correct residuals
+  # without hitting a near-singular arma::solve() in irls_fit_cpp().
   dm <- within_demean_cpp(Xk, y, group_start, group_size)
-  fe <- irls_fit_cpp(dm$X, dm$y, 0L, 0L, maxit, tol)
-  df_fe <- n - G - k
-  resid_fe <- dm$y - dm$X %*% fe$coefficients
-  sigma_v2 <- sum(resid_fe^2) / max(1, df_fe)
+  fe <- stats::lm.fit(dm$X, dm$y)
+  df_fe <- n - G - fe$rank
+  sigma_v2 <- sum(fe$residuals^2) / max(1, df_fe)
 
   gm <- group_means_cpp(X, y, group_start, group_size)
-  bw <- irls_fit_cpp(gm$Xbar, gm$ybar, 0L, 0L, maxit, tol)
-  df_bw <- G - ncol(X)
-  resid_bw <- gm$ybar - gm$Xbar %*% bw$coefficients
-  sigma_1_2 <- sum(resid_bw^2) / max(1, df_bw)
+  bw <- stats::lm.fit(gm$Xbar, gm$ybar)
+  df_bw <- G - bw$rank
+  sigma_1_2 <- sum(bw$residuals^2) / max(1, df_bw)
 
   sigma_mu2 <- max(0, sigma_1_2 - sigma_v2 / mean(Ti))
   theta <- 1 - sqrt(sigma_v2 / (Ti * sigma_mu2 + sigma_v2))
