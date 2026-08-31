@@ -16,17 +16,25 @@ implementation (`plm`, `pglm`, `fixest`, `MASS::glm.nb`, `survival::clogit`,
 ## Test environments
 
 * local: Ubuntu 24.04, R 4.5.1 (via `R CMD check --as-cran`)
-* win-builder / R-hub: to be run before submission
+* win-builder: R-devel and R-release
 
 ## R CMD check results
 
-0 errors | 0 warnings | 1 note
+0 errors | 0 warnings | 3 notes
 
 * This is a new submission.
-* One NOTE on the local machine only: the Ubuntu R toolchain supplies
-  `-mno-omit-leaf-frame-pointer` through its system `Makeconf`. The package
-  does not set this flag in `src/Makevars`; it does not appear on other
-  platforms.
+* NOTE: "unable to verify current time" / future file timestamps. This is a
+  clock artifact of the local check environment (no NTP access); it does not
+  reflect anything in the package.
+* NOTE: compilation used `-mno-omit-leaf-frame-pointer`. This flag is
+  injected by the local Ubuntu R toolchain's system `Makeconf`. The package
+  does not set it in `src/Makevars`; it does not appear on other platforms.
+* The installed size is ~12 Mb, almost entirely the compiled
+  Rcpp/RcppArmadillo/RcppParallel shared object in `libs/`.
+
+## Downstream dependencies
+
+None (new package).
 
 ## Downstream dependencies
 
