@@ -307,9 +307,26 @@ fit_within <- function(X, y, family, group_start, group_size, maxit, tol) {
     alpha_i <- gm$ybar - as.numeric(gm$Xbar %*% res$coefficients)
     alpha_obs <- rep(alpha_i, group_size)
     fitted <- alpha_obs + as.numeric(X %*% res$coefficients)
+
+    ## By the Frisch-Waugh-Lovell theorem, the within-demeaned residuals
+    ## (`resid` above) are algebraically identical to the residuals of the
+    ## full least-squares-dummy-variable regression (y on X plus one
+    ## intercept per group) - so the Gaussian log-likelihood of that full
+    ## model (npar = k regressors + G group intercepts + 1 residual
+    ## variance, exactly what panglm_parameter_count() already reports for
+    ## this branch) is the standard OLS ML log-likelihood evaluated on
+    ## `resid` at n = total observations, not the demeaned df:
+    ##   logLik = -n/2 * (log(2*pi) + log(RSS/n) + 1)
+    ## (same formula as stats:::logLik.lm()). Recomputed here from
+    ## `fitted`/`y` directly rather than assumed, so it is exact even if
+    ## `resid` and the LSDV residual ever diverge numerically.
+    full_resid <- y - fitted
+    rss <- sum(full_resid^2)
+    loglik <- if (rss > 0) -0.5 * n * (log(2 * pi) + log(rss / n) + 1) else NA_real_
+
     return(list(coefficients = coefs, vcov = vcov, bread = bread, fitted.values = fitted,
                 individual_effects = alpha_i,
-                loglik = NA_real_, dispersion = sigma2, df.residual = df_resid,
+                loglik = loglik, dispersion = sigma2, df.residual = df_resid,
                 iterations = res$iterations))
   }
   if (family$family == "poisson") {
@@ -556,8 +573,39 @@ fit_random_gaussian <- function(X, y, group_start, group_size, maxit, tol) {
   vcov <- res$vcov_unscaled * sigma2
   dimnames(vcov) <- list(colnames(X), colnames(X))
 
+  ## Closed-form Gaussian log-likelihood of the random-intercept model
+  ## y_it = x_it'beta + u_i + e_it, u_i ~ N(0, sigma_mu2), e_it ~ N(0,
+  ## sigma_v2), evaluated at the GLS coefficients and the Swamy-Arora
+  ## variance-component estimates already computed above (sigma_v2,
+  ## sigma_mu2). The within-group covariance is Omega_i = sigma_v2 * I_Ti +
+  ## sigma_mu2 * J_Ti (J = all-ones), so det(Omega_i) and the quadratic form
+  ## e_i' Omega_i^{-1} e_i both have closed forms via the Sherman-Morrison
+  ## identity (standard panel-data result, e.g. Baltagi, *Econometric
+  ## Analysis of Panel Data*, ch. 2): with e_i the raw (non-demeaned)
+  ## residuals for group i of size Ti,
+  ##   log det(Omega_i)   = (Ti - 1) log(sigma_v2) + log(sigma_v2 + Ti * sigma_mu2)
+  ##   e_i' Omega_i^{-1} e_i = [sum(e_i^2) - (sigma_mu2 / (sigma_v2 + Ti * sigma_mu2)) * sum(e_i)^2] / sigma_v2
+  ## Summed over groups this gives the exact (not REML) log-likelihood at
+  ## the fitted beta/variance components; used for AIC/BIC via logLik.panglm().
+  resid_raw <- as.numeric(y - X %*% coefs)
+  loglik <- if (sigma_v2 > 0) {
+    idx <- 1L
+    ll <- 0
+    for (g in seq_along(group_size)) {
+      Ti <- group_size[g]
+      ei <- resid_raw[idx:(idx + Ti - 1L)]
+      quad <- (sum(ei^2) - (sigma_mu2 / (sigma_v2 + Ti * sigma_mu2)) * sum(ei)^2) / sigma_v2
+      logdet <- (Ti - 1) * log(sigma_v2) + log(sigma_v2 + Ti * sigma_mu2)
+      ll <- ll - 0.5 * (Ti * log(2 * pi) + logdet + quad)
+      idx <- idx + Ti
+    }
+    ll
+  } else {
+    NA_real_
+  }
+
   list(coefficients = coefs, vcov = vcov, fitted.values = as.numeric(X %*% res$coefficients),
-       loglik = NA_real_, dispersion = sigma2,
+       loglik = loglik, dispersion = sigma2,
        sigma_v2 = sigma_v2, sigma_mu2 = sigma_mu2, theta = theta,
        df.residual = df_resid, iterations = res$iterations)
 }

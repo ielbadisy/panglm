@@ -49,10 +49,20 @@ fit_within_twoways_gaussian <- function(X, y, group_start, group_size, time, max
   )
   fitted <- as.numeric(X %*% coefs) + effects$observation_effect
 
+  ## Same Frisch-Waugh-Lovell argument as the one-way within estimator (see
+  ## fit_within() in panglm.R): the two-way alternating-projection residuals
+  ## are algebraically identical to the full individual+time dummy-variable
+  ## regression's residuals, so the standard OLS ML Gaussian log-likelihood
+  ## applies at n = total observations (matches panglm_parameter_count()'s
+  ## npar = k + (n_id - 1) + (n_time - 1) + 1 for this branch).
+  full_resid <- y - fitted
+  rss <- sum(full_resid^2)
+  loglik <- if (rss > 0) -0.5 * n * (log(2 * pi) + log(rss / n) + 1) else NA_real_
+
   list(coefficients = coefs, vcov = vcov, bread = bread, fitted.values = fitted,
        individual_effects = effects$individual,
        time_effects = effects$time,
-       loglik = NA_real_, dispersion = sigma2, df.residual = df_resid,
+       loglik = loglik, dispersion = sigma2, df.residual = df_resid,
        iterations = res$iterations, demean_iterations = dm$iterations)
 }
 

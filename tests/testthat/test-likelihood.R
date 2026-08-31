@@ -68,18 +68,51 @@ test_that("full fixed-effect and random-effect likelihoods count nuisance parame
   expect_identical(attr(logLik(re_bin), "df"), 3L)
 })
 
-test_that("glance reports likelihood criteria and non-likelihood fits return NA", {
+test_that("glance reports likelihood criteria for pooled, within, and random fits", {
   skip_if_missing("generics")
   data(copd)
   pooled <- panglm(exacerbations ~ crp, copd, index = c("id", "visit"),
                    model = "pooling", family = "poisson")
   within_gaussian <- panglm(fev1 ~ crp, copd, index = c("id", "visit"),
                             model = "within", family = "gaussian")
+  random_gaussian <- panglm(fev1 ~ crp, copd, index = c("id", "visit"),
+                            model = "random", family = "gaussian", effect = "individual")
   pooled_glance <- generics::glance(pooled)
   within_glance <- generics::glance(within_gaussian)
+  random_glance <- generics::glance(random_gaussian)
 
   expect_equal(pooled_glance$AIC, stats::AIC(pooled))
   expect_equal(pooled_glance$BIC, stats::BIC(pooled))
   expect_identical(pooled_glance$df.logLik, attr(logLik(pooled), "df"))
-  expect_true(is.na(within_glance$AIC) && is.na(within_glance$BIC))
+
+  # within (LSDV/FWL) and random (Swamy-Arora GLS) Gaussian log-likelihoods
+  # are computed in closed form (see fit_within()/fit_random_gaussian() in
+  # R/panglm.R) rather than left NA; both should be finite and match
+  # AIC/BIC computed directly from logLik().
+  expect_true(is.finite(within_glance$AIC) && is.finite(within_glance$BIC))
+  expect_equal(within_glance$AIC, stats::AIC(within_gaussian))
+  expect_equal(within_glance$BIC, stats::BIC(within_gaussian))
+
+  expect_true(is.finite(random_glance$AIC) && is.finite(random_glance$BIC))
+  expect_equal(random_glance$AIC, stats::AIC(random_gaussian))
+  expect_equal(random_glance$BIC, stats::BIC(random_gaussian))
+
+  # random-effects GLS nests pooling as sigma_mu2 -> 0, so on the same
+  # formula/data the two log-likelihoods should be close (not identical,
+  # since random additionally estimates the variance-component split).
+  pooled_gaussian <- panglm(fev1 ~ crp, copd, index = c("id", "visit"),
+                            model = "pooling", family = "gaussian")
+  expect_equal(as.numeric(logLik(random_gaussian)), as.numeric(logLik(pooled_gaussian)),
+               tolerance = 0.05 * abs(as.numeric(logLik(pooled_gaussian))))
+})
+
+test_that("glance reports R-squared for gaussian fits", {
+  skip_if_missing("generics")
+  data(copd)
+  pooled <- panglm(fev1 ~ treatment + age + crp, copd, index = c("id", "visit"),
+                   model = "pooling", family = "gaussian")
+  gl <- generics::glance(pooled)
+  yv <- pooled$y; fv <- pooled$fitted.values
+  expect_equal(gl$r.squared, 1 - sum((yv - fv)^2) / sum((yv - mean(yv))^2))
+  expect_true(gl$adj.r.squared <= gl$r.squared)
 })

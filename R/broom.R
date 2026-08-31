@@ -46,8 +46,9 @@ tidy.panglm <- function(x, conf.int = FALSE, conf.level = 0.95, ...) {
 #'
 #' @param x a `"panglm"` fit
 #' @param ... unused
-#' @return a one-row `data.frame` including log-likelihood, AIC, BIC, and
-#'   the likelihood parameter count when a likelihood is available
+#' @return a one-row `data.frame` including log-likelihood, AIC, BIC, the
+#'   likelihood parameter count when a likelihood is available, and
+#'   (Gaussian-family fits only) R-squared and adjusted R-squared
 #' @examples
 #' data(copd)
 #' fit <- panglm(fev1 ~ treatment + age + smoker + crp, data = copd,
@@ -59,6 +60,27 @@ tidy.panglm <- function(x, conf.int = FALSE, conf.level = 0.95, ...) {
 glance.panglm <- function(x, ...) {
   ll <- stats::logLik(x)
   has_likelihood <- length(ll) == 1L && is.finite(as.numeric(ll))
+
+  ## R-squared/adjusted R-squared: defined here as the usual proportion of
+  ## variance explained, 1 - RSS/TSS, computed on whatever scale `fitted()`
+  ## and `y` are on (the linear predictor for gaussian identity-link models,
+  ## i.e. the standard OLS R-squared; the same ratio for other families,
+  ## which is a Gaussian-style pseudo-R-squared, not McFadden's or another
+  ## likelihood-based pseudo-R-squared - reported as NA when TSS is 0 or the
+  ## fit has no residual df left to adjust for).
+  r2 <- adj_r2 <- NA_real_
+  if (!is.null(x$fitted.values) && !is.null(x$y)) {
+    yv <- x$y; fv <- x$fitted.values
+    tss <- sum((yv - mean(yv))^2)
+    if (is.finite(tss) && tss > 0) {
+      rss <- sum((yv - fv)^2)
+      r2 <- 1 - rss / tss
+      k <- length(x$coefficients)
+      n <- length(yv)
+      if (n - k > 0) adj_r2 <- 1 - (1 - r2) * (n - 1) / (n - k)
+    }
+  }
+
   data.frame(
     model = x$model,
     effect = x$effect,
@@ -70,6 +92,8 @@ glance.panglm <- function(x, ...) {
     BIC = if (has_likelihood) stats::BIC(x) else NA_real_,
     df.logLik = attr(ll, "df"),
     df.residual = x$df.residual,
+    r.squared = r2,
+    adj.r.squared = adj_r2,
     nobs = x$nobs,
     n.groups = x$n_groups,
     stringsAsFactors = FALSE

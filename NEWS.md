@@ -1,4 +1,30 @@
-# panglm 1.1.1
+# panglm 1.1.2
+
+## Bug fixes
+
+* `model = "random"`, `family = "gaussian"` always reported `logLik`/`AIC`/
+  `BIC` as `NA`, even though `fit_random_gaussian()` already estimates the
+  Swamy-Arora variance components (`sigma_v2`, `sigma_mu2`) needed to
+  compute a real likelihood - they were simply discarded. Added the
+  closed-form Gaussian random-intercept log-likelihood (Sherman-Morrison
+  identity on `Omega_i = sigma_v2 * I + sigma_mu2 * J`), using the already-
+  estimated coefficients and variance components. Cross-validated: on the
+  bundled `copd` data, `logLik(random)` closely tracks `logLik(pooling)` on
+  the same formula, as expected since random-effects GLS nests pooled OLS
+  as `sigma_mu2 -> 0`.
+* `model = "within"` (one-way and two-way) had the same `loglik = NA_real_`
+  gap. By the Frisch-Waugh-Lovell theorem the demeaned-regression residuals
+  are algebraically identical to the full dummy-variable-regression
+  residuals, so the standard OLS ML Gaussian log-likelihood applies
+  directly - added, using the `npar` (regressors + fixed-effect count + 1
+  dispersion parameter) that `panglm_parameter_count()` already computed
+  for these branches but previously had no likelihood to pair with.
+
+## New features
+
+* `glance.panglm()` now reports `r.squared`/`adj.r.squared` (computed from
+  `fitted.values()`/`y`) for every model type; previously not reported at
+  all.
 
 ## Bug fixes
 

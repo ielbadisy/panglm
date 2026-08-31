@@ -1,7 +1,7 @@
 Package: panglm
 Type: Package
 Title: Generalized Linear Models for Panel Data
-Version: 1.1.1
+Version: 1.1.2
 Authors@R: person("Imad", "El Badisy", email = "elbadisyimad@gmail.com", role = c("aut", "cre"))
 Description: Provides generalized linear models for panel data, including
     pooled, fixed-effects, and random-effects estimators for continuous,
