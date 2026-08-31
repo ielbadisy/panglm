@@ -20,11 +20,13 @@ implementation (`plm`, `pglm`, `fixest`, `MASS::glm.nb`, `survival::clogit`,
 
 ## R CMD check results
 
-0 errors | 0 warnings | 2 notes
+0 errors | 0 warnings | 1 note
 
 * This is a new submission.
-* The local Ubuntu R toolchain supplies `-mno-omit-leaf-frame-pointer` through
-  its system `Makeconf`. The package does not set this flag in `src/Makevars`.
+* One NOTE on the local machine only: the Ubuntu R toolchain supplies
+  `-mno-omit-leaf-frame-pointer` through its system `Makeconf`. The package
+  does not set this flag in `src/Makevars`; it does not appear on other
+  platforms.
 
 ## Downstream dependencies
 

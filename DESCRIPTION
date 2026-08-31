@@ -34,6 +34,7 @@ Suggests:
     MASS,
     AER,
     glmmTMB,
+    lme4,
     pscl,
     generics,
     broom,
