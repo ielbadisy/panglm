@@ -5,7 +5,7 @@
 \alias{panglm-package}
 \title{panglm: Generalized Linear Models for Panel Data}
 \description{
-Provides generalized linear models for panel data, including pooled, fixed-effects, and random-effects estimators for continuous, binary, and count outcomes. Offers a unified interface for fitting and analysing panel regression models, with efficient computation for large datasets. Core numerical routines are implemented using 'Rcpp', 'RcppArmadillo', and 'RcppParallel'.
+Provides generalized linear models for panel data, including pooled, fixed-effects, and random-effects estimators for continuous, binary, and count outcomes. Offers a unified interface for fitting and analysing panel regression models, with efficient computation for large datasets. Estimators and tests follow standard panel-data references, including Hausman (1978) \doi{10.2307/1913827}, Chamberlain (1980) \doi{10.2307/2297110}, Allison and Waterman (2002) \doi{10.1111/1467-9531.00117}, and Croissant and Millo (2008) \doi{10.18637/jss.v027.i02}. Core numerical routines are implemented using 'Rcpp', 'RcppArmadillo', and 'RcppParallel'.
 }
 \seealso{
 Useful links:

@@ -23,6 +23,9 @@ implementation (`plm`, `pglm`, `fixest`, `MASS::glm.nb`, `survival::clogit`,
 0 errors | 0 warnings | 3 notes
 
 * This is a new submission.
+* The `Description` field cites the primary method references as `<doi:...>`
+  (Hausman 1978, Chamberlain 1980, Allison and Waterman 2002, Croissant and
+  Millo 2008).
 * NOTE: "unable to verify current time" / future file timestamps. This is a
   clock artifact of the local check environment (no NTP access); it does not
   reflect anything in the package.

@@ -1,3 +1,9 @@
+# panglm 1.1.3
+
+* Added method references (Hausman 1978, Chamberlain 1980, Allison and
+  Waterman 2002, Croissant and Millo 2008) to the `DESCRIPTION` as
+  `<doi:...>` links.
+
 # panglm 1.1.2
 
 ## Bug fixes
