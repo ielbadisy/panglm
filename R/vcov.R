@@ -19,6 +19,11 @@
 #'   per original observation, i.e. `nrow(data)` long); defaults to the
 #'   panel individual identifier used to fit the model
 #' @param ... unused
+#' @return a numeric covariance matrix for the estimated coefficients, with
+#'   row and column names matching `names(coef(object))`. For
+#'   `type = "classical"` this is the model-based covariance stored on the
+#'   fit; for `"HC1"` and `"cluster"` it is a sandwich (robust or
+#'   cluster-robust) covariance estimate of the same dimension.
 #' @examples
 #' data(copd)
 #' fit <- panglm(fev1 ~ crp, data = copd, index = c("id", "visit"),

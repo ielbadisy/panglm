@@ -11,6 +11,11 @@
 
 \item{...}{unused}
 }
+\value{
+a numeric vector of fitted values, one per row of the original
+  data supplied to [panglm()] (in that row order), or `NA` at rows
+  dropped for missingness, following the model's `na.action`.
+}
 \description{
 Values are returned in the row order of the data supplied to [panglm()],
 even though estimation internally sorts observations by panel index.

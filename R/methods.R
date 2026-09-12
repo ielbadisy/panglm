@@ -10,6 +10,9 @@ coef.panglm <- function(object, ...) object$coefficients
 #'
 #' @param object a fitted `"panglm"` object
 #' @param ... unused
+#' @return a numeric vector of fitted values, one per row of the original
+#'   data supplied to [panglm()] (in that row order), or `NA` at rows
+#'   dropped for missingness, following the model's `na.action`.
 #' @export
 fitted.panglm <- function(object, ...) {
   if (is.null(object$fitted.values)) return(NULL)
@@ -68,6 +71,10 @@ nobs.panglm <- function(object, ...) object$nobs
 #' @param parm which parameters (names or indices); defaults to all
 #' @param level confidence level
 #' @param ... unused
+#' @return a numeric matrix with one row per requested parameter and two
+#'   columns giving the lower and upper confidence limits, named after the
+#'   quantiles implied by `level` (e.g. `"2.5 %"` and `"97.5 %"`). Row names
+#'   are the parameter names.
 #' @examples
 #' data(copd)
 #' fit <- panglm(fev1 ~ crp, data = copd, index = c("id", "visit"),

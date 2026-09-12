@@ -5,6 +5,15 @@
 #'
 #' @param object a `"panglm"` object
 #' @param ... unused
+#' @return an object of class `"summary.panglm"`, a list with components
+#'   `call` (the matched call), `model`, `effect`, and `family` (as stored on
+#'   the fit), `coefficients` (a numeric matrix with one row per parameter
+#'   and columns `Estimate`, `Std. Error`, `z value`, `Pr(>|z|)`), `nobs`,
+#'   `n_groups`, `df.residual`, `loglik`, `dispersion` (`NULL` when not
+#'   applicable), `iterations`, and `vcov_type` (which covariance estimator
+#'   produced the reported standard errors). It has an associated
+#'   `print.summary.panglm()` method and is normally printed rather than
+#'   used programmatically.
 #' @examples
 #' data(copd)
 #' fit <- panglm(fev1 ~ treatment + age + smoker + crp, data = copd,

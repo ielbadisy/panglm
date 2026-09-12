@@ -17,6 +17,13 @@ panel individual identifier used to fit the model}
 
 \item{...}{unused}
 }
+\value{
+a numeric covariance matrix for the estimated coefficients, with
+  row and column names matching `names(coef(object))`. For
+  `type = "classical"` this is the model-based covariance stored on the
+  fit; for `"HC1"` and `"cluster"` it is a sandwich (robust or
+  cluster-robust) covariance estimate of the same dimension.
+}
 \description{
 `type = "classical"` returns the model-based covariance the object was
 fit with. `type = "HC1"` (heteroskedasticity-robust / White) and

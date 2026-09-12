@@ -1,3 +1,9 @@
+# panglm 1.1.4
+
+* Added `\value` documentation to `confint.panglm()`, `fitted.panglm()`,
+  `summary.panglm()`, and `vcov.panglm()`, describing the structure and
+  meaning of each return value (CRAN resubmission).
+
 # panglm 1.1.3
 
 * Added method references (Hausman 1978, Chamberlain 1980, Allison and

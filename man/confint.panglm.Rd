@@ -15,6 +15,12 @@
 
 \item{...}{unused}
 }
+\value{
+a numeric matrix with one row per requested parameter and two
+  columns giving the lower and upper confidence limits, named after the
+  quantiles implied by `level` (e.g. `"2.5 %"` and `"97.5 %"`). Row names
+  are the parameter names.
+}
 \description{
 Wald-type intervals `estimate +/- z * se`, using whichever `vcov()` the
 object currently carries (classical by default; HC1/cluster if the fit
