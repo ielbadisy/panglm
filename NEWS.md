@@ -1,3 +1,18 @@
+# panglm 1.1.5
+
+* Dropped the `data.table` dependency entirely. `build_panel_index()`'s
+  panel sort-by-(id, time) now uses plain base R data.frame indexing;
+  its run-length grouping uses `base::rle()` instead of
+  `data.table::rleidv()` (no `as.character()` coercion needed, since the
+  id column is already atomic and pre-sorted). `demean_twoway()`'s dense
+  time-rank encoding uses a new internal `dense_rank0()` helper
+  (`match(x, sort(unique(x))) - 1L`) instead of `data.table::frankv()`.
+  No basetable equivalent exists for either primitive, so this ended up
+  as a full drop rather than a basetable swap. Also removed several
+  dead `@importFrom data.table`/`utils::globalVariables()` declarations
+  for NSE symbols (`.SD`, `..cols`, `..xnames`, `:=`) that were already
+  unused before this change.
+
 # panglm 1.1.4
 
 * Added `\value` documentation to `confint.panglm()`, `fitted.panglm()`,

@@ -13,10 +13,10 @@
 demean_twoway <- function(X, y, group_start, group_size, time, tol = 1e-10, maxit = 10000) {
   # id groups are already contiguous/sorted (from build_panel_index), so no
   # factor()/match() is needed to derive their codes; only the time
-  # dimension needs a grouping pass, done via data.table's fast dense rank.
+  # dimension needs a grouping pass, done via dense_rank0().
   n_id <- length(group_size)
   id_code <- rep.int(seq_len(n_id) - 1L, group_size)
-  time_code <- as.integer(data.table::frankv(time, ties.method = "dense") - 1L)
+  time_code <- dense_rank0(time)
   n_time <- max(time_code) + 1L
 
   M <- cbind(y, X)
@@ -87,7 +87,7 @@ fit_within_twoways_poisson <- function(X, y, group_start, group_size, time, maxi
   n <- nrow(X); k <- ncol(X)
   n_id <- length(group_size)
   id_code <- rep.int(seq_len(n_id) - 1L, group_size)
-  time_code <- as.integer(data.table::frankv(time, ties.method = "dense") - 1L)
+  time_code <- dense_rank0(time)
   n_time <- max(time_code) + 1L
 
   scale <- apply(X, 2, function(col) { s <- stats::sd(col); if (s > 0) s else 1 })
@@ -180,7 +180,7 @@ fit_within_twoways_negbin <- function(X, y, group_start, group_size, time, maxit
   n <- nrow(X); k <- ncol(X)
   n_id <- length(group_size)
   id_code <- rep.int(seq_len(n_id) - 1L, group_size)
-  time_code <- as.integer(data.table::frankv(time, ties.method = "dense") - 1L)
+  time_code <- dense_rank0(time)
   n_time <- max(time_code) + 1L
 
   scale <- apply(X, 2, function(col) { s <- stats::sd(col); if (s > 0) s else 1 })
