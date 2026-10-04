@@ -1,3 +1,23 @@
+# panglm 1.2.0
+
+* Bug fix: a fit made with `vcov = "HC1"` or `vcov = "cluster"` replaced
+  its model-based covariance, so `vcov(fit, type = "classical")` returned
+  the robust matrix. The model-based covariance is now kept on the fit.
+  `vcov()` gains `type = NULL` (the new default), which returns the
+  covariance the fit was made with, so `vcov(fit)` is unchanged.
+* Bug fix: `panglm_hausman()` used the covariance stored on the FE fit, so
+  an FE fit with a robust `vcov` entered the classical contrast
+  `V_fe - V_re`, which is valid only for model-based covariances. The
+  classical test now always uses the model-based covariances.
+* `panglm_hausman()` gains `method = "mundlak"`: the regression-based
+  (correlated random effects) version of the test, a Wald test of the
+  individual-mean coefficients in the pooled model `y ~ x + xbar`, with a
+  cluster-robust (default), HC1 or classical covariance. With the
+  cluster-robust covariance the reference is `F(k, G - 1)`. Gaussian
+  family, individual effects only.
+* Test of `panglm_hausman()` against `plm::phtest()` now passes fitted
+  `plm` models, since `phtest()`'s formula method calls `plm()` unqualified.
+
 # panglm 1.1.5
 
 * Dropped the `data.table` dependency entirely. `build_panel_index()`'s
