@@ -129,7 +129,11 @@ test_that("Hausman test matches plm::phtest", {
   fe <- panglm(inv ~ value + capital, data = Grunfeld, index = c("firm", "year"), model = "within", family = "gaussian")
   re <- panglm(inv ~ value + capital, data = Grunfeld, index = c("firm", "year"), model = "random", family = "gaussian")
   h <- panglm_hausman(fe, re)
-  ph <- plm::phtest(inv ~ value + capital, data = Grunfeld, index = c("firm", "year"))
+  # phtest()'s formula method calls plm() unqualified, so pass fitted models.
+  ph <- plm::phtest(
+    plm::plm(inv ~ value + capital, data = Grunfeld, index = c("firm", "year"), model = "within"),
+    plm::plm(inv ~ value + capital, data = Grunfeld, index = c("firm", "year"), model = "random")
+  )
   expect_equal(h$statistic, unname(ph$statistic), tolerance = 1e-6)
   expect_equal(h$parameter, unname(ph$parameter))
   expect_equal(h$p.value, unname(ph$p.value), tolerance = 1e-6)
@@ -147,4 +151,48 @@ test_that("tidy()/glance() dispatch and return the expected shape", {
   gl <- generics::glance(f)
   expect_equal(nrow(gl), 1)
   expect_true(all(c("model", "family", "nobs") %in% names(gl)))
+})
+
+test_that("a robust fit keeps its classical covariance", {
+  skip_if_missing("plm")
+  data(Grunfeld, package = "plm")
+  f <- inv ~ value + capital
+  fe <- panglm(f, data = Grunfeld, index = c("firm", "year"), model = "within")
+  fe_cl <- panglm(f, data = Grunfeld, index = c("firm", "year"), model = "within", vcov = "cluster")
+  expect_equal(vcov(fe_cl, type = "classical"), vcov(fe), tolerance = 1e-12)
+  expect_equal(vcov(fe_cl), vcov(fe, type = "cluster"), tolerance = 1e-12)
+  expect_equal(vcov(fe), vcov(fe, type = "classical"))
+})
+
+test_that("classical Hausman ignores a robust vcov on the FE fit", {
+  skip_if_missing("plm")
+  data(Grunfeld, package = "plm")
+  f <- inv ~ value + capital
+  fe <- panglm(f, data = Grunfeld, index = c("firm", "year"), model = "within")
+  fe_cl <- panglm(f, data = Grunfeld, index = c("firm", "year"), model = "within", vcov = "cluster")
+  re <- panglm(f, data = Grunfeld, index = c("firm", "year"), model = "random")
+  expect_equal(panglm_hausman(fe_cl, re)$statistic, panglm_hausman(fe, re)$statistic, tolerance = 1e-10)
+})
+
+test_that("Mundlak test matches a manual pooled regression with cluster-robust Wald", {
+  skip_if_missing("plm")
+  skip_if_missing("sandwich")
+  data(Grunfeld, package = "plm")
+  f <- inv ~ value + capital
+  fe <- panglm(f, data = Grunfeld, index = c("firm", "year"), model = "within")
+  g <- Grunfeld
+  g$vbar <- ave(g$value, g$firm); g$cbar <- ave(g$capital, g$firm)
+  ols <- lm(inv ~ value + capital + vbar + cbar, data = g)
+  # Mundlak (1978): the pooled coefficients on x equal the within estimates.
+  expect_equal(unname(coef(ols)[c("value", "capital")]), unname(coef(fe)), tolerance = 1e-8)
+  V <- sandwich::vcovCL(ols, cluster = ~ firm, type = "HC1")[c("vbar", "cbar"), c("vbar", "cbar")]
+  b <- coef(ols)[c("vbar", "cbar")]
+  W <- as.numeric(t(b) %*% solve(V, b))
+  h <- panglm_hausman(fe, method = "mundlak", data = Grunfeld)
+  expect_equal(h$statistic, W / 2, tolerance = 1e-8)
+  expect_equal(h$parameter, c(2, 9))
+  expect_equal(h$p.value, pf(W / 2, 2, 9, lower.tail = FALSE), tolerance = 1e-8)
+  h0 <- panglm_hausman(fe, method = "mundlak", data = Grunfeld, vcov = "classical")
+  expect_identical(h0$distribution, "chisq")
+  expect_error(panglm_hausman(fe, method = "mundlak"), "needs the 'data'")
 })
