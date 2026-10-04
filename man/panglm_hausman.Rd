@@ -4,25 +4,57 @@
 \alias{panglm_hausman}
 \title{Hausman specification test (fixed vs. random effects)}
 \usage{
-panglm_hausman(fe, re)
+panglm_hausman(
+  fe,
+  re = NULL,
+  method = c("classical", "mundlak"),
+  data = NULL,
+  vcov = c("cluster", "HC1", "classical")
+)
 }
 \arguments{
 \item{fe}{a `"panglm"` fit with `model = "within"`}
 
-\item{re}{a `"panglm"` fit with `model = "random"`, same formula/data/family}
+\item{re}{a `"panglm"` fit with `model = "random"`, same formula/data/family;
+required for `method = "classical"`, ignored for `"mundlak"`}
+
+\item{method}{`"classical"` (default) or `"mundlak"`}
+
+\item{data}{for `method = "mundlak"`: the data `fe` was fit on}
+
+\item{vcov}{for `method = "mundlak"`: covariance of the pooled fit, one of
+`"cluster"` (default), `"HC1"`, `"classical"`}
 }
 \value{
 a list with class `"panglm_hausman"`: `statistic`, `parameter`
-  (df), `p.value`, and the compared coefficient vectors
+  (df; two values for an F reference), `p.value`, `method`,
+  `distribution` (`"chisq"` or `"F"`), and the compared coefficient
+  vectors (`coef_fe`, `coef_re` for `"classical"`; `coef_mean` for
+  `"mundlak"`)
 }
 \description{
 Tests the null that the random-effects estimator is consistent (i.e.
 individual effects are uncorrelated with the regressors) against the
-alternative that only the fixed-effects estimator is consistent, using
-the classic Hausman (1978) statistic
-`t(b_fe - b_re) %*% solve(V_fe - V_re) %*% (b_fe - b_re)`,
-computed over the coefficients common to both models (the random-effects
-model's intercept is dropped, since the within/FE model has none).
+alternative that only the fixed-effects estimator is consistent.
+}
+\details{
+`method = "classical"` computes the Hausman (1978) statistic
+`t(b_fe - b_re) %*% solve(V_fe - V_re) %*% (b_fe - b_re)` over the
+coefficients common to both models (the random-effects intercept is
+dropped), with a chi-square reference. It always uses the model-based
+(classical) covariances, also when `fe` was fit with a robust `vcov`: the
+contrast variance `V_fe - V_re` relies on the random-effects estimator
+being efficient under the null, which holds only for model-based
+covariances and independent, homoskedastic idiosyncratic errors.
+
+`method = "mundlak"` is the regression-based (correlated random effects)
+version of the same test (Mundlak 1978; Wooldridge 2010, section 10.7.3),
+valid under heteroskedasticity and serial correlation. The pooled model
+`y ~ x + xbar` is fit with the individual means `xbar` of the time-varying
+regressors of `fe`, and the null `coef(xbar) = 0` is tested with a Wald
+statistic using the `vcov` covariance. With `vcov = "cluster"` the
+reference is `F(k, G - 1)` (`G` individuals), otherwise chi-square(k).
+Gaussian family only.
 }
 \examples{
 data(copd)
@@ -31,4 +63,5 @@ fit_fe <- panglm(fev1 ~ crp, data = copd, index = c("id", "visit"),
 fit_re <- panglm(fev1 ~ crp, data = copd, index = c("id", "visit"),
                   model = "random", family = "gaussian")
 panglm_hausman(fit_fe, fit_re)
+panglm_hausman(fit_fe, method = "mundlak", data = copd)
 }
