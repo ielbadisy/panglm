@@ -4,12 +4,13 @@
 \alias{vcov.panglm}
 \title{Recompute the coefficient covariance matrix for a panglm fit}
 \usage{
-\method{vcov}{panglm}(object, type = c("classical", "HC1", "cluster"), cluster = NULL, ...)
+\method{vcov}{panglm}(object, type = NULL, cluster = NULL, ...)
 }
 \arguments{
 \item{object}{a `"panglm"` fit}
 
-\item{type}{one of `"classical"`, `"HC1"`, `"cluster"`}
+\item{type}{`NULL` (the covariance stored on the fit) or one of
+`"classical"`, `"HC1"`, `"cluster"`}
 
 \item{cluster}{optional vector giving the clustering variable (one value
 per original observation, i.e. `nrow(data)` long); defaults to the
@@ -20,13 +21,14 @@ panel individual identifier used to fit the model}
 \value{
 a numeric covariance matrix for the estimated coefficients, with
   row and column names matching `names(coef(object))`. For
-  `type = "classical"` this is the model-based covariance stored on the
-  fit; for `"HC1"` and `"cluster"` it is a sandwich (robust or
+  `type = "classical"` this is the model-based covariance; for `"HC1"` and `"cluster"` it is a sandwich (robust or
   cluster-robust) covariance estimate of the same dimension.
 }
 \description{
-`type = "classical"` returns the model-based covariance the object was
-fit with. `type = "HC1"` (heteroskedasticity-robust / White) and
+With `type = NULL` (the default) the covariance the object was fit with
+is returned (set by the `vcov` argument of [panglm()]).
+`type = "classical"` returns the model-based covariance, also for a fit
+made with a robust `vcov`. `type = "HC1"` (heteroskedasticity-robust / White) and
 `type = "cluster"` (cluster-robust sandwich, clustered by the panel
 individual unless `cluster` is given) are only available for
 `model = "pooling"` and `model = "within"`; random-effects models

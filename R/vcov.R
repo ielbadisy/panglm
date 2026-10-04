@@ -1,7 +1,9 @@
 #' Recompute the coefficient covariance matrix for a panglm fit
 #'
-#' `type = "classical"` returns the model-based covariance the object was
-#' fit with. `type = "HC1"` (heteroskedasticity-robust / White) and
+#' With `type = NULL` (the default) the covariance the object was fit with
+#' is returned (set by the `vcov` argument of [panglm()]).
+#' `type = "classical"` returns the model-based covariance, also for a fit
+#' made with a robust `vcov`. `type = "HC1"` (heteroskedasticity-robust / White) and
 #' `type = "cluster"` (cluster-robust sandwich, clustered by the panel
 #' individual unless `cluster` is given) are only available for
 #' `model = "pooling"` and `model = "within"`; random-effects models
@@ -14,15 +16,15 @@
 #' but it may not split observations from one conditioned stratum.
 #'
 #' @param object a `"panglm"` fit
-#' @param type one of `"classical"`, `"HC1"`, `"cluster"`
+#' @param type `NULL` (the covariance stored on the fit) or one of
+#'   `"classical"`, `"HC1"`, `"cluster"`
 #' @param cluster optional vector giving the clustering variable (one value
 #'   per original observation, i.e. `nrow(data)` long); defaults to the
 #'   panel individual identifier used to fit the model
 #' @param ... unused
 #' @return a numeric covariance matrix for the estimated coefficients, with
 #'   row and column names matching `names(coef(object))`. For
-#'   `type = "classical"` this is the model-based covariance stored on the
-#'   fit; for `"HC1"` and `"cluster"` it is a sandwich (robust or
+#'   `type = "classical"` this is the model-based covariance; for `"HC1"` and `"cluster"` it is a sandwich (robust or
 #'   cluster-robust) covariance estimate of the same dimension.
 #' @examples
 #' data(copd)
@@ -31,9 +33,10 @@
 #' vcov(fit)
 #' vcov(fit, type = "cluster")
 #' @export
-vcov.panglm <- function(object, type = c("classical", "HC1", "cluster"), cluster = NULL, ...) {
-  type <- match.arg(type)
-  if (type == "classical") return(object$vcov)
+vcov.panglm <- function(object, type = NULL, cluster = NULL, ...) {
+  if (is.null(type)) return(object$vcov)
+  type <- match.arg(type, c("classical", "HC1", "cluster"))
+  if (type == "classical") return(object$vcov_classical %||% object$vcov)
 
   if (!object$model %in% c("pooling", "within")) {
     stop("type = '", type, "' is only available for model = 'pooling' or 'within'; ",
