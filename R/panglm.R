@@ -224,6 +224,9 @@ panglm <- function(formula, data, index,
   fit$vcov_type <- "classical"
   class(fit) <- "panglm"
 
+  # The model-based covariance is kept so that vcov(fit, type = "classical")
+  # stays available after a robust covariance replaces fit$vcov.
+  fit$vcov_classical <- fit$vcov
   if (vcov != "classical") {
     fit$vcov <- vcov.panglm(fit, type = vcov)
     fit$vcov_type <- vcov
