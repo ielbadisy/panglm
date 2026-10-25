@@ -104,3 +104,16 @@ test_that("a maximum likelihood fit that is not at a proper maximum warns", {
                  "gradient is not zero")
   expect_silent(panglm:::ml_convergence_warning(-diag(2), diag(2), c(1e-5, 0), 1, "the fit"))
 })
+
+test_that("the random-effects beta likelihood does not depend on the warm start", {
+  d <- make_beta_data()
+  X <- cbind(1, d$x, d$z)
+  grp <- d$id
+  theta <- c(0.2, 0.6, -0.4, log(15), log(0.5))
+  cold <- panglm:::beta_contrib_random(X, d$y, "logit", grp, 7)(theta, FALSE)$ll
+  warm <- panglm:::beta_contrib_random(X, d$y, "logit", grp, 7)
+  warm(c(2, -1, 1, log(3), log(2)), FALSE)
+  expect_equal(warm(theta, FALSE)$ll, cold, tolerance = 1e-12)
+  probit <- panglm:::beta_contrib_random(X, d$y, "probit", grp, 7)
+  expect_true(all(is.finite(probit(c(0.1, 0.4, -0.2, log(15), log(0.3)), FALSE)$ll)))
+})

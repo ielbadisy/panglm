@@ -50,9 +50,16 @@ beta_contrib_pooled <- function(X, y, link) {
 
 #' Random-intercept beta contributions by adaptive Gauss-Hermite quadrature
 #'
-#' The mode of each individual's integrand is found by Fisher scoring
-#' (always a negative curvature); the curvature at the mode sets the scale
-#' of the quadrature rule. Returns one log-likelihood per individual.
+#' The mode of each individual's integrand is found by Newton steps on the
+#' observed curvature, with a Fisher scoring step (always a negative
+#' curvature) for the individuals where the observed curvature is not
+#' negative, starting from the modes of the previous evaluation; the
+#' expected curvature at the mode sets the scale of the quadrature rule.
+#' Returns one log-likelihood per individual.
+#'
+#' The second derivative of the beta log-density with respect to `mu` does
+#' not depend on `y`, so the observed curvature on the link scale is the
+#' expected one plus `score_mu * g''`, at no extra cost.
 #'
 #' @keywords internal
 #' @noRd
@@ -62,6 +69,7 @@ beta_contrib_random <- function(X, y, link, group, R) {
   ly <- log(y); l1y <- log1p(-y); ystar <- ly - l1y
   gh <- gauss_hermite_quadrature(R)
   log_w <- log(gh$weights * sqrt(pi)) + gh$nodes^2
+  state <- new.env(parent = emptyenv())
   function(theta, score) {
     eta <- as.numeric(X %*% theta[seq_len(k)])
     if (any(!is.finite(theta[k + 1:2])) || any(abs(theta[k + 1:2]) > 25)) {
@@ -71,26 +79,37 @@ beta_contrib_random <- function(X, y, link, group, R) {
     sigma <- exp(theta[k + 2L])
     h <- function(u) {
       mu <- lf$mu(eta + u[group])
-      as.numeric(rowsum(beta_obs_ll(mu, phi, ly, l1y), group)) +
+      as.numeric(rowsum(beta_obs_ll(mu, phi, ly, l1y), group, reorder = FALSE)) +
         stats::dnorm(u, 0, sigma, log = TRUE)
     }
     curvature <- function(u) {
       e <- eta + u[group]
       mu <- pmin(pmax(lf$mu(e), 1e-12), 1 - 1e-12)
       d1 <- lf$d1(e)
-      info <- phi^2 * (trigamma(mu * phi) + trigamma((1 - mu) * phi)) * d1^2
-      grad <- phi * (ystar - (digamma(mu * phi) - digamma((1 - mu) * phi))) * d1
-      list(g = as.numeric(rowsum(grad, group)) - u / sigma^2,
-           H = -as.numeric(rowsum(info, group)) - 1 / sigma^2)
+      a <- mu * phi; b <- (1 - mu) * phi
+      score_mu <- phi * (ystar - (digamma(a) - digamma(b)))
+      info_mu <- phi^2 * (trigamma(a) + trigamma(b))
+      sums <- rowsum(cbind(score_mu * d1, info_mu * d1^2, score_mu * lf$d2(e)), group,
+                     reorder = FALSE)
+      H <- -sums[, 2L] - 1 / sigma^2
+      list(g = sums[, 1L] - u / sigma^2, H = H, Hobs = H + sums[, 3L])
     }
-    u <- rep(0, G)
-    for (step in seq_len(100L)) {
-      cv <- curvature(u)
-      delta <- pmax(-2, pmin(2, cv$g / cv$H))
-      if (anyNA(delta)) return(list(ll = rep(-Inf, G)))
-      u <- u - delta
-      if (max(abs(delta)) < 1e-9) break
+    find_mode <- function(u) {
+      for (step in seq_len(100L)) {
+        cv <- curvature(u)
+        Hs <- ifelse(cv$Hobs < 0, cv$Hobs, cv$H)
+        delta <- pmax(-2, pmin(2, cv$g / Hs))
+        if (anyNA(delta)) return(NULL)
+        u <- u - delta
+        if (max(abs(delta)) < 1e-9) return(u)
+      }
+      u
     }
+    u <- NULL
+    if (length(state$u) == G && all(is.finite(state$u))) u <- find_mode(state$u)
+    if (is.null(u)) u <- find_mode(rep(0, G))
+    if (is.null(u)) return(list(ll = rep(-Inf, G)))
+    state$u <- u
     tau <- 1 / sqrt(-curvature(u)$H)
     terms <- vapply(seq_along(gh$nodes), function(q) {
       log_w[q] + h(u + sqrt(2) * tau * gh$nodes[q])
