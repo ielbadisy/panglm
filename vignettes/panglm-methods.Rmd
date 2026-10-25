@@ -727,7 +727,7 @@ partial effects.
 The package focuses on Gaussian, Poisson, binomial, NB2, gamma, ordered, beta
 and Tobit panel models, with two-part models for semicontinuous costs. Instrumental
 variables (`paniv()`) and GMM (`pangmm()`) are available for linear models
-only. The binomial
+only, and so is panel quantile regression (`panqr()`). The binomial
 fixed-effects model is the conditional logit, with individual effects or,
 with `effect = "twoways"`, individual effects conditioned out and time
 effects estimated as dummies; there is no fixed-effects estimator for the

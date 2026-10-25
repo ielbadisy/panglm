@@ -47,6 +47,11 @@
   instead of `NaN` when undefined. The help page documents the finite-sample
   bias of system GMM (Roodman 2009, Bun and Windmeijer 2010) and how to limit
   it (`collapse = TRUE`, smaller `maxlag`, FE/OLS bounds).
+* New `panqr()`: panel quantile regression with the Canay (2011) two-step
+  fixed-effects estimator, the Machado and Santos Silva (2019) MM-QR
+  location-scale estimator and pooled quantile regression, for one or several
+  `tau`, with bootstrap or analytic standard errors. Validated against
+  `quantreg::rq()` and `plm`.
 * `validation/`: per-model scripts comparing panglm with established
   packages, summarized in `validation/REPORT.md`.
 

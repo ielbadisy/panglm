@@ -53,6 +53,7 @@ Suggests:
     splines,
     pscl,
     sampleSelection,
+    quantreg,
     generics,
     broom,
     did,
