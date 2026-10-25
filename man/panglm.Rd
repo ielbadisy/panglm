@@ -15,7 +15,8 @@ panglm(
   na.action = stats::na.omit,
   effect = c("individual", "twoways"),
   vcov = c("classical", "HC1", "cluster"),
-  cre = FALSE,
+  cre = dynamic,
+  dynamic = FALSE,
   R = 21,
   maxit = 100,
   tol = 1e-10
@@ -74,7 +75,23 @@ are added to the design matrix, named `mean_<column>`. Available for
 `model = "pooling"` and `model = "random"` and every family. The slopes
 of the time-varying regressors then have a within interpretation, and
 the joint test of the mean terms is a robust Hausman-type test
-(reported by [summary.panglm()]).}
+(reported by [summary.panglm()]).
+Defaults to `dynamic`.}
+
+\item{dynamic}{logical. If `TRUE`, fit a dynamic model with the
+Wooldridge (2005) solution to the initial conditions problem: the
+outcome of the previous wave (`lag_<y>`) and the outcome of the first
+observed wave (`initial_<y>`) are added to the regressors, the first
+wave is dropped, and the individual means of the time-varying
+regressors are added (`cre = TRUE` by default; the lag is not
+averaged). The second element of `index` must be a numeric time
+variable; a lag is only defined when the previous wave `t - 1` is
+observed, other rows are dropped. Factor and logical outcomes (ordered
+and binary models) give factor or logical lags, so their partial
+effects are discrete changes. With `model = "random"` the coefficient
+of the lag measures true state dependence net of unobserved
+heterogeneity; [partialeffects()] gives it on the probability or mean
+scale. Available for `model = "pooling"` and `model = "random"`.}
 
 \item{R}{number of Gauss-Hermite quadrature nodes (random-effects
 binomial and gamma models only)}

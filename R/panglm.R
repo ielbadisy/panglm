@@ -47,6 +47,21 @@
 #'   of the time-varying regressors then have a within interpretation, and
 #'   the joint test of the mean terms is a robust Hausman-type test
 #'   (reported by [summary.panglm()]).
+#'   Defaults to `dynamic`.
+#' @param dynamic logical. If `TRUE`, fit a dynamic model with the
+#'   Wooldridge (2005) solution to the initial conditions problem: the
+#'   outcome of the previous wave (`lag_<y>`) and the outcome of the first
+#'   observed wave (`initial_<y>`) are added to the regressors, the first
+#'   wave is dropped, and the individual means of the time-varying
+#'   regressors are added (`cre = TRUE` by default; the lag is not
+#'   averaged). The second element of `index` must be a numeric time
+#'   variable; a lag is only defined when the previous wave `t - 1` is
+#'   observed, other rows are dropped. Factor and logical outcomes (ordered
+#'   and binary models) give factor or logical lags, so their partial
+#'   effects are discrete changes. With `model = "random"` the coefficient
+#'   of the lag measures true state dependence net of unobserved
+#'   heterogeneity; [partialeffects()] gives it on the probability or mean
+#'   scale. Available for `model = "pooling"` and `model = "random"`.
 #' @param R number of Gauss-Hermite quadrature nodes (random-effects
 #'   binomial and gamma models only)
 #' @param maxit maximum IRLS/Newton iterations
@@ -90,7 +105,7 @@ panglm <- function(formula, data, index,
                     na.action = stats::na.omit,
                     effect = c("individual", "twoways"),
                     vcov = c("classical", "HC1", "cluster"),
-                    cre = FALSE,
+                    cre = dynamic, dynamic = FALSE,
                     R = 21, maxit = 100, tol = 1e-10) {
   model <- match.arg(model)
   effect <- match.arg(effect)
@@ -105,6 +120,14 @@ panglm <- function(formula, data, index,
   if (family$family == "beta" && model == "within") {
     stop("there is no fixed-effects beta regression; use model = 'random' with ",
          "cre = TRUE", call. = FALSE)
+  }
+  if (!is.logical(dynamic) || length(dynamic) != 1L || is.na(dynamic)) {
+    stop("'dynamic' must be TRUE or FALSE", call. = FALSE)
+  }
+  if (dynamic && model == "within") {
+    stop("dynamic = TRUE applies to model = 'pooling' or 'random': the within ",
+         "estimator of a dynamic model is inconsistent for short panels (Nickell ",
+         "bias); use a GMM estimator such as plm::pgmm() instead", call. = FALSE)
   }
   if (!is.logical(cre) || length(cre) != 1L || is.na(cre)) {
     stop("'cre' must be TRUE or FALSE", call. = FALSE)
@@ -126,6 +149,13 @@ panglm <- function(formula, data, index,
   if (effect == "twoways" && !(model == "within" && family$family %in% c("gaussian", "poisson", "negbin"))) {
     stop("effect = 'twoways' is currently only implemented for ",
          "model = 'within', family = 'gaussian', 'poisson', or 'negbin'", call. = FALSE)
+  }
+
+  dynamic_info <- NULL
+  if (dynamic) {
+    dyn <- dynamic_panel_data(formula, data, index, weights, offset)
+    formula <- dyn$formula; data <- dyn$data; weights <- dyn$weights; offset <- dyn$offset
+    dynamic_info <- dyn$info
   }
 
   mf <- stats::model.frame(formula, data = data, na.action = na.action)
@@ -183,6 +213,10 @@ panglm <- function(formula, data, index,
   }
   X_full <- stats::model.matrix(formula, data = mf)
   terms_object <- stats::terms(mf)
+  dynamic_columns <- if (dynamic) {
+    involved <- attr(terms_object, "factors")[dynamic_info$lag, ] > 0
+    colnames(X_full)[attr(X_full, "assign") %in% which(involved)]
+  } else character(0)
   xlevels <- stats::.getXlevels(terms_object, mf)
   contrasts <- attr(X_full, "contrasts")
 
@@ -203,7 +237,9 @@ panglm <- function(formula, data, index,
 
   cre_columns <- character(0)
   if (cre) {
-    cre_means <- cre_mean_columns(X_noint, group_start, group_size)
+    # the lagged outcome is not averaged (Wooldridge 2005)
+    cre_means <- cre_mean_columns(X_noint[, setdiff(colnames(X_noint), dynamic_columns),
+                                          drop = FALSE], group_start, group_size)
     cre_columns <- colnames(cre_means)
     X_full <- cbind(X_full, cre_means)
   }
@@ -259,6 +295,7 @@ panglm <- function(formula, data, index,
   fit$y <- y
   fit$weights <- prior_weights
   fit$cre <- cre
+  fit$dynamic <- dynamic_info
   fit$cre_columns <- intersect(cre_columns, colnames(fit$X))
   data_vars <- unique(c(intersect(all.vars(terms_object), names(data)), index))
   fit$data <- data[model_rows[ord], data_vars, drop = FALSE]
@@ -808,4 +845,59 @@ random_binomial_marginal_mean <- function(eta, sigma, family, quadrature = 21L) 
 
 weighted_random_ok <- function(family) {
   family$family %in% c("ordered", "gaussian", "poisson", "negbin", "binomial", "gamma", "beta")
+}
+
+#' Build the lagged and initial outcomes of a dynamic panel model
+#'
+#' @keywords internal
+#' @noRd
+dynamic_panel_data <- function(formula, data, index, weights, offset) {
+  if (length(index) != 2L) {
+    stop("dynamic = TRUE needs index = c(<individual>, <time>)", call. = FALSE)
+  }
+  lhs <- if (length(formula) == 3L) formula[[2L]] else NULL
+  if (!is.name(lhs)) {
+    stop("dynamic = TRUE needs the response to be a single column of data", call. = FALSE)
+  }
+  yname <- as.character(lhs)
+  if (!yname %in% names(data)) stop("response '", yname, "' not found in data", call. = FALSE)
+  time <- data[[index[2]]]
+  if (!is.numeric(time)) {
+    stop("dynamic = TRUE needs a numeric time index (consecutive waves differ by 1)",
+         call. = FALSE)
+  }
+  id <- data[[index[1]]]
+  if (anyDuplicated(data.frame(id, time))) {
+    stop("dynamic = TRUE needs one row per individual and time period", call. = FALSE)
+  }
+  y <- data[[yname]]
+  lag_name <- paste0("lag_", yname)
+  initial_name <- paste0("initial_", yname)
+  o <- order(as.character(id), time)
+  ys <- y[o]; ids <- as.character(id)[o]; ts <- time[o]
+  n <- length(o)
+  previous <- c(NA, seq_len(n - 1L))
+  ok <- !is.na(previous) & c(FALSE, ids[-1] == ids[-n]) & c(FALSE, ts[-1] - ts[-n] == 1)
+  first <- !duplicated(ids)
+  first_row <- match(ids, ids[first])
+  if (is.character(ys)) ys <- factor(ys)
+  if (is.ordered(ys)) ys <- factor(ys, levels = levels(ys), ordered = FALSE)
+  lag <- ys[previous]
+  lag[!ok] <- NA
+  initial <- ys[first][first_row]
+  # undo the sort
+  back <- order(o)
+  data[[lag_name]] <- lag[back]
+  data[[initial_name]] <- initial[back]
+  keep <- ok[back] & !first[back]
+  if (!any(keep)) stop("no row has an observed previous wave", call. = FALSE)
+  term_labels <- attr(stats::terms(formula), "term.labels")
+  new_formula <- stats::reformulate(c(term_labels, lag_name, initial_name), response = yname,
+                                    intercept = attr(stats::terms(formula), "intercept") == 1L)
+  environment(new_formula) <- environment(formula)
+  list(formula = new_formula, data = data[keep, , drop = FALSE],
+       weights = if (is.null(weights)) NULL else weights[keep],
+       offset = if (is.null(offset)) NULL else offset[keep],
+       info = list(response = yname, lag = lag_name, initial = initial_name,
+                   dropped = sum(!keep)))
 }
