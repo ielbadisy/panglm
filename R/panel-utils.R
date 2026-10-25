@@ -34,7 +34,9 @@ build_panel_index <- function(data, index) {
   # directly (no as.character() coercion needed for an atomic id column, so
   # none of the R-level overhead the earlier data.table::rleidv() swap
   # avoided applies here).
-  group_size <- as.integer(rle(df[[id_col]])$lengths)
+  id_sorted <- df[[id_col]]
+  # rle() needs an atomic vector: a factor id runs on its codes
+  group_size <- as.integer(rle(if (is.factor(id_sorted)) as.integer(id_sorted) else id_sorted)$lengths)
   group_start <- as.integer(c(0L, cumsum(group_size)[-length(group_size)]))
   group_values <- df[[id_col]][group_start + 1L]
 

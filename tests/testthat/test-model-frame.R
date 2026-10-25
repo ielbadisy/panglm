@@ -114,3 +114,17 @@ test_that("invalid response domains fail before numerical fitting", {
     "must be nonnegative"
   )
 })
+
+test_that("a factor individual index gives the same fit as its character codes", {
+  set.seed(303)
+  d <- data.frame(id = rep(c("b", "a", "c", "d"), each = 5), time = rep(1:5, 4))
+  d$x <- stats::rnorm(20)
+  d$y <- d$x + rep(stats::rnorm(4), each = 5) + stats::rnorm(20)
+  a <- panglm(y ~ x, d, index = c("id", "time"), model = "within")
+  d$id <- factor(d$id, levels = c("d", "c", "b", "a"))
+  b <- panglm(y ~ x, d, index = c("id", "time"), model = "within")
+  expect_equal(coef(b), coef(a), tolerance = 1e-12)
+  expect_equal(nobs(b), 20L)
+  expect_equal(sum(b$group_size), 20L)
+  expect_length(b$group_size, 4L)
+})
