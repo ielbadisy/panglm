@@ -88,7 +88,15 @@ print.summary.panglm <- function(x, digits = max(3, getOption("digits") - 3), ..
         format(x$cre_test$statistic, digits = digits), ", p = ",
         format.pval(x$cre_test$p.value, digits = digits), "\n", sep = "")
   }
-  cat("Residual df:", x$df.residual, " Iterations:", x$iterations, "\n\n")
+  # the residual df is not defined for every estimator (e.g. the conditional
+  # logit), so it is only printed when it is a number
+  df_line <- c(if (length(x$df.residual) == 1L && is.finite(x$df.residual)) {
+    paste("Residual df:", x$df.residual)
+  }, if (length(x$iterations) == 1L && !is.na(x$iterations)) {
+    paste("Iterations:", x$iterations)
+  })
+  if (length(df_line)) cat(paste(df_line, collapse = "  "), "\n", sep = "")
+  cat("\n")
   invisible(x)
 }
 

@@ -52,7 +52,8 @@ points (\code{TRUE}) or drop those observations (\code{FALSE})}
 an object of class \code{"panglm_eventstudy"}: a list with \code{fit} (the
 \code{\link[=panglm]{panglm()}} fit), \code{estimates} (a data frame with \code{event}, \code{estimate},
 \code{se}, \code{lower}, \code{upper}; the reference row is zero) and \code{pretrend} (the
-joint test of the leads, from \code{\link[=jointtest]{jointtest()}}). Methods: \code{print}, \code{summary},
+joint test of the leads, from \code{\link[=jointtest]{jointtest()}}) and \code{call} (the
+\code{eventstudy()} call, also stored as the \code{call} of \code{fit}). Methods: \code{print}, \code{summary},
 \code{coef}, \code{vcov}, \code{confint}, \code{logLik}, \code{nobs}, \code{plot}, \code{tidy} and \code{glance}.
 }
 \description{

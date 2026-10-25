@@ -144,3 +144,27 @@ test_that("did() and eventstudy() reject bad input", {
   expect_error(did(y ~ x, d3, c("id", "year"), "first"), "numeric")
   expect_error(eventstudy(y ~ x, d, c("id", "year"), "first", leads = 2, ref = -5), "window")
 })
+
+test_that("did() and eventstudy() summaries show the user's call, not the internal one", {
+  d <- did_panel(3)
+  d$bin <- as.numeric(d$y > median(d$y))
+  fit <- did(y ~ x, data = d, index = c("id", "year"), treat = "first")
+  expect_identical(fit$call[[1]], as.name("did"))
+  out <- paste(capture.output(summary(fit)), collapse = "\n")
+  expect_match(out, "did(formula = y ~ x", fixed = TRUE)
+  expect_no_match(out, "formula = f", fixed = TRUE)
+  expect_match(out, "Residual df:", fixed = TRUE)
+  # conditional logit: no residual df, so the line is not printed
+  fitb <- did(bin ~ x, data = d, index = c("id", "year"), treat = "first",
+              family = "binomial")
+  outb <- paste(capture.output(summary(fitb)), collapse = "\n")
+  expect_match(outb, "did(formula = bin ~ x", fixed = TRUE)
+  expect_no_match(outb, "Residual df: NA", fixed = TRUE)
+  expect_no_match(outb, "NA", fixed = TRUE)
+  es <- eventstudy(y ~ x, data = d, index = c("id", "year"), treat = "first",
+                   leads = 2, lags = 2)
+  expect_identical(es$call[[1]], as.name("eventstudy"))
+  expect_identical(summary(es)$call[[1]], as.name("eventstudy"))
+  expect_match(paste(capture.output(summary(es$fit)), collapse = "\n"),
+               "eventstudy(formula = y ~ x", fixed = TRUE)
+})

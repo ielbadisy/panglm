@@ -65,8 +65,8 @@ did_timing <- function(data, index, treat) {
 #' @param ... further arguments passed to [panglm()]
 #' @return a [panglm()] fit whose coefficient `treated` is the DiD estimate (a
 #'   log odds ratio for `family = "binomial"`), with a component `did` (number
-#'   of treated and never-treated individuals, treatment cohorts). All
-#'   [panglm()] methods apply.
+#'   of treated and never-treated individuals, treatment cohorts). Its
+#'   `call` is the `did()` call. All [panglm()] methods apply.
 #' @references Goodman-Bacon, A. (2021). Difference-in-differences with
 #'   variation in treatment timing. *Journal of Econometrics*, 225, 254-277.
 #'   \doi{10.1016/j.jeconom.2021.03.014}
@@ -112,6 +112,8 @@ did <- function(formula, data, index, treat, family = "gaussian",
   f <- stats::update(formula, . ~ treated + .)
   fit <- panglm(f, data = data, index = index, model = "within", family = family,
                 effect = "twoways", vcov = vcov, ...)
+  # report the user's did() call, not the internal panglm() call
+  fit$call <- match.call()
   ids <- data[[index[1]]]
   fit$did <- list(treat = treat,
                   treated_units = length(unique(ids[timing$ever])),
@@ -153,7 +155,8 @@ did <- function(formula, data, index, treat, family = "gaussian",
 #' @return an object of class `"panglm_eventstudy"`: a list with `fit` (the
 #'   [panglm()] fit), `estimates` (a data frame with `event`, `estimate`,
 #'   `se`, `lower`, `upper`; the reference row is zero) and `pretrend` (the
-#'   joint test of the leads, from [jointtest()]). Methods: `print`, `summary`,
+#'   joint test of the leads, from [jointtest()]) and `call` (the
+#'   `eventstudy()` call, also stored as the `call` of `fit`). Methods: `print`, `summary`,
 #'   `coef`, `vcov`, `confint`, `logLik`, `nobs`, `plot`, `tidy` and `glance`.
 #' @references Freyaldenhoven, S., Hansen, C. and Shapiro, J. M. (2019).
 #'   Pre-event trends in the panel event-study design. *American Economic
@@ -210,6 +213,7 @@ eventstudy <- function(formula, data, index, treat, leads = 4, lags = 4, ref = -
   f <- stats::update(formula, stats::as.formula(paste(". ~", rhs)))
   fit <- panglm(f, data = data, index = index, model = "within", family = family,
                 effect = "twoways", vcov = vcov, ...)
+  fit$call <- match.call()
   b <- stats::coef(fit); V <- stats::vcov(fit)
   kept <- names_e %in% names(b)
   est <- rep(NA_real_, length(events)); se <- est
@@ -225,7 +229,7 @@ eventstudy <- function(formula, data, index, treat, leads = 4, lags = 4, ref = -
   pretrend <- if (length(lead_terms)) jointtest(fit, terms = lead_terms) else NULL
   if (!is.null(pretrend)) pretrend$hypothesis <- "no pre-treatment differences in trends"
   structure(list(fit = fit, estimates = tab, pretrend = pretrend, ref = ref,
-                 leads = leads, lags = lags, bin = bin, level = level),
+                 leads = leads, lags = lags, bin = bin, level = level, call = fit$call),
             class = "panglm_eventstudy")
 }
 
