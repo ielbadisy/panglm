@@ -57,6 +57,7 @@ Suggests:
     quantreg,
     generics,
     broom,
+    modelsummary,
     did,
     etwfe,
     knitr,
