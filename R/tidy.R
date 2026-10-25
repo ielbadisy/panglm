@@ -56,7 +56,7 @@ or_na <- function(x, type = NA_real_) if (is.null(x) || !length(x)) type else x
 #'
 #' Implement the `generics::tidy()` and `generics::glance()` generics for the
 #' fits of [twopart()], [pangmm()], [paniv()], [panqr()], [panselect()],
-#' [panfmm()], [attgt()], [etwfe()] and [eventstudy()], and for the test
+#' [panfmm()], [attgt()], [etwfe()] and [eventstudy()], the hurdle model, and for the test
 #' objects of the Hausman, joint Wald and dispersion tests, so that they work
 #' with `broom` and `modelsummary`.
 #'
