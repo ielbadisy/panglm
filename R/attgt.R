@@ -69,6 +69,13 @@
 #' @param anticipation number of periods before `g` in which treatment can
 #'   already affect the outcome (the base period moves back accordingly)
 #' @param level confidence level of the reported intervals
+#' @param weights optional sampling weights: the name of a column of `data`
+#'   or a numeric vector with one value per row of `data`. They must be
+#'   non-negative and constant within each individual (rows with a missing
+#'   weight are dropped). The weights enter the propensity score, the
+#'   outcome regression and the means of every `ATT(g, t)`, and the cohort
+#'   shares used by the aggregations, as `weightsname` in
+#'   `did::att_gt()`.
 #' @return an object of class `"panglm_attgt"`: a list with `estimates` (a
 #'   data frame with `group`, `time`, `event` (`time - group`), `estimate`,
 #'   `se`, `lower`, `upper` and `post`), `inf` (the matrix of influence
@@ -115,7 +122,7 @@
 #' @export
 attgt <- function(formula, data, index, treat, control = c("never", "notyet"),
                   method = c("dr", "ipw", "reg"), base = c("varying", "universal"),
-                  anticipation = 0, level = 0.95) {
+                  anticipation = 0, level = 0.95, weights = NULL) {
   control <- match.arg(control)
   method <- match.arg(method)
   base <- match.arg(base)
@@ -124,7 +131,8 @@ attgt <- function(formula, data, index, treat, control = c("never", "notyet"),
   }
   data <- as.data.frame(data)
   did_timing(data, index, treat)
-  prep <- attgt_prepare(formula, data, index, treat, control, anticipation)
+  wv <- did_weights(weights, data)
+  prep <- attgt_prepare(formula, data, index, treat, control, anticipation, wv)
   n <- prep$n
   tlist <- prep$periods
   glist <- prep$groups
@@ -157,7 +165,7 @@ attgt <- function(formula, data, index, treat, control = c("never", "notyet"),
         NULL
       } else {
         X <- prep$X[[min(tc, b)]][keep, , drop = FALSE]
-        tryCatch(attgt_2x2(prep$Y[keep, tc] - prep$Y[keep, b], D, X, method),
+        tryCatch(attgt_2x2(prep$Y[keep, tc] - prep$Y[keep, b], D, X, method, prep$W[keep]),
                  error = function(e) {
                    warning("ATT(g, t) for group ", g, " in period ", tlist[tc],
                            " set to NA: ", conditionMessage(e), call. = FALSE)
@@ -200,10 +208,10 @@ attgt <- function(formula, data, index, treat, control = c("never", "notyet"),
     }
   }
   structure(list(estimates = est, inf = inf,
-                 units = data.frame(id = prep$ids, group = G),
+                 units = data.frame(id = prep$ids, group = G, weight = prep$W),
                  pretrend = pretrend, n = n, groups = glist, periods = tlist,
                  control = control, method = method, base = base,
-                 anticipation = anticipation, level = level,
+                 anticipation = anticipation, level = level, weighted = !is.null(wv),
                  covariates = prep$covariates, outcome = prep$outcome,
                  dropped = prep$dropped, call = match.call()),
             class = "panglm_attgt")
@@ -213,7 +221,7 @@ attgt <- function(formula, data, index, treat, control = c("never", "notyet"),
 #'
 #' @keywords internal
 #' @noRd
-attgt_prepare <- function(formula, data, index, treat, control, anticipation) {
+attgt_prepare <- function(formula, data, index, treat, control, anticipation, wv = NULL) {
   formula <- stats::as.formula(formula)
   if (length(formula) != 3L) stop("'formula' must have an outcome, e.g. y ~ 1", call. = FALSE)
   rhs <- stats::delete.response(stats::terms(formula))
@@ -224,6 +232,7 @@ attgt_prepare <- function(formula, data, index, treat, control, anticipation) {
     stop("column(s) not found in data: ", paste(missing_vars, collapse = ", "), call. = FALSE)
   }
   ok <- stats::complete.cases(data[, vars, drop = FALSE])
+  if (!is.null(wv)) ok <- ok & !is.na(wv)
   mf <- stats::model.frame(formula, data = data[ok, , drop = FALSE], na.action = stats::na.pass)
   y <- stats::model.response(mf)
   if (!is.numeric(y) && !is.logical(y)) stop("the outcome must be numeric", call. = FALSE)
@@ -238,6 +247,7 @@ attgt_prepare <- function(formula, data, index, treat, control, anticipation) {
   id <- data[[index[1]]][ok]
   time <- data[[index[2]]][ok]
   first <- data[[treat]][ok]
+  wt <- if (is.null(wv)) rep(1, length(id)) else wv[ok]
   first[is.na(first) | !is.finite(first) | first == 0] <- 0
   y <- as.numeric(y[fin])
   X <- X[fin, , drop = FALSE]
@@ -270,7 +280,7 @@ attgt_prepare <- function(formula, data, index, treat, control, anticipation) {
     dropped$early <- length(unique(id[early & keep]))
   }
   keep <- keep & !early
-  id <- id[keep]; time <- time[keep]; first <- first[keep]; y <- y[keep]
+  id <- id[keep]; time <- time[keep]; first <- first[keep]; y <- y[keep]; wt <- wt[keep]
   X <- X[keep, , drop = FALSE]
   tlist <- sort(unique(time))
   nT <- length(tlist)
@@ -282,9 +292,10 @@ attgt_prepare <- function(formula, data, index, treat, control, anticipation) {
             "and are dropped to balance the panel", call. = FALSE)
     dropped$unbalanced <- length(counts) - length(full)
   }
-  id <- id[bal]; time <- time[bal]; first <- first[bal]; y <- y[bal]
+  id <- id[bal]; time <- time[bal]; first <- first[bal]; y <- y[bal]; wt <- wt[bal]
   X <- X[bal, , drop = FALSE]
   if (!length(id)) stop("no individuals left after balancing the panel", call. = FALSE)
+  if (!is.null(wv)) did_constant(wt, id, "weights")
   ids <- sort(unique(id))
   n <- length(ids)
   row <- match(id, ids)
@@ -299,11 +310,17 @@ attgt_prepare <- function(formula, data, index, treat, control, anticipation) {
   })
   G <- numeric(n)
   G[row] <- first
+  W <- numeric(n)
+  W[row] <- wt
+  if (!is.null(wv)) {
+    if (!(mean(W) > 0)) stop("the weights must have a positive mean", call. = FALSE)
+    W <- W / mean(W)
+  }
   glist <- sort(unique(G[G > 0]))
   if (control == "notyet" && !any(G == 0) && length(glist)) glist <- glist[glist < max(G)]
   glist <- glist[glist > tlist[1] + anticipation]
   if (!length(glist)) stop("no treated cohort with a pre-treatment period", call. = FALSE)
-  list(Y = Y, X = Xs, G = G, ids = ids, n = n, periods = tlist, groups = glist,
+  list(Y = Y, X = Xs, G = G, W = W, ids = ids, n = n, periods = tlist, groups = glist,
        outcome = outcome, covariates = setdiff(colnames(X), "(Intercept)"), dropped = dropped)
 }
 
@@ -311,37 +328,43 @@ attgt_prepare <- function(formula, data, index, treat, control, anticipation) {
 #'
 #' Outcome regression, normalized IPW and the doubly robust estimator of
 #' Sant'Anna and Zhao (2020), as in DRDID::reg_did_panel(),
-#' DRDID::std_ipw_did_panel() and DRDID::drdid_panel() with unit weights.
+#' DRDID::std_ipw_did_panel() and DRDID::drdid_panel() with sampling
+#' weights `w` (normalized to mean one in the subsample, as in DRDID).
 #'
 #' @keywords internal
 #' @noRd
-attgt_2x2 <- function(dy, D, X, method, trim = 0.995) {
+attgt_2x2 <- function(dy, D, X, method, w = NULL, trim = 0.995) {
   n <- length(D)
   control <- D == 0
+  if (is.null(w)) w <- rep(1, n)
+  if (!(mean(w) > 0) || !(sum(w * D) > 0) || !(sum(w * (1 - D)) > 0)) {
+    stop("the treated or the control units have zero total weight", call. = FALSE)
+  }
+  w <- w / mean(w)
   need_or <- method %in% c("dr", "reg")
   need_ps <- method %in% c("dr", "ipw")
   if (need_or) {
-    Xc <- X[control, , drop = FALSE]
-    qx <- qr(Xc)
+    sw <- sqrt(w[control])
+    qx <- qr(sw * X[control, , drop = FALSE])
     if (qx$rank < ncol(X)) stop("outcome regression design is singular", call. = FALSE)
-    beta <- qr.coef(qx, dy[control])
+    beta <- qr.coef(qx, sw * dy[control])
     fitted <- as.numeric(X %*% beta)
-    XpX <- crossprod(X[control, , drop = FALSE]) / n
-    lin_or <- ((1 - D) * (dy - fitted) * X) %*% solve(XpX)
+    XpX <- crossprod(X, w * (1 - D) * X) / n
+    lin_or <- (w * (1 - D) * (dy - fitted) * X) %*% solve(XpX)
   }
   if (need_ps) {
-    ps_fit <- suppressWarnings(stats::glm.fit(X, D, family = stats::binomial(),
+    ps_fit <- suppressWarnings(stats::glm.fit(X, D, weights = w, family = stats::binomial(),
                                               control = list(epsilon = 1e-14, maxit = 100)))
     if (anyNA(ps_fit$coefficients)) stop("propensity score design is singular", call. = FALSE)
     if (!ps_fit$converged) warning("propensity score estimation did not converge", call. = FALSE)
     ps <- pmin(as.numeric(ps_fit$fitted.values), 1 - 1e-6)
     trimmed <- rep(TRUE, n)
     trimmed[control] <- ps[control] < trim
-    H <- crossprod(X, ps * (1 - ps) * X)
-    lin_ps <- ((D - ps) * X) %*% (chol2inv(chol(H)) * n)
+    H <- crossprod(X, w * ps * (1 - ps) * X)
+    lin_ps <- (w * (D - ps) * X) %*% (chol2inv(chol(H)) * n)
   }
   if (method == "reg") {
-    w1 <- D
+    w1 <- w * D
     eta1 <- mean(w1 * dy) / mean(w1)
     eta0 <- mean(w1 * fitted) / mean(w1)
     M1 <- colSums(w1 * X) / n
@@ -349,8 +372,8 @@ attgt_2x2 <- function(dy, D, X, method, trim = 0.995) {
     inf0 <- (w1 * fitted - w1 * eta0 + as.numeric(lin_or %*% M1)) / mean(w1)
     return(list(att = eta1 - eta0, inf = inf1 - inf0))
   }
-  w1 <- trimmed * D
-  w0 <- trimmed * ps * (1 - D) / (1 - ps)
+  w1 <- trimmed * w * D
+  w0 <- trimmed * w * ps * (1 - D) / (1 - ps)
   if (method == "ipw") {
     eta1 <- mean(w1 * dy) / mean(w1)
     eta0 <- mean(w0 * dy) / mean(w0)
@@ -427,13 +450,14 @@ summary.panglm_attgt <- function(object, type = c("simple", "dynamic", "group", 
   inf <- object$inf[, ok, drop = FALSE]
   n <- object$n
   Gu <- object$units$group
+  wu <- if (is.null(object$units$weight)) rep(1, n) else object$units$weight
   att <- est$estimate
   grp <- est$group
-  pg_all <- vapply(object$groups, function(g) mean(Gu == g), numeric(1))
+  pg_all <- vapply(object$groups, function(g) mean(wu * (Gu == g)), numeric(1))
   pg <- pg_all[match(grp, object$groups)]
   wif <- function(keep, p, gg) {
     S <- sum(p[keep])
-    centered <- vapply(keep, function(k) as.numeric(Gu == gg[k]) - p[k], numeric(n))
+    centered <- vapply(keep, function(k) wu * (Gu == gg[k]) - p[k], numeric(n))
     centered <- matrix(centered, nrow = n)
     centered / S - rowSums(centered) %*% t(p[keep] / S^2)
   }
@@ -629,4 +653,41 @@ plot.summary.panglm_attgt <- function(x, type = NULL, xlab = NULL, ylab = "ATT",
   graphics::abline(h = 0, lty = 3)
   if (x$type == "dynamic") graphics::abline(v = -0.5, lty = 2)
   invisible(x)
+}
+
+#' Sampling weights for attgt() and etwfe()
+#'
+#' Returns `NULL` or a numeric vector with one weight per row of `data`.
+#'
+#' @keywords internal
+#' @noRd
+did_weights <- function(weights, data) {
+  if (is.null(weights)) return(NULL)
+  if (is.character(weights) && length(weights) == 1L) {
+    if (!weights %in% names(data)) {
+      stop("weights column '", weights, "' not found in data", call. = FALSE)
+    }
+    weights <- data[[weights]]
+  }
+  if (!is.numeric(weights) || length(weights) != nrow(data)) {
+    stop("'weights' must be a column name or a numeric vector with one value per row of data",
+         call. = FALSE)
+  }
+  weights <- as.numeric(weights)
+  if (any(!is.na(weights) & (weights < 0 | !is.finite(weights)))) {
+    stop("the weights must be finite and non-negative", call. = FALSE)
+  }
+  weights
+}
+
+#' Check that a variable is constant within individuals
+#'
+#' @keywords internal
+#' @noRd
+did_constant <- function(v, id, what) {
+  rng <- tapply(v, id, function(x) max(x) - min(x))
+  if (any(rng > sqrt(.Machine$double.eps) * pmax(1, tapply(abs(v), id, max)))) {
+    stop("'", what, "' must be constant within individuals", call. = FALSE)
+  }
+  invisible(TRUE)
 }

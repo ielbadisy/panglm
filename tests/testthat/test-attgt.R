@@ -72,3 +72,46 @@ test_that("attgt matches did::att_gt and did::aggte", {
     }
   }
 })
+
+test_that("attgt sampling weights: constant weights change nothing, varying ones are rejected", {
+  d <- att_panel(3)
+  fit <- attgt(y ~ x, d, c("id", "year"), "first")
+  d$w2 <- 2.5
+  fw <- attgt(y ~ x, d, c("id", "year"), "first", weights = "w2")
+  expect_equal(fw$estimates$estimate, fit$estimates$estimate, tolerance = 1e-10)
+  expect_equal(fw$estimates$se, fit$estimates$se, tolerance = 1e-10)
+  expect_equal(summary(fw, type = "dynamic")$estimates, summary(fit, type = "dynamic")$estimates,
+               tolerance = 1e-10)
+  d$wv <- runif(nrow(d))
+  expect_error(attgt(y ~ x, d, c("id", "year"), "first", weights = "wv"), "constant within")
+  expect_error(attgt(y ~ x, d, c("id", "year"), "first", weights = -d$w2), "non-negative")
+  expect_error(attgt(y ~ x, d, c("id", "year"), "first", weights = "nope"), "not found")
+  # unit weights of 2 for half the units move the estimates
+  d$wu <- ifelse(d$id %% 2 == 0, 2, 1)
+  fu <- attgt(y ~ x, d, c("id", "year"), "first", weights = d$wu)
+  expect_false(isTRUE(all.equal(fu$estimates$estimate, fit$estimates$estimate)))
+})
+
+test_that("weighted attgt matches did::att_gt(weightsname = )", {
+  skip_if_not_installed("did")
+  data(mpdta, package = "did")
+  set.seed(4)
+  wc <- stats::setNames(runif(500, 0.2, 3), unique(mpdta$countyreal))
+  mpdta$w <- unname(wc[as.character(mpdta$countyreal)])
+  for (cg in c("never", "notyet")) for (m in c("dr", "ipw")) {
+    ref <- did::att_gt("lemp", tname = "year", idname = "countyreal", gname = "first.treat",
+                       xformla = ~lpop, data = mpdta, est_method = m, bstrap = FALSE,
+                       cband = FALSE, weightsname = "w",
+                       control_group = if (cg == "never") "nevertreated" else "notyettreated")
+    fit <- attgt(lemp ~ lpop, mpdta, c("countyreal", "year"), "first.treat",
+                 control = cg, method = m, weights = "w")
+    expect_equal(fit$estimates$estimate, ref$att, tolerance = 1e-8)
+    expect_equal(fit$estimates$se, ref$se, tolerance = 1e-6)
+    for (type in c("simple", "dynamic", "group")) {
+      ag <- did::aggte(ref, type = type, bstrap = FALSE, cband = FALSE)
+      s <- summary(fit, type = type)
+      expect_equal(s$overall$estimate, ag$overall.att, tolerance = 1e-8)
+      expect_equal(s$overall$se, ag$overall.se, tolerance = 1e-6)
+    }
+  }
+})

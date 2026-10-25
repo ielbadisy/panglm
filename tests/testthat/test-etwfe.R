@@ -68,3 +68,30 @@ test_that("etwfe matches etwfe::etwfe and etwfe::emfx", {
     }
   }
 })
+
+test_that("etwfe sampling weights", {
+  d <- et_panel(3)
+  fit <- etwfe(y ~ x, d, c("id", "year"), "first")
+  d$w2 <- 3
+  fw <- etwfe(y ~ x, d, c("id", "year"), "first", weights = "w2")
+  expect_equal(summary(fw, type = "event")$estimates, summary(fit, type = "event")$estimates,
+               tolerance = 1e-8)
+  d$wv <- runif(nrow(d), 0.5, 2)
+  p <- etwfe(cnt ~ 1, d, c("id", "year"), "first", family = "poisson", weights = d$wv)
+  expect_true(is.finite(summary(p)$overall$estimate))
+  expect_error(etwfe(y ~ 1, d, c("id", "year"), "first", weights = -d$wv), "non-negative")
+  skip_if_not_installed("etwfe")
+  data(mpdta, package = "did")
+  set.seed(5)
+  mpdta$w <- runif(nrow(mpdta), 0.2, 3)
+  ref <- suppressMessages(etwfe::etwfe(lemp ~ lpop, tvar = year, gvar = first.treat, data = mpdta,
+                                       vcov = ~countyreal, weights = ~w))
+  fit <- etwfe(lemp ~ lpop, mpdta, c("countyreal", "year"), "first.treat", weights = "w")
+  for (type in c("simple", "event")) {
+    e <- etwfe::emfx(ref, type = type, wts = "w")
+    s <- summary(fit, type = type)
+    tab <- if (type == "simple") s$overall else s$estimates
+    expect_equal(tab$estimate, e$estimate, tolerance = 1e-8)
+    expect_equal(tab$se, e$std.error, tolerance = 1e-6)
+  }
+})

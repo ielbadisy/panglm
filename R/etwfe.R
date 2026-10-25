@@ -62,6 +62,13 @@
 #'   `G / (G - 1) * (n - 1) / (n - k)` with `k` counting all coefficients,
 #'   cohort and period dummies included.
 #' @param level confidence level of the reported intervals
+#' @param weights optional sampling weights: the name of a column of `data`
+#'   or a non-negative numeric vector with one value per row (rows with a
+#'   missing weight are dropped). They weight the quasi-likelihood (as
+#'   `weights = ~w` in `etwfe::etwfe()` and `fixest`) and the averages of
+#'   the treatment effects over the treated observations in
+#'   [summary.panglm_etwfe()] (as `wts` in `etwfe::emfx()`). The centring
+#'   of the controls at their cohort means is unweighted, as in `etwfe`.
 #' @return an object of class `"panglm_etwfe"`: a list with
 #'   `coefficients`, `vcov`, `cells` (a data frame of the cohort by period
 #'   cells with their coefficient on the index scale), `family`, `control`,
@@ -105,7 +112,7 @@
 etwfe <- function(formula, data, index, treat,
                   family = c("gaussian", "poisson", "binomial", "logit"),
                   control = c("notyet", "never"), vcov = c("cluster", "classical"),
-                  level = 0.95) {
+                  level = 0.95, weights = NULL) {
   family <- match.arg(family)
   if (family == "logit") family <- "binomial"
   control <- match.arg(control)
@@ -119,9 +126,12 @@ etwfe <- function(formula, data, index, treat,
   if (length(missing_vars)) {
     stop("column(s) not found in data: ", paste(missing_vars, collapse = ", "), call. = FALSE)
   }
+  wv <- did_weights(weights, data)
   ok <- stats::complete.cases(data[, vars, drop = FALSE])
+  if (!is.null(wv)) ok <- ok & !is.na(wv)
   if (!all(ok)) warning("dropped ", sum(!ok), " rows with missing values", call. = FALSE)
   data <- data[ok, , drop = FALSE]
+  wt <- if (is.null(wv)) rep(1, nrow(data)) else wv[ok]
   mf <- stats::model.frame(formula, data = data)
   y <- as.numeric(stats::model.response(mf))
   fam <- switch(family, gaussian = stats::gaussian(), poisson = stats::poisson(),
@@ -161,7 +171,8 @@ etwfe <- function(formula, data, index, treat,
   } else {
     stop("control = 'never' needs never-treated individuals", call. = FALSE)
   }
-  id <- id[keep]; time <- time[keep]; first <- first[keep]; y <- y[keep]
+  id <- id[keep]; time <- time[keep]; first <- first[keep]; y <- y[keep]; wt <- wt[keep]
+  if (!(sum(wt) > 0)) stop("the weights must have a positive sum", call. = FALSE)
   ctrl <- ctrl[keep, , drop = FALSE]; ctrl_dm <- ctrl_dm[keep, , drop = FALSE]
   tlist <- sort(unique(time))
   tref <- min(tlist)
@@ -208,23 +219,23 @@ etwfe <- function(formula, data, index, treat,
              Dc, inter(Dc, ctrl_dm))
   is_cell <- colnames(X) %in% c(cells$name, colnames(inter(Dc, ctrl_dm)))
 
-  fit <- etwfe_fit(X, y, fam)
+  fit <- etwfe_fit(X, y, fam, wt)
   X <- X[, fit$keep, drop = FALSE]
   is_cell <- is_cell[fit$keep]
   b <- fit$coefficients
   eta <- as.numeric(X %*% b)
   mu <- fam$linkinv(eta)
-  w <- fam$mu.eta(eta)^2 / fam$variance(mu)
+  w <- wt * fam$mu.eta(eta)^2 / fam$variance(mu)
   XtWX <- crossprod(X, w * X)
   bread <- chol2inv(chol(XtWX))
   k <- ncol(X)
   G <- length(unique(id))
   if (vcov == "cluster") {
-    score <- X * ((y - mu) * fam$mu.eta(eta) / fam$variance(mu))
+    score <- X * (wt * (y - mu) * fam$mu.eta(eta) / fam$variance(mu))
     meat <- crossprod(rowsum(score, id))
     V <- bread %*% meat %*% bread * (G / (G - 1)) * ((n - 1) / (n - k))
   } else {
-    disp <- if (family == "gaussian") sum((y - mu)^2) / (n - k) else 1
+    disp <- if (family == "gaussian") sum(wt * (y - mu)^2) / (n - k) else 1
     V <- bread * disp
   }
   dimnames(V) <- list(colnames(X), colnames(X))
@@ -236,6 +247,7 @@ etwfe <- function(formula, data, index, treat,
 
   structure(list(coefficients = b, vcov = V, vcov_type = vcov, cells = cells,
                  family = fam, control = control, reference = gref, X = X, y = y,
+                 weights = if (is.null(wv)) NULL else wt,
                  is_cell = is_cell,
                  rows = data.frame(id = id, time = time, group = first, cell = has),
                  nobs = n, n_groups = G, level = level, outcome = all.vars(formula[[2]]),
@@ -247,12 +259,12 @@ etwfe <- function(formula, data, index, treat,
 #'
 #' @keywords internal
 #' @noRd
-etwfe_fit <- function(X, y, fam) {
+etwfe_fit <- function(X, y, fam, wt = NULL) {
   keep <- rep(TRUE, ncol(X))
   q <- qr(X)
   if (q$rank < ncol(X)) keep[q$pivot[seq.int(q$rank + 1L, ncol(X))]] <- FALSE
   Xk <- X[, keep, drop = FALSE]
-  fit <- suppressWarnings(stats::glm.fit(Xk, y, family = fam,
+  fit <- suppressWarnings(stats::glm.fit(Xk, y, weights = wt, family = fam,
                                          control = list(epsilon = 1e-12, maxit = 100)))
   if (!fit$converged) warning("the model did not converge", call. = FALSE)
   list(coefficients = stats::setNames(fit$coefficients, colnames(Xk)), keep = keep,
@@ -266,7 +278,8 @@ etwfe_fit <- function(X, y, fam) {
 #' effect (on the response scale). The averages are taken over all treated
 #' observations (`"simple"`), by cohort (`"group"`), by calendar period
 #' (`"calendar"`) or by time since treatment (`"event"`), with delta-method
-#' standard errors. They correspond to `etwfe::emfx()`. With
+#' standard errors. With sampling weights in [etwfe()], the averages are
+#' weighted. They correspond to `etwfe::emfx()`. With
 #' `control = "never"`, the event study also reports the pre-treatment
 #' placebo effects, with event time `-1` as the reference (zero).
 #'
@@ -315,6 +328,7 @@ etwfe_ate <- function(object, use, key, level, overall = FALSE) {
   X0[, object$is_cell] <- 0
   b <- object$coefficients
   fam <- object$family
+  wt <- if (is.null(object$weights)) NULL else object$weights[use]
   eta1 <- as.numeric(X1 %*% b)
   eta0 <- as.numeric(X0 %*% b)
   effect <- fam$linkinv(eta1) - fam$linkinv(eta0)
@@ -323,8 +337,14 @@ etwfe_ate <- function(object, use, key, level, overall = FALSE) {
   z <- stats::qnorm(1 - (1 - level) / 2)
   rows <- lapply(lev, function(l) {
     s <- key == l
-    est <- mean(effect[s])
-    g <- colMeans(grad[s, , drop = FALSE])
+    if (is.null(wt)) {
+      est <- mean(effect[s])
+      g <- colMeans(grad[s, , drop = FALSE])
+    } else {
+      ws <- wt[s] / sum(wt[s])
+      est <- sum(ws * effect[s])
+      g <- colSums(ws * grad[s, , drop = FALSE])
+    }
     se <- sqrt(max(0, as.numeric(t(g) %*% object$vcov %*% g)))
     c(level = l, estimate = est, se = se)
   })

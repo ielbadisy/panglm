@@ -12,7 +12,8 @@ etwfe(
   family = c("gaussian", "poisson", "binomial", "logit"),
   control = c("notyet", "never"),
   vcov = c("cluster", "classical"),
-  level = 0.95
+  level = 0.95,
+  weights = NULL
 )
 }
 \arguments{
@@ -37,6 +38,14 @@ The cluster covariance uses the factor
 cohort and period dummies included.}
 
 \item{level}{confidence level of the reported intervals}
+
+\item{weights}{optional sampling weights: the name of a column of `data`
+or a non-negative numeric vector with one value per row (rows with a
+missing weight are dropped). They weight the quasi-likelihood (as
+`weights = ~w` in `etwfe::etwfe()` and `fixest`) and the averages of
+the treatment effects over the treated observations in
+[summary.panglm_etwfe()] (as `wts` in `etwfe::emfx()`). The centring
+of the controls at their cohort means is unweighted, as in `etwfe`.}
 }
 \value{
 an object of class `"panglm_etwfe"`: a list with

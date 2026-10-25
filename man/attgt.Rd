@@ -13,7 +13,8 @@ attgt(
   method = c("dr", "ipw", "reg"),
   base = c("varying", "universal"),
   anticipation = 0,
-  level = 0.95
+  level = 0.95,
+  weights = NULL
 )
 }
 \arguments{
@@ -42,6 +43,14 @@ with covariates}
 already affect the outcome (the base period moves back accordingly)}
 
 \item{level}{confidence level of the reported intervals}
+
+\item{weights}{optional sampling weights: the name of a column of `data`
+or a numeric vector with one value per row of `data`. They must be
+non-negative and constant within each individual (rows with a missing
+weight are dropped). The weights enter the propensity score, the
+outcome regression and the means of every `ATT(g, t)`, and the cohort
+shares used by the aggregations, as `weightsname` in
+`did::att_gt()`.}
 }
 \value{
 an object of class `"panglm_attgt"`: a list with `estimates` (a

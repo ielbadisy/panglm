@@ -32,7 +32,8 @@ predicted mean with and without the observation's cohort by period
 effect (on the response scale). The averages are taken over all treated
 observations (`"simple"`), by cohort (`"group"`), by calendar period
 (`"calendar"`) or by time since treatment (`"event"`), with delta-method
-standard errors. They correspond to `etwfe::emfx()`. With
+standard errors. With sampling weights in [etwfe()], the averages are
+weighted. They correspond to `etwfe::emfx()`. With
 `control = "never"`, the event study also reports the pre-treatment
 placebo effects, with event time `-1` as the reference (zero).
 }
