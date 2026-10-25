@@ -1,218 +1,137 @@
-# panglm (development version)
+# panglm 1.6.0
 
-* `panfmm()` gains `weights` (individual sampling weights, constant within
-  individuals; use `vcov = "cluster"` for design-based standard errors),
-  offsets (`offset()` in the formula or an `offset` argument) and probit
-  components (`family = "probit"`). The Poisson and binomial EM steps use a
-  warm-started IRLS (1.5 to 2.4 times faster, same optimum). Validated against
-  flexmix, `glm()`, `MASS::glm.nb()`, `sampleSelection::probit()` and
-  `sandwich::vcovCL()`.
+This release collects all changes since 1.1.4, the previous CRAN version.
+Every new estimator is validated against an established package; the help
+page of each model function names them in a "Validation" section.
 
-* GLM random slopes (`panglm(model = "random", random = ~ ...)`) now take any
-  number of slopes, with the quadrature nodes per dimension adapted to the
-  number of random effects (warning above 2000 nodes), and gain the `"negbin"`
-  (NB2) and `"gamma"` families with lognormal effects. Standard errors stay
-  finite when a variance is on the boundary, with a singular-fit warning.
-  Analytic scores make the fits 3 to 10 times faster with identical
-  estimates. Validated against glmmTMB and GLMMadaptive. The help page
-  explains that random-slope count models use lognormal mixing, unlike the
-  gamma or beta mixing of the random-intercept Poisson and negbin models.
+## Deprecations and changed behaviour
 
-* `did()` and `eventstudy()` support `family = "binomial"`: the two-way
-  conditional logit, with coefficients as log odds ratios. Validated against
-  `survival::clogit()` and `fixest::feglm()`.
-* `etwfe()` gains `xvar` (treatment effects by a numeric or logical
-  covariate, reported by `summary(byxvar = TRUE)`) and `ivar` (individual
-  instead of cohort fixed effects, gaussian only), matching
-  `etwfe::etwfe()` and `etwfe::emfx()` with and without weights. The help
-  page states that `etwfe()` weights may vary within individuals, unlike
-  `attgt()`.
+* Exported names no longer use underscores. The families are now
+  `gaussianfamily()`, `poissonfamily()`, `binomialfamily()`,
+  `negbinfamily()`, `gammafamily()`, `betafamily()`, `orderedfamily()` and
+  `tobitfamily()`; `panglm_hausman()`, `panglm_dispersiontest()` and
+  `panglm_hurdle()` are now `panhausman()`, `pandispersiontest()` and
+  `panhurdle()`. The old names still work and warn once per session; see
+  `?"panglm-deprecated"`. Result classes are unchanged.
+* `panhurdle()` takes `family =` instead of `count_family =`, and
+  `panqr()` takes `boot =` instead of `R =` and gains `seed`. The old
+  arguments still work with a deprecation warning.
+* `predict.panfmm(type = "class")` now returns the modal class label; the
+  class-specific means it returned before are `type = "components"`. A
+  message flags the change once per session.
 
-# panglm 1.5.0
+## New estimators
 
-* Between estimator: `model = "between"` (OLS on individual means) for the
-  Gaussian family, validated against `plm(model = "between")`.
-* Tobit: `tobit_family(left, right)` for outcomes censored at a floor and/or
-  a ceiling, pooled or with a random intercept (adaptive Gauss-Hermite
-  quadrature). `predict()` and `partialeffects()` work on the observed,
-  censored-mean scale. Validated against `AER::tobit()` and `censReg`.
-* Panel instrumental variables: `paniv()` for fixed-effects, random-effects
-  (G2SLS or EC2SLS), pooled 2SLS and the Hausman-Taylor estimator, with
-  first-stage F statistics, Sargan/Hansen tests and cluster covariances.
-  Validated against `plm(inst)` and `plm::pht()`.
-* Fixed-effects Poisson: the HC1 covariance (and clusters that cut across
-  individuals) now use the correctly centred scores and match
-  `fixest::fepois()`.
-* Two-way fixed-effects logit: `panglm(model = "within", family = "binomial",
-  effect = "twoways")` conditions out the individual effects and estimates
-  time effects as dummies in the conditional likelihood, as in
-  `survival::clogit(y ~ x + factor(time) + strata(id), method = "exact")`.
-  `coef()` holds the slopes; `fit$time_effects` and `fit$time_effects_se`
-  hold the time effects.
-* Dynamic panel GMM: `pangmm()` for Arellano-Bond difference GMM and
-  Blundell-Bond system GMM (one-step and two-step, robust and
-  Windmeijer-corrected SEs), with AR(1)/AR(2) tests, Sargan and Hansen J
-  tests, collapsed instruments (`collapse`) and lag-depth limits (`maxlag`).
-  Uses the `plm::pgmm()` formula syntax and is validated against it.
-* Staggered difference-in-differences: `attgt()` gives the Callaway and
-  Sant'Anna (2021) group-time ATTs (never- or not-yet-treated controls;
-  outcome regression, IPW or doubly robust; analytic influence-function
-  SEs), aggregated by `summary(type = "simple", "dynamic", "group" or
-  "calendar")` with a pre-trend Wald test and an event-study `plot()`.
-  Validated against `did::att_gt()` and `did::aggte()`.
-* Nonlinear difference-in-differences: `etwfe()` fits the Wooldridge (2023)
-  extended two-way FE model for linear, Poisson and logit outcomes and
-  reports ATTs on the response scale with delta-method SEs. Validated
-  against `etwfe::etwfe()` and `etwfe::emfx()`.
-* Panel sample selection: `panselect()` implements the Wooldridge (1995)
-  correction for attrition or death in cohort studies: per-period probits
-  with Mundlak means, inverse Mills ratio terms (by period or common) in a
-  fixed-effects or pooled Mundlak outcome equation, panel bootstrap SEs by
-  default and a Wald test of selection bias. Validated against `glm`, `plm`
-  and, for one period, `sampleSelection::heckit()`.
-* `pangmm()` warns when there are at least as many instruments as individuals
-  (too many instruments bias GMM toward OLS and weaken the Hansen test) and
-  says so in `summary()`; a singular weighting matrix now uses a generalized
-  inverse, as `plm::pgmm()` does, instead of failing; the AR test returns `NA`
-  instead of `NaN` when undefined. The help page documents the finite-sample
-  bias of system GMM (Roodman 2009, Bun and Windmeijer 2010) and how to limit
-  it (`collapse = TRUE`, smaller `maxlag`, FE/OLS bounds).
-* New `panqr()`: panel quantile regression with the Canay (2011) two-step
-  fixed-effects estimator, the Machado and Santos Silva (2019) MM-QR
-  location-scale estimator and pooled quantile regression, for one or several
-  `tau`, with bootstrap or analytic standard errors. Validated against
-  `quantreg::rq()` and `plm`.
-* `panglm(model = "random")` gains `random`, a one-sided formula for
-  correlated random slopes (for example `random = ~ time`, unstructured
-  covariance). Gaussian models use exact ML with any number of slopes,
-  matching `lme4::lmer(REML = FALSE)`; Poisson, logit and probit models take
-  one slope and use adaptive Gauss-Hermite quadrature (`R` nodes per
-  dimension, default 7; `R = 1` is the Laplace approximation). Fits store
-  `varcomp` and `ranef`; cluster-robust `vcov()`, `summary()`, `predict()`,
-  `partialeffects()` and `cre = TRUE` are supported. Validated against lme4,
-  nlme with clubSandwich, glmmTMB and GLMMadaptive.
-* New `panfmm()`: latent class (finite mixture) GLMs for panel data with
-  class membership constant within individual (Deb and Trivedi 1997, 2002;
-  Bago d'Uva 2006): Poisson, NB2, Gaussian and logit components, an optional
-  concomitant multinomial logit for the class probabilities, EM with multiple
-  starts and a Newton polish (Hessian and cluster-robust `vcov()`), posterior
-  class membership, `predict()` (marginal and class-specific means) and
-  `panfmmselect()` to compare numbers of classes by AIC and BIC. Validated
-  against flexmix.
-* `attgt()` and `etwfe()` gain `weights` (sampling weights, a column name or
-  a vector). In `attgt()` they must be constant within individuals and enter
-  the 2x2 estimators, the influence functions and the cohort shares of every
-  aggregation, matching `did::att_gt(weightsname =)`; `etwfe()` uses them in
-  the fit, the cluster-robust variance and the ATT averaging, matching
-  `etwfe::etwfe(weights =)` with `emfx(wts =)`.
-* `attgt()` gains `cluster` (a cluster variable beyond the individual) and
-  `bstrap`, `cband`, `biters`, `multiplier` (Rademacher or Mammen) and `seed`
-  for a multiplier bootstrap: bootstrap standard errors and uniform
-  confidence bands for ATT(g,t) and every `summary()` aggregation, drawn by
-  `plot()`. Validated against `did` (`validation/validate-did-weights.R`,
-  `validation/validate-did-boot.R`).
-* `validation/`: per-model scripts comparing panglm with established
-  packages, summarized in `validation/REPORT.md`.
+* `model = "between"`: the between (individual means) estimator for the
+  Gaussian family (plm).
+* `tobitfamily(left, right)`: censored outcomes, pooled or with a random
+  intercept (AER, censReg).
+* `orderedfamily()`: ordered logit and probit, pooled, random intercept, and
+  the fixed-effects ordered logit by "blow-up and cluster" (Baetschmann,
+  Staub and Winkelmann 2015).
+* `betafamily()`: beta regression for outcomes in (0, 1), pooled or with a
+  random intercept (betareg, glmmTMB).
+* `gammafamily()`: gamma regression with log link for costs, pooled, fixed
+  effects or random intercept.
+* Two-way fixed-effects logit: `model = "within", family = "binomial",
+  effect = "twoways"` (survival::clogit).
+* Random slopes: `panglm(model = "random", random = ~ time)`, correlated
+  random slopes with an unstructured covariance. Gaussian fits use exact ML
+  with any number of slopes (lme4); Poisson, logit, probit, negative
+  binomial and gamma fits use adaptive Gauss-Hermite quadrature with any
+  number of slopes (glmmTMB, GLMMadaptive).
+* `paniv()`: panel instrumental variables (fixed effects, G2SLS or EC2SLS
+  random effects, pooled 2SLS) and the Hausman-Taylor estimator, with
+  first-stage F statistics and Sargan/Hansen tests (plm).
+* `pangmm()`: Arellano-Bond difference and Blundell-Bond system GMM, one- or
+  two-step with Windmeijer standard errors, AR and Hansen tests, collapsed
+  instruments and lag limits; it warns when instruments outnumber
+  individuals (plm::pgmm).
+* `panselect()`: the Wooldridge (1995) correction for attrition or death in
+  cohort studies (glm, plm, sampleSelection).
+* `panqr()`: panel quantile regression by Canay (2011), MM-QR (Machado and
+  Santos Silva 2019) or pooling, with a `plot()` method (quantreg).
+* `panfmm()` and `panfmmselect()`: latent class GLMs with class membership
+  constant within individual, Poisson, NB2, Gaussian, logit and probit
+  components, weights, offsets and a concomitant model (flexmix).
+* `twopart()`: two-part models for semicontinuous costs, with correlated
+  random intercepts (`correlated = TRUE`).
+* `did()` and `eventstudy()`: two-way fixed-effects difference-in-differences
+  and event studies for Gaussian, Poisson, negative binomial and binomial
+  (conditional logit) outcomes (fixest, survival::clogit).
+* `attgt()`: Callaway and Sant'Anna (2021) group-time ATTs with
+  aggregations, pre-trend test, weights, extra clustering and a multiplier
+  bootstrap with uniform bands (did).
+* `etwfe()`: the Wooldridge (2023) extended two-way FE estimator for linear,
+  Poisson and logit outcomes, with weights, `xvar` and `ivar` (etwfe).
 
-# panglm 1.4.0
+## New features
 
-* Ordered outcomes: `ordered_family("logit")` and `ordered_family("probit")`
-  for pooled and random-intercept fits, and the fixed-effects ordered logit
-  by "blow-up and cluster" (Baetschmann, Staub and Winkelmann 2015) with
-  `model = "within"`. `predict()` returns category probabilities;
-  `partialeffects()` gives one effect per category.
-* Beta regression: `beta_family()` (logit or probit link) for outcomes in
-  (0, 1), pooled or with a random intercept; precision in `fit$precision`.
-* Dynamic models: `dynamic = TRUE` adds the lagged and initial outcomes and
-  the Mundlak means (Wooldridge 2005 initial conditions), for pooled and
-  random-effects fits of every family.
-* Random-effects fits of every family accept weights constant within
-  individuals and `vcov = "cluster"` (sandwich from the individual scores of
-  the integrated likelihood). The weighted Gaussian model uses maximum
-  likelihood.
-* Regression splines: new `jointtest()` (joint Wald test of coefficients),
-  `lineartest()` (Wald test that a spline effect is linear),
-  `effectcurve()` with a `plot()` method (fitted curve with pointwise
-  confidence band) and `model.matrix()` for `panglm` fits, which keeps the
-  spline knots on new data.
-* New `did()` (two-way fixed-effects difference-in-differences) and
-  `eventstudy()` (event-time coefficients, joint pre-trend test, `plot()`
-  method), for Gaussian, Poisson and negative binomial outcomes.
-* `twopart(..., correlated = TRUE)`: random-intercept lognormal two-part
-  model with correlated intercepts, fitted jointly (Van Ourti 2004), with
-  population-averaged predictions and partial effects.
-* Bug fix: robust (`HC1`, `cluster`) covariances of the two-way
-  fixed-effects Poisson model ignored the time effects in the score; they
-  now match `fixest::fepois()`. The same covariances are now available for
-  the two-way negative binomial model.
+* `lag()`, `lead()` and `diff()` in the formulas of `panglm()`, `paniv()`,
+  `panqr()` and `panfmm()` are taken within each individual, with `NA` at
+  the start of each panel (plm). Model functions that cannot support them
+  stop with an informative error.
+* `cre = TRUE`: correlated random effects (Mundlak) for pooled and
+  random-effects fits of every family, with a joint test in `summary()`.
+* `dynamic = TRUE`: lagged and initial outcomes with Mundlak means
+  (Wooldridge 2005 initial conditions).
+* `partialeffects()`: average partial effects with delta-method standard
+  errors.
+* Weights: pooled and random-effects fits of every family, `twopart()`,
+  `panfmm()`, `attgt()` and `etwfe()` accept weights, given as a vector or a
+  column name. `offset` also accepts a column name.
+* Splines: `jointtest()`, `lineartest()`, `effectcurve()` with a `plot()`
+  method, and `model.matrix()` that keeps the knots on new data.
+* `panhausman(method = "mundlak")`: the regression-based Hausman test.
+* `pangmm()` accepts `vcov = "cluster"`.
+* `tidy()` and `glance()` for every model class, so modelsummary works;
+  `glance()` reports theta for negative binomial fits and an adjusted
+  R-squared that counts absorbed fixed effects (fixest).
+* `predict()` for `pangmm`, `paniv` and `panselect`; `summary()`, `vcov()`,
+  `nobs()`, `confint()` and `logLik()` for event studies; `confint()` for
+  `twopart`; full methods for `panhurdle()` fits; one print style across
+  classes.
+* `options(panglm.threads)` caps the parallel threads, which are also capped
+  by `OMP_THREAD_LIMIT` and at 2 under `R CMD check`. OpenMP is no longer
+  enabled.
 
-# panglm 1.3.0
+## Robustness
 
-* Observation weights: pooled models accept nonnegative prior `weights`
-  (for example inverse probability weights for attrition), for every
-  family. Zero weights drop observations. Robust and cluster covariances use
-  the weighted scores. Fixed- and random-effects models still reject
-  nontrivial weights.
-* New `gamma_family()` (`family = "gamma"`): gamma regression with log link
-  for positive, skewed outcomes such as costs. Pooled (IRLS), fixed effects
-  (one intercept per individual, consistent for fixed T with a
-  multiplicative effect) and random intercept (adaptive Gauss-Hermite
-  quadrature, `R = 1` is the Laplace approximation) estimators, with robust
-  and cluster covariances for pooled and fixed-effects fits.
-* New `cre` argument: correlated random effects (Mundlak) for pooled and
-  random-effects fits of every family. Individual means of the
-  time-varying regressors are added as `mean_<variable>` columns;
-  `summary()` reports their joint Wald test. `predict()` recomputes the
-  means on new data.
-* New `partialeffects()`: average partial effects (continuous derivatives,
-  binary and factor contrasts) with delta-method standard errors, for
-  `panglm` and `twopart` fits. Random-effects means integrate over the
-  random intercept.
-* New `twopart()`: two-part model for semicontinuous costs, probit or logit
-  first part times a gamma or lognormal positive part, pooled or random
-  intercept, optional correlated random effects, with smearing or normal
-  retransformation. Methods: `predict()`, `fitted()`, `coef()`, `vcov()`,
-  `logLik()`, `nobs()`, `summary()`.
-* Bug fix: the robust (`HC1`, `cluster`) covariance of the pooled negative
-  binomial model used the Poisson score `(y - mu) x` instead of the NB2
-  score `(y - mu) theta / (theta + mu) x`. It now matches
-  `sandwich::vcovHC()` on `MASS::glm.nb()`.
-* The pooled IRLS covariance is now evaluated at the final coefficients.
+* Maximum likelihood fits standardize the design internally and warn when
+  the Hessian is not negative definite, standard errors are missing or the
+  gradient is not zero. Badly scaled regressors no longer break beta fits.
+* The random-effects negative binomial warns when its dispersion diverges
+  (no overdispersion beyond the individual effect, so the model reduces to
+  the random-effects Poisson).
+* Random-slope fits warn when the random-effects covariance is singular, for
+  every family.
+* The random-effects Tobit is stable in the far censored tail.
+* The random-effects beta likelihood is about 3 times faster.
 
-# panglm 1.2.0
+## Bug fixes
 
-* Bug fix: a fit made with `vcov = "HC1"` or `vcov = "cluster"` replaced
-  its model-based covariance, so `vcov(fit, type = "classical")` returned
-  the robust matrix. The model-based covariance is now kept on the fit.
-  `vcov()` gains `type = NULL` (the new default), which returns the
-  covariance the fit was made with, so `vcov(fit)` is unchanged.
-* Bug fix: `panglm_hausman()` used the covariance stored on the FE fit, so
-  an FE fit with a robust `vcov` entered the classical contrast
-  `V_fe - V_re`, which is valid only for model-based covariances. The
-  classical test now always uses the model-based covariances.
-* `panglm_hausman()` gains `method = "mundlak"`: the regression-based
-  (correlated random effects) version of the test, a Wald test of the
-  individual-mean coefficients in the pooled model `y ~ x + xbar`, with a
-  cluster-robust (default), HC1 or classical covariance. With the
-  cluster-robust covariance the reference is `F(k, G - 1)`. Gaussian
-  family, individual effects only.
-* Test of `panglm_hausman()` against `plm::phtest()` now passes fitted
-  `plm` models, since `phtest()`'s formula method calls `plm()` unqualified.
+* Robust and cluster covariances: the pooled negative binomial used the
+  Poisson score, and the two-way fixed-effects Poisson ignored the time
+  effects; both now match sandwich and `fixest::fepois()`.
+* A fit made with `vcov = "HC1"` or `"cluster"` overwrote its model-based
+  covariance; `vcov(fit, type = "classical")` now returns it.
+* `panhausman()` always uses the model-based covariances in the classical
+  contrast.
+* Negative binomial summaries print theta and its standard error instead of
+  "Dispersion parameter: 1".
+* `did()` and `eventstudy()` summaries show the user's call.
+* `paniv(model = "random")` no longer warns about regressors it keeps.
+* A factor individual index works.
+* The `copd` help page documents all 10 columns.
 
-# panglm 1.1.5
+## Dependencies and documentation
 
-* Dropped the `data.table` dependency entirely. `build_panel_index()`'s
-  panel sort-by-(id, time) now uses plain base R data.frame indexing;
-  its run-length grouping uses `base::rle()` instead of
-  `data.table::rleidv()` (no `as.character()` coercion needed, since the
-  id column is already atomic and pre-sorted). `demean_twoway()`'s dense
-  time-rank encoding uses a new internal `dense_rank0()` helper
-  (`match(x, sort(unique(x))) - 1L`) instead of `data.table::frankv()`.
-  No basetable equivalent exists for either primitive, so this ended up
-  as a full drop rather than a basetable swap. Also removed several
-  dead `@importFrom data.table`/`utils::globalVariables()` declarations
-  for NSE symbols (`.SD`, `..cols`, `..xnames`, `:=`) that were already
-  unused before this change.
+* `data.table` is no longer a dependency.
+* Roxygen markdown is enabled and every help page was reviewed; functions
+  are grouped into families with cross-links.
+* New vignettes: a getting started guide, four task guides (outcomes,
+  endogeneity, policy evaluation, heterogeneity) and a technical reference.
+* A pkgdown site and a rewritten README.
 
 # panglm 1.1.4
 
