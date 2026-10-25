@@ -134,3 +134,31 @@ test_that("individual weights: weighted GLM at k = 1, replicated individuals at 
   expect_error(panfmm(y ~ x, d, c("id", "t"), k = 2, weights = -d$w), "nonnegative")
   expect_error(panfmm(y ~ x, d, c("id", "t"), k = 2, weights = d$w[-1]), "nrow")
 })
+
+test_that("offsets in the formula or as an argument", {
+  d <- fmm_sim()
+  set.seed(5)
+  d$months <- sample(3:12, nrow(d), replace = TRUE)
+  d$y2 <- rpois(nrow(d), d$months / 12 * exp(0.3 + 0.4 * d$x))
+  a <- panfmm(y2 ~ x + offset(log(months / 12)), d, c("id", "t"), k = 1)
+  g <- glm(y2 ~ x + offset(log(months / 12)), poisson, d,
+           control = glm.control(epsilon = 1e-14))
+  expect_equal(unname(coef(a)), unname(coef(g)), tolerance = 1e-8)
+  expect_equal(a$loglik, as.numeric(logLik(g)), tolerance = 1e-10)
+  expect_equal(predict(a), unname(fitted(g)), tolerance = 1e-8)
+  expect_equal(predict(a, newdata = d[1:5, ]),
+               unname(predict(g, newdata = d[1:5, ], type = "response")), tolerance = 1e-8)
+  b <- panfmm(y2 ~ x, d, c("id", "t"), k = 1, offset = log(d$months / 12))
+  expect_equal(coef(a), coef(b), tolerance = 1e-12)
+  expect_warning(predict(b, newdata = d[1:5, ]), "not applied")
+  for (fam in c("negbin", "gaussian", "binomial")) {
+    y <- switch(fam, negbin = "ynb", binomial = "yb", gaussian = "yg")
+    f <- stats::as.formula(paste(y, "~ x + offset(0.2 * x)"))
+    a <- panfmm(f, d, c("id", "t"), k = 2, family = fam, nstart = 2, seed = 2)
+    expect_lt(max(abs(colSums(a$score))), 1e-4)
+    expect_length(a$offset, nrow(d))
+  }
+  expect_error(panfmm(y ~ x, d, c("id", "t"), offset = 1:3), "nrow")
+  expect_error(panfmm(y ~ x, d, c("id", "t"), concomitant = ~ female + offset(female)),
+               "not allowed")
+})

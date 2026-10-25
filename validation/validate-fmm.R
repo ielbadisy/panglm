@@ -30,6 +30,9 @@
 # k = 1 the weighted glm(), MASS::glm.nb() and lm() with sandwich::vcovCL()
 # for the cluster covariance.
 #
+# Offsets: flexmix with FLXMRglm(offset = ) (and the NB2 driver with an
+# offset), and at k = 1 glm() / MASS::glm.nb() with the same offset.
+#
 # Data: a simulated panel of doctor visits (500 patients, 4 years, low and
 # high users), and two cross-sections with one row per individual (T = 1):
 # AER::DoctorVisits (5190 Australians, 1977-78) and AER::NMES1988 (4406 US
@@ -62,17 +65,19 @@ FLXMRmlnorm <- function(formula = . ~ .) {
   z
 }
 
-FLXMRnb2 <- function(formula = . ~ .) {
+FLXMRnb2 <- function(formula = . ~ ., offset = NULL) {
   z <- new("FLXMR", weighted = TRUE, formula = formula, name = "FLXMR:negbin (MASS::glm.nb)")
+  off <- if (is.null(offset)) 0 else offset
   z@defineComponent <- function(para) {
-    predict <- function(x, ...) exp(x %*% para$coef)
+    predict <- function(x, ...) exp(x %*% para$coef + off)
     logLik <- function(x, y, ...) dnbinom(y, size = para$theta, mu = predict(x), log = TRUE)
     new("FLXcomponent", parameters = list(coef = para$coef, theta = para$theta),
         logLik = logLik, predict = predict, df = para$df)
   }
   z@fit <- function(x, y, w, component) {
     yy <- as.numeric(y)
-    fit <- suppressWarnings(MASS::glm.nb(yy ~ x - 1, weights = w,
+    oo <- rep_len(off, length(yy))
+    fit <- suppressWarnings(MASS::glm.nb(yy ~ x - 1 + offset(oo), weights = w,
                                          control = glm.control(epsilon = 1e-13, maxit = 200)))
     cf <- coef(fit); names(cf) <- colnames(x)
     z@defineComponent(list(coef = cf, theta = fit$theta, df = ncol(x) + 1))
@@ -292,6 +297,74 @@ g <- lm(logcost ~ chronic + age + income, d, weights = sw)
 add(paste(lab, "gaussian"), dname, "coefficients", coef(a)[1:4], list(lm = coef(g)), 1e-8)
 add(paste(lab, "gaussian"), dname, "sigma (weighted ML)", a$sigma,
     list(lm = sqrt(sum(d$sw * residuals(g)^2) / sum(d$sw))), 1e-8)
+
+# offsets ----------------------------------------------------------------------
+# Visits over observation periods of 3 to 12 months, offset(log(months / 12)).
+# flexmix silently ignores offset() terms in its formula; the offset is
+# given to FLXMRglm(offset = ) and to the custom NB2 driver instead.
+d$months <- sample(3:12, N * TT, replace = TRUE)
+d$lexp <- log(d$months / 12)
+d$visits_e <- rpois(N * TT, exp(eta + d$lexp))
+d$visits_enb <- rnbinom(N * TT, size = ifelse(high == 1, 3, 1.5), mu = exp(eta + d$lexp))
+lab <- "panfmm offset"
+fo <- visits_e ~ chronic + age + income + offset(log(months / 12))
+a <- panfmm(fo, d, idx, k = 2, family = "poisson", nstart = 10, seed = 1)
+a2 <- panfmm(visits_e ~ chronic + age + income, d, idx, k = 2, family = "poisson",
+             offset = d$lexp, nstart = 10, seed = 1)
+add(paste(lab, "poisson k = 2"), dname, "coefficients (offset argument vs formula)",
+    coef(a2), list(panfmm_formula = coef(a)), 1e-10)
+b <- flexmix(visits_e ~ chronic + age + income | id, data = d, k = 2,
+             cluster = post_obs(a, d$id),
+             model = FLXMRglm(family = "poisson", offset = d$lexp), control = ctrl)
+compare_flexmix(paste(lab, "poisson k = 2"), dname, a, b)
+rf <- refit(b)
+add(paste(lab, "poisson k = 2"), dname, "classical SE (vs refit optim Hessian)", se(vcov(a)),
+    list(flexmix = sqrt(diag(rf@vcov))), 1e-3)
+
+a <- panfmm(visits_e ~ chronic + age + income + offset(log(months / 12)), d, idx, k = 2,
+            family = "poisson", weights = d$w, nstart = 10, seed = 1)
+b <- flexmix(visits_e ~ chronic + age + income | id, data = d, k = 2, weights = d$w,
+             cluster = post_obs(a, d$id),
+             model = FLXMRglm(family = "poisson", offset = d$lexp), control = ctrl)
+compare_flexmix(paste(lab, "poisson k = 2, weighted"), dname, a, b, bic = FALSE)
+
+a <- panfmm(visits_enb ~ chronic + age + income + offset(log(months / 12)), d, idx, k = 2,
+            family = "negbin", nstart = 10, seed = 1)
+b <- flexmix(visits_enb ~ chronic + age + income | id, data = d, k = 2,
+             cluster = post_obs(a, d$id), model = FLXMRnb2(offset = d$lexp), control = ctrl)
+compare_flexmix(paste(lab, "negbin k = 2"), dname, a, b, aux = "theta")
+
+lab <- "panfmm offset k = 1"
+a <- panfmm(fo, d, idx, k = 1, family = "poisson")
+g <- glm(fo, poisson, d, control = glm.control(epsilon = 1e-14))
+add(paste(lab, "poisson"), dname, "coefficients", coef(a), list(glm = coef(g)), 1e-8)
+add(paste(lab, "poisson"), dname, "logLik", a$loglik, list(glm = as.numeric(logLik(g))), 1e-8)
+add(paste(lab, "poisson"), dname, "classical SE", se(vcov(a)), list(glm = se(vcov(g))), 1e-5)
+add(paste(lab, "poisson"), dname, "fitted values", predict(a), list(glm = fitted(g)), 1e-8)
+add(paste(lab, "poisson"), dname, "predict(newdata)", predict(a, newdata = d[1:20, ]),
+    list(glm = predict(g, newdata = d[1:20, ], type = "response")), 1e-8)
+
+a <- panfmm(visits_enb ~ chronic + age + income + offset(log(months / 12)), d, idx, k = 1,
+            family = "negbin")
+g <- glm.nb(visits_enb ~ chronic + age + income + offset(log(months / 12)), d,
+            control = glm.control(epsilon = 1e-13))
+add(paste(lab, "negbin"), dname, "coefficients", coef(a)[1:4], list(MASS = coef(g)), 1e-6)
+add(paste(lab, "negbin"), dname, "theta", a$theta, list(MASS = g$theta), 1e-5)
+add(paste(lab, "negbin"), dname, "logLik", a$loglik, list(MASS = as.numeric(logLik(g))), 1e-8)
+
+a <- panfmm(anyvisit ~ chronic + age + income, d, idx, k = 1, family = "binomial",
+            offset = 0.5 * d$income)
+g <- glm(anyvisit ~ chronic + age + income, binomial, d, offset = 0.5 * income,
+         control = glm.control(epsilon = 1e-14))
+add(paste(lab, "binomial"), dname, "coefficients", coef(a), list(glm = coef(g)), 1e-8)
+add(paste(lab, "binomial"), dname, "logLik", a$loglik, list(glm = as.numeric(logLik(g))), 1e-8)
+add(paste(lab, "binomial"), dname, "classical SE", se(vcov(a)), list(glm = se(vcov(g))), 1e-5)
+
+a <- panfmm(logcost ~ chronic + age + income + offset(lexp), d, idx, k = 1,
+            family = "gaussian")
+g <- glm(logcost ~ chronic + age + income + offset(lexp), gaussian, d)
+add(paste(lab, "gaussian"), dname, "coefficients", coef(a)[1:4], list(glm = coef(g)), 1e-8)
+add(paste(lab, "gaussian"), dname, "logLik", a$loglik, list(glm = as.numeric(logLik(g))), 1e-8)
 
 # k = 1 is the pooled GLM -------------------------------------------------------
 lab <- "panfmm k = 1"

@@ -62,7 +62,10 @@
 #' multinomial logit of the class probabilities uses class 1 as reference.
 #'
 #' @param formula a model formula `y ~ x1 + x2` for the class-specific
-#'   regressions (the same regressors in every class)
+#'   regressions (the same regressors in every class). It may contain
+#'   `offset()` terms, e.g. `offset(log(exposure))` for counts over
+#'   different exposure periods; the offset enters the linear predictor of
+#'   every class with coefficient 1
 #' @param data a data.frame in long format
 #' @param index length-1 or length-2 character vector giving the individual
 #'   (and time) columns; class membership is constant within individual. Use
@@ -86,6 +89,9 @@
 #' @param weights optional nonnegative individual (sampling) weights, one
 #'   per row of `data` and constant within individuals; see the Weights
 #'   section
+#' @param offset optional numeric offset, one value per row of `data`, added
+#'   to the linear predictor of every class (in addition to any `offset()`
+#'   terms of `formula`), as in [stats::glm()]
 #' @return an object of class `"panfmm"`, a list with components
 #'   `coefficients` (all parameters, named `class<c>:<term>` and
 #'   `prior<c>:<term>`), `vcov`, `vcov_type`, `classcoef` (a matrix of
@@ -98,7 +104,8 @@
 #'   class), `classmean` (the mean outcome of each class, used for the label
 #'   order), `loglik`, `df`, `starts` (log-likelihood of each EM start),
 #'   `nobs`, `n_groups`, `weights` (the individual weights, `NULL` without
-#'   weights), `k`, `family`, `call` and `formula`. It has `print`,
+#'   weights), `offset` (the total offset of each observation in panel
+#'   order, `NULL` without offsets), `k`, `family`, `call` and `formula`. It has `print`,
 #'   `summary`, `coef`, `vcov`, `nobs`, `logLik` (hence `AIC` and `BIC`, with
 #'   `n` the number of observations), `confint` and `predict` methods.
 #' @references
@@ -139,7 +146,7 @@
 panfmm <- function(formula, data, index, k = 2, family = "poisson",
                    concomitant = NULL, nstart = 10, seed = NULL,
                    vcov = c("classical", "cluster"), maxit = 1000, tol = 1e-6,
-                   na.action = stats::na.omit, weights = NULL) {
+                   na.action = stats::na.omit, weights = NULL, offset = NULL) {
   vcov <- match.arg(vcov)
   family <- resolve_family(family)
   if (!family$family %in% c("gaussian", "poisson", "negbin", "binomial")) {
@@ -179,6 +186,14 @@ panfmm <- function(formula, data, index, k = 2, family = "poisson",
     stop("count families need a non-negative integer response", call. = FALSE)
   }
   X <- stats::model.matrix(parts$regressors, data = mf)
+  off <- stats::model.offset(mf)
+  if (!is.null(offset)) {
+    if (!is.numeric(offset) || length(offset) != nrow(data) || any(!is.finite(offset))) {
+      stop("'offset' must be a finite numeric vector with nrow(data) values", call. = FALSE)
+    }
+    off <- (off %||% 0) + offset[model_rows]
+  }
+  if (!is.null(off) && any(!is.finite(off))) stop("the offset must be finite", call. = FALSE)
   Zobs <- stats::model.matrix(parts$concomitant, data = mf)
 
   panel_cols <- data[model_rows, index, drop = FALSE]
@@ -188,6 +203,10 @@ panfmm <- function(formula, data, index, k = 2, family = "poisson",
   y <- as.numeric(y[ord])
   X <- X[ord, , drop = FALSE]
   Zobs <- Zobs[ord, , drop = FALSE]
+  if (!is.null(off)) {
+    off <- rep_len(as.numeric(off), nrow(mf))[ord]
+    if (all(off == 0)) off <- NULL
+  }
   group <- rep.int(seq_len(panel$n_groups), panel$group_size)
   Z <- Zobs[panel$group_start + 1L, , drop = FALSE]
   if (max(abs(Zobs - Z[group, , drop = FALSE])) > 1e-10 * max(1, abs(Zobs))) {
@@ -211,7 +230,7 @@ panfmm <- function(formula, data, index, k = 2, family = "poisson",
     if (all(w == 1)) w <- NULL
   }
 
-  spec <- fmm_spec(X, Z, y, group, family$family, k, w)
+  spec <- fmm_spec(X, Z, y, group, family$family, k, w, off)
   em <- fmm_em_starts(spec, nstart, seed, maxit, tol)
   par <- em$par
   for (pass in 1:3) {
@@ -259,6 +278,8 @@ panfmm <- function(formula, data, index, k = 2, family = "poisson",
   fit$n_groups <- panel$n_groups
   fit$group_size <- panel$group_size
   fit$weights <- w
+  fit$offset <- off
+  fit$offset_argument <- !is.null(offset)
   fit$y <- y
   fit$X <- X
   fit$Z <- Z
@@ -290,6 +311,9 @@ fmm_formulas <- function(formula, concomitant) {
     if (!inherits(concomitant, "formula") || length(concomitant) != 2L) {
       stop("'concomitant' must be a one-sided formula '~ z1 + z2'", call. = FALSE)
     }
+    if (!is.null(attr(stats::terms(concomitant), "offset"))) {
+      stop("offsets are not allowed in 'concomitant'", call. = FALSE)
+    }
     conc <- concomitant
     combined <- stats::as.formula(call("~", formula[[2L]], call("+", rhs, concomitant[[2L]])),
                                   env = env)
@@ -302,7 +326,7 @@ fmm_formulas <- function(formula, concomitant) {
 #'
 #' @keywords internal
 #' @noRd
-fmm_spec <- function(X, Z, y, group, family, k, w = NULL) {
+fmm_spec <- function(X, Z, y, group, family, k, w = NULL, offset = NULL) {
   p <- ncol(X)
   q <- ncol(Z)
   aux <- family %in% c("gaussian", "negbin")
@@ -317,6 +341,8 @@ fmm_spec <- function(X, Z, y, group, family, k, w = NULL) {
   list(X = X, Z = Z, y = y, group = group, family = family, k = k, p = p, q = q,
        aux = aux, m = m, N = nrow(Z), names = c(cls, pri),
        w = if (is.null(w)) rep(1, nrow(Z)) else w,
+       offset = if (is.null(offset)) rep(0, length(y)) else offset,
+       has_offset = !is.null(offset),
        lgy = if (family == "negbin") lgamma(y + 1) else NULL)
 }
 
@@ -369,7 +395,7 @@ fmm_rowmax <- function(a) a[cbind(seq_len(nrow(a)), max.col(a, ties.method = "fi
 fmm_component <- function(spec, block, score = FALSE) {
   X <- spec$X; y <- spec$y; p <- spec$p
   beta <- block[seq_len(p)]
-  eta <- as.numeric(X %*% beta)
+  eta <- as.numeric(X %*% beta) + spec$offset
   fam <- spec$family
   if (fam == "gaussian") {
     s <- exp(block[p + 1L])
@@ -436,25 +462,32 @@ fmm_contrib <- function(spec, theta, score = FALSE) {
 #' @keywords internal
 #' @noRd
 fmm_mstep_class <- function(spec, w, block) {
-  X <- spec$X; y <- spec$y; p <- spec$p
+  X <- spec$X; y <- spec$y; p <- spec$p; off <- spec$offset
   fam <- spec$family
   start <- if (is.null(block)) NULL else block[seq_len(p)]
   if (fam == "gaussian") {
-    fit <- stats::lm.wfit(X, y, w)
+    fit <- stats::lm.wfit(X, y - off, w)
     beta <- fit$coefficients
     beta[is.na(beta)] <- 0
-    r <- y - as.numeric(X %*% beta)
+    r <- y - off - as.numeric(X %*% beta)
     return(c(beta, log(sqrt(max(sum(w * r^2) / sum(w), 1e-12)))))
   }
   if (fam == "negbin") {
-    if (is.null(block)) {
+    if (is.null(block) && !spec$has_offset) {
       res <- negbin_irls_fit_cpp(X, y, 100L, 1e-8, w)
       block <- c(as.numeric(res$coefficients), log(min(max(res$theta, 1e-4), 1e6)))
+    } else if (is.null(block)) {
+      fit <- suppressWarnings(stats::glm.fit(X, y, weights = w, offset = off,
+                                             family = stats::poisson()))
+      beta <- fit$coefficients
+      beta[is.na(beta)] <- 0
+      return(fmm_mstep_negbin(X, y, w, c(beta, 0), off, maxit = 100L))
     }
-    return(fmm_mstep_negbin(X, y, w, block))
+    return(fmm_mstep_negbin(X, y, w, block, off))
   }
   famobj <- if (fam == "poisson") stats::poisson() else stats::binomial()
-  fit <- suppressWarnings(stats::glm.fit(X, y, weights = w, family = famobj, start = start))
+  fit <- suppressWarnings(stats::glm.fit(X, y, weights = w, offset = off, family = famobj,
+                                         start = start))
   beta <- fit$coefficients
   beta[is.na(beta)] <- 0
   beta
@@ -467,20 +500,20 @@ fmm_mstep_class <- function(spec, w, block) {
 #'
 #' @keywords internal
 #' @noRd
-fmm_mstep_negbin <- function(X, y, w, block, maxit = 5L, tol = 1e-8) {
+fmm_mstep_negbin <- function(X, y, w, block, offset = 0, maxit = 5L, tol = 1e-8) {
   p <- ncol(X)
   beta <- block[seq_len(p)]
   phi <- block[p + 1L]
   for (it in seq_len(maxit)) {
     th <- exp(phi)
-    eta <- as.numeric(X %*% beta)
+    eta <- as.numeric(X %*% beta) + offset
     mu <- exp(eta)
     ww <- w * mu * th / (th + mu)
-    z <- eta + (y - mu) / mu
+    z <- eta - offset + (y - mu) / mu
     fit <- stats::lm.wfit(X, z, ww)
     bnew <- fit$coefficients
     if (anyNA(bnew)) break
-    mu <- exp(as.numeric(X %*% bnew))
+    mu <- exp(as.numeric(X %*% bnew) + offset)
     s_th <- digamma(y + th) - digamma(th) + log(th) + 1 - log(th + mu) - (y + th) / (th + mu)
     h_th <- trigamma(y + th) - trigamma(th) + 1 / th - 2 / (th + mu) + (y + th) / (th + mu)^2
     g <- sum(w * th * s_th)
@@ -714,7 +747,11 @@ confint.panfmm <- function(object, parm, level = 0.95, ...) {
 #'
 #' @param object a `"panfmm"` fit
 #' @param newdata optional data.frame; by default the estimation sample (in
-#'   its original row order)
+#'   its original row order). Offsets are included in the class means:
+#'   the estimation-sample offsets without `newdata`, the `offset()` terms
+#'   of the formula evaluated in `newdata` otherwise (an `offset` argument
+#'   of [panfmm()] cannot be evaluated in `newdata` and is not applied,
+#'   with a warning)
 #' @param type `"response"` for the marginal mean
 #'   `sum_c w_ic mu_c(x_it)`, `"class"` for the matrix of class-specific
 #'   means `mu_c(x_it)` (one column per class), or `"prior"` /
@@ -743,6 +780,7 @@ predict.panfmm <- function(object, newdata = NULL,
   k <- object$k
   if (is.null(newdata)) {
     X <- object$X
+    off <- object$offset %||% 0
     prior <- object$prior[rep(seq_len(object$n_groups), object$group_size), , drop = FALSE]
     post <- object$posterior[rep(seq_len(object$n_groups), object$group_size), , drop = FALSE]
     back <- order(object$panel_order)
@@ -755,6 +793,11 @@ predict.panfmm <- function(object, newdata = NULL,
     mf <- stats::model.frame(tt, newdata, na.action = stats::na.pass,
                              xlev = object$xlevels)
     X <- stats::model.matrix(tt, mf)
+    off <- stats::model.offset(mf) %||% 0
+    if (isTRUE(object$offset_argument)) {
+      warning("the 'offset' argument of panfmm() is not applied to 'newdata'; ",
+              "put the offset in the formula as offset()", call. = FALSE)
+    }
     tz <- object$terms_concomitant
     mz <- stats::model.frame(tz, newdata, na.action = stats::na.pass, xlev = object$xlevels)
     Zn <- stats::model.matrix(tz, mz)
@@ -764,7 +807,7 @@ predict.panfmm <- function(object, newdata = NULL,
     back <- seq_len(nrow(X))
   }
   cn <- paste0("class", seq_len(k))
-  eta <- X %*% object$classcoef
+  eta <- X %*% object$classcoef + off
   mu <- switch(object$family$family,
                gaussian = eta, binomial = stats::plogis(eta), exp(eta))
   mu <- matrix(mu, nrow(X), k, dimnames = list(NULL, cn))

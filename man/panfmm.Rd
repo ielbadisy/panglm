@@ -17,12 +17,16 @@ panfmm(
   maxit = 1000,
   tol = 1e-06,
   na.action = stats::na.omit,
-  weights = NULL
+  weights = NULL,
+  offset = NULL
 )
 }
 \arguments{
 \item{formula}{a model formula `y ~ x1 + x2` for the class-specific
-regressions (the same regressors in every class)}
+regressions (the same regressors in every class). It may contain
+`offset()` terms, e.g. `offset(log(exposure))` for counts over
+different exposure periods; the offset enters the linear predictor of
+every class with coefficient 1}
 
 \item{data}{a data.frame in long format}
 
@@ -58,6 +62,10 @@ log-likelihood}
 \item{weights}{optional nonnegative individual (sampling) weights, one
 per row of `data` and constant within individuals; see the Weights
 section}
+
+\item{offset}{optional numeric offset, one value per row of `data`, added
+to the linear predictor of every class (in addition to any `offset()`
+terms of `formula`), as in [stats::glm()]}
 }
 \value{
 an object of class `"panfmm"`, a list with components
@@ -72,7 +80,8 @@ an object of class `"panfmm"`, a list with components
   class), `classmean` (the mean outcome of each class, used for the label
   order), `loglik`, `df`, `starts` (log-likelihood of each EM start),
   `nobs`, `n_groups`, `weights` (the individual weights, `NULL` without
-  weights), `k`, `family`, `call` and `formula`. It has `print`,
+  weights), `offset` (the total offset of each observation in panel
+  order, `NULL` without offsets), `k`, `family`, `call` and `formula`. It has `print`,
   `summary`, `coef`, `vcov`, `nobs`, `logLik` (hence `AIC` and `BIC`, with
   `n` the number of observations), `confint` and `predict` methods.
 }

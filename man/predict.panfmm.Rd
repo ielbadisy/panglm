@@ -16,7 +16,11 @@
 \item{object}{a `"panfmm"` fit}
 
 \item{newdata}{optional data.frame; by default the estimation sample (in
-its original row order)}
+its original row order). Offsets are included in the class means:
+the estimation-sample offsets without `newdata`, the `offset()` terms
+of the formula evaluated in `newdata` otherwise (an `offset` argument
+of [panfmm()] cannot be evaluated in `newdata` and is not applied,
+with a warning)}
 
 \item{type}{`"response"` for the marginal mean
 `sum_c w_ic mu_c(x_it)`, `"class"` for the matrix of class-specific
