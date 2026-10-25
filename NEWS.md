@@ -1,4 +1,4 @@
-# panglm (development version)
+# panglm 1.5.0
 
 * Between estimator: `model = "between"` (OLS on individual means) for the
   Gaussian family, validated against `plm(model = "between")`.
