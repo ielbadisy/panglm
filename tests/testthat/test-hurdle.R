@@ -23,7 +23,7 @@ test_that("fit_truncated_poisson_dummy matches pscl::hurdle's count part (single
   expect_equal(unname(fit$coefficients["x1"]), unname(ref["count_x1"]), tolerance = 1e-6)
 })
 
-test_that("panglm_hurdle() fits a panel with structural zeros and recovers the count-part slope", {
+test_that("panhurdle() fits a panel with structural zeros and recovers the count-part slope", {
   set.seed(9)
   N <- 80; Tt <- 8
   d <- data.frame(id = rep(1:N, each = Tt), time = rep(1:Tt, N))
@@ -39,7 +39,7 @@ test_that("panglm_hurdle() fits a panel with structural zeros and recovers the c
   }
   d$y <- y
 
-  fit <- panglm_hurdle(y ~ x1, data = d, index = c("id", "time"))
+  fit <- panhurdle(y ~ x1, data = d, index = c("id", "time"))
   expect_s3_class(fit, "panglm_hurdle")
   expect_true(is.finite(fit$count$coefficients["x1"]))
   expect_equal(unname(fit$count$coefficients["x1"]), 0.5, tolerance = 0.3)
@@ -74,7 +74,7 @@ test_that("zero-truncated NB2 count part matches pscl::hurdle for one group", {
   expect_equal(unname(fit$theta), unname(ref$theta), tolerance = 1e-3)
 })
 
-test_that("panglm_hurdle supports an NB2 positive-count component", {
+test_that("panhurdle() supports an NB2 positive-count component", {
   set.seed(28)
   N <- 30; Tt <- 6
   d <- data.frame(id = rep(seq_len(N), each = Tt), time = rep(seq_len(Tt), N))
@@ -83,7 +83,7 @@ test_that("panglm_hurdle supports an NB2 positive-count component", {
   d$y <- stats::rnbinom(nrow(d), size = 3, mu = mu)
 
   fit <- suppressMessages(
-    panglm_hurdle(y ~ x1, d, index = c("id", "time"), count_family = "negbin")
+    panhurdle(y ~ x1, d, index = c("id", "time"), family = "negbin")
   )
   expect_identical(fit$count_family, "negbin")
   expect_true(is.finite(fit$count$theta) && fit$count$theta > 0)

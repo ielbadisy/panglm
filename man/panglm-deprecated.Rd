@@ -10,6 +10,9 @@
 \alias{beta_family}
 \alias{ordered_family}
 \alias{tobit_family}
+\alias{panglm_dispersiontest}
+\alias{panglm_hausman}
+\alias{panglm_hurdle}
 \title{Deprecated functions in panglm}
 \usage{
 gaussian_family(link = "identity")
@@ -27,9 +30,33 @@ beta_family(link = c("logit", "probit"))
 ordered_family(link = c("logit", "probit"))
 
 tobit_family(left = 0, right = Inf)
+
+panglm_dispersiontest(object)
+
+panglm_hausman(
+  fe,
+  re = NULL,
+  method = c("classical", "mundlak"),
+  data = NULL,
+  vcov = c("cluster", "HC1", "classical")
+)
+
+panglm_hurdle(
+  formula,
+  data,
+  index,
+  count_family = c("poisson", "negbin"),
+  maxit = 100,
+  tol = 1e-10
+)
 }
 \arguments{
 \item{link, left, right}{passed to the replacement}
+
+\item{object, fe, re, method, data, vcov, formula, index, maxit, tol}{passed to the
+replacement}
+
+\item{count_family}{passed as \code{family} to \code{\link{panhurdle}()}}
 }
 \value{
 the value of the replacement function
@@ -53,6 +80,14 @@ underscores:
   \code{beta_family()} \tab \code{\link{betafamily}()} \cr
   \code{ordered_family()} \tab \code{\link{orderedfamily}()} \cr
   \code{tobit_family()} \tab \code{\link{tobitfamily}()} \cr
+  \code{panglm_dispersiontest()} \tab \code{\link{pandispersiontest}()} \cr
+  \code{panglm_hausman()} \tab \code{\link{panhausman}()} \cr
+  \code{panglm_hurdle()} \tab \code{\link{panhurdle}()} \cr
 }
+
+\code{panglm_hurdle(count_family = )} is \code{panhurdle(family = )}.
+The objects returned keep their classes (\code{"panglm_dispersiontest"},
+\code{"panglm_hausman"}, \code{"panglm_hurdle"}), so code that tests
+or dispatches on them is unaffected.
 }
 \keyword{internal}

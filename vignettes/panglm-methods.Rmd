@@ -664,9 +664,9 @@ because the individual intercept has been conditioned out.
 plot(fit_fe, which = "coefficients")
 ```
 
-`panglm_dispersiontest()` reports the Pearson statistic divided by its
+`pandispersiontest()` reports the Pearson statistic divided by its
 residual degrees of freedom for Poisson and negative binomial fits.
-`panglm_hausman()` compares compatible fixed-effects and random-effects
+`panhausman()` compares compatible fixed-effects and random-effects
 estimates using their covariance difference.
 
 For likelihood-based estimators, `logLik()`, `AIC()`, and `BIC()` include
@@ -678,12 +678,12 @@ Swamy-Arora random-effects estimators do not report a likelihood, so their
 information criteria are undefined.
 
 ```{r hausman}
-panglm_hausman(fit_fe, fit_re)
+panhausman(fit_fe, fit_re)
 ```
 
 ## Hurdle models for panel counts
 
-For outcomes with a distinct zero-generating process, `panglm_hurdle()`
+For outcomes with a distinct zero-generating process, `panhurdle()`
 fits two fixed-effects components. The first is an exact conditional
 logistic model for $I(y_{it}>0)$. The second is a zero-truncated Poisson or
 NB2 model for positive counts. Its density is
@@ -693,17 +693,17 @@ f_+(y \mid \mu, \theta) =
 \frac{f(y \mid \mu, \theta)}{1-f(0 \mid \mu, \theta)}, \qquad y>0.
 $$
 
-The count distribution is selected with `count_family`. Both positive-count
+The count distribution is selected with `family`. Both positive-count
 models jointly estimate covariate coefficients and individual intercepts;
 the NB2 model also estimates $\theta$.
 
 ```{r hurdle}
 data(copd)
-fit_hurdle <- panglm_hurdle(
+fit_hurdle <- panhurdle(
   exacerbations ~ crp,
   data = copd,
   index = c("id", "visit"),
-  count_family = "negbin"
+  family = "negbin"
 )
 plot(fit_hurdle)
 ```

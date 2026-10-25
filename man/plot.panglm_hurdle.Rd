@@ -24,7 +24,7 @@ binary hurdle component, the positive-count component, or both.
 }
 \examples{
 data(copd)
-fit <- panglm_hurdle(exacerbations ~ crp, data = copd,
+fit <- panhurdle(exacerbations ~ crp, data = copd,
                      index = c("id", "visit"))
 plot(fit)
 }

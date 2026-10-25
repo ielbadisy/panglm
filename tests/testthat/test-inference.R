@@ -13,13 +13,13 @@ test_that("panglm_dispersiontest detects simulated overdispersion and equidisper
   set.seed(1)
   Grunfeld$count_pois <- rpois(nrow(Grunfeld), lambda = exp(0.5 + 0.0002 * Grunfeld$value))
   f_pois <- panglm(count_pois ~ value + capital, data = Grunfeld, index = c("firm", "year"), model = "pooling", family = "poisson")
-  d_pois <- panglm_dispersiontest(f_pois)
+  d_pois <- pandispersiontest(f_pois)
   expect_true(d_pois$ratio < 1.5) # no real overdispersion in the DGP
 
   set.seed(1)
   Grunfeld$count_nb <- rnbinom(nrow(Grunfeld), size = 0.5, mu = exp(0.5 + 0.0002 * Grunfeld$value))
   f_nb <- panglm(count_nb ~ value + capital, data = Grunfeld, index = c("firm", "year"), model = "pooling", family = "poisson")
-  d_nb <- panglm_dispersiontest(f_nb)
+  d_nb <- pandispersiontest(f_nb)
   expect_true(d_nb$ratio > 2) # strong overdispersion (true model is NB with small size)
   expect_true(d_nb$p.value < 0.01)
 })
@@ -31,5 +31,5 @@ test_that("panglm_dispersiontest rejects random-effects marginal variance", {
   Grunfeld$count <- rpois(nrow(Grunfeld), lambda = exp(0.5 + 0.0002 * Grunfeld$value))
   f <- suppressWarnings(panglm(count ~ value + capital, data = Grunfeld, index = c("firm", "year"), model = "random", family = "poisson"))
   expect_true(all(is.finite(fitted(f))))
-  expect_error(panglm_dispersiontest(f), "not defined for random-effects")
+  expect_error(pandispersiontest(f), "not defined for random-effects")
 })

@@ -34,3 +34,49 @@ test_that("a fit with a deprecated family spec is identical to the new one", {
   expect_identical(coef(f_old), coef(f_new))
   expect_identical(vcov(f_old), vcov(f_new))
 })
+
+test_that("panglm_dispersiontest() is a deprecated alias of pandispersiontest()", {
+  data(copd, package = "panglm")
+  fit <- panglm(exacerbations ~ treatment + crp, data = copd, index = c("id", "visit"),
+                model = "pooling", family = "poisson")
+  panglm:::deprecate_reset()
+  expect_warning(old <- panglm_dispersiontest(fit), "pandispersiontest\\(\\)",
+                 class = "deprecatedWarning")
+  expect_identical(old, pandispersiontest(fit))
+  expect_s3_class(old, "panglm_dispersiontest")
+  expect_no_warning(panglm_dispersiontest(fit))
+})
+
+test_that("panglm_hausman() is a deprecated alias of panhausman()", {
+  data(copd, package = "panglm")
+  fe <- panglm(fev1 ~ crp, data = copd, index = c("id", "visit"), model = "within")
+  re <- panglm(fev1 ~ crp, data = copd, index = c("id", "visit"), model = "random")
+  panglm:::deprecate_reset()
+  expect_warning(old <- panglm_hausman(fe, re), "panhausman\\(\\)",
+                 class = "deprecatedWarning")
+  expect_identical(old, panhausman(fe, re))
+  expect_s3_class(old, "panglm_hausman")
+  expect_identical(
+    suppressWarnings(panglm_hausman(fe, method = "mundlak", data = copd, vcov = "HC1")),
+    panhausman(fe, method = "mundlak", data = copd, vcov = "HC1")
+  )
+  expect_output(print(old), "Hausman")
+})
+
+test_that("panglm_hurdle() is a deprecated alias of panhurdle(), count_family = family", {
+  data(copd, package = "panglm")
+  panglm:::deprecate_reset()
+  expect_warning(
+    old <- panglm_hurdle(exacerbations ~ crp, data = copd, index = c("id", "visit")),
+    "panhurdle\\(\\)", class = "deprecatedWarning"
+  )
+  expect_identical(old, panhurdle(exacerbations ~ crp, data = copd, index = c("id", "visit")))
+  old_nb <- panglm_hurdle(exacerbations ~ crp, data = copd, index = c("id", "visit"),
+                          count_family = "negbin")
+  new_nb <- panhurdle(exacerbations ~ crp, data = copd, index = c("id", "visit"),
+                      family = "negbin")
+  expect_identical(old_nb, new_nb)
+  expect_identical(old_nb$count_family, "negbin")
+  expect_s3_class(old_nb, "panglm_hurdle")
+  expect_output(print(old_nb), "NB2")
+})

@@ -70,7 +70,7 @@ plot.panglm <- function(x, which = c("coefficients", "residuals", "fitted"),
 #' @return `x`, invisibly
 #' @examples
 #' data(copd)
-#' fit <- panglm_hurdle(exacerbations ~ crp, data = copd,
+#' fit <- panhurdle(exacerbations ~ crp, data = copd,
 #'                      index = c("id", "visit"))
 #' plot(fit)
 #' @export

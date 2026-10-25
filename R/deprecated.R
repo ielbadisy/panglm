@@ -17,9 +17,20 @@
 #'   \code{beta_family()} \tab \code{\link{betafamily}()} \cr
 #'   \code{ordered_family()} \tab \code{\link{orderedfamily}()} \cr
 #'   \code{tobit_family()} \tab \code{\link{tobitfamily}()} \cr
+#'   \code{panglm_dispersiontest()} \tab \code{\link{pandispersiontest}()} \cr
+#'   \code{panglm_hausman()} \tab \code{\link{panhausman}()} \cr
+#'   \code{panglm_hurdle()} \tab \code{\link{panhurdle}()} \cr
 #' }
 #'
+#' \code{panglm_hurdle(count_family = )} is \code{panhurdle(family = )}.
+#' The objects returned keep their classes (\code{"panglm_dispersiontest"},
+#' \code{"panglm_hausman"}, \code{"panglm_hurdle"}), so code that tests
+#' or dispatches on them is unaffected.
+#'
 #' @param link,left,right passed to the replacement
+#' @param object,fe,re,method,data,vcov,formula,index,maxit,tol passed to the
+#'   replacement
+#' @param count_family passed as \code{family} to \code{\link{panhurdle}()}
 #' @return the value of the replacement function
 #' @name panglm-deprecated
 #' @keywords internal
@@ -113,4 +124,28 @@ ordered_family <- function(link = c("logit", "probit")) {
 tobit_family <- function(left = 0, right = Inf) {
   deprecate_once("tobit_family()", "tobitfamily()")
   tobitfamily(left = left, right = right)
+}
+
+#' @rdname panglm-deprecated
+#' @export
+panglm_dispersiontest <- function(object) {
+  deprecate_once("panglm_dispersiontest()", "pandispersiontest()")
+  pandispersiontest(object)
+}
+
+#' @rdname panglm-deprecated
+#' @export
+panglm_hausman <- function(fe, re = NULL, method = c("classical", "mundlak"), data = NULL,
+                           vcov = c("cluster", "HC1", "classical")) {
+  deprecate_once("panglm_hausman()", "panhausman()")
+  panhausman(fe, re = re, method = method, data = data, vcov = vcov)
+}
+
+#' @rdname panglm-deprecated
+#' @export
+panglm_hurdle <- function(formula, data, index,
+                          count_family = c("poisson", "negbin"),
+                          maxit = 100, tol = 1e-10) {
+  deprecate_once("panglm_hurdle()", "panhurdle()")
+  panhurdle(formula, data, index, family = count_family, maxit = maxit, tol = tol)
 }

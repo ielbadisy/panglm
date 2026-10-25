@@ -40,10 +40,10 @@
 #'                   model = "within", family = "gaussian")
 #' fit_re <- panglm(fev1 ~ crp, data = copd, index = c("id", "visit"),
 #'                   model = "random", family = "gaussian")
-#' panglm_hausman(fit_fe, fit_re)
-#' panglm_hausman(fit_fe, method = "mundlak", data = copd)
+#' panhausman(fit_fe, fit_re)
+#' panhausman(fit_fe, method = "mundlak", data = copd)
 #' @export
-panglm_hausman <- function(fe, re = NULL, method = c("classical", "mundlak"), data = NULL,
+panhausman <- function(fe, re = NULL, method = c("classical", "mundlak"), data = NULL,
                            vcov = c("cluster", "HC1", "classical")) {
   method <- match.arg(method)
   if (!inherits(fe, "panglm") || fe$model != "within") {

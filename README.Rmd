@@ -114,7 +114,7 @@ not be interpreted as eliminating that statistical concern.
 Ordinary Poisson/NB can't distinguish a *structural* zero (a group that
 never has the event) from an *ordinary* sampling zero at low mean -- it
 just shows up as extreme overdispersion regardless of family.
-`panglm_hurdle()` decomposes the two:
+`panhurdle()` decomposes the two:
 
 ```{r hurdle}
 set.seed(9)
@@ -127,7 +127,7 @@ p0    <- plogis(1 - 1.2 * a_i)
 zero  <- rbinom(N * Tt, 1, p0) == 1
 d$y   <- ifelse(zero, 0, rpois(N * Tt, mu))
 
-fit <- panglm_hurdle(y ~ x1, data = d, index = c("id", "time"))
+fit <- panhurdle(y ~ x1, data = d, index = c("id", "time"))
 fit
 ```
 
@@ -162,10 +162,10 @@ conditional panel estimators are not currently implemented.
 | `random` | poisson | Poisson-Gamma marginal | `pglm(model="random")` |
 | `random` | negbin | 2-parameter beta-negative-binomial marginal | `pglm()`'s `lnl.negbin.R` |
 | `random` | binomial | Gauss-Hermite quadrature | `glmmTMB` (approximate, different mixing distribution) |
-| -- | -- | `panglm_hurdle()`: conditional logit + zero-truncated Poisson | `pscl::hurdle()` |
+| -- | -- | `panhurdle()`: conditional logit + zero-truncated Poisson | `pscl::hurdle()` |
 
-Also included: `panglm_hausman()` (FE-vs-RE specification test),
-`panglm_dispersiontest()` (Pearson chi-squared/df overdispersion test),
+Also included: `panhausman()` (FE-vs-RE specification test),
+`pandispersiontest()` (Pearson chi-squared/df overdispersion test),
 `confint.panglm()`, and `tidy()`/`glance()` methods for `broom`/`modelsummary`
 pipelines.
 
@@ -178,7 +178,7 @@ families. See `NEWS.md`.
 Every estimator above is checked against its reference implementation in
 `tests/testthat/`, not just smoke-tested:
 
-```{r test-count}
+```{r test-count, message = FALSE, fig.keep = "none"}
 res <- testthat::test_local(reporter = testthat::SilentReporter$new())
 df  <- as.data.frame(res)
 c(pass = sum(df$passed), fail = sum(df$failed), warn = sum(df$warning), skip = sum(df$skipped))

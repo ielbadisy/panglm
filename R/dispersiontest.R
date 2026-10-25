@@ -21,15 +21,15 @@
 #' data(copd)
 #' fit <- panglm(exacerbations ~ treatment + age + smoker + crp, data = copd,
 #'               index = c("id", "visit"), model = "pooling", family = "poisson")
-#' panglm_dispersiontest(fit)
+#' pandispersiontest(fit)
 #' @export
-panglm_dispersiontest <- function(object) {
+pandispersiontest <- function(object) {
   if (!inherits(object, "panglm")) stop("'object' must be a panglm fit", call. = FALSE)
   if (!object$family$family %in% c("poisson", "negbin")) {
-    stop("panglm_dispersiontest() only applies to family = 'poisson' or 'negbin'", call. = FALSE)
+    stop("pandispersiontest() only applies to family = 'poisson' or 'negbin'", call. = FALSE)
   }
   if (object$model == "random") {
-    stop("panglm_dispersiontest() is not defined for random-effects models; ",
+    stop("pandispersiontest() is not defined for random-effects models; ",
          "their marginal variance includes the fitted mixing distribution",
          call. = FALSE)
   }

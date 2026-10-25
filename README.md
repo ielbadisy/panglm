@@ -53,6 +53,7 @@ summary(f_panglm)
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
+#> Log-likelihood: -1071 
 #> Dispersion parameter: 2784 
 #> Residual df: 188  Iterations: 2
 ```
@@ -60,8 +61,8 @@ summary(f_panglm)
 ``` r
 cbind(panglm = coef(f_panglm), plm = coef(f_plm), diff = coef(f_panglm) - coef(f_plm))
 #>            panglm       plm          diff
-#> value   0.1101238 0.1101238 -4.163336e-17
-#> capital 0.3100653 0.3100653  4.996004e-16
+#> value   0.1101238 0.1101238 -6.938894e-17
+#> capital 0.3100653 0.3100653  2.775558e-16
 ```
 
 ``` r
@@ -140,7 +141,7 @@ concern.
 Ordinary Poisson/NB can't distinguish a *structural* zero (a group that
 never has the event) from an *ordinary* sampling zero at low mean -- it
 just shows up as extreme overdispersion regardless of family.
-`panglm_hurdle()` decomposes the two:
+`panhurdle()` decomposes the two:
 
 ``` r
 set.seed(9)
@@ -153,7 +154,7 @@ p0    <- plogis(1 - 1.2 * a_i)
 zero  <- rbinom(N * Tt, 1, p0) == 1
 d$y   <- ifelse(zero, 0, rpois(N * Tt, mu))
 
-fit <- panglm_hurdle(y ~ x1, data = d, index = c("id", "time"))
+fit <- panhurdle(y ~ x1, data = d, index = c("id", "time"))
 #> 18 group(s) with no within-group outcome variation dropped (all-0 or all-1) -- they carry no information for the conditional likelihood.
 fit
 #> 
@@ -191,22 +192,22 @@ weighted conditional panel estimators are not currently implemented.
 
 ## What's estimated, and against what
 
-| `model`   | `family`                  | Method                                                        | Validated against                                      |
-|-----------|---------------------------|---------------------------------------------------------------|--------------------------------------------------------|
-| `pooling` | gaussian/poisson/binomial | IRLS                                                          | `stats::glm()`                                         |
-| `pooling` | negbin                    | theta-profiled IRLS                                           | `MASS::glm.nb()`                                       |
-| `within`  | gaussian                  | exact demeaning (one-way or `twoways`)                        | `plm(model="within")`                                  |
-| `within`  | poisson                   | conditional MLE (one-way or `twoways`)                        | `pglm()`, `fixest::feglm()`                            |
-| `within`  | negbin                    | Allison-Waterman dummy-variable (one-way or `twoways`)        | `fixest::fenegbin()`                                   |
-| `within`  | binomial                  | exact conditional logit (Chamberlain 1980)                    | `survival::clogit(method="exact")`                     |
-| `random`  | gaussian                  | Swamy-Arora                                                   | `plm(model="random")`                                  |
-| `random`  | poisson                   | Poisson-Gamma marginal                                        | `pglm(model="random")`                                 |
-| `random`  | negbin                    | 2-parameter beta-negative-binomial marginal                   | `pglm()`'s `lnl.negbin.R`                              |
-| `random`  | binomial                  | Gauss-Hermite quadrature                                      | `glmmTMB` (approximate, different mixing distribution) |
-| --        | --                        | `panglm_hurdle()`: conditional logit + zero-truncated Poisson | `pscl::hurdle()`                                       |
+| `model`   | `family`                  | Method                                                    | Validated against                                      |
+|-----------|---------------------------|-----------------------------------------------------------|--------------------------------------------------------|
+| `pooling` | gaussian/poisson/binomial | IRLS                                                      | `stats::glm()`                                         |
+| `pooling` | negbin                    | theta-profiled IRLS                                       | `MASS::glm.nb()`                                       |
+| `within`  | gaussian                  | exact demeaning (one-way or `twoways`)                    | `plm(model="within")`                                  |
+| `within`  | poisson                   | conditional MLE (one-way or `twoways`)                    | `pglm()`, `fixest::feglm()`                            |
+| `within`  | negbin                    | Allison-Waterman dummy-variable (one-way or `twoways`)    | `fixest::fenegbin()`                                   |
+| `within`  | binomial                  | exact conditional logit (Chamberlain 1980)                | `survival::clogit(method="exact")`                     |
+| `random`  | gaussian                  | Swamy-Arora                                               | `plm(model="random")`                                  |
+| `random`  | poisson                   | Poisson-Gamma marginal                                    | `pglm(model="random")`                                 |
+| `random`  | negbin                    | 2-parameter beta-negative-binomial marginal               | `pglm()`'s `lnl.negbin.R`                              |
+| `random`  | binomial                  | Gauss-Hermite quadrature                                  | `glmmTMB` (approximate, different mixing distribution) |
+| --        | --                        | `panhurdle()`: conditional logit + zero-truncated Poisson | `pscl::hurdle()`                                       |
 
-Also included: `panglm_hausman()` (FE-vs-RE specification test),
-`panglm_dispersiontest()` (Pearson chi-squared/df overdispersion test),
+Also included: `panhausman()` (FE-vs-RE specification test),
+`pandispersiontest()` (Pearson chi-squared/df overdispersion test),
 `confint.panglm()`, and `tidy()`/`glance()` methods for
 `broom`/`modelsummary` pipelines.
 
@@ -221,12 +222,10 @@ Every estimator above is checked against its reference implementation in
 
 ``` r
 res <- testthat::test_local(reporter = testthat::SilentReporter$new())
-#> 21 group(s) with no within-group outcome variation dropped (all-0 or all-1) -- they carry no information for the conditional likelihood.
-#> 2 group(s) with all-zero outcomes dropped -- their fixed effect is unbounded under the dummy-variable NB2 MLE and carries no information about the shared slope.
 df  <- as.data.frame(res)
 c(pass = sum(df$passed), fail = sum(df$failed), warn = sum(df$warning), skip = sum(df$skipped))
 #> pass fail warn skip 
-#>  158    0    0    0
+#> 1134    0    0    0
 ```
 
 See `vignette("panglm-methods")` for the full walkthrough (33+

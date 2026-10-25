@@ -128,7 +128,7 @@ test_that("Hausman test matches plm::phtest", {
   data(Grunfeld, package = "plm")
   fe <- panglm(inv ~ value + capital, data = Grunfeld, index = c("firm", "year"), model = "within", family = "gaussian")
   re <- panglm(inv ~ value + capital, data = Grunfeld, index = c("firm", "year"), model = "random", family = "gaussian")
-  h <- panglm_hausman(fe, re)
+  h <- panhausman(fe, re)
   # phtest()'s formula method calls plm() unqualified, so pass fitted models.
   ph <- plm::phtest(
     plm::plm(inv ~ value + capital, data = Grunfeld, index = c("firm", "year"), model = "within"),
@@ -171,7 +171,7 @@ test_that("classical Hausman ignores a robust vcov on the FE fit", {
   fe <- panglm(f, data = Grunfeld, index = c("firm", "year"), model = "within")
   fe_cl <- panglm(f, data = Grunfeld, index = c("firm", "year"), model = "within", vcov = "cluster")
   re <- panglm(f, data = Grunfeld, index = c("firm", "year"), model = "random")
-  expect_equal(panglm_hausman(fe_cl, re)$statistic, panglm_hausman(fe, re)$statistic, tolerance = 1e-10)
+  expect_equal(panhausman(fe_cl, re)$statistic, panhausman(fe, re)$statistic, tolerance = 1e-10)
 })
 
 test_that("Mundlak test matches a manual pooled regression with cluster-robust Wald", {
@@ -188,13 +188,13 @@ test_that("Mundlak test matches a manual pooled regression with cluster-robust W
   V <- sandwich::vcovCL(ols, cluster = ~ firm, type = "HC1")[c("vbar", "cbar"), c("vbar", "cbar")]
   b <- coef(ols)[c("vbar", "cbar")]
   W <- as.numeric(t(b) %*% solve(V, b))
-  h <- panglm_hausman(fe, method = "mundlak", data = Grunfeld)
+  h <- panhausman(fe, method = "mundlak", data = Grunfeld)
   expect_equal(h$statistic, W / 2, tolerance = 1e-8)
   expect_equal(h$parameter, c(2, 9))
   expect_equal(h$p.value, pf(W / 2, 2, 9, lower.tail = FALSE), tolerance = 1e-8)
-  h0 <- panglm_hausman(fe, method = "mundlak", data = Grunfeld, vcov = "classical")
+  h0 <- panhausman(fe, method = "mundlak", data = Grunfeld, vcov = "classical")
   expect_identical(h0$distribution, "chisq")
-  expect_error(panglm_hausman(fe, method = "mundlak"), "needs the 'data'")
+  expect_error(panhausman(fe, method = "mundlak"), "needs the 'data'")
 })
 
 test_that("within poisson HC1 and cluster vcov match fixest::fepois", {

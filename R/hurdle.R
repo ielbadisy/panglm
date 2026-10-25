@@ -35,8 +35,9 @@
 #' @param data a data.frame containing the variables in `formula` and `index`
 #' @param index length-2 character vector identifying the individual and
 #'   time columns, e.g. `c("id", "time")`
-#' @param count_family count distribution for positive observations, either
-#'   `"poisson"` or `"negbin"` (NB2 parameterization)
+#' @param family count distribution for positive observations, either
+#'   `"poisson"` or `"negbin"` (NB2 parameterization). It is stored on the
+#'   fit as `count_family`.
 #' @param maxit maximum IRLS/Newton iterations
 #' @param tol convergence tolerance
 #' @return an object of class `"panglm_hurdle"`: a list with `zero` (the
@@ -44,13 +45,13 @@
 #'   zero-truncated fixed-effects fit for the count part)
 #' @examples
 #' data(copd)
-#' fit <- panglm_hurdle(exacerbations ~ crp, data = copd, index = c("id", "visit"))
+#' fit <- panhurdle(exacerbations ~ crp, data = copd, index = c("id", "visit"))
 #' fit
 #' @export
-panglm_hurdle <- function(formula, data, index,
-                          count_family = c("poisson", "negbin"),
-                          maxit = 100, tol = 1e-10) {
-  count_family <- match.arg(count_family)
+panhurdle <- function(formula, data, index,
+                      family = c("poisson", "negbin"),
+                      maxit = 100, tol = 1e-10) {
+  count_family <- match.arg(family)
   if (missing(index) || length(index) != 2) {
     stop("'index' must be a two-element character vector, e.g. index = c(\"id\", \"time\")", call. = FALSE)
   }

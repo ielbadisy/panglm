@@ -30,7 +30,7 @@ test_that("plot.panglm_hurdle displays either or both components", {
   on.exit(grDevices::dev.off(), add = TRUE)
   data(copd)
   fit <- suppressMessages(
-    panglm_hurdle(exacerbations ~ crp, data = copd,
+    panhurdle(exacerbations ~ crp, data = copd,
                   index = c("id", "visit"))
   )
 
