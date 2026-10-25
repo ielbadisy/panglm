@@ -18,8 +18,11 @@ test_that("confint.twopart is the Wald interval from coef and vcov", {
 
 test_that("confint.twopart uses the joint covariance of a correlated fit", {
   copd <- methods_data("copd")
-  fit <- twopart(cost ~ treatment + crp, data = copd, index = c("id", "visit"),
-                 model = "random", positive = "lognormal", correlated = TRUE)
+  # the binary random-effect SD sits on its zero boundary here, which the fit reports
+  expect_warning(
+    fit <- twopart(cost ~ treatment + crp, data = copd, index = c("id", "visit"),
+                   model = "random", positive = "lognormal", correlated = TRUE),
+    "did not converge")
   ci <- confint(fit)
   expect_equal(nrow(ci), length(coef(fit)))
   expect_equal(unname(ci[, 2] - ci[, 1]), unname(2 * qnorm(0.975) * sqrt(diag(vcov(fit)))))
