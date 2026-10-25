@@ -84,12 +84,12 @@ test_that("methods: predict, summary, cluster vcov, seed, panfmmselect", {
   a <- panfmm(y ~ x, d, c("id", "t"), k = 2, nstart = 2, seed = 3)
   b <- panfmm(y ~ x, d, c("id", "t"), k = 2, nstart = 2, seed = 3)
   expect_identical(coef(a), coef(b))
-  pc <- predict(a, type = "class")
+  pc <- predict(a, type = "components")
   expect_equal(dim(pc), c(nrow(d), 2L))
   expect_equal(predict(a), as.numeric(pc %*% a$prior_mean), tolerance = 1e-12)
   expect_length(predict(a, weights = "posterior"), nrow(d))
   nd <- data.frame(x = c(0, 1))
-  expect_equal(predict(a, newdata = nd, type = "class")[, 1],
+  expect_equal(predict(a, newdata = nd, type = "components")[, 1],
                exp(a$classcoef[1, 1] + a$classcoef[2, 1] * nd$x), tolerance = 1e-12)
   expect_error(predict(a, newdata = nd, type = "posterior"), "estimation sample")
   vc <- vcov(a, type = "cluster")
@@ -176,7 +176,7 @@ test_that("probit components", {
   expect_lt(max(abs(colSums(a$score))), 1e-4)
   expect_output(print(a), "latent class probit")
   nd <- data.frame(x = c(-1, 1))
-  expect_equal(predict(a, newdata = nd, type = "class")[, 2],
+  expect_equal(predict(a, newdata = nd, type = "components")[, 2],
                pnorm(a$classcoef[1, 2] + a$classcoef[2, 2] * nd$x), tolerance = 1e-12)
   logit <- panfmm(yb ~ x, d, c("id", "t"), k = 2, family = "binomial", nstart = 2, seed = 2)
   expect_false(isTRUE(all.equal(a$loglik, logit$loglik)))
@@ -196,4 +196,32 @@ test_that("the warm-started IRLS M step equals glm.fit()", {
     # Fisher scoring converges linearly for the non-canonical probit link
     expect_equal(b, unname(g$coefficients), tolerance = 1e-8)
   }
+})
+
+test_that("predict(type = \"class\") returns modal class labels", {
+  d <- fmm_sim(N = 120)
+  a <- panfmm(y ~ x, d, c("id", "t"), k = 2, nstart = 2, seed = 3)
+  deprecate_reset <- get("deprecate_reset", asNamespace("panglm"))
+  deprecate_reset()
+  expect_message(cl <- predict(a, type = "class"), "type = \"components\"",
+                 class = "panglm_behaviour_change")
+  expect_type(cl, "integer")
+  expect_length(cl, nrow(d))
+  expect_true(all(cl %in% 1:2))
+  post <- predict(a, type = "posterior")
+  expect_equal(dim(post), c(nrow(d), 2L))
+  expect_equal(unname(rowSums(post)), rep(1, nrow(d)), tolerance = 1e-10)
+  expect_identical(cl, as.integer(max.col(post, ties.method = "first")))
+  # the label is constant within individuals and matches the stored posterior
+  expect_true(all(tapply(cl, d$id, function(v) length(unique(v))) == 1L))
+  ids <- sort(unique(d$id))
+  expect_identical(unname(cl[match(ids, d$id)]),
+                   as.integer(max.col(a$posterior, ties.method = "first")))
+  # shown once per session only
+  expect_no_message(predict(a, type = "class"))
+  # with newdata: the class with the largest prior probability
+  nd <- data.frame(x = c(0, 1))
+  expect_identical(predict(a, newdata = nd, type = "class"),
+                   rep(as.integer(which.max(a$prior_mean)), 2L))
+  expect_error(predict(a, newdata = nd, type = "posterior"), "estimation sample")
 })

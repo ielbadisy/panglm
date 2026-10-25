@@ -160,12 +160,16 @@ values 1.8 and 1.35). Higher income lowers the probability of being a
 high user (true coefficient -0.8). With classes this well separated,
 every patient is assigned to their true class.
 `predict(type = "posterior")` gives each patient's posterior class
-probabilities, which can be used to classify them; `type = "class"`
-gives the class-specific means.
+probabilities; `type = "class"` assigns each to the class with the
+largest posterior probability, and `type = "components"` gives the
+class-specific means.
 
-```{r fmm-post}
-post <- predict(fmm, type = "posterior")[!duplicated(m$id), ]
-table(true = high, assigned = max.col(post))
+```{r fmm-post, message = FALSE}
+first <- !duplicated(m$id)
+post <- predict(fmm, type = "posterior")[first, ]
+assigned <- predict(fmm, type = "class")[first]
+all(assigned == max.col(post))
+table(true = high, assigned = assigned)
 ```
 
 Latent classes are a modelling device, not a discovery of real groups:

@@ -189,7 +189,7 @@ fit <- panfmm(visits ~ chronic + age, data = d, index = c("id", "year"),
               k = 2, family = "poisson", nstart = 3, seed = 1)
 summary(fit)
 head(fit$posterior)
-head(predict(fit, type = "class"))
+table(predict(fit, type = "class"))
 }
 \references{
 Deb, P. and Trivedi, P. K. (1997). Demand for medical care by the

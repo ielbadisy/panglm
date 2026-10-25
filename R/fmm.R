@@ -159,7 +159,7 @@
 #'               k = 2, family = "poisson", nstart = 3, seed = 1)
 #' summary(fit)
 #' head(fit$posterior)
-#' head(predict(fit, type = "class"))
+#' table(predict(fit, type = "class"))
 #' @export
 panfmm <- function(formula, data, index, k = 2, family = "poisson",
                    concomitant = NULL, nstart = 10, seed = NULL,
@@ -836,17 +836,24 @@ confint.panfmm <- function(object, parm, level = 0.95, ...) {
 #'   of [panfmm()] cannot be evaluated in `newdata` and is not applied,
 #'   with a warning)
 #' @param type `"response"` for the marginal mean
-#'   `sum_c w_ic mu_c(x_it)`, `"class"` for the matrix of class-specific
-#'   means `mu_c(x_it)` (one column per class), or `"prior"` /
-#'   `"posterior"` for the class probabilities of each observation's
-#'   individual
+#'   `sum_c w_ic mu_c(x_it)`; `"class"` for the modal class of each
+#'   observation's individual (an integer, the class with the largest
+#'   posterior probability in the estimation sample, or the largest prior
+#'   probability, from the concomitant variables when there are some, with
+#'   `newdata`); `"posterior"` / `"prior"` for the matrix of class
+#'   probabilities of each observation's individual; `"components"` for the
+#'   matrix of class-specific means `mu_c(x_it)` (one column per class).
+#'   In panglm 1.5.0 and earlier, `type = "class"` returned the
+#'   class-specific means now given by `"components"`; a message recalls
+#'   this once per session.
 #' @param weights for `type = "response"`: `"prior"` (the class
 #'   probabilities, from the concomitant variables when there are some) or
 #'   `"posterior"` (the in-sample posterior probabilities; only without
 #'   `newdata`)
 #' @param ... unused
-#' @return a numeric vector (`"response"`) or a matrix with one column per
-#'   class
+#' @return a numeric vector (`"response"`), an integer vector of class
+#'   labels `1, ..., k` (`"class"`), or a matrix with one column per class
+#'   (`"posterior"`, `"prior"`, `"components"`)
 #' @family panfmm methods
 #' @examples
 #' set.seed(3)
@@ -854,12 +861,16 @@ confint.panfmm <- function(object, parm, level = 0.95, ...) {
 #' d$y <- rpois(450, exp(ifelse(rep(rbinom(150, 1, 0.4), each = 3) == 1, 1.5, 0) + 0.3 * d$x))
 #' fit <- panfmm(y ~ x, data = d, index = c("id", "t"), nstart = 2, seed = 1)
 #' head(predict(fit))
-#' predict(fit, newdata = data.frame(x = c(-1, 0, 1)), type = "class")
+#' table(predict(fit, type = "class"))              # modal class per row
+#' head(predict(fit, type = "posterior"))           # class probabilities
+#' predict(fit, newdata = data.frame(x = c(-1, 0, 1)), type = "components")
 #' @export
 predict.panfmm <- function(object, newdata = NULL,
-                           type = c("response", "class", "prior", "posterior"),
+                           type = c("response", "class", "prior", "posterior",
+                                    "components"),
                            weights = c("prior", "posterior"), ...) {
   type <- match.arg(type)
+  if (type == "class") fmm_class_notice()
   weights <- match.arg(weights)
   k <- object$k
   if (is.null(newdata)) {
@@ -869,7 +880,7 @@ predict.panfmm <- function(object, newdata = NULL,
     post <- object$posterior[rep(seq_len(object$n_groups), object$group_size), , drop = FALSE]
     back <- order(object$panel_order)
   } else {
-    if (type == "posterior" || weights == "posterior") {
+    if (type == "posterior" || (type == "response" && weights == "posterior")) {
       stop("posterior probabilities are only available for the estimation sample",
            call. = FALSE)
     }
@@ -898,8 +909,12 @@ predict.panfmm <- function(object, newdata = NULL,
                binomial = if (probit) stats::pnorm(eta) else stats::plogis(eta),
                exp(eta))
   mu <- matrix(mu, nrow(X), k, dimnames = list(NULL, cn))
+  if (type == "class") {
+    probs <- if (is.null(post)) prior else post
+    return(as.integer(max.col(probs, ties.method = "first"))[back])
+  }
   out <- switch(type,
-    class = mu,
+    components = mu,
     prior = prior,
     posterior = post,
     response = rowSums(mu * if (weights == "prior") prior else post)
@@ -911,6 +926,20 @@ predict.panfmm <- function(object, newdata = NULL,
   } else {
     as.numeric(out[back])
   }
+}
+
+# Tell users of the old predict(type = "class") (class-specific means)
+# once per session that it now returns class labels.
+fmm_class_notice <- function() {
+  key <- "panfmm predict class"
+  if (isTRUE(.panglm_deprecated[[key]])) return(invisible(FALSE))
+  assign(key, TRUE, envir = .panglm_deprecated)
+  msg <- paste0("predict.panfmm(type = \"class\") now returns the modal class label; ",
+                "the class-specific means it returned in panglm 1.5.0 and earlier are ",
+                "type = \"components\". This message is shown once per session.\n")
+  message(structure(list(message = msg, call = NULL),
+                    class = c("panglm_behaviour_change", "message", "condition")))
+  invisible(TRUE)
 }
 
 #' @export

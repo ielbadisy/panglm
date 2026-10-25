@@ -7,7 +7,7 @@
 \method{predict}{panfmm}(
   object,
   newdata = NULL,
-  type = c("response", "class", "prior", "posterior"),
+  type = c("response", "class", "prior", "posterior", "components"),
   weights = c("prior", "posterior"),
   ...
 )
@@ -23,10 +23,16 @@ of \code{\link[=panfmm]{panfmm()}} cannot be evaluated in \code{newdata} and is 
 with a warning)}
 
 \item{type}{\code{"response"} for the marginal mean
-\verb{sum_c w_ic mu_c(x_it)}, \code{"class"} for the matrix of class-specific
-means \code{mu_c(x_it)} (one column per class), or \code{"prior"} /
-\code{"posterior"} for the class probabilities of each observation's
-individual}
+\verb{sum_c w_ic mu_c(x_it)}; \code{"class"} for the modal class of each
+observation's individual (an integer, the class with the largest
+posterior probability in the estimation sample, or the largest prior
+probability, from the concomitant variables when there are some, with
+\code{newdata}); \code{"posterior"} / \code{"prior"} for the matrix of class
+probabilities of each observation's individual; \code{"components"} for the
+matrix of class-specific means \code{mu_c(x_it)} (one column per class).
+In panglm 1.5.0 and earlier, \code{type = "class"} returned the
+class-specific means now given by \code{"components"}; a message recalls
+this once per session.}
 
 \item{weights}{for \code{type = "response"}: \code{"prior"} (the class
 probabilities, from the concomitant variables when there are some) or
@@ -36,8 +42,9 @@ probabilities, from the concomitant variables when there are some) or
 \item{...}{unused}
 }
 \value{
-a numeric vector (\code{"response"}) or a matrix with one column per
-class
+a numeric vector (\code{"response"}), an integer vector of class
+labels \verb{1, ..., k} (\code{"class"}), or a matrix with one column per class
+(\code{"posterior"}, \code{"prior"}, \code{"components"})
 }
 \description{
 Predictions from a latent class panel model
@@ -48,7 +55,9 @@ d <- data.frame(id = rep(1:150, each = 3), t = rep(1:3, 150), x = rnorm(450))
 d$y <- rpois(450, exp(ifelse(rep(rbinom(150, 1, 0.4), each = 3) == 1, 1.5, 0) + 0.3 * d$x))
 fit <- panfmm(y ~ x, data = d, index = c("id", "t"), nstart = 2, seed = 1)
 head(predict(fit))
-predict(fit, newdata = data.frame(x = c(-1, 0, 1)), type = "class")
+table(predict(fit, type = "class"))              # modal class per row
+head(predict(fit, type = "posterior"))           # class probabilities
+predict(fit, newdata = data.frame(x = c(-1, 0, 1)), type = "components")
 }
 \seealso{
 Other panfmm methods: 
