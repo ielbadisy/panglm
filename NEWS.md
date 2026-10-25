@@ -69,6 +69,18 @@
   class membership, `predict()` (marginal and class-specific means) and
   `panfmmselect()` to compare numbers of classes by AIC and BIC. Validated
   against flexmix.
+* `attgt()` and `etwfe()` gain `weights` (sampling weights, a column name or
+  a vector). In `attgt()` they must be constant within individuals and enter
+  the 2x2 estimators, the influence functions and the cohort shares of every
+  aggregation, matching `did::att_gt(weightsname =)`; `etwfe()` uses them in
+  the fit, the cluster-robust variance and the ATT averaging, matching
+  `etwfe::etwfe(weights =)` with `emfx(wts =)`.
+* `attgt()` gains `cluster` (a cluster variable beyond the individual) and
+  `bstrap`, `cband`, `biters`, `multiplier` (Rademacher or Mammen) and `seed`
+  for a multiplier bootstrap: bootstrap standard errors and uniform
+  confidence bands for ATT(g,t) and every `summary()` aggregation, drawn by
+  `plot()`. Validated against `did` (`validation/validate-did-weights.R`,
+  `validation/validate-did-boot.R`).
 * `validation/`: per-model scripts comparing panglm with established
   packages, summarized in `validation/REPORT.md`.
 

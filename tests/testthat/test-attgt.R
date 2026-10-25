@@ -115,3 +115,57 @@ test_that("weighted attgt matches did::att_gt(weightsname = )", {
     }
   }
 })
+
+test_that("attgt bootstrap: reproducible with a seed, global RNG untouched, uniform bands", {
+  d <- att_panel(5)
+  d$region <- (d$id - 1) %/% 10
+  base <- attgt(y ~ x, d, c("id", "year"), "first")
+  set.seed(99)
+  before <- .Random.seed
+  f1 <- attgt(y ~ x, d, c("id", "year"), "first", cband = TRUE, biters = 299, seed = 4)
+  expect_identical(.Random.seed, before)
+  f2 <- attgt(y ~ x, d, c("id", "year"), "first", cband = TRUE, biters = 299, seed = 4)
+  expect_identical(f1$estimates, f2$estimates)
+  expect_identical(summary(f1, type = "dynamic")$estimates, summary(f2, type = "dynamic")$estimates)
+  expect_true(f1$boot$cband)
+  expect_equal(f1$estimates$estimate, base$estimates$estimate)
+  expect_true(all(f1$estimates$se != base$estimates$se))
+  expect_gte(f1$boot$crit, stats::qnorm(0.975))
+  est <- f1$estimates
+  expect_true(all(c("band_lower", "band_upper") %in% names(est)))
+  expect_equal(est$band_upper - est$estimate, f1$boot$crit * est$se)
+  s <- summary(f1, type = "dynamic")
+  expect_gte(s$crit, stats::qnorm(0.975))
+  expect_true(all(s$estimates$band_lower <= s$estimates$lower))
+  expect_silent(plot(s))
+  expect_silent(plot(f1))
+  # no band columns without cband, and the default results are unchanged
+  f3 <- attgt(y ~ x, d, c("id", "year"), "first", bstrap = TRUE, biters = 99, seed = 1,
+              multiplier = "mammen")
+  expect_false("band_lower" %in% names(f3$estimates))
+  expect_null(base$boot)
+  expect_false("band_lower" %in% names(base$estimates))
+  # clustered bootstrap runs; non-constant cluster is rejected
+  f4 <- attgt(y ~ x, d, c("id", "year"), "first", cluster = "region", cband = TRUE,
+              biters = 99, seed = 2)
+  expect_gte(f4$boot$crit, stats::qnorm(0.975))
+  d$bad <- seq_len(nrow(d))
+  expect_error(attgt(y ~ x, d, c("id", "year"), "first", cluster = "bad"), "constant within")
+  expect_error(attgt(y ~ x, d, c("id", "year"), "first", bstrap = TRUE, biters = 1), "biters")
+})
+
+test_that("clustered attgt matches did::att_gt(clustervars = )", {
+  skip_if_not_installed("did")
+  data(mpdta, package = "did")
+  mpdta$state <- mpdta$countyreal %/% 1000
+  ref <- suppressMessages(did::att_gt("lemp", tname = "year", idname = "countyreal",
+                                      gname = "first.treat", xformla = ~lpop, data = mpdta,
+                                      clustervars = c("countyreal", "state"),
+                                      bstrap = FALSE, cband = FALSE))
+  fit <- attgt(lemp ~ lpop, mpdta, c("countyreal", "year"), "first.treat", cluster = "state")
+  expect_equal(fit$estimates$se, ref$se, tolerance = 1e-6)
+  ag <- did::aggte(ref, type = "dynamic", bstrap = FALSE, cband = FALSE)
+  s <- summary(fit, type = "dynamic")
+  expect_equal(s$estimates$se, ag$se.egt, tolerance = 1e-6)
+  expect_equal(s$overall$se, ag$overall.se, tolerance = 1e-6)
+})

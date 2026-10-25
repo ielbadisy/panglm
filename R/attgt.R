@@ -48,9 +48,26 @@
 #' each estimator, including the estimation of the propensity score and
 #' outcome regression and, for the aggregations, of the cohort shares used
 #' as weights; they are robust to serial correlation within individuals.
-#' They match `did::att_gt(bstrap = FALSE)` and `did::aggte()`. Confidence
-#' intervals are pointwise. The joint Wald test of all pre-treatment
+#' They match `did::att_gt(bstrap = FALSE)` and `did::aggte()`. With
+#' `cluster`, the influence functions are summed within clusters (which must
+#' nest individuals) before computing the standard errors, as
+#' `clustervars` in `did`. The joint Wald test of all pre-treatment
 #' `ATT(g, t)` is reported as a test of parallel pre-trends.
+#'
+#' With `bstrap = TRUE`, the standard errors come instead from the
+#' multiplier bootstrap of `did`: each bootstrap draw multiplies the
+#' (cluster sums of the) influence functions by independent Rademacher or
+#' Mammen weights, and the standard error is the interquartile range of the
+#' draws divided by that of the standard normal, which is robust to a few
+#' extreme draws. With `cband = TRUE` the bootstrap also gives the
+#' simultaneous critical value, the `level` quantile of the largest
+#' studentized deviation across all `ATT(g, t)` (or all levels of an
+#' aggregation), and the uniform confidence bands `band_lower`,
+#' `band_upper` cover all effects jointly with probability `level`. The
+#' aggregations of [summary.panglm_attgt()] reuse the same multiplier draws
+#' (they are generated from `seed`), so that they are coherent with the
+#' `ATT(g, t)`. Pointwise intervals (`lower`, `upper`) use the normal
+#' critical value with the bootstrap standard errors.
 #'
 #' @param formula `outcome ~ 1`, or `outcome ~ covariates` for conditional
 #'   parallel trends (covariates are taken in the base period)
@@ -76,13 +93,34 @@
 #'   outcome regression and the means of every `ATT(g, t)`, and the cohort
 #'   shares used by the aggregations, as `weightsname` in
 #'   `did::att_gt()`.
+#' @param cluster optional name of a column of `data` (or a vector with one
+#'   value per row) defining clusters of individuals, constant within each
+#'   individual (for example the region of a province). Standard errors,
+#'   the pre-trend test and the bootstrap are then clustered at that level
+#'   instead of the individual level.
+#' @param bstrap logical: multiplier bootstrap standard errors (`FALSE` by
+#'   default: analytic standard errors)
+#' @param cband logical: uniform confidence bands from the bootstrap
+#'   simultaneous critical value (implies `bstrap = TRUE`)
+#' @param biters number of bootstrap draws
+#' @param multiplier bootstrap multipliers: `"rademacher"` (`-1` or `1` with
+#'   equal probabilities, as in current versions of `did`) or `"mammen"`
+#'   (the two-point distribution of Mammen 1993)
+#' @param seed optional integer seed for the bootstrap draws. When given,
+#'   the draws are reproducible and the global random number generator is
+#'   left as it was; otherwise a seed is drawn from it. Either way the seed
+#'   is stored in the fit and reused by [summary.panglm_attgt()].
 #' @return an object of class `"panglm_attgt"`: a list with `estimates` (a
 #'   data frame with `group`, `time`, `event` (`time - group`), `estimate`,
 #'   `se`, `lower`, `upper` and `post`), `inf` (the matrix of influence
 #'   functions, one row per individual and one column per `ATT(g, t)`),
-#'   `units` (individual identifiers and cohorts), `pretrend` (the Wald test
-#'   of the pre-treatment `ATT(g, t)`, or `NULL`), `n` (individuals),
-#'   `groups`, `periods` and the settings. Methods: `print`, `summary`,
+#'   `units` (individual identifiers, cohorts, normalized weights and
+#'   clusters), `pretrend` (the Wald test of the pre-treatment `ATT(g, t)`,
+#'   or `NULL`), `n` (individuals), `groups`, `periods`, `boot` (with the
+#'   bootstrap: the settings, the analytic standard errors `se_analytic`
+#'   and the simultaneous critical value `crit`; `NULL` otherwise) and the
+#'   settings. With `cband = TRUE`, `estimates` also has the uniform band
+#'   `band_lower`, `band_upper`. Methods: `print`, `summary`,
 #'   `coef`, `vcov`, `nobs`, `plot`.
 #' @seealso [summary.panglm_attgt()] for the aggregations, [etwfe()] for
 #'   the extended two-way fixed-effects alternative (also for count and
@@ -94,6 +132,10 @@
 #'   Sant'Anna, P. H. C. and Zhao, J. (2020). Doubly robust
 #'   difference-in-differences estimators. *Journal of Econometrics*, 219,
 #'   101-122. \doi{10.1016/j.jeconom.2020.06.003}
+#'
+#'   Mammen, E. (1993). Bootstrap and wild bootstrap for high dimensional
+#'   linear models. *The Annals of Statistics*, 21, 255-285.
+#'   \doi{10.1214/aos/1176349025}
 #' @examples
 #' # A health insurance scheme (for example the AMO extension in Morocco)
 #' # is rolled out region by region: provinces of region A join in 2016,
@@ -119,20 +161,38 @@
 #' fitx <- attgt(visits ~ urban, data = d, index = c("province", "year"),
 #'               treat = "adoption", control = "notyet", method = "dr")
 #' summary(fitx, type = "dynamic")
+#' # multiplier bootstrap, clustered by region, with uniform bands
+#' d$region <- ceiling(d$province / 10)
+#' fitb <- attgt(visits ~ 1, data = d, index = c("province", "year"),
+#'               treat = "adoption", cluster = "region", cband = TRUE,
+#'               biters = 499, seed = 1)
+#' plot(fitb)
 #' @export
 attgt <- function(formula, data, index, treat, control = c("never", "notyet"),
                   method = c("dr", "ipw", "reg"), base = c("varying", "universal"),
-                  anticipation = 0, level = 0.95, weights = NULL) {
+                  anticipation = 0, level = 0.95, weights = NULL, cluster = NULL,
+                  bstrap = FALSE, cband = FALSE, biters = 1000,
+                  multiplier = c("rademacher", "mammen"), seed = NULL) {
   control <- match.arg(control)
   method <- match.arg(method)
   base <- match.arg(base)
+  multiplier <- match.arg(multiplier)
+  bstrap <- isTRUE(bstrap) || isTRUE(cband)
+  if (bstrap) {
+    if (!is.numeric(biters) || length(biters) != 1L || biters < 2) {
+      stop("'biters' must be a number of at least 2", call. = FALSE)
+    }
+    if (is.null(seed)) seed <- sample.int(.Machine$integer.max, 1L)
+  }
   if (!is.numeric(anticipation) || length(anticipation) != 1L || anticipation < 0) {
     stop("'anticipation' must be a non-negative number", call. = FALSE)
   }
   data <- as.data.frame(data)
   did_timing(data, index, treat)
   wv <- did_weights(weights, data)
-  prep <- attgt_prepare(formula, data, index, treat, control, anticipation, wv)
+  cv <- did_cluster(cluster, data)
+  prep <- attgt_prepare(formula, data, index, treat, control, anticipation, wv, cv)
+  cl <- prep$cluster
   n <- prep$n
   tlist <- prep$periods
   glist <- prep$groups
@@ -185,21 +245,32 @@ attgt <- function(formula, data, index, treat, control = c("never", "notyet"),
   }
   cells <- do.call(rbind, cells)
   inf <- do.call(cbind, inf)
-  se <- sqrt(colSums(inf^2)) / n
-  se[!is.na(se) & se <= sqrt(.Machine$double.eps) * 10] <- NA
+  se <- attgt_se(inf, cl, n)
   z <- stats::qnorm(1 - (1 - level) / 2)
   est <- data.frame(group = cells[, 1], time = cells[, 2], event = cells[, 2] - cells[, 1],
                     estimate = cells[, 3], se = se)
+  boot <- NULL
+  if (bstrap) {
+    boot <- list(biters = biters, multiplier = multiplier, seed = seed, cband = isTRUE(cband),
+                 se_analytic = se)
+    bo <- attgt_mboot(inf, cl, n, biters, multiplier, seed, level)
+    est$se <- ifelse(is.na(se), NA_real_, bo$se)
+    if (boot$cband) boot$crit <- attgt_crit(bo$crit, z)
+  }
   est$lower <- est$estimate - z * est$se
   est$upper <- est$estimate + z * est$se
+  if (bstrap && boot$cband) {
+    est$band_lower <- est$estimate - boot$crit * est$se
+    est$band_upper <- est$estimate + boot$crit * est$se
+  }
   est$post <- cells[, 4] == 1
   colnames(inf) <- paste0("g", est$group, ".t", est$time)
   rownames(inf) <- as.character(prep$ids)
 
-  pre <- which(!est$post & !is.na(est$se))
+  pre <- which(!est$post & !is.na(se))
   pretrend <- NULL
   if (length(pre)) {
-    V <- crossprod(inf[, pre, drop = FALSE]) / n^2
+    V <- attgt_vcov(inf[, pre, drop = FALSE], cl, n)
     if (rcond(V) > .Machine$double.eps) {
       stat <- as.numeric(t(est$estimate[pre]) %*% solve(V, est$estimate[pre]))
       pretrend <- list(statistic = stat, df = length(pre),
@@ -208,10 +279,12 @@ attgt <- function(formula, data, index, treat, control = c("never", "notyet"),
     }
   }
   structure(list(estimates = est, inf = inf,
-                 units = data.frame(id = prep$ids, group = G, weight = prep$W),
+                 units = data.frame(id = prep$ids, group = G, weight = prep$W,
+                                    cluster = if (is.null(cl)) prep$ids else cl),
                  pretrend = pretrend, n = n, groups = glist, periods = tlist,
                  control = control, method = method, base = base,
                  anticipation = anticipation, level = level, weighted = !is.null(wv),
+                 clustered = !is.null(cl), boot = boot,
                  covariates = prep$covariates, outcome = prep$outcome,
                  dropped = prep$dropped, call = match.call()),
             class = "panglm_attgt")
@@ -221,7 +294,8 @@ attgt <- function(formula, data, index, treat, control = c("never", "notyet"),
 #'
 #' @keywords internal
 #' @noRd
-attgt_prepare <- function(formula, data, index, treat, control, anticipation, wv = NULL) {
+attgt_prepare <- function(formula, data, index, treat, control, anticipation, wv = NULL,
+                          cv = NULL) {
   formula <- stats::as.formula(formula)
   if (length(formula) != 3L) stop("'formula' must have an outcome, e.g. y ~ 1", call. = FALSE)
   rhs <- stats::delete.response(stats::terms(formula))
@@ -233,6 +307,7 @@ attgt_prepare <- function(formula, data, index, treat, control, anticipation, wv
   }
   ok <- stats::complete.cases(data[, vars, drop = FALSE])
   if (!is.null(wv)) ok <- ok & !is.na(wv)
+  if (!is.null(cv)) ok <- ok & !is.na(cv)
   mf <- stats::model.frame(formula, data = data[ok, , drop = FALSE], na.action = stats::na.pass)
   y <- stats::model.response(mf)
   if (!is.numeric(y) && !is.logical(y)) stop("the outcome must be numeric", call. = FALSE)
@@ -248,6 +323,7 @@ attgt_prepare <- function(formula, data, index, treat, control, anticipation, wv
   time <- data[[index[2]]][ok]
   first <- data[[treat]][ok]
   wt <- if (is.null(wv)) rep(1, length(id)) else wv[ok]
+  cl <- if (is.null(cv)) rep(1L, length(id)) else cv[ok]
   first[is.na(first) | !is.finite(first) | first == 0] <- 0
   y <- as.numeric(y[fin])
   X <- X[fin, , drop = FALSE]
@@ -280,7 +356,7 @@ attgt_prepare <- function(formula, data, index, treat, control, anticipation, wv
     dropped$early <- length(unique(id[early & keep]))
   }
   keep <- keep & !early
-  id <- id[keep]; time <- time[keep]; first <- first[keep]; y <- y[keep]; wt <- wt[keep]
+  id <- id[keep]; time <- time[keep]; first <- first[keep]; y <- y[keep]; wt <- wt[keep]; cl <- cl[keep]
   X <- X[keep, , drop = FALSE]
   tlist <- sort(unique(time))
   nT <- length(tlist)
@@ -292,10 +368,14 @@ attgt_prepare <- function(formula, data, index, treat, control, anticipation, wv
             "and are dropped to balance the panel", call. = FALSE)
     dropped$unbalanced <- length(counts) - length(full)
   }
-  id <- id[bal]; time <- time[bal]; first <- first[bal]; y <- y[bal]; wt <- wt[bal]
+  id <- id[bal]; time <- time[bal]; first <- first[bal]; y <- y[bal]; wt <- wt[bal]; cl <- cl[bal]
   X <- X[bal, , drop = FALSE]
   if (!length(id)) stop("no individuals left after balancing the panel", call. = FALSE)
   if (!is.null(wv)) did_constant(wt, id, "weights")
+  if (!is.null(cv)) {
+    clid <- tapply(as.character(cl), id, function(x) length(unique(x)))
+    if (any(clid > 1L)) stop("'cluster' must be constant within individuals", call. = FALSE)
+  }
   ids <- sort(unique(id))
   n <- length(ids)
   row <- match(id, ids)
@@ -312,6 +392,10 @@ attgt_prepare <- function(formula, data, index, treat, control, anticipation, wv
   G[row] <- first
   W <- numeric(n)
   W[row] <- wt
+  CL <- NULL
+  if (!is.null(cv)) {
+    CL <- cl[match(seq_len(n), row)]
+  }
   if (!is.null(wv)) {
     if (!(mean(W) > 0)) stop("the weights must have a positive mean", call. = FALSE)
     W <- W / mean(W)
@@ -320,7 +404,7 @@ attgt_prepare <- function(formula, data, index, treat, control, anticipation, wv
   if (control == "notyet" && !any(G == 0) && length(glist)) glist <- glist[glist < max(G)]
   glist <- glist[glist > tlist[1] + anticipation]
   if (!length(glist)) stop("no treated cohort with a pre-treatment period", call. = FALSE)
-  list(Y = Y, X = Xs, G = G, W = W, ids = ids, n = n, periods = tlist, groups = glist,
+  list(Y = Y, X = Xs, G = G, W = W, cluster = CL, ids = ids, n = n, periods = tlist, groups = glist,
        outcome = outcome, covariates = setdiff(colnames(X), "(Intercept)"), dropped = dropped)
 }
 
@@ -410,7 +494,12 @@ attgt_2x2 <- function(dy, D, X, method, w = NULL, trim = 0.995) {
 #'   mean over periods.
 #'
 #' Standard errors come from the influence functions and account for the
-#' estimation of the cohort-size weights.
+#' estimation of the cohort-size weights. When the fit was bootstrapped
+#' ([attgt()] with `bstrap = TRUE`), the standard errors of the aggregated
+#' effects come from the same multiplier draws and, with `cband = TRUE`, the
+#' effects by level get uniform confidence bands (`band_lower`,
+#' `band_upper`) from the simultaneous critical value `crit`, as in
+#' `did::aggte()`. Clustering follows the fit.
 #'
 #' @param object an `"panglm_attgt"` fit from [attgt()]
 #' @param type `"simple"`, `"dynamic"`, `"group"` or `"calendar"`
@@ -425,8 +514,10 @@ attgt_2x2 <- function(dy, D, X, method, w = NULL, trim = 0.995) {
 #'   `overall` (a one-row data frame with `estimate`, `se`, `lower`,
 #'   `upper`), `estimates` (the effects by event time, cohort or period:
 #'   column `level` plus the same columns; `NULL` for `"simple"`), `type`,
-#'   `pretrend`, `inf` (the influence functions of the overall effect and,
-#'   as attribute `"by"`, of the effects by level) and the fit settings.
+#'   `pretrend`, `inf` (the influence functions of the overall effect),
+#'   `crit` (the simultaneous critical value of the uniform bands, or
+#'   `NULL`), `boot` and the fit settings. The influence functions of the
+#'   effects by level are the attribute `"inf"` of `estimates`.
 #' @examples
 #' set.seed(2)
 #' d <- expand.grid(id = 1:150, t = 1:8)
@@ -468,7 +559,11 @@ summary.panglm_attgt <- function(object, type = c("simple", "dynamic", "group", 
     list(estimate = estimate, inf = f)
   }
   z <- stats::qnorm(1 - (1 - level) / 2)
-  se_of <- function(f) sqrt(sum(f^2)) / n
+  cl <- if (isTRUE(object$clustered)) object$units$cluster else NULL
+  se_of <- function(f) sqrt(sum(attgt_csum(f, cl)^2)) / n
+  boot <- object$boot
+  mb <- function(f) attgt_mboot(f, cl, n, boot$biters, boot$multiplier, boot$seed, level)
+  crit <- NULL
   by <- NULL
   if (type == "simple") {
     keep <- which(est$post)
@@ -524,15 +619,26 @@ summary.panglm_attgt <- function(object, type = c("simple", "dynamic", "group", 
     }
     se_by <- apply(inf_by, 2, se_of)
     se_by[se_by <= sqrt(.Machine$double.eps) * 10] <- NA
+    if (!is.null(boot)) {
+      bo <- mb(inf_by)
+      se_by <- ifelse(is.na(se_by), NA_real_, bo$se)
+      if (isTRUE(boot$cband)) crit <- attgt_crit(bo$crit, z)
+    }
     by <- data.frame(level = lev, estimate = a_by, se = se_by,
                      lower = a_by - z * se_by, upper = a_by + z * se_by)
+    if (!is.null(crit)) {
+      by$band_lower <- a_by - crit * se_by
+      by$band_upper <- a_by + crit * se_by
+    }
     attr(by, "inf") <- inf_by
   }
   se <- se_of(overall$inf)
+  if (!is.null(boot)) se <- mb(matrix(overall$inf, ncol = 1L))$se
   out <- list(overall = data.frame(estimate = overall$estimate, se = se,
                                    lower = overall$estimate - z * se,
                                    upper = overall$estimate + z * se),
               estimates = by, type = type, inf = overall$inf, pretrend = object$pretrend,
+              crit = crit, boot = boot[setdiff(names(boot), "se_analytic")],
               control = object$control, method = object$method,
               covariates = object$covariates, n = n, level = level, call = object$call)
   class(out) <- "summary.panglm_attgt"
@@ -551,6 +657,12 @@ print.summary.panglm_attgt <- function(x, digits = max(3, getOption("digits") - 
   ov <- x$overall
   name <- c(simple = "ATT", dynamic = "ATT (mean of e >= 0)",
             group = "ATT (cohort-size weighted)", calendar = "ATT (mean over periods)")
+  if (!is.null(x$boot)) {
+    cat("Bootstrap standard errors (", x$boot$multiplier, ", ", x$boot$biters, " draws)",
+        if (!is.null(x$crit)) {
+          paste0("; uniform bands with critical value ", format(x$crit, digits = digits))
+        }, "\n", sep = "")
+  }
   cat(name[[x$type]], ": ", format(ov$estimate, digits = digits), " (SE ",
       format(ov$se, digits = digits), ", ", format(100 * x$level), "% CI ",
       format(ov$lower, digits = digits), " to ", format(ov$upper, digits = digits), ")\n",
@@ -577,7 +689,17 @@ print.panglm_attgt <- function(x, digits = max(3, getOption("digits") - 3), ...)
       " Estimator:", if (length(x$covariates)) toupper(x$method) else "unconditional",
       " Base period:", x$base, "\n")
   cat("Individuals:", x$n, " Periods:", length(x$periods), " Cohorts:",
-      paste(x$groups, collapse = ", "), "\n\n")
+      paste(x$groups, collapse = ", "), "\n")
+  if (isTRUE(x$clustered)) {
+    cat("Standard errors clustered (", length(unique(x$units$cluster)), " clusters)\n", sep = "")
+  }
+  if (!is.null(x$boot)) {
+    cat("Bootstrap standard errors (", x$boot$multiplier, ", ", x$boot$biters, " draws)",
+        if (!is.null(x$boot$crit)) {
+          paste0("; uniform bands with critical value ", format(x$boot$crit, digits = digits))
+        }, "\n", sep = "")
+  }
+  cat("\n")
   tab <- x$estimates
   tab$post <- NULL
   print(format(tab, digits = digits), row.names = FALSE)
@@ -597,7 +719,8 @@ coef.panglm_attgt <- function(object, ...) {
 
 #' @export
 vcov.panglm_attgt <- function(object, ...) {
-  crossprod(object$inf) / object$n^2
+  attgt_vcov(object$inf, if (isTRUE(object$clustered)) object$units$cluster else NULL,
+             object$n)
 }
 
 #' @export
@@ -607,6 +730,8 @@ nobs.panglm_attgt <- function(object, ...) object$n
 #'
 #' Plots the dynamic aggregation of [attgt()] (`ATT(e)` by event time with
 #' pointwise confidence intervals), or the cohort or calendar aggregation.
+#' When the fit has uniform confidence bands (`cband = TRUE`), they are
+#' drawn as thin grey whiskers behind the pointwise intervals.
 #'
 #' @param x an `"panglm_attgt"` fit from [attgt()], or its summary
 #' @param type aggregation to plot (for a fit): `"dynamic"`, `"group"` or
@@ -645,11 +770,20 @@ plot.summary.panglm_attgt <- function(x, type = NULL, xlab = NULL, ylab = "ATT",
   ok <- is.finite(tab$estimate)
   lo <- ifelse(is.finite(tab$lower), tab$lower, tab$estimate)
   hi <- ifelse(is.finite(tab$upper), tab$upper, tab$estimate)
+  band <- !is.null(tab$band_lower)
+  if (band) {
+    blo <- ifelse(is.finite(tab$band_lower), tab$band_lower, tab$estimate)
+    bhi <- ifelse(is.finite(tab$band_upper), tab$band_upper, tab$estimate)
+  }
   pre <- x$type == "dynamic" & tab$level < 0
+  yl <- range(lo[ok], hi[ok], 0, if (band) c(blo[ok], bhi[ok]))
   graphics::plot(tab$level[ok], tab$estimate[ok], pch = ifelse(pre[ok], 1, 19),
-                 xlab = xlab, ylab = ylab, ylim = range(lo[ok], hi[ok], 0), xaxt = "n", ...)
+                 xlab = xlab, ylab = ylab, ylim = yl, xaxt = "n", ...)
   graphics::axis(1, at = tab$level)
-  graphics::segments(tab$level[ok], lo[ok], tab$level[ok], hi[ok])
+  if (band) {
+    graphics::segments(tab$level[ok], blo[ok], tab$level[ok], bhi[ok], col = "grey60", lwd = 1)
+  }
+  graphics::segments(tab$level[ok], lo[ok], tab$level[ok], hi[ok], lwd = if (band) 2 else 1)
   graphics::abline(h = 0, lty = 3)
   if (x$type == "dynamic") graphics::abline(v = -0.5, lty = 2)
   invisible(x)
@@ -690,4 +824,132 @@ did_constant <- function(v, id, what) {
     stop("'", what, "' must be constant within individuals", call. = FALSE)
   }
   invisible(TRUE)
+}
+
+#' Cluster variable for attgt()
+#'
+#' @keywords internal
+#' @noRd
+did_cluster <- function(cluster, data) {
+  if (is.null(cluster)) return(NULL)
+  if (is.character(cluster) && length(cluster) == 1L) {
+    if (!cluster %in% names(data)) {
+      stop("cluster column '", cluster, "' not found in data", call. = FALSE)
+    }
+    cluster <- data[[cluster]]
+  }
+  if (length(cluster) != nrow(data)) {
+    stop("'cluster' must be a column name or a vector with one value per row of data",
+         call. = FALSE)
+  }
+  if (is.factor(cluster)) cluster <- as.character(cluster)
+  cluster
+}
+
+#' Influence functions summed within clusters
+#'
+#' @keywords internal
+#' @noRd
+attgt_csum <- function(inf, cl) {
+  inf <- as.matrix(inf)
+  if (is.null(cl)) inf else rowsum(inf, cl, reorder = TRUE)
+}
+
+#' Analytic standard errors and covariance from influence functions
+#'
+#' @keywords internal
+#' @noRd
+attgt_se <- function(inf, cl, n) {
+  se <- sqrt(colSums(attgt_csum(inf, cl)^2)) / n
+  se[!is.na(se) & se <= sqrt(.Machine$double.eps) * 10] <- NA
+  se
+}
+
+attgt_vcov <- function(inf, cl, n) crossprod(attgt_csum(inf, cl)) / n^2
+
+#' Run an expression with a fixed seed, restoring the global RNG state
+#'
+#' @keywords internal
+#' @noRd
+attgt_with_seed <- function(seed, expr) {
+  genv <- globalenv()
+  had <- exists(".Random.seed", envir = genv, inherits = FALSE)
+  old <- if (had) genv[[".Random.seed"]] else NULL
+  on.exit({
+    if (had) {
+      genv[[".Random.seed"]] <- old
+    } else if (exists(".Random.seed", envir = genv, inherits = FALSE)) {
+      rm(list = ".Random.seed", envir = genv)
+    }
+  })
+  set.seed(seed, kind = "Mersenne-Twister", normal.kind = "Inversion",
+           sample.kind = "Rejection")
+  expr
+}
+
+#' Multiplier bootstrap of influence functions (as did:::mboot)
+#'
+#' Returns the bootstrap standard errors (interquartile range of the draws
+#' over that of the standard normal) and the simultaneous critical value
+#' (quantile of the largest studentized absolute deviation) over the
+#' columns of `inf` with a non-degenerate bootstrap distribution. Columns
+#' with missing values get `NA`.
+#'
+#' @keywords internal
+#' @noRd
+attgt_mboot <- function(inf, cl, n, biters, multiplier, seed, level) {
+  inf <- as.matrix(inf)
+  k <- ncol(inf)
+  okc <- colSums(is.na(inf)) == 0
+  S <- attgt_csum(inf[, okc, drop = FALSE], cl)
+  nc <- nrow(S)
+  bres <- matrix(0, biters, ncol(S))
+  if (ncol(S)) {
+    chunk <- max(1L, min(biters, floor(1e7 / nc)))
+    starts <- seq.int(1L, biters, by = chunk)
+    attgt_with_seed(seed, for (s0 in starts) {
+      b <- min(chunk, biters - s0 + 1L)
+      m <- b * nc
+      v <- if (multiplier == "rademacher") {
+        2 * (stats::runif(m) < 0.5) - 1
+      } else {
+        r5 <- sqrt(5)
+        ifelse(stats::runif(m) < (r5 + 1) / (2 * r5), (1 - r5) / 2, (1 + r5) / 2)
+      }
+      bres[s0:(s0 + b - 1L), ] <- matrix(v, b, nc) %*% S / sqrt(nc)
+    })
+  }
+  iqr_norm <- stats::qnorm(0.75) - stats::qnorm(0.25)
+  bsig <- apply(bres, 2, function(b) {
+    b <- sort.int(b)
+    nb <- length(b)
+    (b[ceiling(0.75 * nb)] - b[ceiling(0.25 * nb)]) / iqr_norm
+  })
+  bsig[!(bsig > sqrt(.Machine$double.eps) * 10)] <- NA
+  se <- rep(NA_real_, k)
+  se[okc] <- bsig * sqrt(nc) / n
+  crit <- NA_real_
+  use <- which(!is.na(bsig))
+  if (length(use)) {
+    tmax <- apply(abs(bres[, use, drop = FALSE]) / rep(bsig[use], each = biters), 1, max)
+    crit <- as.numeric(stats::quantile(tmax, level, type = 1))
+  }
+  list(se = se, crit = crit)
+}
+
+#' Simultaneous critical value with the safeguards of did::aggte()
+#'
+#' @keywords internal
+#' @noRd
+attgt_crit <- function(crit, z) {
+  if (!is.finite(crit)) {
+    warning("the simultaneous critical value could not be computed; ",
+            "the bands are pointwise", call. = FALSE)
+    return(z)
+  }
+  if (crit >= 7) {
+    warning("the simultaneous critical value is very large (", format(crit, digits = 3),
+            ") and may be unreliable", call. = FALSE)
+  }
+  max(crit, z)
 }

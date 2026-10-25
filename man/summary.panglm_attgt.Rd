@@ -35,8 +35,10 @@ an object of class `"summary.panglm_attgt"`: a list with
   `overall` (a one-row data frame with `estimate`, `se`, `lower`,
   `upper`), `estimates` (the effects by event time, cohort or period:
   column `level` plus the same columns; `NULL` for `"simple"`), `type`,
-  `pretrend`, `inf` (the influence functions of the overall effect and,
-  as attribute `"by"`, of the effects by level) and the fit settings.
+  `pretrend`, `inf` (the influence functions of the overall effect),
+  `crit` (the simultaneous critical value of the uniform bands, or
+  `NULL`), `boot` and the fit settings. The influence functions of the
+  effects by level are the attribute `"inf"` of `estimates`.
 }
 \description{
 Combines the `ATT(g, t)` of an [attgt()] fit into summary effects, as in
@@ -54,7 +56,12 @@ Callaway and Sant'Anna (2021, Section 3) and `did::aggte()`:
 }
 \details{
 Standard errors come from the influence functions and account for the
-estimation of the cohort-size weights.
+estimation of the cohort-size weights. When the fit was bootstrapped
+([attgt()] with `bstrap = TRUE`), the standard errors of the aggregated
+effects come from the same multiplier draws and, with `cband = TRUE`, the
+effects by level get uniform confidence bands (`band_lower`,
+`band_upper`) from the simultaneous critical value `crit`, as in
+`did::aggte()`. Clustering follows the fit.
 }
 \examples{
 set.seed(2)

@@ -14,7 +14,13 @@ attgt(
   base = c("varying", "universal"),
   anticipation = 0,
   level = 0.95,
-  weights = NULL
+  weights = NULL,
+  cluster = NULL,
+  bstrap = FALSE,
+  cband = FALSE,
+  biters = 1000,
+  multiplier = c("rademacher", "mammen"),
+  seed = NULL
 )
 }
 \arguments{
@@ -51,15 +57,42 @@ weight are dropped). The weights enter the propensity score, the
 outcome regression and the means of every `ATT(g, t)`, and the cohort
 shares used by the aggregations, as `weightsname` in
 `did::att_gt()`.}
+
+\item{cluster}{optional name of a column of `data` (or a vector with one
+value per row) defining clusters of individuals, constant within each
+individual (for example the region of a province). Standard errors,
+the pre-trend test and the bootstrap are then clustered at that level
+instead of the individual level.}
+
+\item{bstrap}{logical: multiplier bootstrap standard errors (`FALSE` by
+default: analytic standard errors)}
+
+\item{cband}{logical: uniform confidence bands from the bootstrap
+simultaneous critical value (implies `bstrap = TRUE`)}
+
+\item{biters}{number of bootstrap draws}
+
+\item{multiplier}{bootstrap multipliers: `"rademacher"` (`-1` or `1` with
+equal probabilities, as in current versions of `did`) or `"mammen"`
+(the two-point distribution of Mammen 1993)}
+
+\item{seed}{optional integer seed for the bootstrap draws. When given,
+the draws are reproducible and the global random number generator is
+left as it was; otherwise a seed is drawn from it. Either way the seed
+is stored in the fit and reused by [summary.panglm_attgt()].}
 }
 \value{
 an object of class `"panglm_attgt"`: a list with `estimates` (a
   data frame with `group`, `time`, `event` (`time - group`), `estimate`,
   `se`, `lower`, `upper` and `post`), `inf` (the matrix of influence
   functions, one row per individual and one column per `ATT(g, t)`),
-  `units` (individual identifiers and cohorts), `pretrend` (the Wald test
-  of the pre-treatment `ATT(g, t)`, or `NULL`), `n` (individuals),
-  `groups`, `periods` and the settings. Methods: `print`, `summary`,
+  `units` (individual identifiers, cohorts, normalized weights and
+  clusters), `pretrend` (the Wald test of the pre-treatment `ATT(g, t)`,
+  or `NULL`), `n` (individuals), `groups`, `periods`, `boot` (with the
+  bootstrap: the settings, the analytic standard errors `se_analytic`
+  and the simultaneous critical value `crit`; `NULL` otherwise) and the
+  settings. With `cband = TRUE`, `estimates` also has the uniform band
+  `band_lower`, `band_upper`. Methods: `print`, `summary`,
   `coef`, `vcov`, `nobs`, `plot`.
 }
 \description{
@@ -114,9 +147,26 @@ Standard errors are analytic and come from the influence function of
 each estimator, including the estimation of the propensity score and
 outcome regression and, for the aggregations, of the cohort shares used
 as weights; they are robust to serial correlation within individuals.
-They match `did::att_gt(bstrap = FALSE)` and `did::aggte()`. Confidence
-intervals are pointwise. The joint Wald test of all pre-treatment
+They match `did::att_gt(bstrap = FALSE)` and `did::aggte()`. With
+`cluster`, the influence functions are summed within clusters (which must
+nest individuals) before computing the standard errors, as
+`clustervars` in `did`. The joint Wald test of all pre-treatment
 `ATT(g, t)` is reported as a test of parallel pre-trends.
+
+With `bstrap = TRUE`, the standard errors come instead from the
+multiplier bootstrap of `did`: each bootstrap draw multiplies the
+(cluster sums of the) influence functions by independent Rademacher or
+Mammen weights, and the standard error is the interquartile range of the
+draws divided by that of the standard normal, which is robust to a few
+extreme draws. With `cband = TRUE` the bootstrap also gives the
+simultaneous critical value, the `level` quantile of the largest
+studentized deviation across all `ATT(g, t)` (or all levels of an
+aggregation), and the uniform confidence bands `band_lower`,
+`band_upper` cover all effects jointly with probability `level`. The
+aggregations of [summary.panglm_attgt()] reuse the same multiplier draws
+(they are generated from `seed`), so that they are coherent with the
+`ATT(g, t)`. Pointwise intervals (`lower`, `upper`) use the normal
+critical value with the bootstrap standard errors.
 }
 
 \examples{
@@ -144,6 +194,12 @@ plot(fit)
 fitx <- attgt(visits ~ urban, data = d, index = c("province", "year"),
               treat = "adoption", control = "notyet", method = "dr")
 summary(fitx, type = "dynamic")
+# multiplier bootstrap, clustered by region, with uniform bands
+d$region <- ceiling(d$province / 10)
+fitb <- attgt(visits ~ 1, data = d, index = c("province", "year"),
+              treat = "adoption", cluster = "region", cband = TRUE,
+              biters = 499, seed = 1)
+plot(fitb)
 }
 \references{
 Callaway, B. and Sant'Anna, P. H. C. (2021).
@@ -153,6 +209,10 @@ Callaway, B. and Sant'Anna, P. H. C. (2021).
   Sant'Anna, P. H. C. and Zhao, J. (2020). Doubly robust
   difference-in-differences estimators. *Journal of Econometrics*, 219,
   101-122. \doi{10.1016/j.jeconom.2020.06.003}
+
+  Mammen, E. (1993). Bootstrap and wild bootstrap for high dimensional
+  linear models. *The Annals of Statistics*, 21, 255-285.
+  \doi{10.1214/aos/1176349025}
 }
 \seealso{
 [summary.panglm_attgt()] for the aggregations, [etwfe()] for

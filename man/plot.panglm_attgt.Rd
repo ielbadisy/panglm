@@ -32,6 +32,8 @@ the plotted summary, invisibly
 \description{
 Plots the dynamic aggregation of [attgt()] (`ATT(e)` by event time with
 pointwise confidence intervals), or the cohort or calendar aggregation.
+When the fit has uniform confidence bands (`cband = TRUE`), they are
+drawn as thin grey whiskers behind the pointwise intervals.
 }
 \examples{
 set.seed(2)
