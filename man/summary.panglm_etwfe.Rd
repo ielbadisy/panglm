@@ -8,6 +8,7 @@
   object,
   type = c("simple", "group", "calendar", "event"),
   level = object$level,
+  byxvar = !is.null(object$xvar),
   ...
 )
 }
@@ -18,13 +19,20 @@
 
 \item{level}{confidence level; defaults to that of the fit}
 
+\item{byxvar}{logical; for a fit with `xvar`, report the ATTs separately
+for each value of the covariate (by aggregation level and value). The
+default is `TRUE` for such fits; `overall` is always the ATT over all
+treated observations.}
+
 \item{...}{unused}
 }
 \value{
 an object of class `"summary.panglm_etwfe"`: a list with
   `overall` (the simple ATT: `estimate`, `se`, `statistic`, `p.value`,
   `lower`, `upper`), `estimates` (the same columns by `level` of the
-  aggregation, `NULL` for `"simple"`), `cells` and the fit information.
+  aggregation, and by value of the `xvar` covariate in a column named
+  after it when `byxvar = TRUE`; `NULL` for `"simple"` without
+  `byxvar`), `cells` and the fit information.
 }
 \description{
 Averages, over the treated observations, the difference between the

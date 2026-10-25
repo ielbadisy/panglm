@@ -95,3 +95,92 @@ test_that("etwfe sampling weights", {
     expect_equal(tab$se, e$std.error, tolerance = 1e-6)
   }
 })
+
+test_that("etwfe xvar: effects by a covariate", {
+  d <- et_panel(4)
+  d$g <- as.numeric(d$id %% 2 == 0)
+  post <- !is.na(d$first) & d$year >= d$first
+  d$y2 <- d$y + 1.5 * post * d$g
+  fit <- etwfe(y2 ~ x, d, c("id", "year"), "first", xvar = "g")
+  s <- summary(fit)
+  expect_equal(names(s$estimates)[1], "g")
+  expect_equal(s$estimates$g, c(0, 1))
+  expect_equal(diff(s$estimates$estimate), 1.5, tolerance = 0.25)
+  # the overall ATT is the treated-count weighted mean of the by-xvar ATTs
+  n <- table(d$g[post])
+  expect_equal(s$overall$estimate, sum(n * s$estimates$estimate) / sum(n), tolerance = 1e-10)
+  ev <- summary(fit, type = "event")$estimates
+  expect_equal(nrow(ev), 2 * length(unique(ev$level)))
+  expect_null(summary(fit, byxvar = FALSE)$estimates)
+  expect_equal(summary(fit, type = "group", byxvar = FALSE)$estimates$level, c(2014, 2016))
+  expect_output(print(fit), "effects by g")
+  pdf(NULL); on.exit(dev.off())
+  expect_silent(plot(fit))
+  expect_error(plot(summary(fit, type = "event")), "byxvar")
+  b <- etwfe(bin ~ 1, d, c("id", "year"), "first", family = "binomial", xvar = "g",
+             control = "never")
+  expect_equal(nrow(summary(b, type = "calendar")$estimates), 2 * 5)
+  d$gl <- d$g == 1
+  expect_equal(summary(etwfe(y2 ~ x, d, c("id", "year"), "first", xvar = "gl"))$estimates$estimate,
+               s$estimates$estimate, tolerance = 1e-10)
+  d$gc <- as.character(d$g)
+  expect_error(etwfe(y2 ~ 1, d, c("id", "year"), "first", xvar = "gc"), "numeric or logical")
+  expect_error(etwfe(y2 ~ 1, d, c("id", "year"), "first", xvar = "nope"), "not found")
+  expect_error(etwfe(y2 ~ 1, d, c("id", "year"), "first", xvar = c("g", "x")), "one column")
+  expect_error(summary(etwfe(y2 ~ 1, d, c("id", "year"), "first"), byxvar = TRUE), "xvar")
+})
+
+test_that("etwfe ivar: individual fixed effects", {
+  d <- et_panel(5)
+  d$z <- rnorm(240)[d$id]
+  f0 <- etwfe(y ~ 1, d, c("id", "year"), "first")
+  f1 <- etwfe(y ~ 1, d, c("id", "year"), "first", ivar = TRUE)
+  expect_true(f1$ivar)
+  # balanced panel without time-varying controls: same cell effects and
+  # ATTs as with cohort effects
+  for (type in c("simple", "event")) {
+    a <- summary(f0, type = type)
+    b <- summary(f1, type = type)
+    expect_equal(b$overall$estimate, a$overall$estimate, tolerance = 1e-8)
+    expect_equal(b$estimates$estimate, a$estimates$estimate, tolerance = 1e-8)
+  }
+  expect_equal(f1$cells$estimate, f0$cells$estimate, tolerance = 1e-8)
+  expect_output(print(f1), "individual and period")
+  # a time-invariant control is absorbed
+  f2 <- etwfe(y ~ x + z, d, c("id", "year"), "first", ivar = TRUE)
+  expect_false("z" %in% names(coef(f2)))
+  expect_true(is.finite(summary(f2)$overall$se))
+  # unbalanced and weighted fits run and differ from the cohort version
+  du <- d[-seq(1, nrow(d), by = 7), ]
+  du$w <- runif(nrow(du), 0.5, 2)
+  fu <- etwfe(y ~ x, du, c("id", "year"), "first", ivar = TRUE, weights = "w")
+  expect_true(is.finite(summary(fu)$overall$estimate))
+  expect_error(etwfe(cnt ~ 1, d, c("id", "year"), "first", family = "poisson", ivar = TRUE),
+               "gaussian")
+  expect_error(etwfe(y ~ 1, d, c("id", "year"), "first", ivar = NA), "TRUE or FALSE")
+})
+
+test_that("etwfe xvar and ivar match etwfe::etwfe and etwfe::emfx", {
+  skip_if_not_installed("etwfe")
+  data(mpdta, package = "did")
+  mpdta$big <- as.integer(mpdta$lpop > stats::median(mpdta$lpop))
+  mpdta$emp <- round(exp(mpdta$lemp))
+  idx <- c("countyreal", "year")
+  ref <- suppressMessages(etwfe::etwfe(emp ~ 1, tvar = year, gvar = first.treat, data = mpdta,
+                                       xvar = big, family = "poisson", glm.tol = 1e-12,
+                                       vcov = ~countyreal))
+  fit <- etwfe(emp ~ 1, mpdta, idx, "first.treat", family = "poisson", xvar = "big")
+  e <- etwfe::emfx(ref, type = "event")
+  s <- summary(fit, type = "event")$estimates
+  expect_equal(s$level, e$event)
+  expect_equal(s$big, e$big)
+  expect_equal(s$estimate, e$estimate, tolerance = 1e-6)
+  expect_equal(s$se, e$std.error, tolerance = 1e-4)
+  ref <- suppressMessages(etwfe::etwfe(lemp ~ lpop, tvar = year, gvar = first.treat,
+                                       data = mpdta, ivar = countyreal, vcov = ~countyreal))
+  fit <- etwfe(lemp ~ lpop, mpdta, idx, "first.treat", ivar = TRUE)
+  e <- etwfe::emfx(ref, type = "group")
+  s <- summary(fit, type = "group")$estimates
+  expect_equal(s$estimate, e$estimate, tolerance = 1e-8)
+  expect_equal(s$se, e$std.error, tolerance = 1e-6)
+})

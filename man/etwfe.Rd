@@ -13,7 +13,9 @@ etwfe(
   control = c("notyet", "never"),
   vcov = c("cluster", "classical"),
   level = 0.95,
-  weights = NULL
+  weights = NULL,
+  xvar = NULL,
+  ivar = FALSE
 )
 }
 \arguments{
@@ -35,7 +37,8 @@ period; `NA`, `0` or `Inf` for units that are never treated}
 \item{vcov}{`"cluster"` (by individual, the default) or `"classical"`.
 The cluster covariance uses the factor
 `G / (G - 1) * (n - 1) / (n - k)` with `k` counting all coefficients,
-cohort and period dummies included.}
+cohort and period dummies included (with `ivar = TRUE`, the individual
+effects, nested in the clusters, count as one), as `fixest` does.}
 
 \item{level}{confidence level of the reported intervals}
 
@@ -45,13 +48,23 @@ missing weight are dropped). They weight the quasi-likelihood (as
 `weights = ~w` in `etwfe::etwfe()` and `fixest`) and the averages of
 the treatment effects over the treated observations in
 [summary.panglm_etwfe()] (as `wts` in `etwfe::emfx()`). The centring
-of the controls at their cohort means is unweighted, as in `etwfe`.}
+of the controls at their cohort means (and of `xvar` at its cell
+means) is unweighted, as in `etwfe`.}
+
+\item{xvar}{optional name of one numeric or logical column of `data`: a
+covariate by which the treatment effects may vary (see Heterogeneity
+by a covariate)}
+
+\item{ivar}{logical; `TRUE` uses individual (the first element of
+`index`) instead of cohort fixed effects, for `family = "gaussian"`
+only (see Specification)}
 }
 \value{
 an object of class `"panglm_etwfe"`: a list with
   `coefficients`, `vcov`, `cells` (a data frame of the cohort by period
   cells with their coefficient on the index scale), `family`, `control`,
-  `reference` (the reference cohort), `nobs`, `n_groups`, the design
+  `reference` (the reference cohort), `xvar`, `ivar`, `nobs`,
+  `n_groups`, the design
   (`X`, `y`, `rows`) and the call. Methods: `print`, `summary` (the
   ATTs), `coef`, `vcov`, `nobs`, `plot`.
 }
@@ -85,8 +98,9 @@ Standard errors use the delta method with analytic gradients.
 \section{Specification}{
 
 Cohort and period effects enter as dummies (cohort effects rather than
-individual effects: for linear models on balanced panels the two give
-the same cell effects, and for nonlinear models the pooled
+individual effects: for linear models on balanced panels without
+time-varying controls the two give the same cell effects, and for
+nonlinear models the pooled
 quasi-likelihood with cohort dummies is the estimator of Wooldridge
 2023). With `control = "notyet"` (the default) the cell dummies cover
 the post-treatment cells only, so all untreated observations, of
@@ -105,6 +119,39 @@ interactions with the cohort and period dummies, and interactions of the
 cell dummies with the control variables centred at their cohort means,
 as in Wooldridge (2021) and the `etwfe` package, so that the cell
 effects can vary with the controls.
+
+With `ivar = TRUE` (linear model only) individual fixed effects replace
+the cohort effects, as `ivar` in `etwfe::etwfe()`: they are swept out by
+within-individual demeaning (weighted when there are weights). On a
+balanced panel without time-varying controls the cell effects and ATTs
+are the same as with cohort effects. They differ with time-varying
+controls (the individual effects then also absorb the part of the
+individual heterogeneity that is correlated with the controls, as the
+Mundlak means of Wooldridge 2021 would) and on unbalanced panels; the
+individual effects also absorb time-invariant controls.
+Nonlinear models keep the cohort effects (with few periods, individual
+effects in a logit model suffer from the incidental parameters problem;
+the pooled Poisson and logit quasi-likelihoods with cohort effects are
+the estimators of Wooldridge 2023), and `ivar = TRUE` is an error there,
+whereas `etwfe::etwfe()` ignores `ivar` for nonlinear families.
+}
+
+\section{Heterogeneity by a covariate}{
+
+`xvar` names a covariate by which the treatment effects may vary, as
+`xvar` in `etwfe::etwfe()` (typically a time-invariant indicator, such
+as sex, rural residence or a baseline risk group). The covariate is
+centred at its cohort by period cell means and enters through its
+interactions with the period dummies (except the first period) and with
+every cell dummy, so each cohort by period effect becomes a linear
+function of the covariate, with the cell coefficient as the effect at
+the cell mean. This is the specification of the `etwfe` package; the
+level of the covariate itself is not a regressor, so add it to
+`formula` as a control to adjust for it as well. [summary.panglm_etwfe()]
+then reports the ATTs separately for each value of the covariate
+(`byxvar = TRUE`, the default for such a fit), as
+`etwfe::emfx(by_xvar = TRUE)`; with a continuous covariate there is one
+row per distinct value, so summarise a binary or discrete version of it.
 }
 
 \examples{
@@ -131,6 +178,15 @@ d$visits <- 50 + 5 * a[d$district] + 0.5 * (d$year - 2012) + 2 * treated +
   rnorm(nrow(d))
 summary(etwfe(visits ~ poverty, data = d, index = c("district", "year"),
               treat = "adoption"), type = "calendar")
+# individual instead of cohort fixed effects (linear model)
+summary(etwfe(visits ~ poverty, data = d, index = c("district", "year"),
+              treat = "adoption", ivar = TRUE), type = "group")
+# effects by a covariate: poor versus other districts
+d$poor <- as.numeric(d$poverty > 0.5)
+fx <- etwfe(admissions ~ 1, data = d, index = c("district", "year"),
+            treat = "adoption", family = "poisson", xvar = "poor")
+summary(fx)                           # ATT for poor = 0 and poor = 1
+summary(fx, type = "event", byxvar = FALSE)
 }
 \references{
 Wooldridge, J. M. (2021). Two-way fixed effects, the

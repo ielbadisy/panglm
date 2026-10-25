@@ -24,10 +24,29 @@
 #     exact check of the 2 x 2 design; the cluster standard error of that
 #     design is checked against the logit of the second-period outcome on
 #     the change in treatment among switchers (glm + sandwich::vcovCL).
+#
+# etwfe(): heterogeneity by a covariate (xvar) and individual fixed effects
+# (ivar), against etwfe::etwfe(xvar = , ivar = ) and etwfe::emfx() (with
+# by_xvar = TRUE by default for an xvar fit): simple, group, calendar and
+# event ATTs and their standard errors, by value of the covariate, for the
+# linear, Poisson and logit models, not-yet and never-treated controls,
+# with and without a control, without and with weights (weights = ~w and
+# emfx(wts = "w")). ivar is for the linear model only (etwfe ignores it for
+# nonlinear families): cluster and classical (iid) covariances, with and
+# without weights and xvar, an unbalanced panel and a sample without
+# never-treated units. For the linear model emfx() is called with
+# numderiv = "richardson": its default forward differences move some
+# weighted standard errors in the sixth decimal, while Richardson
+# extrapolation agrees with panglm's analytic gradients (it is too slow for
+# the nonlinear models, compared with relative tolerance 1e-4 as in
+# validate-did.R). Tolerances and the nonlinear glm.tol = 1e-12 are
+# otherwise those of validate-did.R and validate-did-weights.R.
 # Data: did::mpdta (500 counties, 2003-2007; binary outcome a noisy
 # indicator of high teen employment, as in validate-did-weights.R) and a
 # simulated staggered panel with a time-varying control (300 individuals,
-# 8 periods, cohorts 2014 and 2016 and never treated).
+# 8 periods, cohorts 2014 and 2016 and never treated). For etwfe, mpdta
+# with counts round(exp(lemp)), county weights uniform on [0.2, 3] and the
+# covariate big = 1(log population above its median).
 source("validation/common.R")
 suppressPackageStartupMessages({
   library(survival)
@@ -160,5 +179,78 @@ add(mod, lab, "coef", coef(f2), list(fixest_half = coef(fx)[c("tr", "x")] / 2,
 add(mod, lab, "SE cluster", se(vcov(f2)),
     list(sandwich = se(vcovCL(gd, cluster = seq_len(nrow(fd)), type = "HC1"))[c("dtr", "dx")]),
     1e-6)
+
+## etwfe(): xvar and ivar ------------------------------------------------------
+mpdta$emp <- round(exp(mpdta$lemp))
+mpdta$big <- as.integer(mpdta$lpop > stats::median(mpdta$lpop))
+wc <- stats::setNames(stats::runif(500, 0.2, 3), unique(mpdta$countyreal))
+mpdta$w <- unname(wc[as.character(mpdta$countyreal)])
+et_check <- function(mod, label, ref, fit, weighted, tol_b, tol_se) {
+  for (type in c("simple", "group", "calendar", "event")) {
+    args <- list(ref, type = type)
+    if (weighted) args$wts <- "w"
+    if (is.null(ref$family)) args$numderiv <- "richardson"
+    e <- do.call(etwfe::emfx, args)
+    s <- summary(fit, type = type)
+    tab <- if (is.null(s$estimates)) s$overall else s$estimates
+    add(mod, label, paste(type, "ATT"), tab$estimate, list(etwfe = e$estimate), tol_b)
+    ok <- !is.na(e$std.error)
+    add(mod, label, paste(type, "SE"), tab$se[ok], list(etwfe = e$std.error[ok]), tol_se)
+  }
+}
+et_ref <- function(f, data, fam, cg, weighted, xvar = NULL, ivar = NULL, vcov = ~countyreal) {
+  args <- list(f, tvar = quote(year), gvar = quote(first.treat), data = data, cgroup = cg,
+               vcov = vcov)
+  if (!is.null(xvar)) args$xvar <- as.name(xvar)
+  if (!is.null(ivar)) args$ivar <- as.name(ivar)
+  if (weighted) args$weights <- ~w
+  if (fam != "gaussian") args <- c(args, list(family = fam, glm.tol = 1e-12))
+  suppressMessages(do.call(etwfe::etwfe, args))
+}
+for (fam in c("gaussian", "poisson", "logit")) for (cg in c("notyet", "never")) {
+  for (ctrl in c(FALSE, TRUE)) for (wtd in c(FALSE, TRUE)) {
+    yv <- c(gaussian = "lemp", poisson = "emp", logit = "hiw")[[fam]]
+    f <- stats::as.formula(paste(yv, if (ctrl) "~ lpop" else "~ 1"))
+    ref <- et_ref(f, mpdta, fam, cg, wtd, xvar = "big")
+    fit <- etwfe(f, mpdta, idx, "first.treat", family = fam, control = cg, xvar = "big",
+                 weights = if (wtd) "w")
+    mod <- sprintf("etwfe xvar %s %s%s%s", fam, cg, if (ctrl) " + lpop" else "",
+                   if (wtd) ", weighted" else "")
+    et_check(mod, "mpdta, by big", ref, fit, wtd, if (fam == "gaussian") 1e-8 else 1e-6,
+             if (fam == "gaussian") 1e-6 else 1e-4)
+  }
+}
+nonever <- subset(mpdta, first.treat != 0)
+unb <- mpdta[-sample(nrow(mpdta), 50), ]
+for (cg in c("notyet", "never")) for (ctrl in c(FALSE, TRUE)) for (wtd in c(FALSE, TRUE)) {
+  for (vc in c("cluster", "classical")) {
+    f <- if (ctrl) lemp ~ lpop else lemp ~ 1
+    ref <- et_ref(f, mpdta, "gaussian", cg, wtd, ivar = "countyreal",
+                  vcov = if (vc == "cluster") ~countyreal else "iid")
+    fit <- etwfe(f, mpdta, idx, "first.treat", control = cg, ivar = TRUE, vcov = vc,
+                 weights = if (wtd) "w")
+    mod <- sprintf("etwfe ivar gaussian %s%s%s", cg, if (ctrl) " + lpop" else "",
+                   if (wtd) ", weighted" else "")
+    et_check(mod, paste0("mpdta, ", vc, " vcov"), ref, fit, wtd, 1e-8, 1e-6)
+  }
+}
+for (wtd in c(FALSE, TRUE)) {
+  for (cg in c("notyet", "never")) {
+    ref <- et_ref(lemp ~ lpop, mpdta, "gaussian", cg, wtd, xvar = "big", ivar = "countyreal")
+    fit <- etwfe(lemp ~ lpop, mpdta, idx, "first.treat", control = cg, ivar = TRUE,
+                 xvar = "big", weights = if (wtd) "w")
+    et_check(sprintf("etwfe ivar + xvar gaussian %s + lpop%s", cg, if (wtd) ", weighted" else ""),
+             "mpdta, by big", ref, fit, wtd, 1e-8, 1e-6)
+  }
+  ref <- et_ref(lemp ~ lpop, unb, "gaussian", "notyet", wtd, ivar = "countyreal")
+  fit <- etwfe(lemp ~ lpop, unb, idx, "first.treat", ivar = TRUE, weights = if (wtd) "w")
+  et_check(sprintf("etwfe ivar gaussian notyet + lpop%s", if (wtd) ", weighted" else ""),
+           "mpdta, unbalanced", ref, fit, wtd, 1e-8, 1e-6)
+  ref <- et_ref(lemp ~ lpop, nonever, "gaussian", "notyet", wtd, ivar = "countyreal")
+  fit <- suppressWarnings(etwfe(lemp ~ lpop, nonever, idx, "first.treat", ivar = TRUE,
+                                weights = if (wtd) "w"))
+  et_check(sprintf("etwfe ivar gaussian notyet + lpop%s", if (wtd) ", weighted" else ""),
+           "mpdta, no never-treated", ref, fit, wtd, 1e-8, 1e-6)
+}
 
 do.call(vsave, c(out, name = "did-gaps"))
