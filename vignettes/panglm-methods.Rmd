@@ -63,9 +63,10 @@ interactions. Before estimation, `panglm` checks rank after applying the
 transformation associated with the requested estimator. Unidentified
 columns, including time-invariant regressors in a within model, are reported
 and omitted. Missing responses or covariates follow `na.action`; missing or
-duplicate panel index pairs are errors. Nontrivial observation weights and
-nonzero offsets are outside the current estimator definitions and are
-rejected explicitly.
+duplicate panel index pairs are errors. Nonzero offsets are rejected
+explicitly. Nontrivial observation weights are supported for pooled models
+(see below) and rejected for fixed- and random-effects models, where their
+meaning would differ by estimator.
 
 ## Pooled models
 
@@ -98,6 +99,36 @@ usually use a covariance estimator that is robust to clustering by unit.
 ```{r pooled-cluster}
 sqrt(diag(vcov(fit_pool, type = "cluster")))
 ```
+
+### Observation weights
+
+Pooled models accept nonnegative prior weights $w_{it}$ through `weights`,
+which enter the score as $\sum_{it} w_{it} s_{it}(\beta)$. The typical use
+is inverse probability weighting for attrition: when the probability of
+remaining in the panel depends on observed characteristics, weighting each
+observed outcome by the inverse of its estimated retention probability
+restores consistency of the pooled estimator under missingness at random.
+Observations with zero weight do not contribute to the fit, the
+log-likelihood, or the degrees of freedom. Robust and cluster covariances
+use the weighted scores, so they account for the weights but treat them as
+known.
+
+```{r weights}
+set.seed(1)
+ipw <- runif(nrow(Grunfeld), 0.5, 2)
+fit_w <- panglm(inv ~ value + capital, data = Grunfeld,
+                index = c("firm", "year"), weights = ipw, vcov = "cluster")
+coef(fit_w)
+```
+
+### Gamma regression for costs
+
+Health care costs are positive and right skewed, with a variance that grows
+with the mean. `family = "gamma"` fits a gamma generalized linear model
+with log link, $\operatorname{Var}(y_{it}) = \phi\,\mu_{it}^2$, which
+models $\log E(y_{it} \mid x_{it})$ directly and so avoids the
+retransformation problem of a linear model for $\log y$. The gamma family
+is available for pooled, fixed-effects, and random-effects models.
 
 ## Fixed-effects models
 
@@ -158,6 +189,17 @@ restriction as an individual intercept. Explicit dummy intercepts do not,
 however, remove the general finite-T incidental-parameter concern. Results
 from short panels should therefore be interpreted with appropriate caution.
 
+### Gamma response
+
+With a multiplicative individual effect,
+$E(y_{it} \mid x_{it}, \alpha_i) = \exp(\alpha_i + x_{it}^{\mathsf T}\beta)$,
+the gamma log-link maximum likelihood estimator with one intercept per
+individual is consistent for fixed $T$ under strict exogeneity, because the
+concentrated score has mean zero (as for the Poisson model). Under the log
+link the gamma working weights are constant, so each iteratively
+reweighted least-squares step is a within regression of the working
+response, and the individual intercepts follow in closed form.
+
 ### Binomial response
 
 The one-way binomial estimator is the exact conditional logistic model. For
@@ -188,9 +230,14 @@ implemented specifications are:
 * negative binomial responses use a two-parameter beta-negative-binomial
   marginal likelihood;
 * binomial responses use a Gaussian random intercept integrated by
-  Gauss-Hermite quadrature.
+  Gauss-Hermite quadrature;
+* gamma responses use a Gaussian random intercept on the log scale,
+  integrated by adaptive Gauss-Hermite quadrature centred at each
+  individual's mode (`R = 1` is the Laplace approximation).
 
-The number of quadrature nodes for the binomial model is controlled by `R`.
+The number of quadrature nodes for the binomial and gamma models is
+controlled by `R`. For the gamma model, response predictions include the
+lognormal factor $\exp(\sigma^2/2)$.
 Random-effects covariance matrices are based on the observed information.
 
 ```{r random-gaussian}
@@ -202,6 +249,75 @@ fit_re <- panglm(
   family = "gaussian"
 )
 coef(fit_re)
+```
+
+### Correlated random effects
+
+Random effects require the individual effect to be independent of the
+regressors. The correlated random effects device of Mundlak (1978) and
+Chamberlain (1980) relaxes this by modelling the effect as
+$\alpha_i = \overline x_i^{\mathsf T}\gamma + a_i$, where
+$\overline x_i$ holds the individual means of the time-varying
+regressors. With `cre = TRUE` these means are added to the model as
+`mean_<variable>` columns, for pooled and random-effects fits of every
+family. For linear models the coefficients on $x_{it}$ then equal the
+within estimates; for nonlinear models (probit, gamma, count) the device
+gives a fixed-effects-like interpretation without the incidental
+parameters problem and still allows average partial effects. The summary
+reports a Wald test of $\gamma = 0$, the regression form of the Hausman
+test.
+
+```{r cre}
+data(copd)
+fit_cre <- panglm(hospitalized ~ treatment + age + crp, data = copd,
+                  index = c("id", "visit"), model = "random",
+                  family = "probit", cre = TRUE)
+summary(fit_cre)
+```
+
+## Average partial effects
+
+Coefficients of nonlinear models are not on the scale of the outcome.
+`partialeffects()` reports average partial effects, the sample average of
+$\partial E(y_{it} \mid x_{it}) / \partial x_{itj}$ for continuous
+regressors and of the discrete change for binary and factor regressors,
+with delta-method standard errors based on the covariance stored on the
+fit. For random-effects models the mean integrates over the random
+intercept, giving the average structural function of Wooldridge (2005);
+for correlated random effects fits the individual means are held fixed, so
+the effect of a time-varying regressor is a within-individual effect.
+
+```{r ape}
+partialeffects(fit_cre)
+```
+
+## Two-part models for costs
+
+Cost data often combine a mass of zeros with a skewed positive part.
+`twopart()` fits the two-part model of Duan et al. (1983),
+
+$$
+E(y_{it} \mid x_{it}) = P(y_{it} > 0 \mid x_{it})\,
+E(y_{it} \mid y_{it} > 0, x_{it}),
+$$
+
+with a probit or logit model for the first part and a gamma (log link) or
+lognormal model for the positive part, pooled or with random intercepts,
+optionally with correlated random effects. For the lognormal part, the
+retransformation from $\log y$ to $y$ uses Duan's smearing estimator
+(default) or the normal-theory factor $\exp(\sigma^2/2)$.
+`predict()` returns the unconditional mean or either part, and
+`partialeffects()` works on any of them.
+
+```{r twopart}
+set.seed(2)
+copd$cost <- ifelse(copd$exacerbations > 0 | runif(nrow(copd)) < 0.3,
+                    exp(6 + 0.2 * copd$crp + rnorm(nrow(copd), sd = 0.8)), 0)
+fit_2p <- twopart(cost ~ treatment + age + crp, data = copd,
+                  index = c("id", "visit"), positive = "gamma",
+                  vcov = "cluster")
+summary(fit_2p)
+partialeffects(fit_2p, variables = "crp")
 ```
 
 ## Covariance estimation and confidence intervals
@@ -300,11 +416,14 @@ pooled generalized linear models, `MASS::glm.nb()` for pooled NB2,
 `plm::plm()` for Gaussian panel models, `survival::clogit()` for exact
 conditional logistic regression, `fixest` for absorbed fixed-effects count
 models, `pglm` for compatible random-effects likelihoods, and
-`pscl::hurdle()` for zero-truncated count likelihoods.
+`pscl::hurdle()` for zero-truncated count likelihoods, `glmmTMB` for the
+Laplace random-effects gamma model, and `marginaleffects` for average
+partial effects.
 
 ## Model scope
 
-The package focuses on Gaussian, Poisson, binomial, and NB2 panel models.
+The package focuses on Gaussian, Poisson, binomial, NB2, and gamma panel
+models, with two-part models for semicontinuous costs.
 It does not provide ordinal, Tobit, or between estimators. A general
 two-way exact conditional logistic likelihood is not available, so the
 binomial fixed-effects model is restricted to individual effects. These
@@ -319,9 +438,21 @@ regression models. *Sociological Methodology*, 32, 247-265.
 Chamberlain, G. (1980). Analysis of covariance with qualitative data.
 *Review of Economic Studies*, 47, 225-238.
 
+Duan, N., Manning, W. G., Morris, C. N., and Newhouse, J. P. (1983). A
+comparison of alternative models for the demand for medical care.
+*Journal of Business and Economic Statistics*, 1, 115-126.
+
 Guimaraes, P., and Portugal, P. (2010). A simple feasible procedure to fit
 models with high-dimensional fixed effects. *Stata Journal*, 10, 628-649.
 
 Hausman, J., Hall, B. H., and Griliches, Z. (1984). Econometric models for
 count data with an application to the patents-R&D relationship.
 *Econometrica*, 52, 909-938.
+
+Mundlak, Y. (1978). On the pooling of time series and cross section data.
+*Econometrica*, 46, 69-85.
+
+Wooldridge, J. M. (2005). Unobserved heterogeneity and estimation of
+average partial effects. In D. W. K. Andrews and J. H. Stock (Eds.),
+*Identification and Inference for Econometric Models*, 27-55. Cambridge
+University Press.

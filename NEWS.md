@@ -1,3 +1,36 @@
+# panglm 1.3.0
+
+* Observation weights: pooled models accept nonnegative prior `weights`
+  (for example inverse probability weights for attrition), for every
+  family. Zero weights drop observations. Robust and cluster covariances use
+  the weighted scores. Fixed- and random-effects models still reject
+  nontrivial weights.
+* New `gamma_family()` (`family = "gamma"`): gamma regression with log link
+  for positive, skewed outcomes such as costs. Pooled (IRLS), fixed effects
+  (one intercept per individual, consistent for fixed T with a
+  multiplicative effect) and random intercept (adaptive Gauss-Hermite
+  quadrature, `R = 1` is the Laplace approximation) estimators, with robust
+  and cluster covariances for pooled and fixed-effects fits.
+* New `cre` argument: correlated random effects (Mundlak) for pooled and
+  random-effects fits of every family. Individual means of the
+  time-varying regressors are added as `mean_<variable>` columns;
+  `summary()` reports their joint Wald test. `predict()` recomputes the
+  means on new data.
+* New `partialeffects()`: average partial effects (continuous derivatives,
+  binary and factor contrasts) with delta-method standard errors, for
+  `panglm` and `twopart` fits. Random-effects means integrate over the
+  random intercept.
+* New `twopart()`: two-part model for semicontinuous costs, probit or logit
+  first part times a gamma or lognormal positive part, pooled or random
+  intercept, optional correlated random effects, with smearing or normal
+  retransformation. Methods: `predict()`, `fitted()`, `coef()`, `vcov()`,
+  `logLik()`, `nobs()`, `summary()`.
+* Bug fix: the robust (`HC1`, `cluster`) covariance of the pooled negative
+  binomial model used the Poisson score `(y - mu) x` instead of the NB2
+  score `(y - mu) theta / (theta + mu) x`. It now matches
+  `sandwich::vcovHC()` on `MASS::glm.nb()`.
+* The pooled IRLS covariance is now evaluated at the final coefficients.
+
 # panglm 1.2.0
 
 * Bug fix: a fit made with `vcov = "HC1"` or `vcov = "cluster"` replaced
