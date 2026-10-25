@@ -24,7 +24,11 @@ panglm(
 )
 }
 \arguments{
-\item{formula}{a model formula, e.g. \code{y ~ x1 + x2}}
+\item{formula}{a model formula, e.g. \code{y ~ x1 + x2}.
+\code{lag(x, k)}, \code{lead(x, k)} and \code{diff(x)} are taken within each
+individual on the grid of sorted distinct time values (needs
+\code{index = c(id, time)}); the first waves of each individual get \code{NA}
+and leave the sample, and \code{lag(x, 0:2)} gives several lags}
 
 \item{data}{a data.frame containing the variables in \code{formula} and \code{index}}
 

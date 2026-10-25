@@ -26,7 +26,11 @@ panfmm(
 regressions (the same regressors in every class). It may contain
 \code{offset()} terms, e.g. \code{offset(log(exposure))} for counts over
 different exposure periods; the offset enters the linear predictor of
-every class with coefficient 1}
+every class with coefficient 1.
+\code{lag(x, k)}, \code{lead(x, k)} and \code{diff(x)} are taken within each
+individual on the grid of sorted distinct time values (needs
+\code{index = c(id, time)}); the first waves of each individual get \code{NA}
+and leave the sample, and \code{lag(x, 0:2)} gives several lags}
 
 \item{data}{a data.frame in long format}
 

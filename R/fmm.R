@@ -66,7 +66,11 @@
 #'   regressions (the same regressors in every class). It may contain
 #'   `offset()` terms, e.g. `offset(log(exposure))` for counts over
 #'   different exposure periods; the offset enters the linear predictor of
-#'   every class with coefficient 1
+#'   every class with coefficient 1.
+#'   `lag(x, k)`, `lead(x, k)` and `diff(x)` are taken within each
+#'   individual on the grid of sorted distinct time values (needs
+#'   `index = c(id, time)`); the first waves of each individual get `NA`
+#'   and leave the sample, and `lag(x, 0:2)` gives several lags
 #' @param data a data.frame in long format
 #' @param index length-1 or length-2 character vector giving the individual
 #'   (and time) columns; class membership is constant within individual. Use
@@ -191,8 +195,10 @@ panfmm <- function(formula, data, index, k = 2, family = "poisson",
          call. = FALSE)
   }
 
+  stop_panel_calls(concomitant, what = "the 'concomitant' formula")
+  formula <- panel_guard_formula(formula)
   parts <- fmm_formulas(formula, concomitant)
-  mf <- stats::model.frame(parts$combined, data = data, na.action = na.action)
+  mf <- panel_model_frame(parts$combined, data, index, na.action = na.action)
   model_rows <- match(rownames(mf), rownames(data))
   if (anyNA(model_rows)) stop("could not align model-frame rows with data", call. = FALSE)
   y <- stats::model.response(mf)

@@ -67,7 +67,11 @@
 #' within covariance of the rest of the package
 #' (`G / (G - 1) * (n - 1) / (n - k)`, as `plm::vcovHC(type = "sss")`).
 #'
-#' @param formula a formula `y ~ regressors`
+#' @param formula a formula `y ~ regressors`.
+#'   `lag(x, k)`, `lead(x, k)` and `diff(x)` are taken within each
+#'   individual on the grid of sorted distinct time values (needs
+#'   `index = c(id, time)`); the first waves of each individual get `NA`
+#'   and leave the sample, and `lag(x, 0:2)` gives several lags
 #' @param data a data.frame in long format
 #' @param index length-1 or length-2 character vector giving the individual
 #'   (and time) columns
@@ -177,7 +181,8 @@ panqr <- function(formula, data, index, tau = 0.5,
     stop("'formula' must be a two-sided formula 'y ~ regressors'", call. = FALSE)
   }
 
-  mf <- stats::model.frame(formula, data = data, na.action = na.action)
+  formula <- panel_guard_formula(formula)
+  mf <- panel_model_frame(formula, data, index, na.action = na.action)
   model_rows <- match(rownames(mf), rownames(data))
   if (anyNA(model_rows)) stop("could not align model-frame rows with data", call. = FALSE)
   y <- stats::model.response(mf)

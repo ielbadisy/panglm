@@ -283,7 +283,8 @@ vcov.panordered <- function(object, type = NULL, cluster = NULL, ...) {
 ordered_shim <- function(object) {
   list(terms = object$terms, xlevels = object$xlevels, contrasts = object$contrasts,
        coefficients = object$coefficients[object$beta_names],
-       cre_columns = object$cre_columns, index = object$index, formula = object$formula)
+       cre_columns = object$cre_columns, index = object$index, formula = object$formula,
+       panel_history = object$panel_history)
 }
 
 ordered_predictor <- function(object, category = NULL, cre_means = NULL) {

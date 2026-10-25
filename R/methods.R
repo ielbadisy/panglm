@@ -222,9 +222,13 @@ predict.panglm <- function(object, newdata = NULL,
 #' @noRd
 panglm_design <- function(object, newdata, cre_means = NULL) {
   terms_object <- stats::delete.response(object$terms %||% stats::terms(object$formula))
-  model_frame <- stats::model.frame(
-    terms_object, data = newdata, xlev = object$xlevels, na.action = stats::na.pass
-  )
+  model_frame <- if (has_panel_calls(terms_object)) {
+    panel_newdata_frame(terms_object, newdata, object$panel_history, object$index,
+                        object$xlevels)
+  } else {
+    stats::model.frame(terms_object, data = newdata, xlev = object$xlevels,
+                       na.action = stats::na.pass)
+  }
   X <- stats::model.matrix(
     terms_object, data = model_frame, contrasts.arg = object$contrasts
   )

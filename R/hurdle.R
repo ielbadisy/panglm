@@ -65,6 +65,7 @@ panhurdle <- function(formula, data, index,
     stop("'index' must be a two-element character vector, e.g. index = c(\"id\", \"time\")", call. = FALSE)
   }
 
+  stop_panel_calls(formula, what = "panhurdle()")
   mf <- stats::model.frame(formula, data = data)
   y <- stats::model.response(mf)
   X_full <- stats::model.matrix(formula, data = mf)

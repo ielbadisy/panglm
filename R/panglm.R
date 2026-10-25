@@ -4,7 +4,11 @@
 #' backed by an Rcpp/RcppArmadillo/RcppParallel numerical core. See the
 #' package vignette for the estimators currently implemented per family.
 #'
-#' @param formula a model formula, e.g. `y ~ x1 + x2`
+#' @param formula a model formula, e.g. `y ~ x1 + x2`.
+#'   `lag(x, k)`, `lead(x, k)` and `diff(x)` are taken within each
+#'   individual on the grid of sorted distinct time values (needs
+#'   `index = c(id, time)`); the first waves of each individual get `NA`
+#'   and leave the sample, and `lag(x, 0:2)` gives several lags
 #' @param data a data.frame containing the variables in `formula` and `index`
 #' @param index length-1 or length-2 character vector identifying the
 #'   individual (and optionally time) columns, e.g. `c("id", "time")`
@@ -326,14 +330,22 @@ panglm <- function(formula, data, index,
          "is only implemented for the logit link", call. = FALSE)
   }
 
+  formula <- panel_guard_formula(formula)
   dynamic_info <- NULL
+  frame_data <- data
+  frame_rows <- NULL
   if (dynamic) {
     dyn <- dynamic_panel_data(formula, data, index, weights, offset)
     formula <- dyn$formula; data <- dyn$data; weights <- dyn$weights; offset <- dyn$offset
     dynamic_info <- dyn$info
+    frame_data <- dyn$full
+    frame_rows <- dyn$keep
   }
 
-  mf <- stats::model.frame(formula, data = data, na.action = na.action)
+  panel_calls <- has_panel_calls(formula)
+  # lag(), lead() and diff() are taken within individuals on all rows
+  mf <- panel_model_frame(formula, frame_data, index, na.action = na.action,
+                          rows = frame_rows)
   model_rows <- match(rownames(mf), rownames(data))
   if (anyNA(model_rows)) stop("could not align model-frame rows with data", call. = FALSE)
 
@@ -402,6 +414,7 @@ panglm <- function(formula, data, index,
 
   y <- y[ord]
   X_full <- X_full[ord, , drop = FALSE]
+  if (slopes) stop_panel_calls(random, what = "the 'random' formula")
   Z_random <- if (slopes) slopes_z(random, data[model_rows[ord], , drop = FALSE]) else NULL
   prior_weights <- if (is.null(used_weights)) NULL else used_weights[ord]
   group_start <- panel$group_start
@@ -488,6 +501,9 @@ panglm <- function(formula, data, index,
     rownames(fit$ranef) <- as.character(panel$group_id)
   }
   fit$data <- data[model_rows[ord], data_vars, drop = FALSE]
+  if (panel_calls) {
+    fit$panel_history <- frame_data[, intersect(data_vars, names(frame_data)), drop = FALSE]
+  }
   fit$group_start <- group_start
   fit$group_size <- group_size
   fit$time_id <- time_id
@@ -1159,7 +1175,7 @@ dynamic_panel_data <- function(formula, data, index, weights, offset) {
   new_formula <- stats::reformulate(c(term_labels, lag_name, initial_name), response = yname,
                                     intercept = attr(stats::terms(formula), "intercept") == 1L)
   environment(new_formula) <- environment(formula)
-  list(formula = new_formula, data = data[keep, , drop = FALSE],
+  list(formula = new_formula, data = data[keep, , drop = FALSE], full = data, keep = keep,
        weights = if (is.null(weights)) NULL else weights[keep],
        offset = if (is.null(offset)) NULL else offset[keep],
        info = list(response = yname, lag = lag_name, initial = initial_name,

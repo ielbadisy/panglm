@@ -125,6 +125,8 @@ twopart <- function(formula, data, index, binary_formula = NULL,
   }
 
   formula <- stats::as.formula(formula)
+  stop_panel_calls(formula, if (is.null(binary_formula)) NULL else stats::as.formula(binary_formula),
+                   what = "twopart()")
   rhs_binary <- if (is.null(binary_formula)) {
     stats::delete.response(stats::terms(formula))
   } else {

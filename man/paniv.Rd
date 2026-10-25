@@ -17,7 +17,11 @@ paniv(
 }
 \arguments{
 \item{formula}{a two-part formula \code{y ~ regressors | instruments}; see
-the Formula section}
+the Formula section.
+\code{lag(x, k)}, \code{lead(x, k)} and \code{diff(x)} are taken within each
+individual on the grid of sorted distinct time values (needs
+\code{index = c(id, time)}); the first waves of each individual get \code{NA}
+and leave the sample, and \code{lag(x, 0:2)} gives several lags}
 
 \item{data}{a data.frame in long format}
 

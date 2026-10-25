@@ -128,3 +128,80 @@ test_that("a factor individual index gives the same fit as its character codes",
   expect_equal(sum(b$group_size), 20L)
   expect_length(b$group_size, 4L)
 })
+
+lag_panel <- function(seed = 304) {
+  set.seed(seed)
+  d <- data.frame(id = rep(seq_len(30), each = 6), time = rep(2001:2006, 30))
+  d$x <- stats::rnorm(nrow(d))
+  d$z <- stats::rnorm(nrow(d))
+  d$y <- 1 + 0.5 * d$x + rep(stats::rnorm(30), each = 6) + stats::rnorm(nrow(d))
+  d <- d[-c(3, 40, 41), ]  # gaps inside some panels
+  d[sample(nrow(d)), ]     # rows out of panel order
+}
+
+# shifted columns built by hand on the grid of sorted distinct times
+lag_by_hand <- function(d, v, k) {
+  key <- paste(d$id, d$time)
+  d[[v]][match(paste(d$id, d$time - k), key)]
+}
+
+test_that("lag(), lead() and diff() in a formula are taken within individuals", {
+  d <- lag_panel()
+  d$x1 <- lag_by_hand(d, "x", 1); d$x2 <- lag_by_hand(d, "x", 2)
+  d$zf <- lag_by_hand(d, "z", -1); d$dx <- d$x - d$x1
+  for (m in c("pooling", "within", "random")) {
+    a <- panglm(y ~ lag(x, 1:2) + lead(z) + diff(x), d, index = c("id", "time"), model = m)
+    b <- panglm(y ~ x1 + x2 + zf + dx, d, index = c("id", "time"), model = m)
+    expect_equal(unname(coef(a)), unname(coef(b)), tolerance = 1e-10)
+    expect_equal(nobs(a), nobs(b))
+    expect_equal(unname(sqrt(diag(vcov(a)))), unname(sqrt(diag(vcov(b)))), tolerance = 1e-10)
+  }
+  expect_true(all(c("lag(x, 1:2)1", "lag(x, 1:2)2") %in% names(coef(a))))
+  # predictions on new rows reach back into the estimation data
+  a <- panglm(y ~ lag(x) + z, d, index = c("id", "time"), model = "pooling")
+  b <- panglm(y ~ x1 + z, d, index = c("id", "time"), model = "pooling")
+  nd <- d[d$time == 2006, ]
+  expect_equal(predict(a, newdata = nd), predict(b, newdata = nd), tolerance = 1e-10)
+  expect_error(predict(a, newdata = nd[, c("x", "z")]), "panel index")
+  pa <- partialeffects(a)
+  expect_true(all(is.finite(unlist(pa[vapply(pa, is.numeric, logical(1))]))))
+  # a lag beside dynamic = TRUE reaches the wave the dynamic model drops
+  a <- panglm(y ~ lag(x) + z, d, index = c("id", "time"), model = "random", dynamic = TRUE)
+  b <- panglm(y ~ x1 + z, d, index = c("id", "time"), model = "random", dynamic = TRUE)
+  expect_equal(unname(coef(a)), unname(coef(b)), tolerance = 1e-8)
+})
+
+test_that("panel lags in formulas match plm", {
+  skip_on_cran()
+  skip_if_missing("plm")
+  data("EmplUK", package = "plm")
+  f <- log(emp) ~ lag(log(emp), 1) + lag(log(wage), 0:1) + diff(log(capital))
+  p <- plm::plm(f, data = EmplUK, index = c("firm", "year"), model = "within")
+  g <- panglm(f, data = EmplUK, index = c("firm", "year"), model = "within")
+  expect_equal(unname(coef(g)), unname(coef(p)), tolerance = 1e-8)
+  expect_equal(unname(sqrt(diag(vcov(g)))), unname(sqrt(diag(vcov(p)))), tolerance = 1e-8)
+  expect_equal(nobs(g), nobs(p))
+  data("Produc", package = "plm")
+  f <- log(gsp) ~ lag(log(pcap)) + unemp | lag(log(pcap), 2) + unemp
+  iv <- paniv(f, data = Produc, index = c("state", "year"), model = "within")
+  piv <- plm::plm(f, data = Produc, index = c("state", "year"), model = "within")
+  expect_equal(unname(coef(iv)), unname(coef(piv)), tolerance = 1e-8)
+})
+
+test_that("estimators that cannot shift within individuals refuse panel calls", {
+  d <- lag_panel()
+  expect_error(panglm(y ~ x, d, index = "id"), NA)
+  expect_error(panglm(y ~ lag(x), d, index = "id"), "index = c")
+  q <- panqr(y ~ lag(x) + z, d, index = c("id", "time"), model = "pooling")
+  expect_equal(nobs(q), sum(!is.na(lag_by_hand(d, "x", 1))))
+  expect_error(stats::model.frame(formula(q), d), "cannot rebuild")
+  d$yc <- stats::rpois(nrow(d), exp(0.3 + 0.4 * d$x))
+  d$x1 <- lag_by_hand(d, "x", 1)
+  a <- panfmm(yc ~ lag(x), d, index = c("id", "time"), k = 2)
+  b <- panfmm(yc ~ x1, d, index = c("id", "time"), k = 2)
+  expect_equal(as.numeric(logLik(a)), as.numeric(logLik(b)), tolerance = 1e-8)
+  expect_error(predict(a, newdata = d), "cannot rebuild")
+  expect_error(panhurdle(yc ~ lag(x), d, index = c("id", "time")), "not supported")
+  dd <- d; dd$time[2] <- dd$time[1]; dd$id[2] <- dd$id[1]
+  expect_error(panglm(y ~ lag(x), dd, index = c("id", "time")), "one row per individual")
+})

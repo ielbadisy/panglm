@@ -163,6 +163,7 @@ panselect <- function(selection, outcome, data, index,
   data <- as.data.frame(data)
   rownames(data) <- NULL
 
+  stop_panel_calls(selection, outcome, what = "panselect()")
   # selection sample: every row with complete selection variables
   mf_s <- stats::model.frame(selection, data = data, na.action = na.action)
   rows_s <- match(rownames(mf_s), rownames(data))

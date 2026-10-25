@@ -200,6 +200,7 @@ attgt <- function(formula, data, index, treat, control = c("never", "notyet"),
   did_timing(data, index, treat)
   wv <- did_weights(weights, data)
   cv <- did_cluster(cluster, data)
+  stop_panel_calls(formula, what = "attgt()")
   prep <- attgt_prepare(formula, data, index, treat, control, anticipation, wv, cv)
   cl <- prep$cluster
   n <- prep$n

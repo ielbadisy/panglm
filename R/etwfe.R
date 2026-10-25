@@ -184,6 +184,7 @@ etwfe <- function(formula, data, index, treat,
   did_timing(data, index, treat)
   formula <- stats::as.formula(formula)
   if (length(formula) != 3L) stop("'formula' must have an outcome, e.g. y ~ 1", call. = FALSE)
+  stop_panel_calls(formula, what = "etwfe()")
   if (!is.logical(ivar) || length(ivar) != 1L || is.na(ivar)) {
     stop("'ivar' must be TRUE or FALSE", call. = FALSE)
   }
