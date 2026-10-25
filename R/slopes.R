@@ -205,12 +205,13 @@ robust_vcov_slopes <- function(object, cluster) {
 #' @keywords internal
 #' @noRd
 slopes_obs_terms <- function(family, y) {
+  # ll: log density; d1: its derivative in eta; w = -d2; w1 = dw / deta
   if (family$family == "poisson") {
     lfy <- lgamma(y + 1)
     return(function(eta, deriv = TRUE) {
       mu <- exp(eta)
       if (!deriv) return(y * eta - mu - lfy)
-      list(ll = y * eta - mu - lfy, d1 = y - mu, w = mu)
+      list(ll = y * eta - mu - lfy, d1 = y - mu, w = mu, w1 = mu)
     })
   }
   s <- 2 * y - 1
@@ -219,7 +220,8 @@ slopes_obs_terms <- function(family, y) {
       ll <- stats::plogis(s * eta, log.p = TRUE)
       if (!deriv) return(ll)
       p <- stats::plogis(eta)
-      list(ll = ll, d1 = y - p, w = p * (1 - p))
+      w <- p * (1 - p)
+      list(ll = ll, d1 = y - p, w = w, w1 = w * (1 - 2 * p))
     })
   }
   function(eta, deriv = TRUE) {
@@ -227,7 +229,8 @@ slopes_obs_terms <- function(family, y) {
     ll <- stats::pnorm(se, log.p = TRUE)
     if (!deriv) return(ll)
     lam <- exp(stats::dnorm(se, log = TRUE) - ll)
-    list(ll = ll, d1 = s * lam, w = lam * (lam + se))
+    w <- lam * (lam + se)
+    list(ll = ll, d1 = s * lam, w = w, w1 = s * (lam - w * (2 * lam + se)))
   }
 }
 
@@ -287,6 +290,19 @@ bspdinv <- function(A) {
     P[, a, c] <- s; P[, c, a] <- s
   }
   P
+}
+
+#' Batch matrix product: slice i of the result is A_i B_i (tA: A_i' B_i)
+#'
+#' @keywords internal
+#' @noRd
+bmatmul <- function(A, B, tA = FALSE) {
+  q <- dim(A)[2]
+  out <- array(0, dim(A))
+  for (a in seq_len(q)) for (c in seq_len(q)) for (m in seq_len(q)) {
+    out[, a, c] <- out[, a, c] + (if (tA) A[, m, a] else A[, a, m]) * B[, m, c]
+  }
+  out
 }
 
 #' Batch matrix-vector product: row i of the result is A_i v_i
@@ -416,7 +432,9 @@ slopes_glm_contrib <- function(family, X, y, Z, group, R) {
     if (is.null(u)) return(fail(length(theta)))
     state$modes <- u
     # C C' = H^{-1} at the mode; nodes u + sqrt(2) C z_k
-    C <- bchol(bspdinv(curvature(obs(lin(u))$w)))
+    o <- obs(lin(u))
+    P <- bspdinv(curvature(o$w))
+    C <- bchol(P)
     log_det_C <- 0
     for (a in seq_len(q)) log_det_C <- log_det_C + log(C[, a, a])
     U <- lapply(seq_len(q), function(a) {
@@ -426,11 +444,83 @@ slopes_glm_contrib <- function(family, X, y, Z, group, R) {
     })
     eta <- matrix(eta0, length(eta0), K)
     for (a in seq_len(q)) eta <- eta + Zt[, a] * U[[a]][group, , drop = FALSE]
-    terms <- rs(obs(eta, deriv = FALSE)) - half_log_2pi +
+    on <- obs(eta, deriv = score)
+    terms <- rs(if (score) on$ll else on) - half_log_2pi +
       matrix(log_wk, G, K, byrow = TRUE)
     for (a in seq_len(q)) terms <- terms - 0.5 * U[[a]]^2
-    list(ll = half_log_2pi + log_det_C + log_row_sum_exp(terms))
+    lse <- log_row_sum_exp(terms)
+    ll <- half_log_2pi + log_det_C + lse
+    if (!score) return(list(ll = ll))
+    list(ll = ll, score = slopes_glm_score(X, Z, Zt, group, u, P, C, U, zn,
+                                           exp(terms - lse), on$d1, o, vi))
   }
+}
+
+#' Analytic scores of the adaptive quadrature log-likelihood
+#'
+#' Total derivatives of `log|C| + log sum_k w_k exp(h(u_k))` with respect to
+#' `theta = (beta, vech L)`, where the nodes `u_k = u + sqrt(2) C z_k` move
+#' with the mode `u` (implicit function theorem: `du = H^{-1} g`) and with
+#' the Cholesky factor `C` of `H^{-1}` (`dC = -C Phi(C' dH C)`, `Phi` the
+#' lower triangle with half the diagonal). `pk` holds the normalised node
+#' weights of each individual, `d1` the derivatives of the log density at
+#' the nodes and `o` the observation terms at the mode.
+#'
+#' @keywords internal
+#' @noRd
+slopes_glm_score <- function(X, Z, Zt, group, u, P, C, U, zn, pk, d1, o, vi) {
+  k <- ncol(X); q <- ncol(Z); G <- nrow(u)
+  rs <- function(v) rowsum(v, group, reorder = FALSE)
+  E1 <- pk[group, , drop = FALSE] * d1
+  e1 <- rowSums(E1)
+  EU <- vapply(U, function(Ua) rowSums(pk * Ua), numeric(G))
+  if (G == 1L) EU <- matrix(EU, 1L)
+  # expected gradient of h over the nodes, and M[m, c] = E[grad_m h z_c]
+  Egrad <- rs(e1 * Zt) - EU
+  Ez <- E1 %*% zn
+  M <- array(0, c(G, q, q))
+  for (m in seq_len(q)) {
+    PU <- (pk * U[[m]]) %*% zn
+    for (c in seq_len(q)) M[, m, c] <- rs(Zt[, m] * Ez[, c]) - PU[, c]
+  }
+  W <- o$w; W1 <- o$w1
+  p <- k + nrow(vi)
+  out <- matrix(0, G, p)
+  for (j in seq_len(p)) {
+    if (j <= k) {
+      direct <- X[, j]
+      Edirect <- rs(e1 * direct)
+    } else {
+      a <- vi$row[j - k]; cc <- vi$col[j - k]
+      direct <- Z[, a] * u[group, cc]
+      Edirect <- rs(Z[, a] * rowSums(E1 * U[[cc]][group, , drop = FALSE]))
+    }
+    g <- -rs(W * direct * Zt)
+    if (j > k) g[, cc] <- g[, cc] + rs(o$d1 * Z[, a])
+    du <- bmatvec(P, g)
+    deta <- direct + rowSums(Zt * du[group, , drop = FALSE])
+    dH <- array(0, c(G, q, q))
+    S <- rs((W1 * deta) * Zt[, rep(seq_len(q), q), drop = FALSE] *
+              Zt[, rep(seq_len(q), each = q), drop = FALSE])
+    dH[] <- S
+    if (j > k) {
+      v <- rs(W * Z[, a] * Zt)
+      for (m in seq_len(q)) {
+        dH[, m, cc] <- dH[, m, cc] + v[, m]
+        dH[, cc, m] <- dH[, cc, m] + v[, m]
+      }
+    }
+    dlogC <- 0
+    for (m in seq_len(q)) for (c in seq_len(q)) dlogC <- dlogC - 0.5 * P[, m, c] * dH[, c, m]
+    Phi <- bmatmul(C, bmatmul(dH, C), tA = TRUE)
+    for (m in seq_len(q)) {
+      Phi[, m, m] <- Phi[, m, m] / 2
+      for (c in seq_len(q)) if (c > m) Phi[, m, c] <- 0
+    }
+    dC <- -bmatmul(C, Phi)
+    out[, j] <- dlogC + Edirect + rowSums(Egrad * du) + sqrt(2) * rowSums(M * dC, dims = 1L)
+  }
+  out
 }
 
 #' Default number of quadrature nodes per dimension for q random effects

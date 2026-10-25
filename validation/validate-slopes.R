@@ -261,7 +261,11 @@ slopes2_block <- function(y, family, glm_family, label) {
   tm <- glmmTMB(stats::update(fm, . ~ . + (1 + time + w | id)), data = d3, family = glm_family)
   f7 <- panglm(fm, data = d3, index = idx, model = "random", family = family,
                random = ~ time + w, R = 7)
+  # GLMMadaptive started at the glmmTMB estimates (from its own default
+  # start it can stop at a far worse optimum in three dimensions)
   ga <- mixed_model(fm, random = ~ time + w | id, data = d3, family = glm_family, nAGQ = 7,
+                    initial_values = list(betas = fixef(tm)$cond,
+                                          D = unname(VarCorr(tm)$cond$id[, ])),
                     control = list(iter_EM = 0, update_GH_every = 1,
                                    tol1 = 1e-10, tol2 = 1e-10, tol3 = 1e-12))
   # with three dimensions the two packages scale the nodes with different

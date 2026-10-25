@@ -138,6 +138,29 @@ test_that("a GLM slope variance at the boundary keeps finite standard errors", {
   expect_equal(V, diag(c(0.25, 1, 0)))
 })
 
+test_that("analytic scores of the quadrature likelihood match numerical ones", {
+  set.seed(5)
+  G <- 25; T <- 5
+  d <- data.frame(id = rep(seq_len(G), each = T), time = rep(0:(T - 1), G))
+  d$x <- stats::rnorm(G * T); d$w <- stats::rnorm(G * T)
+  lin <- 0.3 * d$x + rep(stats::rnorm(G, 0, 0.6), each = T) +
+    rep(stats::rnorm(G, 0, 0.2), each = T) * d$time
+  ys <- list(poisson = stats::rpois(G * T, exp(0.2 + lin)),
+             logit = stats::rbinom(G * T, 1, stats::plogis(lin)),
+             probit = stats::rbinom(G * T, 1, stats::pnorm(lin)))
+  fams <- list(poisson = stats::poisson(), logit = stats::binomial(),
+               probit = stats::binomial("probit"))
+  X <- cbind(1, d$time, d$x)
+  for (nm in names(ys)) for (q in 2:3) for (R in c(1L, 3L)) {
+    Z <- cbind(1, d$time, d$w)[, seq_len(q), drop = FALSE]
+    contrib <- slopes_glm_contrib(fams[[nm]], X, ys[[nm]], Z, d$id, R)
+    theta <- c(0.1, 0.05, 0.3, if (q == 2) c(0.6, 0.05, 0.2) else c(0.6, 0.05, 0.1, 0.2, 0.05, 0.3))
+    contrib(theta, FALSE)
+    expect_equal(contrib(theta, TRUE)$score, ml_numeric_scores(contrib, theta),
+                 tolerance = 1e-6, info = paste(nm, q, R))
+  }
+})
+
 test_that("the default number of quadrature nodes adapts to the dimension", {
   expect_identical(panglm:::slopes_default_nodes(2L), 7L)
   expect_identical(panglm:::slopes_default_nodes(3L), 5L)
