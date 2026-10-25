@@ -360,11 +360,15 @@ paniv_standard <- function(y, X, Z, group, panel, model, effect, inst.method, ti
     transform <- function(M) iv_within(M, group, panel, effect, time_id)
   } else {
     # Swamy-Arora components from within and between 2SLS residuals
+    # The within regression here only estimates the idiosyncratic variance:
+    # time-invariant regressors drop out of it but stay in the final GLS
+    # fit, so they are removed silently (a warning would wrongly say they
+    # are dropped from the model, as plm keeps them too).
     Xw_all <- iv_within(X, group, panel, "individual", NULL)
-    Xw <- iv_drop_columns(Xw_all, Xw_all, drop_intercept = TRUE)
+    Xw <- iv_independent(Xw_all[, setdiff(colnames(Xw_all), "(Intercept)"), drop = FALSE])
     Ww <- iv_independent(iv_within(Z, group, panel, "individual", NULL))
     yw <- y - as.numeric(iv_between(matrix(y), group, Ti))
-    fw <- iv_2sls(yw, Xw, Ww)
+    fw <- if (ncol(Xw)) iv_2sls(yw, Xw, Ww) else list(residuals = yw)
     Xb_all <- iv_between(X, group, Ti)
     Xb <- iv_independent(Xb_all)
     Wb <- iv_independent(iv_between(Z, group, Ti))

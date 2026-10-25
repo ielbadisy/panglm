@@ -179,3 +179,25 @@ test_that("paniv() reports invalid input clearly", {
                "subset of the first part")
   expect_error(vcov(paniv(y ~ x | z, data = d, index = idx), type = "HC1"))
 })
+
+test_that("random-effects 2SLS keeps time-invariant regressors without a spurious warning", {
+  d <- iv_sim(N = 200, TT = 4, seed = 7)
+  d$female <- rep(rbinom(200, 1, 0.5), each = 4)
+  d$y <- d$y + 0.4 * d$female
+  f <- y ~ x + w + female | z + w + female
+  for (im in c("bvk", "baltagi")) {
+    a <- expect_no_warning(paniv(f, d, index = c("id", "t"), model = "random",
+                                 inst.method = im))
+    expect_true("female" %in% names(coef(a)))
+    skip_if_missing("plm")
+    b <- plm::plm(f, d, index = c("id", "t"), model = "random", inst.method = im)
+    expect_equal(unname(coef(a)), unname(coef(b)), tolerance = 1e-8)
+    expect_equal(unname(a$ercomp$sigma2), unname(b$ercomp$sigma2[c("idios", "id")]),
+                 tolerance = 1e-8)
+  }
+  # a regressor that is truly unidentified in the final fit still warns
+  d$female2 <- 2 * d$female
+  expect_warning(paniv(y ~ x + w + female + female2 | z + w + female + female2, d,
+                       index = c("id", "t"), model = "random"),
+                 "dropping unidentified column")
+})
