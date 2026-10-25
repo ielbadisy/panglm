@@ -238,7 +238,7 @@ add("panqr mmqr", "Monte Carlo N=200 T=30 (300 reps)", "analytic SE / MC SD",
 # cluster bootstrap against the analytic Canay SE on one data set
 set.seed(7)
 d1 <- sim_ls(200, 30)
-cbt <- panqr(y ~ x + z, d1, index = idx, tau = 0.9, model = "canay", vcov = "bootstrap", R = 300)
+cbt <- panqr(y ~ x + z, d1, index = idx, tau = 0.9, model = "canay", vcov = "bootstrap", boot = 300)
 can <- panqr(y ~ x + z, d1, index = idx, tau = 0.9, model = "canay", vcov = "analytic")
 # slopes only: the bootstrap intercept also reflects the sampling variation of the
 # mean individual effect, which the analytic (fixed-effects) SE conditions on

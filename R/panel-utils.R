@@ -99,3 +99,28 @@ data_column <- function(x, data, arg) {
   }
   x
 }
+
+#' Evaluate an expression with an optional fixed seed
+#'
+#' With `seed = NULL` the expression uses the global random number stream.
+#' Otherwise it runs after `set.seed(seed)` and the global random number
+#' state is restored afterwards, as for `seed` in [panselect()] and
+#' [panfmm()].
+#'
+#' @keywords internal
+#' @noRd
+with_seed <- function(seed, expr) {
+  if (is.null(seed)) return(expr)
+  genv <- globalenv()
+  had <- exists(".Random.seed", envir = genv, inherits = FALSE)
+  old <- if (had) genv[[".Random.seed"]] else NULL
+  on.exit({
+    if (had) {
+      assign(".Random.seed", old, envir = genv)
+    } else if (exists(".Random.seed", envir = genv, inherits = FALSE)) {
+      rm(".Random.seed", envir = genv)
+    }
+  })
+  set.seed(seed)
+  expr
+}

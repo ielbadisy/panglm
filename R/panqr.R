@@ -36,7 +36,7 @@
 #'
 #' @section Covariance:
 #' `vcov = "bootstrap"` resamples whole individuals with replacement (a
-#' cluster bootstrap) `R` times, repeats every step of the estimator and
+#' cluster bootstrap) `boot` times, repeats every step of the estimator and
 #' returns the covariance of the replicates. `vcov = "analytic"` gives:
 #' * `"mmqr"`: the asymptotic covariance of Machado and Santos Silva (2019),
 #'   with the matrix layout of `xtqreg` (version 1.5): it combines the
@@ -75,13 +75,17 @@
 #' @param model `"canay"`, `"mmqr"` or `"pooling"`
 #' @param vcov `"analytic"`, `"bootstrap"` or `"none"`; the default is
 #'   `"bootstrap"` for `"canay"` and `"analytic"` otherwise
-#' @param R number of bootstrap replications
+#' @param boot number of bootstrap replications for `vcov = "bootstrap"`
 #' @param na.action missing-data action passed to [stats::model.frame()]
+#' @param seed optional random seed for the bootstrap; the global random
+#'   number state is restored afterwards. With `seed = NULL` (the default)
+#'   the draws come from the global random number stream.
+#' @param R deprecated; use `boot`
 #' @return an object of class `"panqr"`, a list with components
 #'   `coefficients` (a matrix with one column per quantile), `vcov` (a list
 #'   of covariance matrices, one per quantile, or `NULL` for
 #'   `vcov = "none"`), `vcov_type`, `tau`, `model`, `boot` (the bootstrap
-#'   replicates, an array `R x k x length(tau)`, for `vcov = "bootstrap"`),
+#'   replicates, an array `boot x k x length(tau)`, for `vcov = "bootstrap"`),
 #'   `alpha` (one per individual: for `"canay"` the normalized effects
 #'   subtracted from the outcome, for `"mmqr"` the location effects including
 #'   the constant), for `"mmqr"` also `location`, `scale` (lists with
@@ -123,13 +127,20 @@
 #'
 #'   # Canay two-step estimator with a small cluster bootstrap
 #'   cn <- panqr(cost ~ chronic + age, data = d, index = c("id", "year"),
-#'               tau = 0.9, model = "canay", R = 50)
+#'               tau = 0.9, model = "canay", boot = 50, seed = 1)
 #'   coef(cn)
 #' }
 #' @export
 panqr <- function(formula, data, index, tau = 0.5,
                   model = c("canay", "mmqr", "pooling"),
-                  vcov = NULL, R = 200, na.action = stats::na.omit) {
+                  vcov = NULL, boot = 200, na.action = stats::na.omit,
+                  seed = NULL, R) {
+  if (!missing(R)) {
+    deprecate_once("panqr(R = )", "panqr(boot = )", what = "argument")
+    if (!missing(boot)) stop("give only one of 'boot' and 'R'", call. = FALSE)
+    boot <- R
+  }
+  R <- boot
   model <- match.arg(model)
   if (is.null(vcov)) vcov <- if (model == "canay") "bootstrap" else "analytic"
   vcov <- match.arg(vcov, c("analytic", "bootstrap", "none"))
@@ -141,7 +152,7 @@ panqr <- function(formula, data, index, tau = 0.5,
     stop("model = '", model, "' needs the 'quantreg' package", call. = FALSE)
   }
   if (vcov == "bootstrap" && (!is.numeric(R) || length(R) != 1L || R < 2)) {
-    stop("'R' must be a number of bootstrap replications >= 2", call. = FALSE)
+    stop("'boot' must be a number of bootstrap replications >= 2", call. = FALSE)
   }
   if (missing(index)) stop("'index' is required, e.g. index = c(\"id\", \"time\")", call. = FALSE)
   if (!is.character(index) || !length(index) %in% 1:2 || anyDuplicated(index)) {
@@ -218,7 +229,7 @@ panqr <- function(formula, data, index, tau = 0.5,
   )
 
   if (vcov == "bootstrap") {
-    fit$boot <- panqr_bootstrap(y, X, group, tau, model, R)
+    fit$boot <- with_seed(seed, panqr_bootstrap(y, X, group, tau, model, R))
     fit$vcov <- lapply(seq_along(tau), function(j) {
       v <- stats::cov(fit$boot[, , j, drop = TRUE])
       if (!is.matrix(v)) v <- matrix(v, 1, 1)

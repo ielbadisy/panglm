@@ -90,9 +90,9 @@ test_that("cluster bootstrap is reproducible and close to the analytic SE", {
   skip_if_missing("quantreg")
   d <- qr_sim(N = 100, TT = 8, seed = 6)
   set.seed(11)
-  b1 <- panqr(y ~ x + z, d, index = c("id", "t"), tau = 0.5, model = "canay", R = 40)
+  b1 <- panqr(y ~ x + z, d, index = c("id", "t"), tau = 0.5, model = "canay", boot = 40)
   set.seed(11)
-  b2 <- panqr(y ~ x + z, d, index = c("id", "t"), tau = 0.5, model = "canay", R = 40)
+  b2 <- panqr(y ~ x + z, d, index = c("id", "t"), tau = 0.5, model = "canay", boot = 40)
   expect_identical(vcov(b1), vcov(b2))
   expect_identical(b1$vcov_type, "bootstrap")
   expect_equal(dim(b1$boot), c(40L, 3L, 1L))
@@ -102,7 +102,7 @@ test_that("cluster bootstrap is reproducible and close to the analytic SE", {
   expect_true(all(ratio > 0.5 & ratio < 2))
   set.seed(12)
   mb <- panqr(y ~ x + z, d, index = c("id", "t"), tau = c(0.25, 0.75), model = "mmqr",
-              vcov = "bootstrap", R = 30)
+              vcov = "bootstrap", boot = 30)
   expect_length(vcov(mb), 2L)
   expect_equal(dim(vcov(mb, tau = 0.75)), c(2L, 2L))
 })
@@ -140,4 +140,31 @@ test_that("methods, singletons, time-invariant regressors and input checks", {
   expect_error(panqr(y ~ x - 1, d, index = c("id", "t"), model = "mmqr"), "intercept")
   expect_error(suppressWarnings(panqr(y ~ female, d, index = c("id", "t"), model = "mmqr",
                                       vcov = "none")), "no time-varying")
+})
+
+test_that("panqr() takes boot and seed; R is a deprecated alias of boot", {
+  skip_if_missing("quantreg")
+  d <- qr_sim(N = 60, TT = 6, seed = 6)
+  set.seed(11)
+  a <- panqr(y ~ x + z, d, index = c("id", "t"), model = "canay", boot = 20)
+  set.seed(11)
+  panglm:::deprecate_reset()
+  expect_warning(
+    b <- panqr(y ~ x + z, d, index = c("id", "t"), model = "canay", R = 20),
+    "boot", class = "deprecatedWarning"
+  )
+  expect_identical(vcov(a), vcov(b))
+  expect_identical(a$R, 20)
+  expect_error(panqr(y ~ x + z, d, index = c("id", "t"), boot = 20, R = 20),
+               "only one of")
+
+  # seed: reproducible draws, global stream left untouched
+  set.seed(5); before <- runif(1); set.seed(5)
+  s1 <- panqr(y ~ x + z, d, index = c("id", "t"), model = "canay", boot = 20, seed = 3)
+  expect_identical(runif(1), before)
+  s2 <- panqr(y ~ x + z, d, index = c("id", "t"), model = "canay", boot = 20, seed = 3)
+  expect_identical(vcov(s1), vcov(s2))
+  set.seed(3)
+  s3 <- panqr(y ~ x + z, d, index = c("id", "t"), model = "canay", boot = 20)
+  expect_identical(vcov(s1), vcov(s3))
 })
