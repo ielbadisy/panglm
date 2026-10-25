@@ -725,10 +725,9 @@ partial effects.
 ## Model scope
 
 The package focuses on Gaussian, Poisson, binomial, NB2, gamma, ordered, beta
-and Tobit panel models, with two-part models for semicontinuous costs. It does
-not provide GMM (Arellano-Bond) estimators; packages such as `plm` cover
-those. Instrumental-variable estimation is limited to linear models
-(`paniv()`). The binomial
+and Tobit panel models, with two-part models for semicontinuous costs. Instrumental
+variables (`paniv()`) and GMM (`pangmm()`) are available for linear models
+only. The binomial
 fixed-effects model is the conditional logit, with individual effects or,
 with `effect = "twoways"`, individual effects conditioned out and time
 effects estimated as dummies; there is no fixed-effects estimator for the

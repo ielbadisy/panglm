@@ -19,6 +19,11 @@
   `survival::clogit(y ~ x + factor(time) + strata(id), method = "exact")`.
   `coef()` holds the slopes; `fit$time_effects` and `fit$time_effects_se`
   hold the time effects.
+* Dynamic panel GMM: `pangmm()` for Arellano-Bond difference GMM and
+  Blundell-Bond system GMM (one-step and two-step, robust and
+  Windmeijer-corrected SEs), with AR(1)/AR(2) tests, Sargan and Hansen J
+  tests, collapsed instruments (`collapse`) and lag-depth limits (`maxlag`).
+  Uses the `plm::pgmm()` formula syntax and is validated against it.
 * `validation/`: per-model scripts comparing panglm with established
   packages, summarized in `validation/REPORT.md`.
 
