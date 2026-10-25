@@ -14,12 +14,23 @@
 \value{
 a one-row \code{data.frame} including log-likelihood, AIC, BIC, the
 likelihood parameter count when a likelihood is available,
-R-squared and adjusted R-squared, and \code{theta}, the NB2
+R-squared and adjusted R-squared (see Details), and \code{theta}, the NB2
 dispersion parameter of pooled, fixed-effects and random-slope
 negative binomial fits (\code{NA} otherwise)
 }
 \description{
 Implements the \code{generics::glance()} generic.
+}
+\details{
+\code{r.squared} is \code{1 - RSS / TSS} on the scale of \code{fitted()} and
+the outcome. For Gaussian fixed-effects fits the fitted values include
+the absorbed individual (and, with \code{effect = "twoways"}, time) effects,
+so \code{r.squared} is the R-squared of the dummy-variable regression,
+\code{fixest::r2(type = "r2")}, not the within R-squared reported by
+\code{plm}. \code{adj.r.squared} is \code{1 - (1 - R^2) (n - 1) / df}, with \code{df} the
+residual degrees of freedom of the fit, which count the absorbed
+effects, as \code{fixest::r2(type = "ar2")}. For non-Gaussian families both
+are Gaussian-style pseudo-R-squared measures, not likelihood based.
 }
 \examples{
 data(copd)

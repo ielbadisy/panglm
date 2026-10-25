@@ -46,11 +46,21 @@ tidy.panglm <- function(x, conf.int = FALSE, conf.level = 0.95, ...) {
 #'
 #' Implements the `generics::glance()` generic.
 #'
+#' @details `r.squared` is `1 - RSS / TSS` on the scale of `fitted()` and
+#' the outcome. For Gaussian fixed-effects fits the fitted values include
+#' the absorbed individual (and, with `effect = "twoways"`, time) effects,
+#' so `r.squared` is the R-squared of the dummy-variable regression,
+#' `fixest::r2(type = "r2")`, not the within R-squared reported by
+#' `plm`. `adj.r.squared` is `1 - (1 - R^2) (n - 1) / df`, with `df` the
+#' residual degrees of freedom of the fit, which count the absorbed
+#' effects, as `fixest::r2(type = "ar2")`. For non-Gaussian families both
+#' are Gaussian-style pseudo-R-squared measures, not likelihood based.
+#'
 #' @param x a `"panglm"` fit
 #' @param ... unused
 #' @return a one-row `data.frame` including log-likelihood, AIC, BIC, the
 #'   likelihood parameter count when a likelihood is available,
-#'   R-squared and adjusted R-squared, and `theta`, the NB2
+#'   R-squared and adjusted R-squared (see Details), and `theta`, the NB2
 #'   dispersion parameter of pooled, fixed-effects and random-slope
 #'   negative binomial fits (`NA` otherwise)
 #' @family panglm methods
@@ -67,23 +77,27 @@ glance.panglm <- function(x, ...) {
   ll <- stats::logLik(x)
   has_likelihood <- length(ll) == 1L && is.finite(as.numeric(ll))
 
-  ## R-squared/adjusted R-squared: defined here as the usual proportion of
-  ## variance explained, 1 - RSS/TSS, computed on whatever scale `fitted()`
-  ## and `y` are on (the linear predictor for gaussian identity-link models,
-  ## i.e. the standard OLS R-squared; the same ratio for other families,
-  ## which is a Gaussian-style pseudo-R-squared, not McFadden's or another
-  ## likelihood-based pseudo-R-squared - reported as NA when TSS is 0 or the
-  ## fit has no residual df left to adjust for).
+  ## R-squared: the usual proportion of variance explained, 1 - RSS/TSS,
+  ## computed on whatever scale `fitted()` and `y` are on (for Gaussian
+  ## fixed-effects fits the fitted values include the absorbed effects, so
+  ## this is the "total" R-squared of fixest::r2(type = "r2") and of the
+  ## dummy-variable regression; for other families a Gaussian-style
+  ## pseudo-R-squared). The adjusted version uses the residual degrees of
+  ## freedom of the fit, which count the absorbed individual (and time)
+  ## effects, as fixest::r2(type = "ar2") and lm() with dummies do.
   r2 <- adj_r2 <- NA_real_
-  if (!is.null(x$fitted.values) && !is.null(x$y)) {
-    yv <- x$y; fv <- x$fitted.values
+  if (!is.null(x$fitted.values) && !is.null(x$y) &&
+      length(x$fitted.values) == length(x$y)) {
+    ok <- is.finite(x$fitted.values) & is.finite(x$y)
+    yv <- x$y[ok]; fv <- x$fitted.values[ok]
     tss <- sum((yv - mean(yv))^2)
-    if (is.finite(tss) && tss > 0) {
+    if (length(yv) > 1L && is.finite(tss) && tss > 0) {
       rss <- sum((yv - fv)^2)
       r2 <- 1 - rss / tss
-      k <- length(x$coefficients)
       n <- length(yv)
-      if (n - k > 0) adj_r2 <- 1 - (1 - r2) * (n - 1) / (n - k)
+      df_res <- x$df.residual
+      if (length(df_res) != 1L || !is.finite(df_res)) df_res <- n - length(x$coefficients)
+      if (df_res > 0) adj_r2 <- 1 - (1 - r2) * (n - 1) / df_res
     }
   }
 

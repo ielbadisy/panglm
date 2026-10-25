@@ -187,3 +187,28 @@ test_that("modelsummary tabulates the main classes", {
                                    shape = term + tau ~ model)
   expect_s3_class(tq, "data.frame")
 })
+
+test_that("glance() adjusts R-squared for the absorbed fixed effects", {
+  data(copd, package = "panglm", envir = environment())
+  pooled <- panglm(fev1 ~ crp + age, data = copd, index = c("id", "visit"),
+                   model = "pooling", family = "gaussian")
+  ref <- summary(stats::lm(fev1 ~ crp + age, data = copd))
+  expect_equal(generics::glance(pooled)$r.squared, ref$r.squared, tolerance = 1e-10)
+  expect_equal(generics::glance(pooled)$adj.r.squared, ref$adj.r.squared, tolerance = 1e-10)
+  within <- panglm(fev1 ~ crp, data = copd, index = c("id", "visit"),
+                   model = "within", family = "gaussian")
+  g <- generics::glance(within)
+  expect_lt(g$adj.r.squared, g$r.squared)
+  dummies <- summary(stats::lm(fev1 ~ crp + factor(id), data = copd))
+  expect_equal(g$r.squared, dummies$r.squared, tolerance = 1e-8)
+  expect_equal(g$adj.r.squared, dummies$adj.r.squared, tolerance = 1e-8)
+  twoway <- panglm(fev1 ~ crp, data = copd, index = c("id", "visit"),
+                   model = "within", effect = "twoways", family = "gaussian")
+  dummies2 <- summary(stats::lm(fev1 ~ crp + factor(id) + factor(visit), data = copd))
+  expect_equal(generics::glance(twoway)$r.squared, dummies2$r.squared, tolerance = 1e-6)
+  expect_equal(generics::glance(twoway)$adj.r.squared, dummies2$adj.r.squared,
+               tolerance = 1e-6)
+  skip_if_not_installed("fixest")
+  fx <- fixest::feols(fev1 ~ crp | id, data = copd)
+  expect_equal(g$adj.r.squared, unname(fixest::r2(fx, "ar2")), tolerance = 1e-8)
+})

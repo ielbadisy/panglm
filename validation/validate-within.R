@@ -109,7 +109,13 @@ for (eff in c("individual", "twoways")) {
              list(plm = se(plm::vcovHC(pl, method = "arellano", type = "sss")),
                   fixest = se(vcov(fx, vcov = ~firm, ssc = nofe))), tol),
     vcompare(label, gname, "logLik", as.numeric(logLik(p)),
-             list(fixest = as.numeric(logLik(fx)), lm = as.numeric(logLik(lsdv))), tol)
+             list(fixest = as.numeric(logLik(fx)), lm = as.numeric(logLik(lsdv))), tol),
+    # glance(): R-squared of the dummy-variable regression and its adjusted
+    # version with the absorbed effects counted in the residual df
+    vcompare(label, gname, "r2_adjusted",
+             unlist(generics::glance(p)[c("r.squared", "adj.r.squared")]),
+             list(fixest = unname(fixest::r2(fx, c("r2", "ar2"))),
+                  lm = unlist(summary(lsdv)[c("r.squared", "adj.r.squared")])), tol)
   )
 }
 
