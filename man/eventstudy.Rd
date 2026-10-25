@@ -100,3 +100,13 @@ Sun, L. and Abraham, S. (2021). Estimating dynamic treatment effects in
 event studies with heterogeneous treatment effects. \emph{Journal of
 Econometrics}, 225, 175-199. \doi{10.1016/j.jeconom.2020.09.006}
 }
+\seealso{
+\link{eventstudy-methods} and \code{\link[=plot.panglm_eventstudy]{plot.panglm_eventstudy()}} for the fitted
+model, \link{tidy-methods} for \code{tidy()} and \code{glance()}.
+
+Other policy evaluation: 
+\code{\link{attgt}()},
+\code{\link{did}()},
+\code{\link{etwfe}()}
+}
+\concept{policy evaluation}

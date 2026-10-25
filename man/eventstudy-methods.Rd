@@ -67,3 +67,8 @@ summary(es)
 confint(es)
 vcov(es)
 }
+\seealso{
+Other eventstudy methods: 
+\code{\link{plot.panglm_eventstudy}()}
+}
+\concept{eventstudy methods}

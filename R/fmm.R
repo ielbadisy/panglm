@@ -126,7 +126,9 @@
 #' Gruen, B. and Leisch, F. (2008). FlexMix version 2: finite mixtures with
 #' concomitant variables and varying and constant parameters. *Journal of
 #' Statistical Software*, 28(4). \doi{10.18637/jss.v028.i04}
-#' @seealso [panfmmselect()] to compare numbers of classes
+#' @seealso [summary.panfmm()], [vcov.panfmm()] and [predict.panfmm()] for
+#'   the fitted model, [tidy-methods] for `tidy()` and `glance()`.
+#' @family panel models
 #' @examples
 #' # Doctor visits of 400 patients over 4 years: 70% low users and 30%
 #' # high users with a stronger effect of chronic illness
@@ -769,6 +771,7 @@ fmm_unpack <- function(spec, theta) {
 #'   individuals; defaults to the individual
 #' @param ... unused
 #' @return the covariance matrix of all parameters
+#' @family panfmm methods
 #' @examples
 #' set.seed(3)
 #' d <- data.frame(id = rep(1:150, each = 3), t = rep(1:3, 150), x = rnorm(450))
@@ -829,6 +832,7 @@ confint.panfmm <- function(object, parm, level = 0.95, ...) {
 #' @param ... unused
 #' @return a numeric vector (`"response"`) or a matrix with one column per
 #'   class
+#' @family panfmm methods
 #' @examples
 #' set.seed(3)
 #' d <- data.frame(id = rep(1:150, each = 3), t = rep(1:3, 150), x = rnorm(450))
@@ -936,6 +940,7 @@ fmm_print_aux <- function(x, digits) {
 #'   class probabilities, the class sizes by modal posterior class, and the
 #'   fit information (`call`, `loglik`, `AIC`, `BIC`, `nobs`, `n_groups`,
 #'   `vcov_type`).
+#' @family panfmm methods
 #' @examples
 #' set.seed(3)
 #' d <- data.frame(id = rep(1:150, each = 3), t = rep(1:3, 150), x = rnorm(450))
@@ -1003,6 +1008,7 @@ print.summary.panfmm <- function(x, digits = max(3, getOption("digits") - 3), ..
 #' @return a data.frame with columns `k`, `logLik`, `df`, `AIC`, `BIC` and
 #'   `smallest` (the smallest mean class probability), with the fits in the
 #'   attribute `"fits"`
+#' @family panel models
 #' @examples
 #' set.seed(3)
 #' d <- data.frame(id = rep(1:150, each = 3), t = rep(1:3, 150), x = rnorm(450))

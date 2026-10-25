@@ -75,3 +75,8 @@ fit <- attgt(y ~ 1, d, index = c("id", "t"), treat = "first")
 summary(fit, type = "dynamic")
 summary(fit, type = "calendar")
 }
+\seealso{
+Other attgt methods: 
+\code{\link{plot.panglm_attgt}()}
+}
+\concept{attgt methods}

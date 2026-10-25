@@ -105,6 +105,9 @@
 #' Machado, J. A. F. and Santos Silva, J. M. C. (2019). Quantiles via
 #' moments. *Journal of Econometrics*, 213(1), 145-173.
 #' \doi{10.1016/j.jeconom.2019.04.009}
+#' @family panel models
+#' @seealso [summary.panqr()], [vcov.panqr()] and [plot.panqr()] for the fitted
+#'   model, [tidy-methods] for `tidy()` and `glance()`.
 #' @examples
 #' # Simulated panel of 300 patients over 6 years. Annual health costs have
 #' # a patient effect and a heavy upper tail that widens with chronic
@@ -480,6 +483,7 @@ panqr_bootstrap <- function(y, X, group, tau, model, R) {
 #' @return the covariance matrix of the coefficients at quantile `tau`; when
 #'   several quantiles were fitted and `tau` is `NULL`, a list of matrices,
 #'   one per quantile
+#' @family panqr methods
 #' @examples
 #' set.seed(2)
 #' d <- data.frame(id = rep(1:100, each = 5), t = rep(1:5, 100))
@@ -559,6 +563,7 @@ print.panqr <- function(x, digits = max(3, getOption("digits") - 3), ...) {
 #'   quantiles `q` of the standardized errors for MM-QR, and the fit
 #'   information (`call`, `model`, `tau`, `nobs`, `n_groups`, `vcov_type`,
 #'   `R`, `dropped`).
+#' @family panqr methods
 #' @examples
 #' set.seed(2)
 #' d <- data.frame(id = rep(1:100, each = 5), t = rep(1:5, 100))

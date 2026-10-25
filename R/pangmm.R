@@ -170,6 +170,9 @@
 #'
 #' Roodman, D. (2009). How to do xtabond2: An introduction to difference
 #' and system GMM in Stata. *Stata Journal*, 9, 86-136.
+#' @family panel models
+#' @seealso [summary.pangmm()], [vcov.pangmm()] and [predict.pangmm()] for the
+#'   fitted model, [tidy-methods] for `tidy()` and `glance()`.
 #' @examples
 #' # Habit persistence in smoking: cigarettes per day depend on last
 #' # wave's consumption (state dependence) and on the price of tobacco,
@@ -750,6 +753,7 @@ gmm_wald <- function(object, V) {
 #'   `"robust"`
 #' @param ... unused
 #' @return the covariance matrix of the coefficients
+#' @family pangmm methods
 #' @examples
 #' set.seed(3)
 #' N <- 200; TT <- 6
@@ -810,6 +814,7 @@ print.pangmm <- function(x, digits = max(3, getOption("digits") - 3), ...) {
 #'   and p-value), the Arellano-Bond tests (`artest`), `sargan`, `hansen`,
 #'   `wald` and the fit information (`call`, `label`, `vcov_type`, `nobs`,
 #'   `n_groups`, `n_periods`, `n_instruments`).
+#' @family pangmm methods
 #' @examples
 #' set.seed(3)
 #' N <- 200; TT <- 6

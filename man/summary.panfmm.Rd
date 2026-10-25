@@ -29,3 +29,9 @@ d <- data.frame(id = rep(1:150, each = 3), t = rep(1:3, 150), x = rnorm(450))
 d$y <- rpois(450, exp(ifelse(rep(rbinom(150, 1, 0.4), each = 3) == 1, 1.5, 0) + 0.3 * d$x))
 summary(panfmm(y ~ x, data = d, index = c("id", "t"), nstart = 2, seed = 1))
 }
+\seealso{
+Other panfmm methods: 
+\code{\link{predict.panfmm}()},
+\code{\link{vcov.panfmm}()}
+}
+\concept{panfmm methods}

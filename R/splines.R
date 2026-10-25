@@ -60,6 +60,7 @@ variable_basis <- function(object, variable, values, columns) {
 #' @param level confidence level of the pointwise band
 #' @return a data frame of class `"panglm_effectcurve"` with columns
 #'   `value`, `estimate`, `se`, `lower` and `upper`
+#' @family panglm methods
 #' @examples
 #' data(copd)
 #' fit <- panglm(fev1 ~ splines::ns(crp, 3), data = copd,
@@ -100,6 +101,7 @@ effectcurve <- function(object, variable, values = NULL, ref = NULL, vcov = NULL
 #' @param band_col colour of the confidence band
 #' @param ... passed to [graphics::plot()]
 #' @return `x`, invisibly
+#' @family panglm methods
 #' @export
 plot.panglm_effectcurve <- function(x, xlab = attr(x, "variable"),
                                     ylab = "Effect on the linear predictor",
@@ -127,6 +129,7 @@ plot.panglm_effectcurve <- function(x, xlab = attr(x, "variable"),
 #'
 #' @inheritParams effectcurve
 #' @return an object of class `"panglm_jointtest"`
+#' @family tests
 #' @examples
 #' data(copd)
 #' fit <- panglm(fev1 ~ splines::ns(crp, 3), data = copd,

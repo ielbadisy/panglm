@@ -251,3 +251,18 @@ linear efficient two-step GMM estimators. \emph{Journal of Econometrics},
 Roodman, D. (2009). How to do xtabond2: An introduction to difference
 and system GMM in Stata. \emph{Stata Journal}, 9, 86-136.
 }
+\seealso{
+\code{\link[=summary.pangmm]{summary.pangmm()}}, \code{\link[=vcov.pangmm]{vcov.pangmm()}} and \code{\link[=predict.pangmm]{predict.pangmm()}} for the
+fitted model, \link{tidy-methods} for \code{tidy()} and \code{glance()}.
+
+Other panel models: 
+\code{\link{panfmm}()},
+\code{\link{panfmmselect}()},
+\code{\link{panglm}()},
+\code{\link{panhurdle}()},
+\code{\link{paniv}()},
+\code{\link{panqr}()},
+\code{\link{panselect}()},
+\code{\link{twopart}()}
+}
+\concept{panel models}

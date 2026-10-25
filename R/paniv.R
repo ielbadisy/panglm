@@ -110,6 +110,9 @@
 #'
 #' Hausman, J. A. and Taylor, W. E. (1981). Panel data and unobservable
 #' individual effects. *Econometrica*, 49, 1377-1398.
+#' @family panel models
+#' @seealso [summary.paniv()], [vcov.paniv()] and [predict.paniv()] for the
+#'   fitted model, [tidy-methods] for `tidy()` and `glance()`.
 #' @examples
 #' # Simulated panel of 500 patients over 4 waves. Private insurance is
 #' # endogenous for doctor visits (a time-varying health shock drives both)
@@ -615,6 +618,7 @@ iv_overid <- function(fit, vcov_type) {
 #'   individual
 #' @param ... unused
 #' @return the covariance matrix of the coefficients
+#' @family paniv methods
 #' @examples
 #' set.seed(2)
 #' d <- data.frame(id = rep(1:50, each = 4), t = rep(1:4, 50))
@@ -676,6 +680,7 @@ iv_label <- function(x) {
 #'   `first_stage`, `overid`, `ercomp`, `endogenous`, `instruments`,
 #'   `varlist` (Hausman-Taylor) and the fit information (`call`, `model`,
 #'   `nobs`, `n_groups`, `df.residual`, `vcov_type`).
+#' @family paniv methods
 #' @examples
 #' set.seed(2)
 #' d <- data.frame(id = rep(1:50, each = 4), t = rep(1:4, 50))

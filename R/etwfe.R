@@ -131,6 +131,7 @@
 #'   Wooldridge, J. M. (2023). Simple approaches to nonlinear
 #'   difference-in-differences with panel data. *The Econometrics Journal*,
 #'   26, C31-C66. \doi{10.1093/ectj/utad016}
+#' @family policy evaluation
 #' @examples
 #' # Staggered rollout of a health insurance scheme by region (for example
 #' # RAMED, then AMO, in Morocco): regions join in 2016, 2018 or 2020, the
@@ -408,6 +409,7 @@ etwfe_fit <- function(X, y, fam, wt = NULL) {
 #'   aggregation, and by value of the `xvar` covariate in a column named
 #'   after it when `byxvar = TRUE`; `NULL` for `"simple"` without
 #'   `byxvar`), `cells` and the fit information.
+#' @family etwfe methods
 #' @examples
 #' set.seed(2)
 #' d <- expand.grid(id = 1:150, t = 1:8)
@@ -547,6 +549,7 @@ nobs.panglm_etwfe <- function(object, ...) object$nobs
 #' @param xlab,ylab axis labels
 #' @param ... passed to [graphics::plot()]
 #' @return the plotted summary, invisibly
+#' @family etwfe methods
 #' @examples
 #' set.seed(2)
 #' d <- expand.grid(id = 1:150, t = 1:8)

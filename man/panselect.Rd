@@ -155,3 +155,18 @@ Econometrics}, 68, 115-132.
 Wooldridge, J. M. (2010). \emph{Econometric Analysis of Cross Section and
 Panel Data}, 2nd edition, section 19.9. MIT Press.
 }
+\seealso{
+\code{\link[=summary.panselect]{summary.panselect()}}, \code{\link[=vcov.panselect]{vcov.panselect()}} and \code{\link[=predict.panselect]{predict.panselect()}}
+for the fitted model, \link{tidy-methods} for \code{tidy()} and \code{glance()}.
+
+Other panel models: 
+\code{\link{panfmm}()},
+\code{\link{panfmmselect}()},
+\code{\link{panglm}()},
+\code{\link{pangmm}()},
+\code{\link{panhurdle}()},
+\code{\link{paniv}()},
+\code{\link{panqr}()},
+\code{\link{twopart}()}
+}
+\concept{panel models}

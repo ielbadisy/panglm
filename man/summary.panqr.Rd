@@ -29,3 +29,9 @@ d$x <- rnorm(500) + rep(rnorm(100), each = 5)
 d$y <- d$x + rep(rnorm(100), each = 5) + (1 + 0.2 * abs(d$x)) * rnorm(500)
 summary(panqr(y ~ x, data = d, index = c("id", "t"), tau = 0.9, model = "mmqr"))
 }
+\seealso{
+Other panqr methods: 
+\code{\link{plot.panqr}()},
+\code{\link{vcov.panqr}()}
+}
+\concept{panqr methods}

@@ -227,3 +227,19 @@ fit_ns <- panglm(fev1 ~ splines::ns(crp, 3), data = copd,
 lineartest(fit_ns, "crp")
 plot(effectcurve(fit_ns, "crp"))
 }
+\seealso{
+\link{panglm-families} for the outcome families, \code{\link[=summary.panglm]{summary.panglm()}},
+\code{\link[=vcov.panglm]{vcov.panglm()}}, \code{\link[=predict.panglm]{predict.panglm()}} and \code{\link[=partialeffects]{partialeffects()}} for the fitted
+model, \link{tidy-methods} for \code{tidy()} and \code{glance()}.
+
+Other panel models: 
+\code{\link{panfmm}()},
+\code{\link{panfmmselect}()},
+\code{\link{pangmm}()},
+\code{\link{panhurdle}()},
+\code{\link{paniv}()},
+\code{\link{panqr}()},
+\code{\link{panselect}()},
+\code{\link{twopart}()}
+}
+\concept{panel models}

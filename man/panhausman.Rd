@@ -65,3 +65,13 @@ fit_re <- panglm(fev1 ~ crp, data = copd, index = c("id", "visit"),
 panhausman(fit_fe, fit_re)
 panhausman(fit_fe, method = "mundlak", data = copd)
 }
+\seealso{
+\code{\link[=panglm]{panglm()}} with \code{cre = TRUE}, whose summary reports the Mundlak
+test.
+
+Other tests: 
+\code{\link{jointtest}()},
+\code{\link{lineartest}()},
+\code{\link{pandispersiontest}()}
+}
+\concept{tests}

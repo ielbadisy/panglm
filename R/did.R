@@ -77,6 +77,9 @@ did_timing <- function(data, index, treat) {
 #'   Wooldridge, J. M. (2023). Simple approaches to nonlinear
 #'   difference-in-differences with panel data. *The Econometrics Journal*,
 #'   26, C31-C66. \doi{10.1093/ectj/utad016}
+#' @family policy evaluation
+#' @seealso [summary.panglm()] and the other [panglm()] methods for the fitted
+#'   model.
 #' @examples
 #' set.seed(1)
 #' d <- expand.grid(id = 1:200, year = 2015:2022)
@@ -152,6 +155,9 @@ did <- function(formula, data, index, treat, family = "gaussian",
 #'   Sun, L. and Abraham, S. (2021). Estimating dynamic treatment effects in
 #'   event studies with heterogeneous treatment effects. *Journal of
 #'   Econometrics*, 225, 175-199. \doi{10.1016/j.jeconom.2020.09.006}
+#' @family policy evaluation
+#' @seealso [eventstudy-methods] and [plot.panglm_eventstudy()] for the fitted
+#'   model, [tidy-methods] for `tidy()` and `glance()`.
 #' @examples
 #' set.seed(1)
 #' d <- expand.grid(id = 1:200, year = 2015:2022)
@@ -236,6 +242,7 @@ coef.panglm_eventstudy <- function(object, ...) {
 #' @param xlab,ylab axis labels
 #' @param ... passed to [graphics::plot()]
 #' @return `x`, invisibly
+#' @family eventstudy methods
 #' @export
 plot.panglm_eventstudy <- function(x, xlab = "Event time", ylab = "Estimate", ...) {
   tab <- x$estimates

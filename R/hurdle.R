@@ -43,6 +43,10 @@
 #' @return an object of class `"panglm_hurdle"`: a list with `zero` (the
 #'   `panglm` binomial fit for the zero-vs-positive part) and `count` (the
 #'   zero-truncated fixed-effects fit for the count part)
+#' @family panel models
+#' @seealso [hurdle-methods] and [plot.panglm_hurdle()] for the fitted model,
+#'   [pandispersiontest()] to check the count part, [twopart()] for continuous
+#'   costs.
 #' @examples
 #' data(copd)
 #' fit <- panhurdle(exacerbations ~ crp, data = copd, index = c("id", "visit"))

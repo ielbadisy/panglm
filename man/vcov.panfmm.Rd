@@ -34,3 +34,9 @@ d$y <- rpois(450, exp(ifelse(rep(rbinom(150, 1, 0.4), each = 3) == 1, 1.5, 0) + 
 fit <- panfmm(y ~ x, data = d, index = c("id", "t"), nstart = 2, seed = 1)
 sqrt(diag(vcov(fit, type = "cluster")))
 }
+\seealso{
+Other panfmm methods: 
+\code{\link{predict.panfmm}()},
+\code{\link{summary.panfmm}()}
+}
+\concept{panfmm methods}

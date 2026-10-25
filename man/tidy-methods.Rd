@@ -160,3 +160,6 @@ if (requireNamespace("generics", quietly = TRUE)) {
   generics::glance(fit)
 }
 }
+\seealso{
+\code{\link[=tidy.panglm]{tidy.panglm()}} and \code{\link[=glance.panglm]{glance.panglm()}} for \code{\link[=panglm]{panglm()}} fits.
+}

@@ -73,6 +73,9 @@
 #'   Van Ourti, T. (2004). Measuring horizontal inequity in Belgian health
 #'   care using a Gaussian random effects two part count data model.
 #'   *Health Economics*, 13, 705-724. \doi{10.1002/hec.869}
+#' @family panel models
+#' @seealso [predict.twopart()], [confint.twopart()] and [partialeffects()] for
+#'   the fitted model, [tidy-methods] for `tidy()` and `glance()`.
 #' @examples
 #' data(copd)
 #' set.seed(1)
@@ -288,6 +291,7 @@ twopart_predictor <- function(object, part = c("total", "binary", "positive")) {
 #'   the lognormal part)
 #' @param ... unused
 #' @return a numeric vector with one prediction per row of `newdata`
+#' @family twopart methods
 #' @export
 predict.twopart <- function(object, newdata = NULL,
                             type = c("response", "prob", "positive"), ...) {

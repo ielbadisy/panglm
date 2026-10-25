@@ -31,3 +31,9 @@ d$y <- ifelse(d$s == 1, 1 + d$x + 0.5 * v + rnorm(300), NA)
 fit <- panselect(s ~ x + z, y ~ x, data = d, index = c("id", "t"), boot = 0)
 vcov(fit, type = "cluster")
 }
+\seealso{
+Other panselect methods: 
+\code{\link{predict.panselect}()},
+\code{\link{summary.panselect}()}
+}
+\concept{panselect methods}

@@ -171,3 +171,18 @@ Machado, J. A. F. and Santos Silva, J. M. C. (2019). Quantiles via
 moments. \emph{Journal of Econometrics}, 213(1), 145-173.
 \doi{10.1016/j.jeconom.2019.04.009}
 }
+\seealso{
+\code{\link[=summary.panqr]{summary.panqr()}}, \code{\link[=vcov.panqr]{vcov.panqr()}} and \code{\link[=plot.panqr]{plot.panqr()}} for the fitted
+model, \link{tidy-methods} for \code{tidy()} and \code{glance()}.
+
+Other panel models: 
+\code{\link{panfmm}()},
+\code{\link{panfmmselect}()},
+\code{\link{panglm}()},
+\code{\link{pangmm}()},
+\code{\link{panhurdle}()},
+\code{\link{paniv}()},
+\code{\link{panselect}()},
+\code{\link{twopart}()}
+}
+\concept{panel models}

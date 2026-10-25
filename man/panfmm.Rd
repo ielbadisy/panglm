@@ -192,5 +192,17 @@ concomitant variables and varying and constant parameters. \emph{Journal of
 Statistical Software}, 28(4). \doi{10.18637/jss.v028.i04}
 }
 \seealso{
-\code{\link[=panfmmselect]{panfmmselect()}} to compare numbers of classes
+\code{\link[=summary.panfmm]{summary.panfmm()}}, \code{\link[=vcov.panfmm]{vcov.panfmm()}} and \code{\link[=predict.panfmm]{predict.panfmm()}} for
+the fitted model, \link{tidy-methods} for \code{tidy()} and \code{glance()}.
+
+Other panel models: 
+\code{\link{panfmmselect}()},
+\code{\link{panglm}()},
+\code{\link{pangmm}()},
+\code{\link{panhurdle}()},
+\code{\link{paniv}()},
+\code{\link{panqr}()},
+\code{\link{panselect}()},
+\code{\link{twopart}()}
 }
+\concept{panel models}

@@ -71,3 +71,19 @@ data(copd)
 fit <- panhurdle(exacerbations ~ crp, data = copd, index = c("id", "visit"))
 fit
 }
+\seealso{
+\link{hurdle-methods} and \code{\link[=plot.panglm_hurdle]{plot.panglm_hurdle()}} for the fitted model,
+\code{\link[=pandispersiontest]{pandispersiontest()}} to check the count part, \code{\link[=twopart]{twopart()}} for continuous
+costs.
+
+Other panel models: 
+\code{\link{panfmm}()},
+\code{\link{panfmmselect}()},
+\code{\link{panglm}()},
+\code{\link{pangmm}()},
+\code{\link{paniv}()},
+\code{\link{panqr}()},
+\code{\link{panselect}()},
+\code{\link{twopart}()}
+}
+\concept{panel models}

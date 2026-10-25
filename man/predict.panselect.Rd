@@ -66,3 +66,9 @@ fit <- panselect(s ~ x + z, y ~ x, data = d, index = c("id", "t"),
 head(predict(fit, newdata = d, type = "conditional"))
 head(predict(fit, newdata = d, type = "selection"))
 }
+\seealso{
+Other panselect methods: 
+\code{\link{summary.panselect}()},
+\code{\link{vcov.panselect}()}
+}
+\concept{panselect methods}

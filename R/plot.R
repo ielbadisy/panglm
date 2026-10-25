@@ -11,6 +11,7 @@
 #' @param xlab optional horizontal-axis label
 #' @param ... additional arguments passed to [graphics::plot.default()]
 #' @return `x`, invisibly
+#' @family panglm methods
 #' @examples
 #' data(copd)
 #' fit <- panglm(fev1 ~ crp, data = copd, index = c("id", "visit"),
@@ -68,6 +69,7 @@ plot.panglm <- function(x, which = c("coefficients", "residuals", "fitted"),
 #' @param level confidence level for coefficient intervals
 #' @param ... additional arguments passed to [graphics::plot.default()]
 #' @return `x`, invisibly
+#' @family panhurdle methods
 #' @examples
 #' data(copd)
 #' fit <- panhurdle(exacerbations ~ crp, data = copd,

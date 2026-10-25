@@ -119,3 +119,7 @@ variables. \emph{Psychological Methods}, 11, 54-71.
 Tobin, J. (1958). Estimation of relationships for limited
 dependent variables. \emph{Econometrica}, 26, 24-36. \doi{10.2307/1907382}
 }
+\seealso{
+\code{\link[=panglm]{panglm()}}, whose \code{family} argument takes these objects, and
+\link{panglm-deprecated} for the former names.
+}

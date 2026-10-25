@@ -136,6 +136,7 @@
 #'   Mammen, E. (1993). Bootstrap and wild bootstrap for high dimensional
 #'   linear models. *The Annals of Statistics*, 21, 255-285.
 #'   \doi{10.1214/aos/1176349025}
+#' @family policy evaluation
 #' @examples
 #' # A health insurance scheme (for example the AMO extension in Morocco)
 #' # is rolled out region by region: provinces of region A join in 2016,
@@ -518,6 +519,7 @@ attgt_2x2 <- function(dy, D, X, method, w = NULL, trim = 0.995) {
 #'   `crit` (the simultaneous critical value of the uniform bands, or
 #'   `NULL`), `boot` and the fit settings. The influence functions of the
 #'   effects by level are the attribute `"inf"` of `estimates`.
+#' @family attgt methods
 #' @examples
 #' set.seed(2)
 #' d <- expand.grid(id = 1:150, t = 1:8)
@@ -740,6 +742,7 @@ nobs.panglm_attgt <- function(object, ...) object$n
 #' @param ... passed to [summary.panglm_attgt()] (for example `min_e`,
 #'   `max_e`) and then to [graphics::plot()]
 #' @return the plotted summary, invisibly
+#' @family attgt methods
 #' @examples
 #' set.seed(2)
 #' d <- expand.grid(id = 1:150, t = 1:8)

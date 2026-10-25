@@ -59,3 +59,9 @@ fit <- panqr(y ~ x, data = d, index = c("id", "t"),
              tau = c(0.1, 0.25, 0.5, 0.75, 0.9), model = "mmqr")
 plot(fit)
 }
+\seealso{
+Other panqr methods: 
+\code{\link{summary.panqr}()},
+\code{\link{vcov.panqr}()}
+}
+\concept{panqr methods}

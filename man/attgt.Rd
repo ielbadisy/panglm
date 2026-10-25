@@ -220,4 +220,10 @@ linear models. \emph{The Annals of Statistics}, 21, 255-285.
 \code{\link[=summary.panglm_attgt]{summary.panglm_attgt()}} for the aggregations, \code{\link[=etwfe]{etwfe()}} for
 the extended two-way fixed-effects alternative (also for count and
 binary outcomes), \code{\link[=did]{did()}} and \code{\link[=eventstudy]{eventstudy()}} for the TWFE versions.
+
+Other policy evaluation: 
+\code{\link{did}()},
+\code{\link{etwfe}()},
+\code{\link{eventstudy}()}
 }
+\concept{policy evaluation}

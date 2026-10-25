@@ -62,3 +62,8 @@ coef(fit)
 confint(fit)
 summary(fit)
 }
+\seealso{
+Other panhurdle methods: 
+\code{\link{plot.panglm_hurdle}()}
+}
+\concept{panhurdle methods}

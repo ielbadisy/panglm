@@ -180,3 +180,18 @@ structure. \emph{Econometric Theory}, 3, 223-246.
 Hausman, J. A. and Taylor, W. E. (1981). Panel data and unobservable
 individual effects. \emph{Econometrica}, 49, 1377-1398.
 }
+\seealso{
+\code{\link[=summary.paniv]{summary.paniv()}}, \code{\link[=vcov.paniv]{vcov.paniv()}} and \code{\link[=predict.paniv]{predict.paniv()}} for the
+fitted model, \link{tidy-methods} for \code{tidy()} and \code{glance()}.
+
+Other panel models: 
+\code{\link{panfmm}()},
+\code{\link{panfmmselect}()},
+\code{\link{panglm}()},
+\code{\link{pangmm}()},
+\code{\link{panhurdle}()},
+\code{\link{panqr}()},
+\code{\link{panselect}()},
+\code{\link{twopart}()}
+}
+\concept{panel models}

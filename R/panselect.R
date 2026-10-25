@@ -99,6 +99,9 @@
 #'
 #' Wooldridge, J. M. (2010). *Econometric Analysis of Cross Section and
 #' Panel Data*, 2nd edition, section 19.9. MIT Press.
+#' @family panel models
+#' @seealso [summary.panselect()], [vcov.panselect()] and [predict.panselect()]
+#'   for the fitted model, [tidy-methods] for `tidy()` and `glance()`.
 #' @examples
 #' # Simulated cohort of 300 patients followed over 4 waves. A quality of
 #' # life score is observed only for patients who answer the questionnaire;
@@ -433,6 +436,7 @@ ps_wald <- function(coefs, V, terms) {
 #'   ignoring the first step)
 #' @param ... unused
 #' @return the covariance matrix of the outcome-equation coefficients
+#' @family panselect methods
 #' @examples
 #' set.seed(3)
 #' d <- data.frame(id = rep(1:100, each = 3), t = rep(1:3, 100))
@@ -492,6 +496,7 @@ print.panselect <- function(x, digits = max(3, getOption("digits") - 3), ...) {
 #'   and p-value, using the default covariance of the fit), the selection
 #'   test (`selection_test`), the probit coefficients (`probit`) and the
 #'   fit information.
+#' @family panselect methods
 #' @examples
 #' set.seed(3)
 #' d <- data.frame(id = rep(1:100, each = 3), t = rep(1:3, 100))

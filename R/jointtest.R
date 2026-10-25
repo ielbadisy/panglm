@@ -19,6 +19,7 @@
 #'   [vcov.panglm()], e.g. `"cluster"`
 #' @return an object of class `"panglm_jointtest"`: a list with
 #'   `statistic`, `df`, `p.value`, `terms` and `vcov_type`
+#' @family tests
 #' @examples
 #' data(copd)
 #' fit <- panglm(fev1 ~ splines::ns(crp, 3), data = copd,
@@ -86,6 +87,7 @@ print.panglm_jointtest <- function(x, digits = max(3, getOption("digits") - 3), 
 #'   then needs the individual index
 #' @param ... unused
 #' @return a numeric matrix with one column per coefficient
+#' @family panglm methods
 #' @examples
 #' data(copd)
 #' fit <- panglm(fev1 ~ splines::ns(crp, 3), data = copd,

@@ -32,3 +32,9 @@ d$x <- d$z + d$u + rnorm(200); d$y <- 1 + d$x + d$u + rnorm(200)
 fit <- paniv(y ~ x | z, data = d, index = c("id", "t"), model = "pooling")
 vcov(fit, type = "cluster")
 }
+\seealso{
+Other paniv methods: 
+\code{\link{predict.paniv}()},
+\code{\link{summary.paniv}()}
+}
+\concept{paniv methods}

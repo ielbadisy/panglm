@@ -58,3 +58,9 @@ fit <- pangmm(y ~ lag(y, 1) + x | lag(y, 2:99), data = d, index = c("id", "t"),
 head(predict(fit, newdata = d))
 head(predict(fit, newdata = d, type = "difference"))
 }
+\seealso{
+Other pangmm methods: 
+\code{\link{summary.pangmm}()},
+\code{\link{vcov.pangmm}()}
+}
+\concept{pangmm methods}

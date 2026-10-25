@@ -30,3 +30,8 @@ copd$cost <- ifelse(copd$exacerbations > 0, exp(6 + 0.1 * copd$crp), 0)
 fit <- twopart(cost ~ treatment + crp, data = copd, index = c("id", "visit"))
 confint(fit)
 }
+\seealso{
+Other twopart methods: 
+\code{\link{predict.twopart}()}
+}
+\concept{twopart methods}

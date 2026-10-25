@@ -31,6 +31,7 @@ es_terms <- function(events) {
 #'   coefficient table `coefficients` (estimate, standard error, z value,
 #'   p-value), the intervals `conf.int`, the pre-trend test `pretrend` and
 #'   the fit description.
+#' @family eventstudy methods
 #' @examples
 #' set.seed(1)
 #' d <- expand.grid(id = 1:200, year = 2015:2022)

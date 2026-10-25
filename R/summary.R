@@ -20,6 +20,7 @@
 #'   `cre = TRUE` fits, `cre_test`: the Wald (Mundlak) test that the
 #'   individual-mean coefficients are jointly zero, computed with the
 #'   covariance stored on the fit.
+#' @family panglm methods
 #' @examples
 #' data(copd)
 #' fit <- panglm(fev1 ~ treatment + age + smoker + crp, data = copd,

@@ -19,6 +19,7 @@
 #' @param ylab vertical-axis label
 #' @param ... additional arguments passed to [graphics::plot.default()]
 #' @return `x`, invisibly
+#' @family panqr methods
 #' @examples
 #' set.seed(2)
 #' d <- data.frame(id = rep(1:100, each = 5), t = rep(1:5, 100))

@@ -50,3 +50,9 @@ fit <- panfmm(y ~ x, data = d, index = c("id", "t"), nstart = 2, seed = 1)
 head(predict(fit))
 predict(fit, newdata = data.frame(x = c(-1, 0, 1)), type = "class")
 }
+\seealso{
+Other panfmm methods: 
+\code{\link{summary.panfmm}()},
+\code{\link{vcov.panfmm}()}
+}
+\concept{panfmm methods}

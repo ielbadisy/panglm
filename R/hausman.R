@@ -34,6 +34,9 @@
 #'   `distribution` (`"chisq"` or `"F"`), and the compared coefficient
 #'   vectors (`coef_fe`, `coef_re` for `"classical"`; `coef_mean` for
 #'   `"mundlak"`)
+#' @family tests
+#' @seealso [panglm()] with `cre = TRUE`, whose summary reports the Mundlak
+#'   test.
 #' @examples
 #' data(copd)
 #' fit_fe <- panglm(fev1 ~ crp, data = copd, index = c("id", "visit"),

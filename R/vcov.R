@@ -35,6 +35,7 @@
 #'   row and column names matching `names(coef(object))`. For
 #'   `type = "classical"` this is the model-based covariance; for `"HC1"` and `"cluster"` it is a sandwich (robust or
 #'   cluster-robust) covariance estimate of the same dimension.
+#' @family panglm methods
 #' @examples
 #' data(copd)
 #' fit <- panglm(fev1 ~ crp, data = copd, index = c("id", "visit"),

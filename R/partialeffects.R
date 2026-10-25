@@ -42,6 +42,8 @@
 #' @references Wooldridge, J. M. (2005). Unobserved heterogeneity and
 #'   estimation of average partial effects. In *Identification and
 #'   Inference for Econometric Models*, Cambridge University Press.
+#' @family panglm methods
+#' @seealso [effectcurve()] for the effect of a spline term across its range.
 #' @examples
 #' data(copd)
 #' fit <- panglm(hospitalized ~ treatment + age + crp, data = copd,

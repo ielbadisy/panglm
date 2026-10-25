@@ -19,3 +19,8 @@
 \description{
 Plot event-study coefficients
 }
+\seealso{
+Other eventstudy methods: 
+\code{\link{eventstudy-methods}}
+}
+\concept{eventstudy methods}

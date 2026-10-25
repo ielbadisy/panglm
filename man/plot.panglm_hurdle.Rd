@@ -28,3 +28,8 @@ fit <- panhurdle(exacerbations ~ crp, data = copd,
                      index = c("id", "visit"))
 plot(fit)
 }
+\seealso{
+Other panhurdle methods: 
+\code{\link{hurdle-methods}}
+}
+\concept{panhurdle methods}

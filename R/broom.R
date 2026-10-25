@@ -8,6 +8,8 @@
 #' @param conf.level confidence level for the interval
 #' @param ... unused
 #' @return a `data.frame` with one row per coefficient
+#' @family panglm methods
+#' @seealso [tidy-methods] for the other model classes.
 #' @examples
 #' data(copd)
 #' fit <- panglm(fev1 ~ treatment + age + smoker + crp, data = copd,
@@ -49,6 +51,8 @@ tidy.panglm <- function(x, conf.int = FALSE, conf.level = 0.95, ...) {
 #' @return a one-row `data.frame` including log-likelihood, AIC, BIC, the
 #'   likelihood parameter count when a likelihood is available, and
 #'   (Gaussian-family fits only) R-squared and adjusted R-squared
+#' @family panglm methods
+#' @seealso [tidy-methods] for the other model classes.
 #' @examples
 #' data(copd)
 #' fit <- panglm(fev1 ~ treatment + age + smoker + crp, data = copd,

@@ -54,3 +54,8 @@ d$y <- rbinom(nrow(d), 1, plogis(-1 + 0.1 * d$t +
 fit <- etwfe(y ~ 1, d, index = c("id", "t"), treat = "first", family = "binomial")
 summary(fit, type = "event")
 }
+\seealso{
+Other etwfe methods: 
+\code{\link{plot.panglm_etwfe}()}
+}
+\concept{etwfe methods}

@@ -42,3 +42,20 @@ Xc <- sweep(X, 2, X0)            # centered at the median CRP
 cbind(grid, effect = drop(Xc \%*\% coef(fit)),
       se = sqrt(rowSums((Xc \%*\% vcov(fit)) * Xc)))
 }
+\seealso{
+Other panglm methods: 
+\code{\link{confint.panglm}()},
+\code{\link{effectcurve}()},
+\code{\link{fitted.panglm}()},
+\code{\link{glance.panglm}()},
+\code{\link{logLik.panglm}()},
+\code{\link{partialeffects.panordered}()},
+\code{\link{plot.panglm}()},
+\code{\link{plot.panglm_effectcurve}()},
+\code{\link{predict.panglm}()},
+\code{\link{predict.panordered}()},
+\code{\link{summary.panglm}()},
+\code{\link{tidy.panglm}()},
+\code{\link{vcov.panglm}()}
+}
+\concept{panglm methods}

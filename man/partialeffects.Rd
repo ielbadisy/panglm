@@ -82,3 +82,22 @@ Wooldridge, J. M. (2005). Unobserved heterogeneity and
 estimation of average partial effects. In \emph{Identification and
 Inference for Econometric Models}, Cambridge University Press.
 }
+\seealso{
+\code{\link[=effectcurve]{effectcurve()}} for the effect of a spline term across its range.
+
+Other panglm methods: 
+\code{\link{confint.panglm}()},
+\code{\link{effectcurve}()},
+\code{\link{fitted.panglm}()},
+\code{\link{glance.panglm}()},
+\code{\link{logLik.panglm}()},
+\code{\link{model.matrix.panglm}()},
+\code{\link{plot.panglm}()},
+\code{\link{plot.panglm_effectcurve}()},
+\code{\link{predict.panglm}()},
+\code{\link{predict.panordered}()},
+\code{\link{summary.panglm}()},
+\code{\link{tidy.panglm}()},
+\code{\link{vcov.panglm}()}
+}
+\concept{panglm methods}

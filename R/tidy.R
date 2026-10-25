@@ -100,6 +100,7 @@ or_na <- function(x, type = NA_real_) if (is.null(x) || !length(x)) type else x
 #' @param ... further arguments passed to the `summary()` aggregation
 #'   (attgt, etwfe), otherwise unused
 #' @return a `data.frame`
+#' @seealso [tidy.panglm()] and [glance.panglm()] for [panglm()] fits.
 #' @examples
 #' data(copd)
 #' if (requireNamespace("generics", quietly = TRUE)) {

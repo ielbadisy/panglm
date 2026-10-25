@@ -41,3 +41,10 @@ fit <- panglm(fev1 ~ splines::ns(crp, 3), data = copd,
               index = c("id", "visit"), model = "within", vcov = "cluster")
 jointtest(fit, pattern = "crp")
 }
+\seealso{
+Other tests: 
+\code{\link{lineartest}()},
+\code{\link{pandispersiontest}()},
+\code{\link{panhausman}()}
+}
+\concept{tests}

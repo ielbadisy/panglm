@@ -126,6 +126,10 @@
 #' @param maxit maximum IRLS/Newton iterations
 #' @param tol convergence tolerance
 #' @return an object of class `"panglm"`
+#' @family panel models
+#' @seealso [panglm-families] for the outcome families, [summary.panglm()],
+#'   [vcov.panglm()], [predict.panglm()] and [partialeffects()] for the fitted
+#'   model, [tidy-methods] for `tidy()` and `glance()`.
 #' @examples
 #' data(copd)
 #'

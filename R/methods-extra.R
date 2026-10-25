@@ -33,6 +33,7 @@ wald_confint <- function(b, V, parm, level) {
 #' @param level confidence level
 #' @param ... unused
 #' @return a two-column matrix
+#' @family twopart methods
 #' @examples
 #' data(copd)
 #' copd$cost <- ifelse(copd$exacerbations > 0, exp(6 + 0.1 * copd$crp), 0)
@@ -73,6 +74,7 @@ logLik.panglm_eventstudy <- function(object, ...) stats::logLik(object$fit)
 #'   per part (`zero`, `count`: estimate, standard error, z value and
 #'   p-value, from the inverse Hessian of each part) and the fit
 #'   information.
+#' @family panhurdle methods
 #' @examples
 #' data(copd)
 #' fit <- panhurdle(exacerbations ~ crp, data = copd, index = c("id", "visit"))

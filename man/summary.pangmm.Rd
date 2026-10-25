@@ -33,3 +33,9 @@ d$y <- ave(mu + rnorm(N * TT), d$id, FUN = function(e) stats::filter(e, 0.4,
   method = "recursive"))
 summary(pangmm(y ~ lag(y, 1) | lag(y, 2:99), data = d, index = c("id", "t")))
 }
+\seealso{
+Other pangmm methods: 
+\code{\link{predict.pangmm}()},
+\code{\link{vcov.pangmm}()}
+}
+\concept{pangmm methods}

@@ -17,6 +17,8 @@
 #'   observations dropped from the statistic because their fitted value was
 #'   exactly zero or unavailable (e.g. rows in a structurally-zero panel
 #'   individual screened out of a fixed-effects negbin fit)
+#' @family tests
+#' @seealso [negbinfamily()] for the negative binomial alternative.
 #' @examples
 #' data(copd)
 #' fit <- panglm(exacerbations ~ treatment + age + smoker + crp, data = copd,

@@ -126,3 +126,18 @@ Van Ourti, T. (2004). Measuring horizontal inequity in Belgian health
 care using a Gaussian random effects two part count data model.
 \emph{Health Economics}, 13, 705-724. \doi{10.1002/hec.869}
 }
+\seealso{
+\code{\link[=predict.twopart]{predict.twopart()}}, \code{\link[=confint.twopart]{confint.twopart()}} and \code{\link[=partialeffects]{partialeffects()}} for
+the fitted model, \link{tidy-methods} for \code{tidy()} and \code{glance()}.
+
+Other panel models: 
+\code{\link{panfmm}()},
+\code{\link{panfmmselect}()},
+\code{\link{panglm}()},
+\code{\link{pangmm}()},
+\code{\link{panhurdle}()},
+\code{\link{paniv}()},
+\code{\link{panqr}()},
+\code{\link{panselect}()}
+}
+\concept{panel models}

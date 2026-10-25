@@ -51,3 +51,20 @@ curve_crp <- effectcurve(fit, "crp")
 head(curve_crp)
 plot(curve_crp)
 }
+\seealso{
+Other panglm methods: 
+\code{\link{confint.panglm}()},
+\code{\link{fitted.panglm}()},
+\code{\link{glance.panglm}()},
+\code{\link{logLik.panglm}()},
+\code{\link{model.matrix.panglm}()},
+\code{\link{partialeffects.panordered}()},
+\code{\link{plot.panglm}()},
+\code{\link{plot.panglm_effectcurve}()},
+\code{\link{predict.panglm}()},
+\code{\link{predict.panordered}()},
+\code{\link{summary.panglm}()},
+\code{\link{tidy.panglm}()},
+\code{\link{vcov.panglm}()}
+}
+\concept{panglm methods}

@@ -30,3 +30,9 @@ d$y <- ifelse(d$s == 1, 1 + d$x + 0.5 * v + rnorm(300), NA)
 summary(panselect(s ~ x + z, y ~ x, data = d, index = c("id", "t"),
                   boot = 29, seed = 1))
 }
+\seealso{
+Other panselect methods: 
+\code{\link{predict.panselect}()},
+\code{\link{vcov.panselect}()}
+}
+\concept{panselect methods}

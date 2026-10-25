@@ -6,6 +6,8 @@
 #'
 #' @param link canonical link name
 #' @return a list with `family`, `link`, `family_id`, `link_id`
+#' @seealso [panglm()], whose `family` argument takes these objects, and
+#'   [panglm-deprecated] for the former names.
 #' @examples
 #' gaussianfamily()
 #' poissonfamily()

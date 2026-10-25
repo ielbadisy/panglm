@@ -206,4 +206,10 @@ difference-in-differences with panel data. \emph{The Econometrics Journal},
 \seealso{
 \code{\link[=attgt]{attgt()}} for the Callaway and Sant'Anna estimator, \code{\link[=did]{did()}} and
 \code{\link[=eventstudy]{eventstudy()}} for the TWFE versions.
+
+Other policy evaluation: 
+\code{\link{attgt}()},
+\code{\link{did}()},
+\code{\link{eventstudy}()}
 }
+\concept{policy evaluation}

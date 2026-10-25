@@ -313,6 +313,7 @@ ordered_predictor <- function(object, category = NULL, cre_means = NULL) {
 #' @param ... unused
 #' @return a matrix with one column per category (`"prob"`), a factor
 #'   (`"class"`) or a numeric vector (`"link"`)
+#' @family panglm methods
 #' @export
 predict.panordered <- function(object, newdata = NULL, type = c("prob", "class", "link"), ...) {
   type <- match.arg(type)

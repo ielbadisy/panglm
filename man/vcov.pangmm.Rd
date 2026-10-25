@@ -35,3 +35,9 @@ fit <- pangmm(y ~ lag(y, 1) | lag(y, 2:99), data = d, index = c("id", "t"),
 sqrt(diag(vcov(fit, type = "classical")))
 sqrt(diag(vcov(fit, type = "robust")))
 }
+\seealso{
+Other pangmm methods: 
+\code{\link{predict.pangmm}()},
+\code{\link{summary.pangmm}()}
+}
+\concept{pangmm methods}

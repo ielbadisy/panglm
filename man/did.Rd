@@ -89,3 +89,13 @@ Wooldridge, J. M. (2023). Simple approaches to nonlinear
 difference-in-differences with panel data. \emph{The Econometrics Journal},
 26, C31-C66. \doi{10.1093/ectj/utad016}
 }
+\seealso{
+\code{\link[=summary.panglm]{summary.panglm()}} and the other \code{\link[=panglm]{panglm()}} methods for the fitted
+model.
+
+Other policy evaluation: 
+\code{\link{attgt}()},
+\code{\link{etwfe}()},
+\code{\link{eventstudy}()}
+}
+\concept{policy evaluation}

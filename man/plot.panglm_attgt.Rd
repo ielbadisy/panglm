@@ -43,3 +43,8 @@ d$y <- rnorm(150)[d$id] + 0.2 * d$t +
   ifelse(!is.na(d$first) & d$t >= d$first, 1, 0) + rnorm(nrow(d))
 plot(attgt(y ~ 1, d, index = c("id", "t"), treat = "first"))
 }
+\seealso{
+Other attgt methods: 
+\code{\link{summary.panglm_attgt}()}
+}
+\concept{attgt methods}

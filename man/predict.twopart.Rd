@@ -25,3 +25,8 @@ a numeric vector with one prediction per row of \code{newdata}
 \description{
 Predict from a two-part model
 }
+\seealso{
+Other twopart methods: 
+\code{\link{confint.twopart}()}
+}
+\concept{twopart methods}

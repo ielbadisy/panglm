@@ -34,3 +34,12 @@ fit <- panglm(exacerbations ~ treatment + age + smoker + crp, data = copd,
               index = c("id", "visit"), model = "pooling", family = "poisson")
 pandispersiontest(fit)
 }
+\seealso{
+\code{\link[=negbinfamily]{negbinfamily()}} for the negative binomial alternative.
+
+Other tests: 
+\code{\link{jointtest}()},
+\code{\link{lineartest}()},
+\code{\link{panhausman}()}
+}
+\concept{tests}

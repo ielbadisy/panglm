@@ -28,3 +28,9 @@ d$z <- rnorm(200); d$u <- rnorm(200)
 d$x <- d$z + d$u + rnorm(200); d$y <- 1 + d$x + d$u + rnorm(200)
 summary(paniv(y ~ x | z, data = d, index = c("id", "t"), model = "within"))
 }
+\seealso{
+Other paniv methods: 
+\code{\link{predict.paniv}()},
+\code{\link{vcov.paniv}()}
+}
+\concept{paniv methods}
