@@ -57,7 +57,8 @@ vcov.panglm <- function(object, type = NULL, cluster = NULL, ...) {
     return(robust_vcov_random(object, cluster))
   }
 
-  if (object$model == "within" && object$family$family == "negbin") {
+  if (object$model == "within" && object$family$family == "negbin" &&
+      !identical(object$effect, "twoways")) {
     return(robust_vcov_within_negbin(object, type, cluster))
   }
   if (object$model == "within" && object$family$family == "binomial") {
@@ -184,6 +185,27 @@ panglm_score <- function(object) {
     dm <- within_demean_cpp(X, y, object$group_start, object$group_size)
     resid <- as.numeric(dm$y - dm$X %*% beta)
     return(resid * dm$X)
+  }
+
+  if (object$model == "within" && object$family$family == "poisson" &&
+      identical(object$effect, "twoways")) {
+    if (is.null(object$X_tilde)) {
+      stop("robust/cluster vcov is unavailable for this two-way Poisson fit: re-fit the model",
+           call. = FALSE)
+    }
+    return((y - object$fitted.values) * object$X_tilde)
+  }
+
+  if (object$model == "within" && object$family$family == "negbin" &&
+      identical(object$effect, "twoways")) {
+    if (is.null(object$X_tilde)) {
+      stop("robust/cluster vcov is unavailable for this two-way negative binomial fit: ",
+           "re-fit the model", call. = FALSE)
+    }
+    mu <- object$fitted.values
+    # NB2 score with theta held at its estimate (the beta-theta block of the
+    # information is zero in expectation)
+    return((y - mu) * object$theta / (object$theta + mu) * object$X_tilde)
   }
 
   if (object$model == "within" && object$family$family == "poisson") {

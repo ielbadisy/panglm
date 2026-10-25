@@ -154,6 +154,9 @@ fit_within_twoways_poisson <- function(X, y, group_start, group_size, time, maxi
   list(coefficients = coefs, vcov = vcov, bread = vcov, fitted.values = exp(eta),
        individual_effects = effects$individual,
        time_effects = effects$time,
+       # regressors net of both effects (weighted by mu): the robust score is
+       # (y - mu) * X_tilde, which profiles out the time effects as well
+       X_tilde = sweep(X_tilde, 2, scale, "*"),
        loglik = ll_old, dispersion = 1, df.residual = df_resid,
        iterations = iter, demean_iterations = demean_iters)
 }
@@ -264,6 +267,7 @@ fit_within_twoways_negbin <- function(X, y, group_start, group_size, time, maxit
   list(coefficients = coefs, vcov = vcov, bread = vcov, fitted.values = exp(eta),
        individual_effects = effects$individual,
        time_effects = effects$time,
+       X_tilde = sweep(X_tilde, 2, scale, "*"),
        loglik = ll_old, theta = theta, dispersion = 1, df.residual = df_resid,
        iterations = iter, demean_iterations = demean_iters)
 }
