@@ -133,11 +133,13 @@ The number of classes is chosen first, usually by BIC (Deb and Trivedi
 2002 prefer it). Mixture likelihoods have local maxima, so the EM
 algorithm is run from several starts (`nstart`). The comparison below
 uses a single start and the final model three, to keep the example
-fast; in practice use 10 or more.
+fast; in practice use 10 or more. EM converges slowly when a model has
+more classes than the data support; a looser tolerance (`tol = 1e-4`)
+is enough to compare the fits and leaves this table unchanged.
 
 ```{r fmm-select}
 panfmmselect(visits ~ chronic + age, data = m, index = c("id", "year"),
-             k = 1:3, nstart = 1, seed = 1)
+             k = 1:3, nstart = 1, seed = 1, tol = 1e-4)
 ```
 
 BIC picks two classes; the third class of the three-class model holds
