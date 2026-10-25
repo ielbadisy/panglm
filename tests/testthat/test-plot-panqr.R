@@ -1,0 +1,21 @@
+test_that("plot.panqr draws every term and returns the fit", {
+  fit <- methods_fit("panqr")
+  path <- tempfile(fileext = ".pdf")
+  grDevices::pdf(path)
+  on.exit({ grDevices::dev.off(); unlink(path) }, add = TRUE)
+  expect_identical(plot(fit), fit)
+  expect_invisible(plot(fit, parm = "x", level = 0.9, main = "slope"))
+  expect_invisible(plot(fit, parm = 1))
+  pooled <- panqr(y ~ x, data = methods_data("qr"), index = c("id", "t"), tau = c(0.25, 0.75),
+                  model = "pooling")
+  expect_invisible(plot(pooled, ncol = 1))
+  expect_error(plot(fit, parm = "zz"), "parm")
+  expect_error(plot(fit, level = 2), "level")
+  d <- methods_data("qr")
+  one <- panqr(y ~ x, data = d, index = c("id", "t"), tau = 0.5, model = "mmqr")
+  expect_invisible(plot(one))
+  # the bands are the confint() intervals
+  ci <- confint(fit, tau = 0.9, level = 0.8)
+  se <- sqrt(diag(fit$vcov[[3]]))
+  expect_equal(unname(ci[, 2]), unname(fit$coefficients[, 3] + qnorm(0.9) * se))
+})
