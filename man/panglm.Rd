@@ -138,4 +138,10 @@ fit_cre <- panglm(hospitalized ~ treatment + age + crp, data = copd,
                   index = c("id", "visit"), model = "random",
                   family = "probit", cre = TRUE)
 summary(fit_cre)
+
+# nonlinear effect through a natural spline: linearity test and curve
+fit_ns <- panglm(fev1 ~ splines::ns(crp, 3), data = copd,
+                 index = c("id", "visit"), model = "within", vcov = "cluster")
+lineartest(fit_ns, "crp")
+plot(effectcurve(fit_ns, "crp"))
 }

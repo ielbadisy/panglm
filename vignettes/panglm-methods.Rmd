@@ -275,6 +275,65 @@ fit_cre <- panglm(hospitalized ~ treatment + age + crp, data = copd,
 summary(fit_cre)
 ```
 
+## Nonlinear effects with regression splines
+
+A continuous regressor whose effect is not linear can enter through a
+regression spline, `splines::ns(x, df)` or `splines::bs(x, df)`, or a
+polynomial `poly(x, degree)`. These are ordinary model-formula terms, so
+they work for every model and family: the basis columns are demeaned like
+any other regressor in fixed-effects fits, and the knots chosen on the
+estimation sample are reused by `predict()` and `model.matrix()` on new
+data. Three helpers complete the workflow:
+
+* `lineartest(fit, "x")` tests whether the effect of `x` is linear. The
+  spline basis contains the linear function, $x = c + B a$, so linearity
+  means the spline coefficients are proportional to $a$; the test is the
+  joint Wald test of the $q - 1$ restrictions this implies and accepts any
+  covariance type, including cluster-robust ones.
+* `jointtest(fit, pattern = "x")` tests whether `x` matters at all (all
+  of its columns are zero), or any other set of coefficients.
+* `effectcurve(fit, "x")` returns the change in the linear predictor when
+  `x` moves from a reference value (default: the median) to a grid of
+  values, with delta-method pointwise confidence limits; `plot()` draws it.
+  Centering matters in fixed-effects fits, where the level of the curve is
+  absorbed by the individual effects.
+
+The example simulates a panel in which the effect of body mass index on
+log health spending is J-shaped and BMI is correlated with the individual
+effect, so pooled estimates are biased and fixed effects are needed.
+
+```{r splines}
+set.seed(2026)
+N <- 300; T <- 5
+sim <- data.frame(id = rep(seq_len(N), each = T), year = rep(seq_len(T), N))
+alpha <- rnorm(N)
+sim$bmi <- 27 + 3 * alpha[sim$id] + rnorm(N * T, sd = 2.5)
+sim$age <- rep(sample(40:70, N, replace = TRUE), each = T) + sim$year
+sim$logcost <- 6 + alpha[sim$id] + 0.004 * (sim$bmi - 23)^2 +
+  0.02 * sim$age + rnorm(N * T, sd = 0.4)
+
+fit_spline <- panglm(logcost ~ splines::ns(bmi, 4) + age, data = sim,
+                     index = c("id", "year"), model = "within", vcov = "cluster")
+lineartest(fit_spline, "bmi")
+jointtest(fit_spline, pattern = "bmi")
+```
+
+```{r splines-plot, fig.cap = "Within-individual effect of BMI on log spending relative to BMI 25, with a pointwise 95% band (cluster-robust)."}
+bmi_curve <- effectcurve(fit_spline, "bmi", ref = 25)
+plot(bmi_curve, xlab = "Body mass index",
+     ylab = "Change in log spending vs BMI 25")
+curve(0.004 * (x - 23)^2 - 0.004 * (25 - 23)^2, add = TRUE, lty = 2)
+```
+
+The dashed line is the true curve. A likelihood-ratio test of the nested
+linear and spline fixed-effects models is tempting but biased upwards: the
+maximum likelihood error variance of the dummy-variable fit divides the
+residual sum of squares by $NT$ instead of $N(T - 1)$, which inflates the
+statistic by about $T / (T - 1)$ (the incidental parameters problem), so
+the Wald form above is preferred. For the same reason, choose the degrees
+of freedom of the spline on substantive grounds or by a small number of
+candidate values, not by repeated testing.
+
 ## Average partial effects
 
 Coefficients of nonlinear models are not on the scale of the outcome.
