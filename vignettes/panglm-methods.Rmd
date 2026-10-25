@@ -516,6 +516,68 @@ fit_c <- twopart(cost ~ x, data = d, index = c("id", "t"), model = "random",
 summary(fit_c)
 ```
 
+## Instrumental variables
+
+When a regressor is correlated with the idiosyncratic error, for example
+insurance status chosen in response to a health shock, neither the within
+nor the random-effects estimator is consistent. `paniv()` fits linear panel
+models by two-stage least squares. The formula has two parts,
+`y ~ regressors | instruments`; the second part is the full instrument set,
+so exogenous regressors appear on both sides and the regressors missing
+from the second part are the endogenous ones.
+
+With instrument matrix $Z$, a transformation $\tilde a$ of each variable
+(within demeaning, quasi-demeaning, or none) and
+$\hat X = P_{\tilde Z}\tilde X$, the estimator is
+
+$$
+\widehat\beta_{\mathrm{2SLS}} = (\hat X^{\mathsf T}\tilde X)^{-1}
+\hat X^{\mathsf T}\tilde y .
+$$
+
+`model = "within"` gives fixed-effects 2SLS, `model = "pooling"` pooled
+2SLS, and `model = "random"` the generalized 2SLS of Balestra and
+Varadharajan-Krishnakumar (`inst.method = "bvk"`, with quasi-demeaned
+instruments) or Baltagi's EC2SLS (`inst.method = "baltagi"`, with
+instruments $[QZ, PZ]$). The random-effects variance components are
+estimated from within and between 2SLS residuals. The summary reports, for
+each endogenous regressor, the first-stage partial $R^2$ and $F$ statistic
+of the excluded instruments, and a Sargan test (or a cluster-robust Hansen
+$J$ test) when the model is overidentified.
+
+In the North Carolina crime panel, police per capita is endogenous and is
+instrumented by tax revenue per capita and the offence mix:
+
+```{r iv}
+data(Crime, package = "plm")
+fit_iv <- paniv(lcrmrte ~ lpolpc + lprbarr + lprbconv + ldensity |
+                  ltaxpc + lmix + lprbarr + lprbconv + ldensity,
+                data = Crime, index = c("county", "year"),
+                model = "within", vcov = "cluster")
+summary(fit_iv)
+```
+
+The Hausman and Taylor (1981) estimator (`model = "hausmantaylor"`)
+recovers the effects of time-invariant regressors, such as schooling or
+sex, when some regressors are correlated with the individual effect. The
+second part of the formula lists the regressors that are uncorrelated with
+the individual effect; time variation is detected from the data. The
+individual means of the exogenous time-varying regressors serve as
+instruments for the endogenous time-invariant ones, so there must be at
+least as many of the former as of the latter.
+
+```{r hausman-taylor}
+data(Wages, package = "plm")
+Wages$id <- rep(1:595, each = 7)
+Wages$year <- rep(1:7, 595)
+fit_ht <- paniv(lwage ~ wks + south + smsa + married + exp + I(exp^2) +
+                  bluecol + ind + union + sex + black + ed |
+                  sex + black + bluecol + south + smsa + ind,
+                data = Wages, index = c("id", "year"),
+                model = "hausmantaylor")
+coef(fit_ht)[c("ed", "sexfemale", "blackyes")]
+```
+
 ## Covariance estimation and confidence intervals
 
 The default covariance matrix is model based. Pooled and fixed-effects
@@ -651,7 +713,9 @@ plot(fit_hurdle)
 The test suite compares estimators with established implementations where
 the statistical models coincide. Comparisons include `stats::glm()` for
 pooled generalized linear models, `MASS::glm.nb()` for pooled NB2,
-`plm::plm()` for Gaussian panel models, `survival::clogit()` for exact
+`plm::plm()` for Gaussian panel models, `plm::pht()`,
+`AER::ivreg()` and `fixest::feols()` for the instrumental-variable
+estimators, `survival::clogit()` for exact
 conditional logistic regression, `fixest` for absorbed fixed-effects count
 models, `pglm` for compatible random-effects likelihoods, and
 `pscl::hurdle()` for zero-truncated count likelihoods, `glmmTMB` for the
@@ -660,10 +724,11 @@ partial effects.
 
 ## Model scope
 
-The package focuses on Gaussian, Poisson, binomial, NB2, gamma, ordered and
-beta panel models, with two-part models for semicontinuous costs. It does
-not provide Tobit, GMM (Arellano-Bond) or instrumental-variable
-estimators; packages such as `plm` cover those. A general two-way exact
+The package focuses on Gaussian, Poisson, binomial, NB2, gamma, ordered, beta
+and Tobit panel models, with two-part models for semicontinuous costs. It does
+not provide GMM (Arellano-Bond) estimators; packages such as `plm` cover
+those. Instrumental-variable estimation is limited to linear models
+(`paniv()`). A general two-way exact
 conditional logistic likelihood is not available, so the binomial
 fixed-effects model is restricted to individual effects, and there is no
 fixed-effects estimator for the beta and ordered probit models. These
@@ -678,6 +743,9 @@ regression models. *Sociological Methodology*, 32, 247-265.
 Baetschmann, G., Staub, K. E., and Winkelmann, R. (2015). Consistent
 estimation of the fixed effects ordered logit model. *Journal of the Royal
 Statistical Society A*, 178, 685-703.
+
+Baltagi, B. H. (1981). Simultaneous equations with error components.
+*Journal of Econometrics*, 17, 189-200.
 
 Chamberlain, G. (1980). Analysis of covariance with qualitative data.
 *Review of Economic Studies*, 47, 225-238.
@@ -698,6 +766,9 @@ models with high-dimensional fixed effects. *Stata Journal*, 10, 628-649.
 Hausman, J., Hall, B. H., and Griliches, Z. (1984). Econometric models for
 count data with an application to the patents-R&D relationship.
 *Econometrica*, 52, 909-938.
+
+Hausman, J. A., and Taylor, W. E. (1981). Panel data and unobservable
+individual effects. *Econometrica*, 49, 1377-1398.
 
 Mundlak, Y. (1978). On the pooling of time series and cross section data.
 *Econometrica*, 46, 69-85.

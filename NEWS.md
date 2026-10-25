@@ -6,6 +6,13 @@
   a ceiling, pooled or with a random intercept (adaptive Gauss-Hermite
   quadrature). `predict()` and `partialeffects()` work on the observed,
   censored-mean scale. Validated against `AER::tobit()` and `censReg`.
+* Panel instrumental variables: `paniv()` for fixed-effects, random-effects
+  (G2SLS or EC2SLS), pooled 2SLS and the Hausman-Taylor estimator, with
+  first-stage F statistics, Sargan/Hansen tests and cluster covariances.
+  Validated against `plm(inst)` and `plm::pht()`.
+* Fixed-effects Poisson: the HC1 covariance (and clusters that cut across
+  individuals) now use the correctly centred scores and match
+  `fixest::fepois()`.
 * `validation/`: per-model scripts comparing panglm with established
   packages, summarized in `validation/REPORT.md`.
 
