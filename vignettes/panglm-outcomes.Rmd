@@ -1,0 +1,310 @@
+---
+title: "Counts, costs, bounded and censored outcomes"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Counts, costs, bounded and censored outcomes}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>",
+                      fig.width = 6, fig.height = 4)
+```
+
+Health outcomes are rarely Gaussian. This vignette shows the `panglm`
+models for the common cases:
+
+| Outcome | Example | Model |
+|---|---|---|
+| Count | GP visits, exacerbations | Poisson or negative binomial (NB2), `family = "poisson"` or `"negbin"` |
+| Count with many zeros | exacerbations | hurdle, `panhurdle()` |
+| Cost with zeros, skewed when positive | annual expenditure | two-part model, `twopart()` |
+| Proportion in (0, 1) | proportion of days covered | beta, `family = "beta"` |
+| Ordered category | severity grade | ordered logit or probit, `orderedfamily()` |
+| Censored at a bound | EQ-5D index at 1 | tobit, `tobitfamily()` |
+
+All of them use the same `index`, `model`, `vcov`, `partialeffects()`
+and `predict()` interface as the Gaussian model of
+`vignette("panglm-intro")`. The examples use small samples so that the
+vignette builds in seconds; the companion book uses the full data and
+more quadrature nodes (`R`).
+
+```{r setup}
+library(panglm)
+```
+
+## Counts: Poisson and negative binomial
+
+We simulate a panel of 200 patients over 5 years. The number of GP visits
+depends on a chronic condition, age and sex, plus a patient effect `a`
+that also raises the chance of having the condition, so pooled models
+are biased. The counts are overdispersed (NB2 with size 2).
+
+```{r count-data}
+set.seed(42)
+N <- 200; TT <- 5
+d <- data.frame(id = rep(1:N, each = TT), year = rep(1:TT, N))
+a <- rnorm(N, sd = 0.6)
+d$age <- rep(round(runif(N, 50, 80)), each = TT) + d$year - 1
+d$female <- rep(rbinom(N, 1, 0.5), each = TT)
+d$chronic <- rbinom(N * TT, 1, plogis(-0.5 + a[d$id]))
+mu <- exp(0.5 * d$chronic + 0.03 * (d$age - 65) + 0.2 * d$female + a[d$id])
+d$visits <- rnbinom(N * TT, mu = mu, size = 2)
+```
+
+**Fixed-effects Poisson** is the conditional Poisson estimator of
+Hausman, Hall and Griliches (1984). It is consistent for the slopes
+whenever the conditional mean is correct, whatever the distribution of
+the counts, so with a cluster covariance it is robust to overdispersion
+and serial correlation (Wooldridge 1999). This makes it the default
+choice for panel counts.
+
+```{r fe-poisson}
+fe_pois <- panglm(visits ~ chronic + age, data = d, index = c("id", "year"),
+                  model = "within", family = "poisson", vcov = "cluster")
+summary(fe_pois)
+```
+
+The true effect is 0.5: a chronic condition raises the visit rate by a
+factor of about $\exp(0.51) = 1.66$. Sex does not vary within a patient,
+so it is not in the model.
+
+The dispersion test of Cameron and Trivedi (1990) checks whether the
+variance exceeds the Poisson mean. A ratio well above 1 calls for
+cluster standard errors, or for a negative binomial model when
+efficiency or predicted probabilities matter.
+
+```{r dispersion}
+pandispersiontest(fe_pois)
+```
+
+**Negative binomial** fits add the NB2 variance $\mu + \mu^2 / \theta$.
+The fixed-effects version uses one intercept per patient (the incidental
+parameter bias is small for count models); the random-effects version
+is the beta-negative-binomial model of Hausman, Hall and Griliches
+(1984). Random effects keep time-invariant regressors such as sex.
+
+```{r negbin}
+fe_nb <- panglm(visits ~ chronic + age, data = d, index = c("id", "year"),
+                model = "within", family = "negbin")
+coef(fe_nb)
+fe_nb$theta
+re_nb <- panglm(visits ~ chronic + age + female, data = d,
+                index = c("id", "year"), model = "random", family = "negbin")
+coef(re_nb)
+```
+
+The random-effects Poisson (gamma mixing) and negative binomial models
+assume that the patient effect is independent of the regressors. Here it
+is not: patients with a high `a` are more often chronic, and the
+random-effects NB slope of `chronic` (0.63) is above the fixed-effects
+one (0.54) and the true 0.5. `cre = TRUE` removes the bias from the time-varying
+regressors, as in the Gaussian case.
+
+```{r re-poisson}
+re_pois <- panglm(visits ~ chronic + age + female, data = d,
+                  index = c("id", "year"), model = "random",
+                  family = "poisson", cre = TRUE, vcov = "cluster")
+partialeffects(re_pois)
+```
+
+The average partial effect is on the count scale: a chronic condition
+adds about one visit a year on average.
+
+## Excess zeros: the hurdle model
+
+A hurdle model separates whether any event happens from how many events
+happen once the hurdle is crossed. `panhurdle()` fits a conditional
+(fixed-effects) logit for $P(y > 0)$ and a zero-truncated Poisson or
+negative binomial fixed-effects model for the positive counts. Patients
+whose outcome never changes between zero and positive carry no
+information for the binary part and are dropped from it.
+
+```{r hurdle}
+data(copd)
+hur <- panhurdle(exacerbations ~ crp, data = copd, index = c("id", "visit"))
+summary(hur)
+```
+
+Within a patient, higher CRP goes with higher odds of any exacerbation
+and with more exacerbations among visits with at least one, but with 60
+patients neither effect is precisely estimated. Only 34 patients switch
+between zero and positive counts, which is typical of short panels.
+
+## Costs: the two-part model
+
+Health care costs have a mass at zero and a long right tail. The
+two-part model of Duan et al. (1983) fits a probit or logit for
+$P(y > 0)$ on all observations and a gamma GLM with a log link for
+$E(y \mid y > 0)$ on the positive costs, so that
+$E(y) = P(y > 0)\, E(y \mid y > 0)$ needs no retransformation
+(Manning and Mullahy 2001). `positive = "lognormal"` fits a linear model
+for $\log y$ with smearing instead.
+
+```{r cost-data}
+set.seed(11)
+N <- 150; TT <- 4
+cst <- data.frame(id = rep(1:N, each = TT), year = rep(1:TT, N))
+a <- rnorm(N, sd = 0.5)
+cst$age <- rep(round(runif(N, 40, 85)), each = TT)
+cst$chronic <- rbinom(N * TT, 1, plogis(-0.5 + a[cst$id]))
+p_any <- pnorm(-0.3 + 0.6 * cst$chronic + 0.01 * (cst$age - 60) + a[cst$id])
+mu <- exp(7 + 0.5 * cst$chronic + 0.01 * (cst$age - 60) + 0.5 * a[cst$id])
+cst$cost <- ifelse(runif(N * TT) < p_any,
+                   rgamma(N * TT, shape = 2, rate = 2 / mu), 0)
+mean(cst$cost == 0)
+```
+
+```{r twopart}
+tp <- twopart(cost ~ chronic + age, data = cst, index = c("id", "year"),
+              model = "pooling", vcov = "cluster")
+summary(tp)
+partialeffects(tp)
+```
+
+The two parts are on different scales; `partialeffects()` combines them
+into effects on expected cost. A chronic condition adds about 900
+currency units a year: part of it because more patients have any cost,
+part because their costs are higher. `model = "random"` adds a random
+intercept to each part (and `correlated = TRUE` lets the two intercepts
+correlate, for the lognormal part).
+
+## Proportions: the beta model
+
+Outcomes strictly between 0 and 1, such as the proportion of days
+covered by a prescription, follow a beta regression with a logit link
+and precision $\phi$ (Ferrari and Cribari-Neto 2004). `model = "random"`
+adds a normal random intercept on the link scale.
+
+```{r beta}
+m <- plogis(1 - 0.4 * cst$chronic - 0.01 * (cst$age - 60) + a[cst$id])
+cst$pdc <- rbeta(N * TT, m * 20, (1 - m) * 20)
+cst$age10 <- (cst$age - 60) / 10
+fit_beta <- panglm(pdc ~ chronic + age10, data = cst, model = "random",
+                   index = c("id", "year"), family = "beta", R = 5)
+summary(fit_beta)
+partialeffects(fit_beta)
+```
+
+Patients with a chronic condition cover about 7 percentage points fewer
+days. Age is rescaled to decades from 60: the beta fit is sensitive to
+badly scaled regressors, so centring and scaling them is good practice.
+Values of exactly 0 or 1 must be moved inside the interval first, or
+modelled with a two-part model.
+
+## Ordered outcomes
+
+Severity grades and satisfaction scales are ordinal.
+`family = orderedfamily("logit")` (or `"probit"`) fits the cumulative
+link model with estimated cut points. The random-effects version adds a
+normal random intercept; the fixed-effects ordered logit uses the
+"blow-up and cluster" estimator of Baetschmann, Staub and Winkelmann
+(2015), which is consistent for the slopes.
+
+```{r ordered}
+copd$severity <- cut(copd$exacerbations, c(-Inf, 0, 2, Inf),
+                     labels = c("none", "mild", "severe"),
+                     ordered_result = TRUE)
+fit_ord <- panglm(severity ~ treatment + age + crp, data = copd,
+                  index = c("id", "visit"), model = "random",
+                  family = orderedfamily("logit"), R = 8)
+summary(fit_ord)
+fe_ord <- panglm(severity ~ crp, data = copd, index = c("id", "visit"),
+                 model = "within", family = orderedfamily("logit"))
+coef(fe_ord)
+```
+
+`partialeffects()` reports effects on the probability of each category,
+and `predict(type = "prob")` gives the predicted probabilities.
+
+```{r ordered-ape}
+partialeffects(fit_ord)
+head(predict(fit_ord, type = "prob"), 3)
+```
+
+Active treatment lowers the probability of the "severe" category by
+about 11 percentage points and raises that of "none" by about 9
+(imprecisely estimated); the effects across categories sum to zero.
+
+## Censored outcomes: the tobit model
+
+The EQ-5D index is capped at 1 (full health), and many patients sit at
+the cap. A linear model then underestimates the effects, because the
+outcome cannot rise above 1 whatever the latent health. The tobit model
+(Tobin 1958) treats the observed value as a censored latent variable;
+`tobitfamily(left, right)` sets the bounds. Pooled and random-effects
+tobit are available; the fixed-effects tobit is inconsistent with short
+panels, so use `cre = TRUE` instead.
+
+```{r tobit-data}
+set.seed(7)
+N <- 80; TT <- 4
+eq <- data.frame(id = rep(1:N, each = TT), wave = rep(1:TT, N))
+u <- rnorm(N, sd = 0.15)
+eq$age <- rep(round(runif(N, 40, 85)), each = TT)
+eq$chronic <- rpois(N * TT, 0.5 + 0.02 * (eq$age - 40))
+ystar <- 1.15 - 0.006 * (eq$age - 40) - 0.08 * eq$chronic + u[eq$id] +
+  rnorm(N * TT, sd = 0.12)
+eq$eq5d <- pmin(ystar, 1)
+mean(eq$eq5d == 1)
+```
+
+```{r tobit, warning = FALSE}
+fit_tob <- panglm(eq5d ~ age + chronic, data = eq, index = c("id", "wave"),
+                  model = "random", family = tobitfamily(left = -Inf, right = 1),
+                  R = 5)
+coef(fit_tob)
+c(sigma_e = fit_tob$sigma_e, sigma_u = fit_tob$sigma)
+fit_lin <- panglm(eq5d ~ age + chronic, data = eq, index = c("id", "wave"),
+                  model = "random")
+coef(fit_lin)
+```
+
+The tobit slopes refer to latent health. The linear random-effects
+slopes are attenuated by the ceiling, by about 40% here, since 43% of
+the observations sit at 1. Use `partialeffects()` for effects on the
+observed, censored outcome.
+
+## Validated against
+
+Fixed-effects Poisson reproduces `pglm` and `fixest::fepois()`;
+negative binomial fits reproduce `MASS::glm.nb()` and `pglm`;
+random-effects Poisson and negative binomial reproduce `pglm`; the
+hurdle count part reproduces `pscl::hurdle()` on the same data; the
+two-part gamma part reproduces `stats::glm()` and `MASS`; beta models
+reproduce `betareg` and `glmmTMB`; ordered models reproduce
+`MASS::polr()`, `ordinal::clmm()` and, for the fixed-effects logit,
+`survival::clogit()`; tobit models reproduce `AER::tobit()` and
+`censReg`. The scripts are in `tests/testthat` and `validation/`.
+
+## References
+
+Baetschmann, G., Staub, K. E., and Winkelmann, R. (2015). Consistent
+estimation of the fixed effects ordered logit model. *Journal of the
+Royal Statistical Society A*, 178, 685-703.
+
+Cameron, A. C., and Trivedi, P. K. (1990). Regression-based tests for
+overdispersion in the Poisson model. *Journal of Econometrics*, 46,
+347-364.
+
+Duan, N., Manning, W. G., Morris, C. N., and Newhouse, J. P. (1983). A
+comparison of alternative models for the demand for medical care.
+*Journal of Business and Economic Statistics*, 1, 115-126.
+
+Ferrari, S., and Cribari-Neto, F. (2004). Beta regression for modelling
+rates and proportions. *Journal of Applied Statistics*, 31, 799-815.
+
+Hausman, J., Hall, B. H., and Griliches, Z. (1984). Econometric models
+for count data with an application to the patents-R&D relationship.
+*Econometrica*, 52, 909-938.
+
+Manning, W. G., and Mullahy, J. (2001). Estimating log models: to
+transform or not to transform? *Journal of Health Economics*, 20,
+461-494.
+
+Tobin, J. (1958). Estimation of relationships for limited dependent
+variables. *Econometrica*, 26, 24-36.
+
+Wooldridge, J. M. (1999). Distribution-free estimation of some nonlinear
+panel data models. *Journal of Econometrics*, 90, 77-97.
