@@ -1,0 +1,274 @@
+---
+title: "Getting started with panglm"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with panglm}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>",
+                      fig.width = 6, fig.height = 4)
+has_generics <- requireNamespace("generics", quietly = TRUE)
+has_ms <- requireNamespace("modelsummary", quietly = TRUE)
+```
+
+This vignette covers the basic workflow of `panglm`: how panel data are
+laid out, the four classical estimators (pooled, fixed effects, between,
+random effects) and the correlated random effects compromise, how to
+choose between them, which standard errors to report, and how to get
+average partial effects, predictions, tables and plots. The other
+vignettes build on it:
+
+* `vignette("panglm-outcomes")`: counts, costs, bounded and censored
+  outcomes;
+* `vignette("panglm-endogeneity")`: instrumental variables,
+  Hausman-Taylor, dynamic GMM and sample selection;
+* `vignette("panglm-policy")`: difference-in-differences, event studies
+  and staggered adoption;
+* `vignette("panglm-heterogeneity")`: random slopes, latent classes and
+  quantile regression;
+* `vignette("panglm-methods")`: the technical reference.
+
+Which estimator to start from:
+
+| Question | Estimator | `model =` |
+|---|---|---|
+| Effect of a change within a patient, robust to stable confounders | fixed effects | `"within"` |
+| Effect of time-invariant traits (sex, treatment arm) | random effects | `"random"` |
+| Within effects and time-invariant traits in one model | correlated random effects | `"random"`, `cre = TRUE` |
+| Differences between patients only | between | `"between"` |
+| Descriptive population average, no panel structure | pooled, cluster SE | `"pooling"` |
+
+## Data layout
+
+`panglm` works with data in long format: one row per individual and
+period. The `index` argument names the individual and the time columns.
+Panels may be unbalanced; missing or duplicated index pairs are errors.
+The package ships a small synthetic panel of 60 patients with chronic
+obstructive pulmonary disease (COPD) seen at 5 visits.
+
+```{r data}
+library(panglm)
+data(copd)
+head(copd)
+```
+
+`treatment`, `age`, `smoker` and `bmi` are fixed at baseline; C-reactive
+protein (`crp`) changes from visit to visit. The outcomes are lung
+function (`fev1`, litres), the number of exacerbations and a hospital
+admission indicator.
+
+## The four estimators
+
+Write the model as $y_{it} = x_{it}^{\mathsf T}\beta + \alpha_i +
+\varepsilon_{it}$, where $\alpha_i$ is the unobserved, stable part of a
+patient's health.
+
+**Pooled** least squares ignores $\alpha_i$. It is consistent only if
+$\alpha_i$ is unrelated to the regressors, and its classical standard
+errors are wrong because the errors of one patient are correlated, so
+always cluster by individual.
+
+```{r pooled}
+fit_pool <- panglm(fev1 ~ treatment + age + smoker + crp, data = copd,
+                   index = c("id", "visit"), model = "pooling",
+                   vcov = "cluster")
+summary(fit_pool)
+```
+
+**Fixed effects** (the within estimator) removes $\alpha_i$ by
+subtracting each patient's mean. It uses only changes within a patient,
+so it is robust to any stable confounder, but time-invariant regressors
+are not identified and are dropped.
+
+```{r within}
+fit_fe <- panglm(fev1 ~ crp, data = copd, index = c("id", "visit"),
+                 model = "within", vcov = "cluster")
+summary(fit_fe)
+```
+
+A rise of 1 mg/L in CRP within a patient goes with a fall of about 35 mL
+in FEV1. `effect = "twoways"` adds visit effects, which absorb shocks
+common to all patients at a visit.
+
+**Between** is least squares on the patient means, one row per patient.
+It uses only the differences between patients and is mostly useful as a
+contrast with the within estimator.
+
+```{r between}
+fit_be <- panglm(fev1 ~ crp + age, data = copd, index = c("id", "visit"),
+                 model = "between")
+coef(fit_be)
+```
+
+**Random effects** treats $\alpha_i$ as a random draw, independent of the
+regressors (Swamy-Arora feasible GLS for the Gaussian model). It keeps
+the time-invariant regressors and is efficient when that independence
+holds.
+
+```{r random}
+fit_re <- panglm(fev1 ~ treatment + age + smoker + crp, data = copd,
+                 index = c("id", "visit"), model = "random")
+coef(fit_re)
+```
+
+**Correlated random effects** (Mundlak 1978; Chamberlain 1980) lets
+$\alpha_i$ depend on the patient means of the time-varying regressors,
+$\alpha_i = \bar x_i^{\mathsf T}\gamma + a_i$. With `cre = TRUE` these
+means enter as `mean_<variable>`. The slope of `crp` is then the within
+slope, while `treatment`, `age` and `smoker` stay in the model.
+
+```{r cre}
+fit_cre <- panglm(fev1 ~ treatment + age + smoker + crp, data = copd,
+                  index = c("id", "visit"), model = "random", cre = TRUE,
+                  vcov = "cluster")
+summary(fit_cre)
+```
+
+## Choosing between fixed and random effects
+
+The Hausman (1978) test compares the fixed- and random-effects slopes.
+Under its null both are consistent and random effects is efficient. The
+classical version uses model-based covariances; the Mundlak form tests
+$\gamma = 0$ in the correlated random effects regression with a
+cluster-robust covariance, and stays valid under heteroskedasticity and
+serial correlation, so it is the one to report.
+
+```{r hausman}
+fit_re1 <- panglm(fev1 ~ crp, data = copd, index = c("id", "visit"),
+                  model = "random")
+panhausman(fit_fe, fit_re1)
+panhausman(fit_fe, method = "mundlak", data = copd)
+```
+
+Neither test rejects: in these data CRP is unrelated to the stable part
+of lung function, and random effects is acceptable. When the test
+rejects, use fixed effects, or correlated random effects if
+time-invariant regressors matter.
+
+## Standard errors
+
+Every fit stores one covariance, chosen with `vcov`, and `vcov()`
+recomputes another one after fitting:
+
+* `"classical"`: model based, valid only under the full model
+  assumptions;
+* `"HC1"`: robust to heteroskedasticity (pooled and fixed effects);
+* `"cluster"`: robust to heteroskedasticity and to any correlation
+  within an individual. This is the default choice for panel data
+  (Cameron and Miller 2015). The cluster is the individual unless
+  `cluster` gives a coarser grouping, such as the hospital.
+
+```{r vcov}
+sqrt(diag(vcov(fit_fe, type = "classical")))
+sqrt(diag(vcov(fit_fe, type = "cluster")))
+confint(fit_fe)
+```
+
+## Nonlinear models and average partial effects
+
+The same interface fits binary, count and other nonlinear models through
+`family`. Their coefficients are on the link scale. `partialeffects()`
+reports average partial effects on the outcome scale: the mean
+derivative for continuous regressors and the mean discrete change for
+binary ones, with delta-method standard errors from the stored
+covariance. For random-effects models the mean integrates over the
+random intercept, which gives the average structural function of
+Wooldridge (2005).
+
+```{r ape}
+fit_hosp <- panglm(hospitalized ~ treatment + age + crp, data = copd,
+                   index = c("id", "visit"), model = "random",
+                   family = "probit", cre = TRUE, vcov = "cluster")
+partialeffects(fit_hosp)
+```
+
+Active treatment lowers the probability of an admission between visits
+by about 14 percentage points, and each extra year of age raises it by
+about 1 point.
+
+## Predictions
+
+`predict()` returns the linear predictor (`type = "link"`) or the mean
+(`type = "response"`), in sample or for new data. Random-effects
+predictions are population averages. Fixed-effects predictions add the
+estimated individual effect, so `newdata` needs the index columns; an
+unseen individual is an error unless `allow.new.levels = TRUE`, which
+sets its effect to zero.
+
+```{r predict}
+new <- data.frame(id = 1, visit = 6, treatment = c(0, 1), age = 65,
+                  smoker = 0, crp = 3)
+predict(fit_re, newdata = new, type = "response")
+predict(fit_fe, newdata = data.frame(id = 1:2, visit = 6, crp = 3))
+```
+
+## Tables
+
+`tidy()` and `glance()` methods (from the `generics` package) exist for
+every model class, so the fits work with `broom` and `modelsummary`.
+
+```{r tidy, eval = has_generics}
+generics::tidy(fit_fe, conf.int = TRUE)
+generics::glance(fit_fe)
+```
+
+```{r modelsummary, eval = has_ms}
+modelsummary::modelsummary(
+  list(Pooled = fit_pool, "Fixed effects" = fit_fe, "Random effects" = fit_re),
+  gof_map = c("nobs", "n.groups"), output = "markdown"
+)
+```
+
+## Plots
+
+`plot()` draws the coefficients with confidence intervals, the residuals
+against fitted values, or observed against fitted values.
+
+```{r plot, fig.alt = "Coefficient estimates of the correlated random effects model with 95% confidence intervals"}
+plot(fit_cre, which = "coefficients")
+```
+
+```{r plot-resid, fig.alt = "Residuals against fitted values of the fixed-effects model"}
+plot(fit_fe, which = "residuals")
+```
+
+## Validated against
+
+The pooled, within, between and random-effects Gaussian estimators
+reproduce `plm::plm()`; cluster and HC1 covariances reproduce
+`plm::vcovHC()` and `sandwich`; pooled GLMs reproduce `stats::glm()`;
+random-intercept GLMs reproduce `lme4` and `glmmTMB`; average partial
+effects reproduce `marginaleffects`. The scripts are in the package
+source (`tests/testthat` and `validation/`).
+
+## References
+
+Cameron, A. C., and Miller, D. L. (2015). A practitioner's guide to
+cluster-robust inference. *Journal of Human Resources*, 50, 317-372.
+
+Chamberlain, G. (1980). Analysis of covariance with qualitative data.
+*Review of Economic Studies*, 47, 225-238.
+
+Croissant, Y., and Millo, G. (2008). Panel data econometrics in R: the
+plm package. *Journal of Statistical Software*, 27(2), 1-43.
+
+Hausman, J. A. (1978). Specification tests in econometrics.
+*Econometrica*, 46, 1251-1271.
+
+Mundlak, Y. (1978). On the pooling of time series and cross section data.
+*Econometrica*, 46, 69-85.
+
+Swamy, P. A. V. B., and Arora, S. S. (1972). The exact finite sample
+properties of the estimators of coefficients in the error components
+regression models. *Econometrica*, 40, 261-275.
+
+Wooldridge, J. M. (2005). Unobserved heterogeneity and estimation of
+average partial effects. In D. W. K. Andrews and J. H. Stock (Eds.),
+*Identification and Inference for Econometric Models*, 27-55. Cambridge
+University Press.
+
+Wooldridge, J. M. (2010). *Econometric Analysis of Cross Section and
+Panel Data*, 2nd edition. MIT Press.
