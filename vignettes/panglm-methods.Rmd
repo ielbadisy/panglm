@@ -23,8 +23,9 @@ Longitudinal and panel data contain repeated observations for each sampling
 unit. Dependence within units must therefore be represented either through
 unit-specific effects or through an appropriate covariance estimator. The
 `panglm` package provides a common interface for pooled, fixed-effects, and
-random-effects generalized linear models for continuous, binary, and count
-outcomes.
+random-effects generalized linear models for continuous, binary, count,
+ordinal, positive (gamma) and bounded (beta) outcomes, with two-part cost
+models, dynamic models and difference-in-differences tools.
 
 This vignette defines the models fitted by the package, describes their
 estimating equations, and illustrates the associated inferential methods.
@@ -233,12 +234,23 @@ implemented specifications are:
   Gauss-Hermite quadrature;
 * gamma responses use a Gaussian random intercept on the log scale,
   integrated by adaptive Gauss-Hermite quadrature centred at each
-  individual's mode (`R = 1` is the Laplace approximation).
+  individual's mode (`R = 1` is the Laplace approximation);
+* ordered logit and probit, and beta regression, use a Gaussian random
+  intercept on the link scale with the same adaptive quadrature (see the
+  sections below).
 
 The number of quadrature nodes for the binomial and gamma models is
 controlled by `R`. For the gamma model, response predictions include the
 lognormal factor $\exp(\sigma^2/2)$.
-Random-effects covariance matrices are based on the observed information.
+Random-effects covariance matrices are based on the observed information;
+`vcov = "cluster"` gives the sandwich built from the individual scores of
+the integrated likelihood, for every family.
+
+Random-effects fits also accept `weights` that are constant within
+individuals, typically a baseline sampling or inverse probability weight.
+The fit then maximizes the weighted sum of the individual integrated
+log-likelihoods (the Gaussian model switches from FGLS to maximum
+likelihood), and `vcov = "cluster"` gives design-based standard errors.
 
 ```{r random-gaussian}
 fit_re <- panglm(
@@ -273,6 +285,79 @@ fit_cre <- panglm(hospitalized ~ treatment + age + crp, data = copd,
                   index = c("id", "visit"), model = "random",
                   family = "probit", cre = TRUE)
 summary(fit_cre)
+```
+
+### Dynamic models and initial conditions
+
+Health outcomes are persistent: a hospital admission this year predicts
+one next year. Part of this is true state dependence, part is unobserved
+heterogeneity, and a random-effects model with a lagged outcome
+separates the two only if the initial condition is handled. With
+`dynamic = TRUE`, `panglm()` applies the solution of Wooldridge (2005):
+it adds the lagged outcome `lag_<y>` and the first observed outcome
+`initial_<y>` to the regressors, drops the first wave, and adds the
+individual means of the time-varying regressors (`cre = TRUE`). The
+coefficient on the lag then measures state dependence, and
+`partialeffects()` reports it on the probability scale.
+
+```{r dynamic}
+fit_dyn <- panglm(hospitalized ~ treatment + crp, data = copd,
+                  index = c("id", "visit"), model = "random",
+                  family = "probit", dynamic = TRUE)
+summary(fit_dyn)
+partialeffects(fit_dyn, variables = "lag_hospitalized")
+```
+
+## Ordered outcomes
+
+Self-assessed health, symptom severity and satisfaction scales are
+ordinal. `family = ordered_family("logit")` or `ordered_family("probit")`
+fits $P(y_{it} \le j) = F(c_j - x_{it}^{\mathsf T}\beta - u_i)$. The
+intercept is absorbed in the cutpoints $c_j$, which are reported after
+the slopes. Pooled and random-intercept fits are available for both links.
+For the logit link, `model = "within"` fits the "blow-up and cluster"
+fixed-effects ordered logit of Baetschmann, Staub and Winkelmann (2015):
+each observation is copied once per cutoff, dichotomized, and a
+conditional logit is fitted to the stacked data with standard errors
+clustered by individual. `predict(type = "prob")` returns the category
+probabilities (averaged over the random intercept), and
+`partialeffects()` gives one effect per category.
+
+```{r ordered}
+copd$severity <- cut(copd$exacerbations, c(-Inf, 0, 2, Inf),
+                     labels = c("none", "1-2", "3+"), ordered_result = TRUE)
+fit_ord <- panglm(severity ~ treatment + age + crp, data = copd,
+                  index = c("id", "visit"), model = "random",
+                  family = ordered_family("logit"))
+summary(fit_ord)
+partialeffects(fit_ord, variables = "crp")
+coef(panglm(severity ~ crp, data = copd, index = c("id", "visit"),
+            model = "within", family = ordered_family("logit")))
+```
+
+## Beta regression for bounded outcomes
+
+Utility index scores rescaled to the unit interval, adherence fractions
+and proportions of days in hospital are continuous on $(0, 1)$.
+`family = beta_family()` (logit or probit link) fits
+$y_{it} \sim \mathrm{Beta}(\mu_{it}\phi, (1 - \mu_{it})\phi)$ with
+$g(\mu_{it}) = x_{it}^{\mathsf T}\beta$, so $E(y_{it}) = \mu_{it}$ and
+$\mathrm{Var}(y_{it}) = \mu_{it}(1 - \mu_{it})/(1 + \phi)$ (Ferrari and
+Cribari-Neto 2004), pooled or with a random intercept on the link scale.
+The precision is stored as `fit$precision`. Values of exactly 0 or 1 must
+be moved inside the interval first, for example with
+$(y(n - 1) + 0.5)/n$ (Smithson and Verkuilen 2006).
+
+```{r beta}
+set.seed(3)
+u <- rnorm(60, sd = 0.4)[copd$id]
+mu <- plogis(-1 + 0.15 * copd$crp + u)
+copd$adherence <- rbeta(nrow(copd), mu * 20, (1 - mu) * 20)
+fit_beta <- panglm(adherence ~ treatment + crp, data = copd,
+                   index = c("id", "visit"), model = "random",
+                   family = beta_family(), vcov = "cluster")
+summary(fit_beta)
+fit_beta$precision
 ```
 
 ## Nonlinear effects with regression splines
@@ -554,11 +639,13 @@ partial effects.
 
 ## Model scope
 
-The package focuses on Gaussian, Poisson, binomial, NB2, and gamma panel
-models, with two-part models for semicontinuous costs.
-It does not provide ordinal, Tobit, or between estimators. A general
-two-way exact conditional logistic likelihood is not available, so the
-binomial fixed-effects model is restricted to individual effects. These
+The package focuses on Gaussian, Poisson, binomial, NB2, gamma, ordered and
+beta panel models, with two-part models for semicontinuous costs. It does
+not provide Tobit, between, GMM (Arellano-Bond) or instrumental-variable
+estimators; packages such as `plm` cover those. A general two-way exact
+conditional logistic likelihood is not available, so the binomial
+fixed-effects model is restricted to individual effects, and there is no
+fixed-effects estimator for the beta and ordered probit models. These
 restrictions define the current statistical scope and prevent unlike
 estimators from being presented under a common option.
 
@@ -567,12 +654,19 @@ estimators from being presented under a common option.
 Allison, P. D., and Waterman, R. P. (2002). Fixed-effects negative binomial
 regression models. *Sociological Methodology*, 32, 247-265.
 
+Baetschmann, G., Staub, K. E., and Winkelmann, R. (2015). Consistent
+estimation of the fixed effects ordered logit model. *Journal of the Royal
+Statistical Society A*, 178, 685-703.
+
 Chamberlain, G. (1980). Analysis of covariance with qualitative data.
 *Review of Economic Studies*, 47, 225-238.
 
 Duan, N., Manning, W. G., Morris, C. N., and Newhouse, J. P. (1983). A
 comparison of alternative models for the demand for medical care.
 *Journal of Business and Economic Statistics*, 1, 115-126.
+
+Ferrari, S., and Cribari-Neto, F. (2004). Beta regression for modelling
+rates and proportions. *Journal of Applied Statistics*, 31, 799-815.
 
 Goodman-Bacon, A. (2021). Difference-in-differences with variation in
 treatment timing. *Journal of Econometrics*, 225, 254-277.
@@ -586,6 +680,10 @@ count data with an application to the patents-R&D relationship.
 
 Mundlak, Y. (1978). On the pooling of time series and cross section data.
 *Econometrica*, 46, 69-85.
+
+Smithson, M., and Verkuilen, J. (2006). A better lemon squeezer?
+Maximum-likelihood regression with beta-distributed dependent variables.
+*Psychological Methods*, 11, 54-71.
 
 Sun, L., and Abraham, S. (2021). Estimating dynamic treatment effects in
 event studies with heterogeneous treatment effects. *Journal of

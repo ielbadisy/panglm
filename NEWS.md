@@ -1,3 +1,35 @@
+# panglm 1.4.0
+
+* Ordered outcomes: `ordered_family("logit")` and `ordered_family("probit")`
+  for pooled and random-intercept fits, and the fixed-effects ordered logit
+  by "blow-up and cluster" (Baetschmann, Staub and Winkelmann 2015) with
+  `model = "within"`. `predict()` returns category probabilities;
+  `partialeffects()` gives one effect per category.
+* Beta regression: `beta_family()` (logit or probit link) for outcomes in
+  (0, 1), pooled or with a random intercept; precision in `fit$precision`.
+* Dynamic models: `dynamic = TRUE` adds the lagged and initial outcomes and
+  the Mundlak means (Wooldridge 2005 initial conditions), for pooled and
+  random-effects fits of every family.
+* Random-effects fits of every family accept weights constant within
+  individuals and `vcov = "cluster"` (sandwich from the individual scores of
+  the integrated likelihood). The weighted Gaussian model uses maximum
+  likelihood.
+* Regression splines: new `jointtest()` (joint Wald test of coefficients),
+  `lineartest()` (Wald test that a spline effect is linear),
+  `effectcurve()` with a `plot()` method (fitted curve with pointwise
+  confidence band) and `model.matrix()` for `panglm` fits, which keeps the
+  spline knots on new data.
+* New `did()` (two-way fixed-effects difference-in-differences) and
+  `eventstudy()` (event-time coefficients, joint pre-trend test, `plot()`
+  method), for Gaussian, Poisson and negative binomial outcomes.
+* `twopart(..., correlated = TRUE)`: random-intercept lognormal two-part
+  model with correlated intercepts, fitted jointly (Van Ourti 2004), with
+  population-averaged predictions and partial effects.
+* Bug fix: robust (`HC1`, `cluster`) covariances of the two-way
+  fixed-effects Poisson model ignored the time effects in the score; they
+  now match `fixest::fepois()`. The same covariances are now available for
+  the two-way negative binomial model.
+
 # panglm 1.3.0
 
 * Observation weights: pooled models accept nonnegative prior `weights`
