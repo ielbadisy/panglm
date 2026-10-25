@@ -40,10 +40,10 @@ within estimator. Its robust covariances (`"HC1"`, `"cluster"`) are the
 same, since each individual is one observation of the means regression.}
 
 \item{family}{one of `"gaussian"`, `"poisson"`, `"binomial"`, `"probit"`,
-`"negbin"`, `"gamma"`, `"ologit"`, `"oprobit"`, `"beta"`, or a family
-spec from [gaussianfamily()] / [poissonfamily()] / [binomialfamily()] /
-[negbinfamily()] / [gammafamily()] / [orderedfamily()] /
-[betafamily()]}
+`"negbin"`, `"gamma"`, `"ologit"`, `"oprobit"`, `"beta"`, `"tobit"`,
+or a family spec from [gaussianfamily()] / [poissonfamily()] /
+[binomialfamily()] / [negbinfamily()] / [gammafamily()] /
+[orderedfamily()] / [betafamily()] / [tobitfamily()]}
 
 \item{weights}{optional nonnegative observation (prior) weights: the
 name of a column of `data` or a numeric vector with one value per row
