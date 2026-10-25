@@ -49,6 +49,20 @@ vcov.panglm <- function(object, type = NULL, cluster = NULL, ...) {
     }
     return(robust_vcov_beta(object, type, cluster))
   }
+  if (object$model == "between") {
+    if (!is.null(cluster)) {
+      stop("custom clusters are not available for model = 'between': each individual ",
+           "is one observation of the means regression", call. = FALSE)
+    }
+    # HC1 on the means regression; clustering by individual gives the same matrix
+    Xb <- object$between_X
+    e <- object$between_resid
+    G <- nrow(Xb); k <- ncol(Xb)
+    meat <- crossprod(Xb * e)
+    V <- object$bread %*% meat %*% object$bread * G / (G - k)
+    dimnames(V) <- dimnames(object$bread)
+    return(V)
+  }
   if (object$model == "random") {
     if (type == "HC1") {
       stop("type = 'HC1' is not available for model = 'random': the independent units ",

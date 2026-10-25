@@ -8,7 +8,7 @@ panglm(
   formula,
   data,
   index,
-  model = c("pooling", "within", "random"),
+  model = c("pooling", "within", "random", "between"),
   family = "gaussian",
   weights = NULL,
   offset = NULL,
@@ -30,7 +30,13 @@ panglm(
 \item{index}{length-1 or length-2 character vector identifying the
 individual (and optionally time) columns, e.g. `c("id", "time")`}
 
-\item{model}{one of `"pooling"`, `"within"`, `"random"`}
+\item{model}{one of `"pooling"`, `"within"`, `"random"`, `"between"`.
+The between estimator (`family = "gaussian"` only) is least squares on
+the individual means of the outcome and the regressors, one row per
+individual, as in `plm(model = "between")`; it uses only the variation
+between individuals and is the cross-sectional counterpart of the
+within estimator. Its robust covariances (`"HC1"`, `"cluster"`) are the
+same, since each individual is one observation of the means regression.}
 
 \item{family}{one of `"gaussian"`, `"poisson"`, `"binomial"`, `"probit"`,
 `"negbin"`, `"gamma"`, `"ologit"`, `"oprobit"`, `"beta"`, or a family

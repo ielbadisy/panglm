@@ -8,7 +8,13 @@
 #' @param data a data.frame containing the variables in `formula` and `index`
 #' @param index length-1 or length-2 character vector identifying the
 #'   individual (and optionally time) columns, e.g. `c("id", "time")`
-#' @param model one of `"pooling"`, `"within"`, `"random"`
+#' @param model one of `"pooling"`, `"within"`, `"random"`, `"between"`.
+#'   The between estimator (`family = "gaussian"` only) is least squares on
+#'   the individual means of the outcome and the regressors, one row per
+#'   individual, as in `plm(model = "between")`; it uses only the variation
+#'   between individuals and is the cross-sectional counterpart of the
+#'   within estimator. Its robust covariances (`"HC1"`, `"cluster"`) are the
+#'   same, since each individual is one observation of the means regression.
 #' @param family one of `"gaussian"`, `"poisson"`, `"binomial"`, `"probit"`,
 #'   `"negbin"`, `"gamma"`, `"ologit"`, `"oprobit"`, `"beta"`, or a family
 #'   spec from [gaussian_family()] / [poisson_family()] / [binomial_family()] /
@@ -105,7 +111,7 @@
 #' plot(effectcurve(fit_ns, "crp"))
 #' @export
 panglm <- function(formula, data, index,
-                    model = c("pooling", "within", "random"),
+                    model = c("pooling", "within", "random", "between"),
                     family = "gaussian",
                     weights = NULL, offset = NULL,
                     na.action = stats::na.omit,
@@ -126,6 +132,21 @@ panglm <- function(formula, data, index,
   if (family$family == "beta" && model == "within") {
     stop("there is no fixed-effects beta regression; use model = 'random' with ",
          "cre = TRUE", call. = FALSE)
+  }
+  if (model == "between") {
+    if (family$family != "gaussian") {
+      stop("model = 'between' is available for family = 'gaussian' only", call. = FALSE)
+    }
+    if (isTRUE(dynamic) || isTRUE(cre)) {
+      stop("model = 'between' cannot be combined with dynamic or cre", call. = FALSE)
+    }
+    if (effect != "individual") {
+      stop("model = 'between' uses individual means; effect must be 'individual'",
+           call. = FALSE)
+    }
+    if (!is.null(weights)) {
+      stop("observation weights are not supported for model = 'between'", call. = FALSE)
+    }
   }
   if (!is.logical(dynamic) || length(dynamic) != 1L || is.na(dynamic)) {
     stop("'dynamic' must be TRUE or FALSE", call. = FALSE)
@@ -254,7 +275,7 @@ panglm <- function(formula, data, index,
     X_full <- X_full[, setdiff(colnames(X_full), "(Intercept)"), drop = FALSE]
   }
 
-  candidate_X <- if (model %in% c("pooling", "random")) X_full else X_noint
+  candidate_X <- if (model %in% c("pooling", "random", "between")) X_full else X_noint
   estimable <- if (is_ordered && model != "within") {
     setdiff(panglm_estimable_columns(cbind(`(Intercept)` = 1, candidate_X), model, effect,
                                      group_start, group_size, time_id), 1L) - 1L
@@ -267,7 +288,7 @@ panglm <- function(formula, data, index,
     warning("rank-deficient model matrix: dropping unidentified column(s): ",
             paste(aliased, collapse = ", "), call. = FALSE)
   }
-  if (model %in% c("pooling", "random")) {
+  if (model %in% c("pooling", "random", "between")) {
     X_full <- X_full[, estimable, drop = FALSE]
   } else {
     X_noint <- X_noint[, estimable, drop = FALSE]
@@ -280,6 +301,7 @@ panglm <- function(formula, data, index,
     fit_beta(X_full, y, family, model, group_start, group_size, prior_weights, R, maxit, tol)
   } else switch(model,
     pooling = fit_pooled(X_full, y, family, maxit, tol, prior_weights),
+    between = fit_between(X_full, y, group_start, group_size),
     within  = if (effect == "twoways" && family$family == "gaussian") {
       fit_within_twoways_gaussian(X_noint, y, group_start, group_size, time_id, maxit, tol)
     } else if (effect == "twoways" && family$family == "poisson") {
@@ -297,7 +319,7 @@ panglm <- function(formula, data, index,
     }
   )
 
-  fit$X <- if (model == "pooling" || model == "random") X_full else X_noint
+  fit$X <- if (model %in% c("pooling", "random", "between")) X_full else X_noint
   fit$y <- y
   fit$weights <- prior_weights
   fit$cre <- cre
@@ -371,7 +393,9 @@ panglm <- function(formula, data, index,
 
 panglm_estimable_columns <- function(X, model, effect, group_start, group_size, time) {
   if (!ncol(X)) stop("the model contains no estimable covariates", call. = FALSE)
-  transformed <- if (model != "within") {
+  transformed <- if (model == "between") {
+    group_means_cpp(X, rep(0, nrow(X)), group_start, group_size)$Xbar
+  } else if (model != "within") {
     X
   } else if (effect == "twoways") {
     demean_twoway(X, rep(0, nrow(X)), group_start, group_size, time)$X
@@ -391,6 +415,7 @@ panglm_parameter_count <- function(fit, model, family, effect, n_groups, n_time)
   if (model == "pooling") {
     return(k + as.integer(family %in% c("gaussian", "negbin", "gamma")))
   }
+  if (model == "between") return(k + 1L)
   if (model == "random") {
     extra <- switch(family, gaussian = 2L, poisson = 1L, negbin = 2L,
                     binomial = 1L, gamma = 2L, 0L)
@@ -403,6 +428,38 @@ panglm_parameter_count <- function(fit, model, family, effect, n_groups, n_time)
   if (family %in% c("poisson", "binomial")) return(k)
   used_groups <- fit$n_used_groups %||% n_groups
   k + used_groups + as.integer(family %in% c("gaussian", "negbin", "gamma"))
+}
+
+#' Between estimator: least squares on the individual means
+#'
+#' One row per individual (unweighted, as in plm). The log-likelihood is the
+#' Gaussian likelihood of the means regression; residuals and fitted values
+#' are returned at the observation level for predict() and residuals().
+#'
+#' @keywords internal
+#' @noRd
+fit_between <- function(X, y, group_start, group_size) {
+  gm <- group_means_cpp(X, y, group_start, group_size)
+  Xb <- gm$Xbar
+  yb <- as.numeric(gm$ybar)
+  colnames(Xb) <- colnames(X)
+  G <- nrow(Xb); k <- ncol(Xb)
+  if (G <= k) stop("model = 'between' needs more individuals than coefficients", call. = FALSE)
+  decomposition <- qr(Xb)
+  coefs <- as.numeric(qr.coef(decomposition, yb))
+  names(coefs) <- colnames(X)
+  resid_means <- yb - as.numeric(Xb %*% coefs)
+  rss <- sum(resid_means^2)
+  sigma2 <- rss / (G - k)
+  bread <- chol2inv(qr.R(decomposition))
+  bread <- bread[order(decomposition$pivot), order(decomposition$pivot), drop = FALSE]
+  dimnames(bread) <- list(colnames(X), colnames(X))
+  fitted <- as.numeric(X %*% coefs)
+  list(coefficients = coefs, vcov = bread * sigma2, bread = bread,
+       fitted.values = fitted, linear.predictors = fitted,
+       loglik = -0.5 * G * (log(2 * pi) + log(rss / G) + 1),
+       dispersion = sigma2, df.residual = G - k, iterations = 1L,
+       between_X = Xb, between_resid = resid_means)
 }
 
 fit_pooled <- function(X, y, family, maxit, tol, weights = NULL) {

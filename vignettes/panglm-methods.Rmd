@@ -218,6 +218,27 @@ The denominator and score are evaluated by a forward and backward dynamic
 program. Units with all-zero or all-one responses do not contribute to this
 conditional likelihood and are excluded.
 
+## Between estimator
+
+The between estimator uses only the variation between individuals. It is
+least squares on the individual means,
+
+$$
+\bar y_i = \bar x_i^{\mathsf T}\beta + \bar u_i, \qquad i = 1, \dots, N,
+$$
+
+with one row per individual, as in `plm(model = "between")`. Comparing it
+with the within estimator shows how much of an association comes from
+differences between patients rather than changes within a patient. Its
+robust covariance is HC1 on the means regression; clustering by individual
+gives the same matrix, because each individual contributes one row.
+
+```{r between}
+fit_be <- panglm(fev1 ~ crp + age, data = copd, index = c("id", "visit"),
+                 model = "between")
+summary(fit_be)
+```
+
 ## Random-effects models
 
 Random-effects models retain time-invariant regressors and account for
@@ -641,7 +662,7 @@ partial effects.
 
 The package focuses on Gaussian, Poisson, binomial, NB2, gamma, ordered and
 beta panel models, with two-part models for semicontinuous costs. It does
-not provide Tobit, between, GMM (Arellano-Bond) or instrumental-variable
+not provide Tobit, GMM (Arellano-Bond) or instrumental-variable
 estimators; packages such as `plm` cover those. A general two-way exact
 conditional logistic likelihood is not available, so the binomial
 fixed-effects model is restricted to individual effects, and there is no
