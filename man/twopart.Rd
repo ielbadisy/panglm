@@ -51,7 +51,9 @@ correlated and fit them jointly}
 \item{cre}{logical; add individual means of the time-varying regressors
 to both parts}
 
-\item{weights}{optional observation weights (`model = "pooling"` only)}
+\item{weights}{optional observation weights (`model = "pooling"` only):
+the name of a column of `data` or a numeric vector with one value per
+row of `data`}
 
 \item{vcov}{covariance type passed to [panglm()] for both parts}
 

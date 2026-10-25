@@ -81,3 +81,21 @@ gauss_hermite_quadrature <- function(n) {
   ord <- order(nodes)
   list(nodes = nodes[ord], weights = weights[ord])
 }
+
+#' Resolve an argument given as a column name of `data` or as a vector
+#'
+#' `weights`, `offset` and `cluster` may be passed either as the name of a
+#' column of `data` or as a vector with one value per row of `data`; a
+#' single string is looked up in `data`, anything else is returned as is.
+#'
+#' @keywords internal
+#' @noRd
+data_column <- function(x, data, arg) {
+  if (is.character(x) && length(x) == 1L && !is.null(names(data))) {
+    if (!x %in% names(data)) {
+      stop(arg, " column '", x, "' not found in data", call. = FALSE)
+    }
+    x <- data[[x]]
+  }
+  x
+}

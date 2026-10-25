@@ -20,8 +20,9 @@
 #'   spec from [gaussianfamily()] / [poissonfamily()] / [binomialfamily()] /
 #'   [negbinfamily()] / [gammafamily()] / [orderedfamily()] /
 #'   [betafamily()]
-#' @param weights optional nonnegative observation (prior) weights, one per
-#'   row of `data`, e.g. inverse probability weights for attrition.
+#' @param weights optional nonnegative observation (prior) weights: the
+#'   name of a column of `data` or a numeric vector with one value per row
+#'   of `data`, e.g. inverse probability weights for attrition.
 #'   Nontrivial weights are supported for `model = "pooling"` (all
 #'   families); the fit then maximizes the weighted (pseudo) log-likelihood
 #'   and robust covariances use the weighted scores. For `model = "random"`
@@ -31,7 +32,8 @@
 #'   Gaussian model is then estimated by maximum likelihood instead of
 #'   Swamy-Arora FGLS. Use `vcov = "cluster"` for design-based standard
 #'   errors. Weighted fixed-effects fits are rejected.
-#' @param offset optional model offset. Nonzero offsets, including offsets
+#' @param offset optional model offset (the name of a column of `data` or a
+#'   numeric vector with one value per row of `data`). Nonzero offsets, including offsets
 #'   specified in `formula`, are rejected explicitly rather than ignored.
 #' @param na.action missing-data action passed to [stats::model.frame()]
 #' @param effect one of `"individual"` or `"twoways"` (individual + time
@@ -195,6 +197,8 @@ panglm <- function(formula, data, index,
   effect <- match.arg(effect)
   vcov <- match.arg(vcov)
   family <- resolve_family(family)
+  weights <- data_column(weights, data, "weights")
+  offset <- data_column(offset, data, "offset")
   slopes <- random_slopes_requested(random)
   if (slopes) {
     if (model != "random") {
@@ -308,7 +312,7 @@ panglm <- function(formula, data, index,
   if (!is.null(weights)) {
     if (!is.numeric(weights) || length(weights) != nrow(data) ||
         any(!is.finite(weights)) || any(weights < 0)) {
-      stop("'weights' must be a finite nonnegative numeric vector with nrow(data) values",
+      stop("'weights' must be a column name or a finite nonnegative numeric vector with nrow(data) values",
            call. = FALSE)
     }
     used_weights <- weights[model_rows]
@@ -324,7 +328,7 @@ panglm <- function(formula, data, index,
   formula_offset <- stats::model.offset(mf)
   if (!is.null(offset)) {
     if (!is.numeric(offset) || length(offset) != nrow(data) || any(!is.finite(offset))) {
-      stop("'offset' must be a finite numeric vector with nrow(data) values",
+      stop("'offset' must be a column name or a finite numeric vector with nrow(data) values",
            call. = FALSE)
     }
     formula_offset <- (formula_offset %||% 0) + offset[model_rows]

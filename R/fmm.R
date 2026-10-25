@@ -88,10 +88,11 @@
 #' @param tol convergence tolerance on the relative change of the EM
 #'   log-likelihood
 #' @param na.action missing-data action passed to [stats::model.frame()]
-#' @param weights optional nonnegative individual (sampling) weights, one
-#'   per row of `data` and constant within individuals; see the Weights
-#'   section
-#' @param offset optional numeric offset, one value per row of `data`, added
+#' @param weights optional nonnegative individual (sampling) weights: the
+#'   name of a column of `data` or a numeric vector with one value per row
+#'   of `data`, constant within individuals; see the Weights section
+#' @param offset optional numeric offset (the name of a column of `data` or
+#'   a vector with one value per row of `data`), added
 #'   to the linear predictor of every class (in addition to any `offset()`
 #'   terms of `formula`), as in [stats::glm()]
 #' @return an object of class `"panfmm"`, a list with components
@@ -151,6 +152,8 @@ panfmm <- function(formula, data, index, k = 2, family = "poisson",
                    na.action = stats::na.omit, weights = NULL, offset = NULL) {
   vcov <- match.arg(vcov)
   family <- resolve_family(family)
+  weights <- data_column(weights, data, "weights")
+  offset <- data_column(offset, data, "offset")
   if (!family$family %in% c("gaussian", "poisson", "negbin", "binomial")) {
     stop("panfmm() supports family = 'gaussian', 'poisson', 'negbin' and 'binomial'",
          call. = FALSE)
@@ -193,7 +196,7 @@ panfmm <- function(formula, data, index, k = 2, family = "poisson",
   off <- stats::model.offset(mf)
   if (!is.null(offset)) {
     if (!is.numeric(offset) || length(offset) != nrow(data) || any(!is.finite(offset))) {
-      stop("'offset' must be a finite numeric vector with nrow(data) values", call. = FALSE)
+      stop("'offset' must be a column name or a finite numeric vector with nrow(data) values", call. = FALSE)
     }
     off <- (off %||% 0) + offset[model_rows]
   }
@@ -226,7 +229,7 @@ panfmm <- function(formula, data, index, k = 2, family = "poisson",
   if (!is.null(weights)) {
     if (!is.numeric(weights) || length(weights) != nrow(data) ||
         any(!is.finite(weights)) || any(weights < 0)) {
-      stop("'weights' must be a finite nonnegative numeric vector with nrow(data) values",
+      stop("'weights' must be a column name or a finite nonnegative numeric vector with nrow(data) values",
            call. = FALSE)
     }
     w <- fmm_individual_weights(weights[model_rows][ord], panel$group_size)

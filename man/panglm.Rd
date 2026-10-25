@@ -45,8 +45,9 @@ spec from [gaussianfamily()] / [poissonfamily()] / [binomialfamily()] /
 [negbinfamily()] / [gammafamily()] / [orderedfamily()] /
 [betafamily()]}
 
-\item{weights}{optional nonnegative observation (prior) weights, one per
-row of `data`, e.g. inverse probability weights for attrition.
+\item{weights}{optional nonnegative observation (prior) weights: the
+name of a column of `data` or a numeric vector with one value per row
+of `data`, e.g. inverse probability weights for attrition.
 Nontrivial weights are supported for `model = "pooling"` (all
 families); the fit then maximizes the weighted (pseudo) log-likelihood
 and robust covariances use the weighted scores. For `model = "random"`
@@ -57,7 +58,8 @@ Gaussian model is then estimated by maximum likelihood instead of
 Swamy-Arora FGLS. Use `vcov = "cluster"` for design-based standard
 errors. Weighted fixed-effects fits are rejected.}
 
-\item{offset}{optional model offset. Nonzero offsets, including offsets
+\item{offset}{optional model offset (the name of a column of `data` or a
+numeric vector with one value per row of `data`). Nonzero offsets, including offsets
 specified in `formula`, are rejected explicitly rather than ignored.}
 
 \item{na.action}{missing-data action passed to [stats::model.frame()]}

@@ -51,7 +51,9 @@
 #'   correlated and fit them jointly
 #' @param cre logical; add individual means of the time-varying regressors
 #'   to both parts
-#' @param weights optional observation weights (`model = "pooling"` only)
+#' @param weights optional observation weights (`model = "pooling"` only):
+#'   the name of a column of `data` or a numeric vector with one value per
+#'   row of `data`
 #' @param vcov covariance type passed to [panglm()] for both parts
 #' @param R,maxit,tol passed to [panglm()]
 #' @return an object of class `"twopart"` with components `binary` and
@@ -107,8 +109,10 @@ twopart <- function(formula, data, index, binary_formula = NULL,
   if (correlated && vcov == "HC1") {
     stop("vcov = 'HC1' is not available for random effects: use 'cluster'", call. = FALSE)
   }
+  weights <- data_column(weights, data, "weights")
   if (!is.null(weights) && (!is.numeric(weights) || length(weights) != nrow(data))) {
-    stop("'weights' must be a numeric vector with nrow(data) values", call. = FALSE)
+    stop("'weights' must be a column name or a numeric vector with nrow(data) values",
+         call. = FALSE)
   }
 
   formula <- stats::as.formula(formula)

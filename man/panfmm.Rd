@@ -60,11 +60,12 @@ log-likelihood}
 
 \item{na.action}{missing-data action passed to [stats::model.frame()]}
 
-\item{weights}{optional nonnegative individual (sampling) weights, one
-per row of `data` and constant within individuals; see the Weights
-section}
+\item{weights}{optional nonnegative individual (sampling) weights: the
+name of a column of `data` or a numeric vector with one value per row
+of `data`, constant within individuals; see the Weights section}
 
-\item{offset}{optional numeric offset, one value per row of `data`, added
+\item{offset}{optional numeric offset (the name of a column of `data` or
+a vector with one value per row of `data`), added
 to the linear predictor of every class (in addition to any `offset()`
 terms of `formula`), as in [stats::glm()]}
 }
