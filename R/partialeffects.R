@@ -110,7 +110,8 @@ panglm_mean_function <- function(object) {
       multiplier <- object$marginal_mean_multiplier
       function(eta) multiplier * exp(eta)
     },
-    binomial = {
+    binomial = ,
+    beta = {
       gh <- gauss_hermite_quadrature(object$quadrature_nodes %||% 21L)
       function(eta) random_binomial_marginal_mean(eta, object$sigma, family, gh)
     },

@@ -13,6 +13,7 @@
 #' negbin_family()
 #' gamma_family()
 #' ordered_family("probit")
+#' beta_family()
 #'
 #' data(copd)
 #' fit <- panglm(hospitalized ~ crp, data = copd, index = c("id", "visit"),
@@ -84,6 +85,32 @@ ordered_family <- function(link = c("logit", "probit")) {
        link_id = if (link == "logit") 2L else 3L)
 }
 
+#' @details `beta_family()` is beta regression for continuous outcomes in
+#'   the open interval (0, 1), such as utility index scores rescaled to
+#'   (0, 1), proportions of days in hospital or adherence fractions:
+#'   `y ~ Beta(mu phi, (1 - mu) phi)` with `g(mu) = x'beta`, so `E(y) = mu`
+#'   and `Var(y) = mu (1 - mu) / (1 + phi)`. The precision `phi` is
+#'   reported as `fit$precision`. `model = "pooling"` and `model = "random"`
+#'   (Gaussian random intercept on the link scale, adaptive Gauss-Hermite
+#'   quadrature) are available; there is no fixed-effects estimator.
+#'   Outcomes equal to 0 or 1 must be transformed first, e.g. with
+#'   `(y * (n - 1) + 0.5) / n` (Smithson and Verkuilen 2006).
+#' @references Ferrari, S. and Cribari-Neto, F. (2004). Beta regression for
+#'   modelling rates and proportions. *Journal of Applied Statistics*, 31,
+#'   799-815. \doi{10.1080/0266476042000214501}
+#'
+#'   Smithson, M. and Verkuilen, J. (2006). A better lemon squeezer?
+#'   Maximum-likelihood regression with beta-distributed dependent
+#'   variables. *Psychological Methods*, 11, 54-71.
+#'   \doi{10.1037/1082-989X.11.1.54}
+#' @rdname panglm-families
+#' @export
+beta_family <- function(link = c("logit", "probit")) {
+  link <- match.arg(link)
+  list(family = "beta", link = link, family_id = NA_integer_,
+       link_id = if (link == "logit") 2L else 3L)
+}
+
 #' @keywords internal
 #' @noRd
 binomial_response_to_numeric <- function(y) {
@@ -108,6 +135,7 @@ resolve_family <- function(family) {
       Gamma    = gamma_family(),
       ologit   = ordered_family("logit"),
       oprobit  = ordered_family("probit"),
+      beta     = beta_family(),
       stop("unknown family '", family, "'", call. = FALSE)
     )
   }

@@ -8,6 +8,7 @@
 \alias{negbin_family}
 \alias{gamma_family}
 \alias{ordered_family}
+\alias{beta_family}
 \title{Family specifications for panglm}
 \usage{
 gaussian_family(link = "identity")
@@ -21,6 +22,8 @@ negbin_family(link = "log")
 gamma_family(link = "log")
 
 ordered_family(link = c("logit", "probit"))
+
+beta_family(link = c("logit", "probit"))
 }
 \arguments{
 \item{link}{canonical link name}
@@ -50,6 +53,17 @@ expects (see `src/families.h`).
   logit link only (the "blow-up and cluster" fixed-effects ordered logit
   of Baetschmann, Staub and Winkelmann 2015). The fit has class
   `c("panordered", "panglm")`; see [predict.panordered()].
+
+`beta_family()` is beta regression for continuous outcomes in
+  the open interval (0, 1), such as utility index scores rescaled to
+  (0, 1), proportions of days in hospital or adherence fractions:
+  `y ~ Beta(mu phi, (1 - mu) phi)` with `g(mu) = x'beta`, so `E(y) = mu`
+  and `Var(y) = mu (1 - mu) / (1 + phi)`. The precision `phi` is
+  reported as `fit$precision`. `model = "pooling"` and `model = "random"`
+  (Gaussian random intercept on the link scale, adaptive Gauss-Hermite
+  quadrature) are available; there is no fixed-effects estimator.
+  Outcomes equal to 0 or 1 must be transformed first, e.g. with
+  `(y * (n - 1) + 0.5) / n` (Smithson and Verkuilen 2006).
 }
 \examples{
 gaussian_family()
@@ -58,6 +72,7 @@ binomial_family("probit")
 negbin_family()
 gamma_family()
 ordered_family("probit")
+beta_family()
 
 data(copd)
 fit <- panglm(hospitalized ~ crp, data = copd, index = c("id", "visit"),
@@ -69,4 +84,13 @@ Baetschmann, G., Staub, K. E. and Winkelmann, R. (2015).
   Consistent estimation of the fixed effects ordered logit model.
   *Journal of the Royal Statistical Society A*, 178, 685-703.
   \doi{10.1111/rssa.12090}
+
+Ferrari, S. and Cribari-Neto, F. (2004). Beta regression for
+  modelling rates and proportions. *Journal of Applied Statistics*, 31,
+  799-815. \doi{10.1080/0266476042000214501}
+
+  Smithson, M. and Verkuilen, J. (2006). A better lemon squeezer?
+  Maximum-likelihood regression with beta-distributed dependent
+  variables. *Psychological Methods*, 11, 54-71.
+  \doi{10.1037/1082-989X.11.1.54}
 }

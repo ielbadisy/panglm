@@ -32,9 +32,10 @@ individual (and optionally time) columns, e.g. `c("id", "time")`}
 \item{model}{one of `"pooling"`, `"within"`, `"random"`}
 
 \item{family}{one of `"gaussian"`, `"poisson"`, `"binomial"`, `"probit"`,
-`"negbin"`, `"gamma"`, or a family spec from [gaussian_family()] /
-[poisson_family()] / [binomial_family()] / [negbin_family()] /
-[gamma_family()]}
+`"negbin"`, `"gamma"`, `"ologit"`, `"oprobit"`, `"beta"`, or a family
+spec from [gaussian_family()] / [poisson_family()] / [binomial_family()] /
+[negbin_family()] / [gamma_family()] / [ordered_family()] /
+[beta_family()]}
 
 \item{weights}{optional nonnegative observation (prior) weights, one per
 row of `data`, e.g. inverse probability weights for attrition.

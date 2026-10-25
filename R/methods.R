@@ -187,7 +187,10 @@ predict.panglm <- function(object, newdata = NULL,
     binomial = random_binomial_marginal_mean(
       eta, object$sigma, object$family, object$quadrature_nodes %||% 21L
     ),
-    gamma = exp(eta + object$sigma^2 / 2)
+    gamma = exp(eta + object$sigma^2 / 2),
+    beta = random_binomial_marginal_mean(
+      eta, object$sigma, object$family, object$quadrature_nodes %||% 21L
+    )
   )
 }
 

@@ -241,14 +241,14 @@ robust_vcov_random <- function(object, cluster) {
     return(v)
   }
   group <- rep(seq_along(object$group_size), object$group_size)
-  contrib <- random_contrib(object$family, object$X, object$y, group,
-                            object$quadrature_nodes %||% 21L)
   if (weighted) {
     w <- object$unit_weights
     score <- object$theta_score
     bread <- object$theta_vcov
   } else {
     w <- rep(1, length(object$group_size))
+    contrib <- random_contrib(object$family, object$X, object$y, group,
+                              object$quadrature_nodes %||% 21L)
     theta <- random_theta(object, object$family)
     score <- ml_scores(contrib, theta)
     bread <- solve(-ml_hessian(contrib, theta, w))

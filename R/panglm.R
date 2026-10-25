@@ -10,9 +10,10 @@
 #'   individual (and optionally time) columns, e.g. `c("id", "time")`
 #' @param model one of `"pooling"`, `"within"`, `"random"`
 #' @param family one of `"gaussian"`, `"poisson"`, `"binomial"`, `"probit"`,
-#'   `"negbin"`, `"gamma"`, or a family spec from [gaussian_family()] /
-#'   [poisson_family()] / [binomial_family()] / [negbin_family()] /
-#'   [gamma_family()]
+#'   `"negbin"`, `"gamma"`, `"ologit"`, `"oprobit"`, `"beta"`, or a family
+#'   spec from [gaussian_family()] / [poisson_family()] / [binomial_family()] /
+#'   [negbin_family()] / [gamma_family()] / [ordered_family()] /
+#'   [beta_family()]
 #' @param weights optional nonnegative observation (prior) weights, one per
 #'   row of `data`, e.g. inverse probability weights for attrition.
 #'   Nontrivial weights are supported for `model = "pooling"` (all
@@ -101,6 +102,10 @@ panglm <- function(formula, data, index,
          "(blow-up and cluster); use model = 'random' with cre = TRUE for the probit",
          call. = FALSE)
   }
+  if (family$family == "beta" && model == "within") {
+    stop("there is no fixed-effects beta regression; use model = 'random' with ",
+         "cre = TRUE", call. = FALSE)
+  }
   if (!is.logical(cre) || length(cre) != 1L || is.na(cre)) {
     stop("'cre' must be TRUE or FALSE", call. = FALSE)
   }
@@ -172,6 +177,10 @@ panglm <- function(formula, data, index,
   if (family$family == "gamma" && any(y[if (is.null(used_weights)) TRUE else used_weights > 0] <= 0)) {
     stop("family = 'gamma' requires a strictly positive response", call. = FALSE)
   }
+  if (family$family == "beta" && any(y <= 0 | y >= 1)) {
+    stop("family = 'beta' requires a response strictly between 0 and 1; ",
+         "transform boundary values first, e.g. (y * (n - 1) + 0.5) / n", call. = FALSE)
+  }
   X_full <- stats::model.matrix(formula, data = mf)
   terms_object <- stats::terms(mf)
   xlevels <- stats::.getXlevels(terms_object, mf)
@@ -225,6 +234,8 @@ panglm <- function(formula, data, index,
   fit <- if (is_ordered) {
     fit_ordered(if (model == "within") X_noint else X_full, y, ordered_levels, family$link,
                 model, group_start, group_size, prior_weights, R, maxit, tol)
+  } else if (family$family == "beta") {
+    fit_beta(X_full, y, family, model, group_start, group_size, prior_weights, R, maxit, tol)
   } else switch(model,
     pooling = fit_pooled(X_full, y, family, maxit, tol, prior_weights),
     within  = if (effect == "twoways" && family$family == "gaussian") {
@@ -796,5 +807,5 @@ random_binomial_marginal_mean <- function(eta, sigma, family, quadrature = 21L) 
 }
 
 weighted_random_ok <- function(family) {
-  family$family %in% c("ordered", "gaussian", "poisson", "negbin", "binomial", "gamma")
+  family$family %in% c("ordered", "gaussian", "poisson", "negbin", "binomial", "gamma", "beta")
 }
