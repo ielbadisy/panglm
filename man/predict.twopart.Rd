@@ -25,6 +25,16 @@ a numeric vector with one prediction per row of \code{newdata}
 \description{
 Predict from a two-part model
 }
+\examples{
+data(copd)
+set.seed(1)
+copd$cost <- ifelse(copd$exacerbations > 0,
+                    exp(6 + 0.1 * copd$crp + rnorm(nrow(copd), 0, 0.5)), 0)
+tp <- twopart(cost ~ treatment + crp, data = copd, index = c("id", "visit"))
+head(predict(tp))                    # E[y]
+head(predict(tp, type = "prob"))     # P(y > 0)
+head(predict(tp, type = "positive")) # E[y | y > 0]
+}
 \seealso{
 Other twopart methods: 
 \code{\link{confint.twopart}()}

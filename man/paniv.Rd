@@ -49,8 +49,8 @@ Hausman-Taylor the four variable groups in \code{varlist}), \code{first_stage}
 \code{overid} (the Sargan or Hansen test, or \code{NULL} when exactly
 identified), \code{ercomp} (variance components and \code{theta} for the random
 and Hausman-Taylor estimators), \code{nobs}, \code{n_groups}, \code{df.residual},
-\code{call} and \code{formula}. It has \code{print}, \code{summary}, \code{coef}, \code{vcov},
-\code{nobs} and \code{confint} methods.
+\code{call} and \code{formula}. Methods: \code{print}, \code{summary}, \code{coef}, \code{vcov},
+\code{confint}, \code{predict}, \code{nobs}, \code{tidy} and \code{glance}.
 }
 \description{
 Two-stage least squares for linear panel models with endogenous

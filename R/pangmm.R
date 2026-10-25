@@ -146,8 +146,9 @@
 #'   `sigma2` (`s2`), `n_instruments`, `nobs` (number of equations used),
 #'   `nobs_diff`, `nobs_level`, `n_groups`, `n_periods`, `timedummies`
 #'   (names of the time-effect coefficients), `transformation`, `model`,
-#'   `effect`, `collapse`, `call` and `formula`. It has `print`,
-#'   `summary`, `coef`, `vcov`, `nobs`, `residuals` and `confint` methods.
+#'   `effect`, `collapse`, `call` and `formula`. Methods: `print`,
+#'   `summary`, `coef`, `vcov`, `confint`, `predict`, `residuals`, `nobs`,
+#'   `tidy` and `glance`.
 #' @references
 #' Bond, S. (2002). Dynamic panel data models: a guide to micro data
 #' methods and practice. *Portuguese Economic Journal*, 1, 141-162.

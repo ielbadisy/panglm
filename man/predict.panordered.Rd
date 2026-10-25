@@ -25,6 +25,14 @@ a matrix with one column per category (\code{"prob"}), a factor
 \description{
 Predict from an ordered panel model
 }
+\examples{
+data(copd)
+copd$lf <- cut(copd$fev1, 3, labels = c("low", "mid", "high"))
+fit <- panglm(lf ~ crp + age, data = copd, index = c("id", "visit"),
+              model = "pooling", family = "ologit")
+head(predict(fit, type = "prob"))
+predict(fit, newdata = copd[1:3, ], type = "class")
+}
 \seealso{
 Other panglm methods: 
 \code{\link{confint.panglm}()},

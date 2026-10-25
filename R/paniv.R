@@ -98,8 +98,8 @@
 #'   `overid` (the Sargan or Hansen test, or `NULL` when exactly
 #'   identified), `ercomp` (variance components and `theta` for the random
 #'   and Hausman-Taylor estimators), `nobs`, `n_groups`, `df.residual`,
-#'   `call` and `formula`. It has `print`, `summary`, `coef`, `vcov`,
-#'   `nobs` and `confint` methods.
+#'   `call` and `formula`. Methods: `print`, `summary`, `coef`, `vcov`,
+#'   `confint`, `predict`, `nobs`, `tidy` and `glance`.
 #' @references
 #' Baltagi, B. H. (1981). Simultaneous equations with error components.
 #' *Journal of Econometrics*, 17, 189-200.

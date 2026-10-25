@@ -57,8 +57,8 @@ constant, so that \verb{alpha_i(tau) = alpha_i + delta_i q(tau)}),
 \code{dropped} (time-invariant regressors dropped), \code{n_singletons}
 (individuals observed once, dropped for \code{"canay"} and \code{"mmqr"}), \code{nobs},
 \code{n_groups},
-\code{call} and \code{formula}. It has \code{print}, \code{summary}, \code{coef}, \code{vcov}, \code{nobs}
-and \code{confint} methods.
+\code{call} and \code{formula}. Methods: \code{print}, \code{summary}, \code{coef}, \code{vcov},
+\code{confint}, \code{nobs}, \code{plot}, \code{tidy} and \code{glance}.
 }
 \description{
 Fixed-effects quantile regression for linear panel models: the two-step

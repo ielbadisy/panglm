@@ -99,7 +99,8 @@ or_na <- function(x, type = NA_real_) if (is.null(x) || !length(x)) type else x
 #'   Details)
 #' @param ... further arguments passed to the `summary()` aggregation
 #'   (attgt, etwfe), otherwise unused
-#' @return a `data.frame`
+#' @return a `data.frame`: one row per coefficient (or effect) for `tidy()` of
+#'   a fit, one row for `glance()` and for the test objects (see Details).
 #' @seealso [tidy.panglm()] and [glance.panglm()] for [panglm()] fits.
 #' @section Validation:
 #' Estimates and standard errors are checked against the reference fits of each

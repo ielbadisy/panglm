@@ -95,8 +95,8 @@
 #'   `dropped` (time-invariant regressors dropped), `n_singletons`
 #'   (individuals observed once, dropped for `"canay"` and `"mmqr"`), `nobs`,
 #'   `n_groups`,
-#'   `call` and `formula`. It has `print`, `summary`, `coef`, `vcov`, `nobs`
-#'   and `confint` methods.
+#'   `call` and `formula`. Methods: `print`, `summary`, `coef`, `vcov`,
+#'   `confint`, `nobs`, `plot`, `tidy` and `glance`.
 #' @references
 #' Canay, I. A. (2011). A simple approach to quantile regression for panel
 #' data. *The Econometrics Journal*, 14(3), 368-386.

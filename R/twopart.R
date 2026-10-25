@@ -59,8 +59,8 @@
 #' @return an object of class `"twopart"` with components `binary` and
 #'   `positive` (the two [panglm()] fits), `retransformation` (the factor
 #'   `phi`, 1 for the gamma part) and the settings used. Methods: `print`,
-#'   `summary`, `coef`, `vcov`, `predict`, `fitted`, `logLik`, `nobs` and
-#'   [partialeffects()].
+#'   `summary`, `coef`, `vcov`, `confint`, `predict`, `fitted`, `logLik`,
+#'   `nobs`, [partialeffects()], `tidy` and `glance`.
 #' @references Duan, N., Manning, W. G., Morris, C. N. and Newhouse, J. P.
 #'   (1983). A comparison of alternative models for the demand for medical
 #'   care. *Journal of Business and Economic Statistics*, 1, 115-126.
@@ -298,6 +298,15 @@ twopart_predictor <- function(object, part = c("total", "binary", "positive")) {
 #' @param ... unused
 #' @return a numeric vector with one prediction per row of `newdata`
 #' @family twopart methods
+#' @examples
+#' data(copd)
+#' set.seed(1)
+#' copd$cost <- ifelse(copd$exacerbations > 0,
+#'                     exp(6 + 0.1 * copd$crp + rnorm(nrow(copd), 0, 0.5)), 0)
+#' tp <- twopart(cost ~ treatment + crp, data = copd, index = c("id", "visit"))
+#' head(predict(tp))                    # E[y]
+#' head(predict(tp, type = "prob"))     # P(y > 0)
+#' head(predict(tp, type = "positive")) # E[y | y > 0]
 #' @export
 predict.twopart <- function(object, newdata = NULL,
                             type = c("response", "prob", "positive"), ...) {

@@ -2,7 +2,7 @@
 #'
 #' A hurdle decomposition for panels where a large fraction of groups report
 #' *structural* zeros (never observed to occur), rather than zeros arising
-#' from ordinary Poisson/NB sampling variation at a low mean -- a pattern
+#' from ordinary Poisson/NB sampling variation at a low mean, a pattern
 #' that shows up as extreme, family-invariant overdispersion under either
 #' `family = "poisson"` or `family = "negbin"` in [panglm()].
 #'
@@ -14,7 +14,7 @@
 #' \enumerate{
 #'   \item **Zero vs. positive.** `1(y > 0)` fit via the exact conditional
 #'     logistic regression already used for `panglm(..., family =
-#'     "binomial")` (Chamberlain 1980) -- no new estimator, just a new
+#'     "binomial")` (Chamberlain 1980): no new estimator, just a new
 #'     outcome vector.
 #'   \item **Count given `y > 0`.** A zero-truncated Poisson or NB2
 #'     fixed-effects model (Allison-Waterman-style dummy-variable
@@ -41,8 +41,9 @@
 #' @param maxit maximum IRLS/Newton iterations
 #' @param tol convergence tolerance
 #' @return an object of class `"panglm_hurdle"`: a list with `zero` (the
-#'   `panglm` binomial fit for the zero-vs-positive part) and `count` (the
-#'   zero-truncated fixed-effects fit for the count part)
+#'   [panglm()] binomial fit for the zero-vs-positive part) and `count` (the
+#'   zero-truncated fixed-effects fit for the count part). Methods: `print`,
+#'   `summary`, `coef`, `vcov`, `confint`, `nobs`, `plot`, `tidy` and `glance`.
 #' @family panel models
 #' @seealso [hurdle-methods] and [plot.panglm_hurdle()] for the fitted model,
 #'   [pandispersiontest()] to check the count part, [twopart()] for continuous

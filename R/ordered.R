@@ -314,6 +314,13 @@ ordered_predictor <- function(object, category = NULL, cre_means = NULL) {
 #' @return a matrix with one column per category (`"prob"`), a factor
 #'   (`"class"`) or a numeric vector (`"link"`)
 #' @family panglm methods
+#' @examples
+#' data(copd)
+#' copd$lf <- cut(copd$fev1, 3, labels = c("low", "mid", "high"))
+#' fit <- panglm(lf ~ crp + age, data = copd, index = c("id", "visit"),
+#'               model = "pooling", family = "ologit")
+#' head(predict(fit, type = "prob"))
+#' predict(fit, newdata = copd[1:3, ], type = "class")
 #' @export
 predict.panordered <- function(object, newdata = NULL, type = c("prob", "class", "link"), ...) {
   type <- match.arg(type)

@@ -23,7 +23,7 @@
 \method{logLik}{panglm_eventstudy}(object, ...)
 }
 \arguments{
-\item{object}{an \code{"panglm_eventstudy"} fit from \code{\link[=eventstudy]{eventstudy()}}}
+\item{object}{a \code{"panglm_eventstudy"} fit from \code{\link[=eventstudy]{eventstudy()}}}
 
 \item{...}{unused}
 

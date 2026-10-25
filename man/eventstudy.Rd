@@ -52,8 +52,8 @@ points (\code{TRUE}) or drop those observations (\code{FALSE})}
 an object of class \code{"panglm_eventstudy"}: a list with \code{fit} (the
 \code{\link[=panglm]{panglm()}} fit), \code{estimates} (a data frame with \code{event}, \code{estimate},
 \code{se}, \code{lower}, \code{upper}; the reference row is zero) and \code{pretrend} (the
-joint test of the leads, from \code{\link[=jointtest]{jointtest()}}). Methods: \code{print}, \code{coef},
-\code{plot}.
+joint test of the leads, from \code{\link[=jointtest]{jointtest()}}). Methods: \code{print}, \code{summary},
+\code{coef}, \code{vcov}, \code{confint}, \code{logLik}, \code{nobs}, \code{plot}, \code{tidy} and \code{glance}.
 }
 \description{
 Replaces the single treatment indicator of \code{\link[=did]{did()}} by indicators of event

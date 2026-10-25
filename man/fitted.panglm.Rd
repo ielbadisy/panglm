@@ -22,6 +22,12 @@ even though estimation internally sorts observations by panel index.
 Fixed-effects binomial values are conditional inclusion probabilities,
 conditional on each individual's observed number of successes.
 }
+\examples{
+data(copd)
+fit <- panglm(exacerbations ~ crp + treatment, data = copd,
+              index = c("id", "visit"), model = "random", family = "poisson")
+head(fitted(fit))
+}
 \seealso{
 Other panglm methods: 
 \code{\link{confint.panglm}()},

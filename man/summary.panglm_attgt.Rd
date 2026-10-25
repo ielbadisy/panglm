@@ -15,7 +15,7 @@
 )
 }
 \arguments{
-\item{object}{an \code{"panglm_attgt"} fit from \code{\link[=attgt]{attgt()}}}
+\item{object}{a \code{"panglm_attgt"} fit from \code{\link[=attgt]{attgt()}}}
 
 \item{type}{\code{"simple"}, \code{"dynamic"}, \code{"group"} or \code{"calendar"}}
 

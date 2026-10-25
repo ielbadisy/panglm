@@ -121,7 +121,7 @@
 #'   and the simultaneous critical value `crit`; `NULL` otherwise) and the
 #'   settings. With `cband = TRUE`, `estimates` also has the uniform band
 #'   `band_lower`, `band_upper`. Methods: `print`, `summary`,
-#'   `coef`, `vcov`, `nobs`, `plot`.
+#'   `coef`, `vcov`, `nobs`, `plot`, `tidy` and `glance`.
 #' @seealso [summary.panglm_attgt()] for the aggregations, [etwfe()] for
 #'   the extended two-way fixed-effects alternative (also for count and
 #'   binary outcomes), [did()] and [eventstudy()] for the TWFE versions.
@@ -510,7 +510,7 @@ attgt_2x2 <- function(dy, D, X, method, w = NULL, trim = 0.995) {
 #' `band_upper`) from the simultaneous critical value `crit`, as in
 #' `did::aggte()`. Clustering follows the fit.
 #'
-#' @param object an `"panglm_attgt"` fit from [attgt()]
+#' @param object a `"panglm_attgt"` fit from [attgt()]
 #' @param type `"simple"`, `"dynamic"`, `"group"` or `"calendar"`
 #' @param min_e,max_e for `"dynamic"`: event-time window
 #' @param balance_e for `"dynamic"`: if not `NULL`, only cohorts observed for
@@ -743,7 +743,7 @@ nobs.panglm_attgt <- function(object, ...) object$n
 #' When the fit has uniform confidence bands (`cband = TRUE`), they are
 #' drawn as thin grey whiskers behind the pointwise intervals.
 #'
-#' @param x an `"panglm_attgt"` fit from [attgt()], or its summary
+#' @param x a `"panglm_attgt"` fit from [attgt()], or its summary
 #' @param type aggregation to plot (for a fit): `"dynamic"`, `"group"` or
 #'   `"calendar"`
 #' @param xlab,ylab axis labels

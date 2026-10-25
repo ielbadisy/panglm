@@ -83,9 +83,10 @@ class), \code{classmean} (the mean outcome of each class, used for the label
 order), \code{loglik}, \code{df}, \code{starts} (log-likelihood of each EM start),
 \code{nobs}, \code{n_groups}, \code{weights} (the individual weights, \code{NULL} without
 weights), \code{offset} (the total offset of each observation in panel
-order, \code{NULL} without offsets), \code{k}, \code{family}, \code{call} and \code{formula}. It has \code{print},
-\code{summary}, \code{coef}, \code{vcov}, \code{nobs}, \code{logLik} (hence \code{AIC} and \code{BIC}, with
-\code{n} the number of observations), \code{confint} and \code{predict} methods.
+order, \code{NULL} without offsets), \code{k}, \code{family}, \code{call} and \code{formula}. Methods:
+\code{print}, \code{summary}, \code{coef}, \code{vcov}, \code{confint}, \code{predict}, \code{logLik}
+(hence \code{AIC} and \code{BIC}, with \code{n} the number of observations), \code{nobs},
+\code{tidy} and \code{glance}.
 }
 \description{
 Finite mixture regression in which every individual belongs to one of

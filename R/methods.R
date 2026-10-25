@@ -14,6 +14,11 @@ coef.panglm <- function(object, ...) object$coefficients
 #'   data supplied to [panglm()] (in that row order), or `NA` at rows
 #'   dropped for missingness, following the model's `na.action`.
 #' @family panglm methods
+#' @examples
+#' data(copd)
+#' fit <- panglm(exacerbations ~ crp + treatment, data = copd,
+#'               index = c("id", "visit"), model = "random", family = "poisson")
+#' head(fitted(fit))
 #' @export
 fitted.panglm <- function(object, ...) {
   if (is.null(object$fitted.values)) return(NULL)

@@ -108,7 +108,8 @@
 Details)}
 }
 \value{
-a \code{data.frame}
+a \code{data.frame}: one row per coefficient (or effect) for \code{tidy()} of
+a fit, one row for \code{glance()} and for the test objects (see Details).
 }
 \description{
 Implement the \code{generics::tidy()} and \code{generics::glance()} generics for the

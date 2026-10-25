@@ -4,11 +4,11 @@
 #' disease (COPD) patients followed over several clinic visits, used
 #' throughout this package's examples and vignette. It is entirely
 #' synthetic (not real patient data), generated to have a realistic panel
-#' structure -- time-invariant baseline covariates plus an individual-level
-#' frailty/random intercept -- so it exercises pooled, fixed-effects, and
-#' random-effects fits across all four families (`gaussian`, `poisson`,
-#' `binomial`, `negbin`) without depending on any Suggested package. See
-#' `data-raw/copd.R` for the generating code.
+#' structure (time-invariant baseline covariates plus an individual-level
+#' frailty or random intercept), so it exercises pooled, fixed-effects and
+#' random-effects fits for continuous, count and binary outcomes without
+#' depending on any suggested package. The generating code is in
+#' `data-raw/copd.R` in the package's GitHub repository.
 #'
 #' @format A data frame with 300 rows (60 patients x 5 visits) and 9 columns:
 #' \describe{
@@ -28,5 +28,10 @@
 #'   \item{hospitalized}{hospital admission in the interval since the
 #'     previous visit; a binary outcome, one value per visit}
 #' }
-#' @source Simulated; see `data-raw/copd.R`.
+#' @source Simulated; see `data-raw/copd.R` in the package's GitHub
+#'   repository.
+#' @examples
+#' data(copd)
+#' str(copd)
+#' table(copd$visit)
 "copd"

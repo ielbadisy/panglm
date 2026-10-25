@@ -162,7 +162,14 @@ when \code{R^q} exceeds 2000. \code{R = 1} gives the Laplace approximation.}
 \item{tol}{convergence tolerance}
 }
 \value{
-an object of class \code{"panglm"}
+an object of class \code{"panglm"} (with the additional class
+\code{"panordered"} for the ordered families): a list with \code{coefficients},
+\code{vcov}, \code{vcov_type}, \code{fitted.values}, \code{linear.predictors}, \code{loglik}, the
+variance components of random-effects fits (\code{sigma_mu2}, \code{sigma_v2},
+\code{theta}), the panel structure, \code{nobs}, \code{n_groups}, \code{call} and \code{formula}.
+Methods: \code{print}, \code{summary}, \code{coef}, \code{vcov}, \code{confint}, \code{predict},
+\code{fitted}, \code{residuals}, \code{logLik}, \code{nobs}, \code{model.matrix}, \code{plot},
+\code{\link[=partialeffects]{partialeffects()}}, \code{\link[=effectcurve]{effectcurve()}}, \code{tidy} and \code{glance}.
 }
 \description{
 Fast pooled, fixed-effects ("within") and random-effects panel GLMs,
@@ -200,7 +207,7 @@ fit_pool <- panglm(fev1 ~ treatment + age + smoker + crp, data = copd,
                     index = c("id", "visit"), model = "pooling", family = "gaussian")
 summary(fit_pool)
 
-# fixed-effects ("within") estimator -- only the time-varying regressor
+# fixed-effects ("within") estimator: only the time-varying regressor
 # (crp) survives demeaning; time-invariant covariates like treatment
 # or age are not identified by a fixed-effects estimator
 fit_fe <- panglm(fev1 ~ crp, data = copd,

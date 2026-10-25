@@ -31,13 +31,14 @@ fit as \code{count_family}.}
 }
 \value{
 an object of class \code{"panglm_hurdle"}: a list with \code{zero} (the
-\code{panglm} binomial fit for the zero-vs-positive part) and \code{count} (the
-zero-truncated fixed-effects fit for the count part)
+\code{\link[=panglm]{panglm()}} binomial fit for the zero-vs-positive part) and \code{count} (the
+zero-truncated fixed-effects fit for the count part). Methods: \code{print},
+\code{summary}, \code{coef}, \code{vcov}, \code{confint}, \code{nobs}, \code{plot}, \code{tidy} and \code{glance}.
 }
 \description{
 A hurdle decomposition for panels where a large fraction of groups report
 \emph{structural} zeros (never observed to occur), rather than zeros arising
-from ordinary Poisson/NB sampling variation at a low mean -- a pattern
+from ordinary Poisson/NB sampling variation at a low mean, a pattern
 that shows up as extreme, family-invariant overdispersion under either
 \code{family = "poisson"} or \code{family = "negbin"} in \code{\link[=panglm]{panglm()}}.
 }
@@ -49,7 +50,7 @@ drops the zeros):
 
 \enumerate{
 \item \strong{Zero vs. positive.} \code{1(y > 0)} fit via the exact conditional
-logistic regression already used for \code{panglm(..., family = "binomial")} (Chamberlain 1980) -- no new estimator, just a new
+logistic regression already used for \code{panglm(..., family = "binomial")} (Chamberlain 1980): no new estimator, just a new
 outcome vector.
 \item \strong{Count given \code{y > 0}.} A zero-truncated Poisson or NB2
 fixed-effects model (Allison-Waterman-style dummy-variable

@@ -17,7 +17,7 @@ es_terms <- function(events) {
 #' Intervals and tests are Wald (normal) based, from the variance of the
 #' underlying two-way fixed-effects fit (`object$fit`).
 #'
-#' @param object an `"panglm_eventstudy"` fit from [eventstudy()]
+#' @param object a `"panglm_eventstudy"` fit from [eventstudy()]
 #' @param parm event times (as numbers or names) or positions of the
 #'   coefficients; all by default
 #' @param level confidence level

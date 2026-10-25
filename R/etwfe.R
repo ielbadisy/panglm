@@ -121,7 +121,7 @@
 #'   `reference` (the reference cohort), `xvar`, `ivar`, `nobs`,
 #'   `n_groups`, the design
 #'   (`X`, `y`, `rows`) and the call. Methods: `print`, `summary` (the
-#'   ATTs), `coef`, `vcov`, `nobs`, `plot`.
+#'   ATTs), `coef`, `vcov`, `nobs`, `plot`, `tidy` and `glance`.
 #' @seealso [attgt()] for the Callaway and Sant'Anna estimator, [did()] and
 #'   [eventstudy()] for the TWFE versions.
 #' @references Wooldridge, J. M. (2021). Two-way fixed effects, the
@@ -401,7 +401,7 @@ etwfe_fit <- function(X, y, fam, wt = NULL) {
 #' `control = "never"`, the event study also reports the pre-treatment
 #' placebo effects, with event time `-1` as the reference (zero).
 #'
-#' @param object an `"panglm_etwfe"` fit from [etwfe()]
+#' @param object a `"panglm_etwfe"` fit from [etwfe()]
 #' @param type `"simple"`, `"group"`, `"calendar"` or `"event"`
 #' @param level confidence level; defaults to that of the fit
 #' @param byxvar logical; for a fit with `xvar`, report the ATTs separately
@@ -549,7 +549,7 @@ nobs.panglm_etwfe <- function(object, ...) object$nobs
 #' Plots the event-study aggregation of an [etwfe()] fit (or the cohort or
 #' calendar aggregation) with pointwise confidence intervals.
 #'
-#' @param x an `"panglm_etwfe"` fit from [etwfe()], or its summary
+#' @param x a `"panglm_etwfe"` fit from [etwfe()], or its summary
 #' @param type aggregation to plot (for a fit): `"event"`, `"group"` or
 #'   `"calendar"`
 #' @param xlab,ylab axis labels

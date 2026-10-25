@@ -61,8 +61,9 @@ of the coefficients other than time dummies and the constant),
 \code{sigma2} (\code{s2}), \code{n_instruments}, \code{nobs} (number of equations used),
 \code{nobs_diff}, \code{nobs_level}, \code{n_groups}, \code{n_periods}, \code{timedummies}
 (names of the time-effect coefficients), \code{transformation}, \code{model},
-\code{effect}, \code{collapse}, \code{call} and \code{formula}. It has \code{print},
-\code{summary}, \code{coef}, \code{vcov}, \code{nobs}, \code{residuals} and \code{confint} methods.
+\code{effect}, \code{collapse}, \code{call} and \code{formula}. Methods: \code{print},
+\code{summary}, \code{coef}, \code{vcov}, \code{confint}, \code{predict}, \code{residuals}, \code{nobs},
+\code{tidy} and \code{glance}.
 }
 \description{
 Arellano and Bond (1991) difference GMM and Blundell and Bond (1998)

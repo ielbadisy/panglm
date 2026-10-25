@@ -10,7 +10,7 @@
 \method{plot}{summary.panglm_etwfe}(x, type = NULL, xlab = NULL, ylab = "ATT", ...)
 }
 \arguments{
-\item{x}{an \code{"panglm_etwfe"} fit from \code{\link[=etwfe]{etwfe()}}, or its summary}
+\item{x}{a \code{"panglm_etwfe"} fit from \code{\link[=etwfe]{etwfe()}}, or its summary}
 
 \item{type}{aggregation to plot (for a fit): \code{"event"}, \code{"group"} or
 \code{"calendar"}}

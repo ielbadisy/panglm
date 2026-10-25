@@ -93,7 +93,7 @@ bootstrap: the settings, the analytic standard errors \code{se_analytic}
 and the simultaneous critical value \code{crit}; \code{NULL} otherwise) and the
 settings. With \code{cband = TRUE}, \code{estimates} also has the uniform band
 \code{band_lower}, \code{band_upper}. Methods: \code{print}, \code{summary},
-\code{coef}, \code{vcov}, \code{nobs}, \code{plot}.
+\code{coef}, \code{vcov}, \code{nobs}, \code{plot}, \code{tidy} and \code{glance}.
 }
 \description{
 The Callaway and Sant'Anna (2021) estimator of the group-time average

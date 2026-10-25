@@ -102,6 +102,11 @@ effectcurve <- function(object, variable, values = NULL, ref = NULL, vcov = NULL
 #' @param ... passed to [graphics::plot()]
 #' @return `x`, invisibly
 #' @family panglm methods
+#' @examples
+#' data(copd)
+#' fit <- panglm(fev1 ~ splines::ns(crp, 3), data = copd,
+#'               index = c("id", "visit"), model = "within")
+#' plot(effectcurve(fit, "crp"), band_col = "lightblue")
 #' @export
 plot.panglm_effectcurve <- function(x, xlab = attr(x, "variable"),
                                     ylab = "Effect on the linear predictor",
@@ -128,7 +133,8 @@ plot.panglm_effectcurve <- function(x, xlab = attr(x, "variable"),
 #' the regressor matters at all, use [jointtest()] on its columns.
 #'
 #' @inheritParams effectcurve
-#' @return an object of class `"panglm_jointtest"`
+#' @return an object of class `"panglm_jointtest"`, as returned by
+#'   [jointtest()].
 #' @family tests
 #' @section Validation:
 #' The package tests check that the test rejects a nonlinear curve and keeps

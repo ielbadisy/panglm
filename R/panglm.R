@@ -125,7 +125,14 @@
 #'   when `R^q` exceeds 2000. `R = 1` gives the Laplace approximation.
 #' @param maxit maximum IRLS/Newton iterations
 #' @param tol convergence tolerance
-#' @return an object of class `"panglm"`
+#' @return an object of class `"panglm"` (with the additional class
+#'   `"panordered"` for the ordered families): a list with `coefficients`,
+#'   `vcov`, `vcov_type`, `fitted.values`, `linear.predictors`, `loglik`, the
+#'   variance components of random-effects fits (`sigma_mu2`, `sigma_v2`,
+#'   `theta`), the panel structure, `nobs`, `n_groups`, `call` and `formula`.
+#'   Methods: `print`, `summary`, `coef`, `vcov`, `confint`, `predict`,
+#'   `fitted`, `residuals`, `logLik`, `nobs`, `model.matrix`, `plot`,
+#'   [partialeffects()], [effectcurve()], `tidy` and `glance`.
 #' @family panel models
 #' @seealso [panglm-families] for the outcome families, [summary.panglm()],
 #'   [vcov.panglm()], [predict.panglm()] and [partialeffects()] for the fitted
@@ -156,7 +163,7 @@
 #'                     index = c("id", "visit"), model = "pooling", family = "gaussian")
 #' summary(fit_pool)
 #'
-#' # fixed-effects ("within") estimator -- only the time-varying regressor
+#' # fixed-effects ("within") estimator: only the time-varying regressor
 #' # (crp) survives demeaning; time-invariant covariates like treatment
 #' # or age are not identified by a fixed-effects estimator
 #' fit_fe <- panglm(fev1 ~ crp, data = copd,

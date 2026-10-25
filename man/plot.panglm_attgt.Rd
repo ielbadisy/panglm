@@ -16,7 +16,7 @@
 \method{plot}{summary.panglm_attgt}(x, type = NULL, xlab = NULL, ylab = "ATT", ...)
 }
 \arguments{
-\item{x}{an \code{"panglm_attgt"} fit from \code{\link[=attgt]{attgt()}}, or its summary}
+\item{x}{a \code{"panglm_attgt"} fit from \code{\link[=attgt]{attgt()}}, or its summary}
 
 \item{type}{aggregation to plot (for a fit): \code{"dynamic"}, \code{"group"} or
 \code{"calendar"}}

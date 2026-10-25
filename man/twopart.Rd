@@ -63,8 +63,8 @@ row of \code{data}}
 an object of class \code{"twopart"} with components \code{binary} and
 \code{positive} (the two \code{\link[=panglm]{panglm()}} fits), \code{retransformation} (the factor
 \code{phi}, 1 for the gamma part) and the settings used. Methods: \code{print},
-\code{summary}, \code{coef}, \code{vcov}, \code{predict}, \code{fitted}, \code{logLik}, \code{nobs} and
-\code{\link[=partialeffects]{partialeffects()}}.
+\code{summary}, \code{coef}, \code{vcov}, \code{confint}, \code{predict}, \code{fitted}, \code{logLik},
+\code{nobs}, \code{\link[=partialeffects]{partialeffects()}}, \code{tidy} and \code{glance}.
 }
 \description{
 Fits the two-part model of Duan et al. (1983), the standard model for

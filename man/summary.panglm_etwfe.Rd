@@ -13,7 +13,7 @@
 )
 }
 \arguments{
-\item{object}{an \code{"panglm_etwfe"} fit from \code{\link[=etwfe]{etwfe()}}}
+\item{object}{a \code{"panglm_etwfe"} fit from \code{\link[=etwfe]{etwfe()}}}
 
 \item{type}{\code{"simple"}, \code{"group"}, \code{"calendar"} or \code{"event"}}
 

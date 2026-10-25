@@ -90,8 +90,9 @@
 #'   ratio of every observation of the selection sample, in the row order
 #'   of the data), `residuals`, `nobs` (selected observations used),
 #'   `nobs_selection`, `n_groups`, `n_groups_selection`, `df.residual`,
-#'   `periods`, `model`, `mundlak`, `lambda`, `call`. It has `print`,
-#'   `summary`, `coef`, `vcov`, `nobs` and `confint` methods.
+#'   `periods`, `model`, `mundlak`, `lambda`, `call`. Methods: `print`,
+#'   `summary`, `coef`, `vcov`, `confint`, `predict`, `nobs`, `tidy` and
+#'   `glance`.
 #' @references
 #' Wooldridge, J. M. (1995). Selection corrections for panel data models
 #' under conditional mean independence assumptions. *Journal of

@@ -72,7 +72,7 @@ cells with their coefficient on the index scale), \code{family}, \code{control},
 \code{reference} (the reference cohort), \code{xvar}, \code{ivar}, \code{nobs},
 \code{n_groups}, the design
 (\code{X}, \code{y}, \code{rows}) and the call. Methods: \code{print}, \code{summary} (the
-ATTs), \code{coef}, \code{vcov}, \code{nobs}, \code{plot}.
+ATTs), \code{coef}, \code{vcov}, \code{nobs}, \code{plot}, \code{tidy} and \code{glance}.
 }
 \description{
 The extended two-way fixed-effects (ETWFE) estimator of Wooldridge

@@ -62,8 +62,9 @@ cluster-robust and bootstrap Wald tests), \code{imr} (the inverse Mills
 ratio of every observation of the selection sample, in the row order
 of the data), \code{residuals}, \code{nobs} (selected observations used),
 \code{nobs_selection}, \code{n_groups}, \code{n_groups_selection}, \code{df.residual},
-\code{periods}, \code{model}, \code{mundlak}, \code{lambda}, \code{call}. It has \code{print},
-\code{summary}, \code{coef}, \code{vcov}, \code{nobs} and \code{confint} methods.
+\code{periods}, \code{model}, \code{mundlak}, \code{lambda}, \code{call}. Methods: \code{print},
+\code{summary}, \code{coef}, \code{vcov}, \code{confint}, \code{predict}, \code{nobs}, \code{tidy} and
+\code{glance}.
 }
 \description{
 Two-step selection correction of Wooldridge (1995) for linear panel

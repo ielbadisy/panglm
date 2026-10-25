@@ -63,9 +63,10 @@ did_timing <- function(data, index, treat) {
 #'   (conditional logit, logit link only; see Details)
 #' @param vcov covariance type, cluster-robust by individual by default
 #' @param ... further arguments passed to [panglm()]
-#' @return a [panglm()] fit whose coefficient `treated` is the DiD estimate
-#'   (a log odds ratio for `family = "binomial"`), with a component `did` (number of treated and never-treated
-#'   individuals, treatment cohorts)
+#' @return a [panglm()] fit whose coefficient `treated` is the DiD estimate (a
+#'   log odds ratio for `family = "binomial"`), with a component `did` (number
+#'   of treated and never-treated individuals, treatment cohorts). All
+#'   [panglm()] methods apply.
 #' @references Goodman-Bacon, A. (2021). Difference-in-differences with
 #'   variation in treatment timing. *Journal of Econometrics*, 225, 254-277.
 #'   \doi{10.1016/j.jeconom.2021.03.014}
@@ -152,8 +153,8 @@ did <- function(formula, data, index, treat, family = "gaussian",
 #' @return an object of class `"panglm_eventstudy"`: a list with `fit` (the
 #'   [panglm()] fit), `estimates` (a data frame with `event`, `estimate`,
 #'   `se`, `lower`, `upper`; the reference row is zero) and `pretrend` (the
-#'   joint test of the leads, from [jointtest()]). Methods: `print`, `coef`,
-#'   `plot`.
+#'   joint test of the leads, from [jointtest()]). Methods: `print`, `summary`,
+#'   `coef`, `vcov`, `confint`, `logLik`, `nobs`, `plot`, `tidy` and `glance`.
 #' @references Freyaldenhoven, S., Hansen, C. and Shapiro, J. M. (2019).
 #'   Pre-event trends in the panel event-study design. *American Economic
 #'   Review*, 109, 3307-3338. \doi{10.1257/aer.20180609}
@@ -254,6 +255,16 @@ coef.panglm_eventstudy <- function(object, ...) {
 #' @param ... passed to [graphics::plot()]
 #' @return `x`, invisibly
 #' @family eventstudy methods
+#' @examples
+#' set.seed(1)
+#' d <- expand.grid(id = 1:100, year = 2015:2020)
+#' d$first <- ifelse(d$id <= 50, 2018, NA)
+#' e <- d$year - d$first
+#' d$visits <- 3 + rnorm(100)[d$id] + ifelse(!is.na(e) & e >= 0, 1, 0) +
+#'   rnorm(nrow(d))
+#' es <- eventstudy(visits ~ 1, data = d, index = c("id", "year"),
+#'                  treat = "first", leads = 3, lags = 2)
+#' plot(es, main = "Effect of the policy by event time")
 #' @export
 plot.panglm_eventstudy <- function(x, xlab = "Event time", ylab = "Estimate", ...) {
   tab <- x$estimates

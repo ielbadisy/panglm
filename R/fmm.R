@@ -108,9 +108,10 @@
 #'   order), `loglik`, `df`, `starts` (log-likelihood of each EM start),
 #'   `nobs`, `n_groups`, `weights` (the individual weights, `NULL` without
 #'   weights), `offset` (the total offset of each observation in panel
-#'   order, `NULL` without offsets), `k`, `family`, `call` and `formula`. It has `print`,
-#'   `summary`, `coef`, `vcov`, `nobs`, `logLik` (hence `AIC` and `BIC`, with
-#'   `n` the number of observations), `confint` and `predict` methods.
+#'   order, `NULL` without offsets), `k`, `family`, `call` and `formula`. Methods:
+#'   `print`, `summary`, `coef`, `vcov`, `confint`, `predict`, `logLik`
+#'   (hence `AIC` and `BIC`, with `n` the number of observations), `nobs`,
+#'   `tidy` and `glance`.
 #' @references
 #' Deb, P. and Trivedi, P. K. (1997). Demand for medical care by the
 #' elderly: a finite mixture approach. *Journal of Applied Econometrics*,
@@ -1024,7 +1025,11 @@ print.summary.panfmm <- function(x, digits = max(3, getOption("digits") - 3), ..
 #' set.seed(3)
 #' d <- data.frame(id = rep(1:150, each = 3), t = rep(1:3, 150), x = rnorm(450))
 #' d$y <- rpois(450, exp(ifelse(rep(rbinom(150, 1, 0.4), each = 3) == 1, 1.5, 0) + 0.3 * d$x))
+#' panfmmselect(y ~ x, data = d, index = c("id", "t"), k = 1:2, nstart = 2, seed = 1)
+#' \donttest{
+#' # up to three classes (a few seconds)
 #' panfmmselect(y ~ x, data = d, index = c("id", "t"), k = 1:3, nstart = 2, seed = 1)
+#' }
 #' @export
 panfmmselect <- function(formula, data, index, k = 1:3, family = "poisson",
                          concomitant = NULL, ...) {

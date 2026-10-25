@@ -26,9 +26,10 @@ that are never treated}
 \item{...}{further arguments passed to \code{\link[=panglm]{panglm()}}}
 }
 \value{
-a \code{\link[=panglm]{panglm()}} fit whose coefficient \code{treated} is the DiD estimate
-(a log odds ratio for \code{family = "binomial"}), with a component \code{did} (number of treated and never-treated
-individuals, treatment cohorts)
+a \code{\link[=panglm]{panglm()}} fit whose coefficient \code{treated} is the DiD estimate (a
+log odds ratio for \code{family = "binomial"}), with a component \code{did} (number
+of treated and never-treated individuals, treatment cohorts). All
+\code{\link[=panglm]{panglm()}} methods apply.
 }
 \description{
 Adds the indicator \verb{treated = 1(t >= first treated period)} to the model

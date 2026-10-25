@@ -15,7 +15,8 @@ lineartest(object, variable, vcov = NULL)
 \code{\link[=vcov.panglm]{vcov.panglm()}}}
 }
 \value{
-an object of class \code{"panglm_jointtest"}
+an object of class \code{"panglm_jointtest"}, as returned by
+\code{\link[=jointtest]{jointtest()}}.
 }
 \description{
 For a regressor entered through a spline or polynomial basis whose span

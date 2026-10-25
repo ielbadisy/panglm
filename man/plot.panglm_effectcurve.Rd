@@ -27,6 +27,12 @@
 \description{
 Plot an effect curve
 }
+\examples{
+data(copd)
+fit <- panglm(fev1 ~ splines::ns(crp, 3), data = copd,
+              index = c("id", "visit"), model = "within")
+plot(effectcurve(fit, "crp"), band_col = "lightblue")
+}
 \seealso{
 Other panglm methods: 
 \code{\link{confint.panglm}()},
