@@ -49,7 +49,13 @@ missing weight are dropped). They weight the quasi-likelihood (as
 the treatment effects over the treated observations in
 [summary.panglm_etwfe()] (as `wts` in `etwfe::emfx()`). The centring
 of the controls at their cohort means (and of `xvar` at its cell
-means) is unweighted, as in `etwfe`.}
+means) is unweighted, as in `etwfe`. Unlike in [attgt()], the weights
+need not be constant within individuals: the model is a weighted
+pooled (quasi-)likelihood over the rows, so observation-level weights
+are well defined, and the cluster-robust covariance by individual
+remains valid (as in `fixest`). Use weights constant within
+individuals when they are sampling weights of the individuals, so that
+the estimates are comparable with [attgt()].}
 
 \item{xvar}{optional name of one numeric or logical column of `data`: a
 covariate by which the treatment effects may vary (see Heterogeneity

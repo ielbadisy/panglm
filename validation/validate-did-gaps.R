@@ -34,7 +34,9 @@
 # emfx(wts = "w")). ivar is for the linear model only (etwfe ignores it for
 # nonlinear families): cluster and classical (iid) covariances, with and
 # without weights and xvar, an unbalanced panel and a sample without
-# never-treated units. For the linear model emfx() is called with
+# never-treated units. Weights that vary within individuals (row-level
+# weights, which attgt() refuses) for every family, and with ivar and xvar
+# for the linear model. For the linear model emfx() is called with
 # numderiv = "richardson": its default forward differences move some
 # weighted standard errors in the sixth decimal, while Richardson
 # extrapolation agrees with panglm's analytic gradients (it is too slow for
@@ -252,5 +254,24 @@ for (wtd in c(FALSE, TRUE)) {
   et_check(sprintf("etwfe ivar gaussian notyet + lpop%s", if (wtd) ", weighted" else ""),
            "mpdta, no never-treated", ref, fit, wtd, 1e-8, 1e-6)
 }
+
+## etwfe(): weights varying within individuals --------------------------------
+mpdta$wr <- stats::runif(nrow(mpdta), 0.2, 3)
+mpdta_r <- transform(mpdta, w = wr)
+for (fam in c("gaussian", "poisson", "logit")) for (cg in c("notyet", "never")) {
+  yv <- c(gaussian = "lemp", poisson = "emp", logit = "hiw")[[fam]]
+  f <- stats::as.formula(paste(yv, "~ lpop"))
+  ref <- et_ref(f, mpdta_r, fam, cg, TRUE)
+  fit <- etwfe(f, mpdta_r, idx, "first.treat", family = fam, control = cg, weights = "w")
+  et_check(sprintf("etwfe row weights %s %s + lpop", fam, cg), "mpdta, row-level weights",
+           ref, fit, TRUE, if (fam == "gaussian") 1e-8 else 1e-6,
+           if (fam == "gaussian") 1e-6 else 1e-4)
+}
+ref <- et_ref(lemp ~ lpop, mpdta_r, "gaussian", "notyet", TRUE, xvar = "big",
+              ivar = "countyreal")
+fit <- etwfe(lemp ~ lpop, mpdta_r, idx, "first.treat", ivar = TRUE, xvar = "big",
+             weights = "w")
+et_check("etwfe row weights ivar + xvar gaussian notyet + lpop", "mpdta, row-level weights",
+         ref, fit, TRUE, 1e-8, 1e-6)
 
 do.call(vsave, c(out, name = "did-gaps"))

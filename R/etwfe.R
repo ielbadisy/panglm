@@ -108,7 +108,13 @@
 #'   the treatment effects over the treated observations in
 #'   [summary.panglm_etwfe()] (as `wts` in `etwfe::emfx()`). The centring
 #'   of the controls at their cohort means (and of `xvar` at its cell
-#'   means) is unweighted, as in `etwfe`.
+#'   means) is unweighted, as in `etwfe`. Unlike in [attgt()], the weights
+#'   need not be constant within individuals: the model is a weighted
+#'   pooled (quasi-)likelihood over the rows, so observation-level weights
+#'   are well defined, and the cluster-robust covariance by individual
+#'   remains valid (as in `fixest`). Use weights constant within
+#'   individuals when they are sampling weights of the individuals, so that
+#'   the estimates are comparable with [attgt()].
 #' @return an object of class `"panglm_etwfe"`: a list with
 #'   `coefficients`, `vcov`, `cells` (a data frame of the cohort by period
 #'   cells with their coefficient on the index scale), `family`, `control`,

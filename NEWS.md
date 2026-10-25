@@ -18,6 +18,16 @@
   explains that random-slope count models use lognormal mixing, unlike the
   gamma or beta mixing of the random-intercept Poisson and negbin models.
 
+* `did()` and `eventstudy()` support `family = "binomial"`: the two-way
+  conditional logit, with coefficients as log odds ratios. Validated against
+  `survival::clogit()` and `fixest::feglm()`.
+* `etwfe()` gains `xvar` (treatment effects by a numeric or logical
+  covariate, reported by `summary(byxvar = TRUE)`) and `ivar` (individual
+  instead of cohort fixed effects, gaussian only), matching
+  `etwfe::etwfe()` and `etwfe::emfx()` with and without weights. The help
+  page states that `etwfe()` weights may vary within individuals, unlike
+  `attgt()`.
+
 # panglm 1.5.0
 
 * Between estimator: `model = "between"` (OLS on individual means) for the
