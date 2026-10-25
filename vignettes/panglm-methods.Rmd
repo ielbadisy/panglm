@@ -1,754 +1,559 @@
 ---
-title: "Panel generalized linear models with panglm"
+title: "Technical reference: models, estimators and inference"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Panel generalized linear models with panglm}
+  %\VignetteIndexEntry{Technical reference: models, estimators and inference}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
 ```{r, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>",
-  fig.width = 6,
-  fig.height = 4,
-  eval = requireNamespace("plm", quietly = TRUE)
-)
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>",
+                      fig.width = 6, fig.height = 4)
 ```
 
-## Introduction
+This vignette is the technical reference of `panglm`. It states the
+models, the estimating equations and the covariance estimators, lists
+the established implementations each estimator is validated against,
+and defines the scope of the package. Worked examples are in the task
+vignettes:
 
-Longitudinal and panel data contain repeated observations for each sampling
-unit. Dependence within units must therefore be represented either through
-unit-specific effects or through an appropriate covariance estimator. The
-`panglm` package provides a common interface for pooled, fixed-effects, and
-random-effects generalized linear models for continuous, binary, count,
-ordinal, positive (gamma) and bounded (beta) outcomes, with two-part cost
-models, dynamic models and difference-in-differences tools.
+| Topic | Vignette |
+|---|---|
+| Data layout, pooled, within, between, random and correlated random effects, standard errors, partial effects, tables | `vignette("panglm-intro")` |
+| Counts, hurdle, two-part costs, beta, ordered and tobit models | `vignette("panglm-outcomes")` |
+| Instrumental variables, Hausman-Taylor, dynamic GMM, sample selection | `vignette("panglm-endogeneity")` |
+| Difference-in-differences, event studies, staggered adoption | `vignette("panglm-policy")` |
+| Random slopes, latent classes, quantile regression | `vignette("panglm-heterogeneity")` |
 
-This vignette defines the models fitted by the package, describes their
-estimating equations, and illustrates the associated inferential methods.
-The emphasis is on the statistical specification of each estimator. The
-numerical routines use Rcpp, RcppArmadillo, and RcppParallel.
+The numerical routines use Rcpp, RcppArmadillo and RcppParallel.
 
 ```{r setup}
 library(panglm)
-data(Grunfeld, package = "plm")
+data(copd)
 ```
 
 ## Notation and data organization
 
-Let $y_{it}$ denote the response for unit $i$ at occasion $t$, and let
-$x_{it}$ be a vector of observed covariates. The conditional mean is linked
-to a linear predictor by
+Let $y_{it}$ be the response of unit $i = 1, \dots, N$ at occasion
+$t = 1, \dots, T_i$, and $x_{it}$ a vector of covariates. The
+conditional mean is linked to a linear predictor by
 
 $$
 g\{E(y_{it} \mid x_{it}, \alpha_i, \gamma_t)\}
 = x_{it}^{\mathsf T}\beta + \alpha_i + \gamma_t,
 $$
 
-where $\alpha_i$ is an individual effect and $\gamma_t$ is an optional time
-effect. The `index` argument identifies the individual and time variables.
-The `model` argument determines how the individual effect is treated:
+where $\alpha_i$ is an individual effect and $\gamma_t$ an optional time
+effect. `index` names the individual and time variables. `model` sets
+how $\alpha_i$ is treated:
 
-* `"pooling"` omits $\alpha_i$ from the mean model;
+* `"pooling"` omits $\alpha_i$;
 * `"within"` treats $\alpha_i$ as a fixed nuisance parameter;
-* `"random"` assigns a distribution to $\alpha_i$ and integrates it out.
+* `"between"` regresses individual means on individual means;
+* `"random"` gives $\alpha_i$ a distribution and integrates it out.
 
-The optional `effect = "twoways"` includes both individual and time effects
-for supported fixed-effects models.
+`effect = "twoways"` adds the time effects to supported fixed-effects
+models.
 
-Model matrices follow the usual R formula rules, including factors and
-interactions. Before estimation, `panglm` checks rank after applying the
-transformation associated with the requested estimator. Unidentified
-columns, including time-invariant regressors in a within model, are reported
-and omitted. Missing responses or covariates follow `na.action`; missing or
-duplicate panel index pairs are errors. Nonzero offsets are rejected
-explicitly. Nontrivial observation weights are supported for pooled models
-(see below) and rejected for fixed- and random-effects models, where their
-meaning would differ by estimator.
+Model matrices follow the usual R formula rules. Before estimation the
+rank is checked after the transformation of the requested estimator;
+unidentified columns, such as time-invariant regressors in a within
+model, are reported and dropped. Missing responses or covariates follow
+`na.action`; missing or duplicated index pairs are errors. Nonzero
+offsets are rejected. Observation weights are accepted by pooled models
+and, when constant within individuals, by random-effects models.
 
-## Pooled models
+## Linear estimators
 
-For Gaussian, Poisson, and binomial responses, pooled models maximize the
-ordinary generalized linear model likelihood by iteratively reweighted
-least squares. The negative binomial model uses the NB2 variance function
+**Pooled.** Least squares, or iteratively reweighted least squares
+(IRLS) for generalized linear models. The negative binomial model uses
+the NB2 variance $\mu_{it} + \mu_{it}^2/\theta$ and alternates
+coefficient updates with the estimation of $\theta$. With prior weights
+$w_{it}$ the score is $\sum_{it} w_{it} s_{it}(\beta)$; zero weights
+remove an observation from the fit, the likelihood and the degrees of
+freedom. Robust and cluster covariances use the weighted scores and
+treat the weights as known, which is the usual inverse probability
+weighting for attrition.
 
-$$
-\operatorname{Var}(y_{it} \mid x_{it}) = \mu_{it} +
-\frac{\mu_{it}^2}{\theta},
-$$
+**Within.** The one-way estimator is least squares on
+$\tilde y_{it} = y_{it} - \bar y_i$ and
+$\tilde x_{it} = x_{it} - \bar x_i$. With `effect = "twoways"`
+alternating projections remove both individual and time means, which
+also handles unbalanced panels.
 
-and alternates coefficient updates with estimation of the shape parameter
-$\theta$.
+**Between.** Least squares on the individual means,
+$\bar y_i = \bar x_i^{\mathsf T}\beta + \bar u_i$, one row per
+individual. Its HC1 covariance equals the cluster covariance because
+each individual contributes one row.
 
-```{r pooled}
-fit_pool <- panglm(
-  inv ~ value + capital,
-  data = Grunfeld,
-  index = c("firm", "year"),
-  model = "pooling",
-  family = "gaussian"
-)
-coef(fit_pool)
-```
+**Random effects.** The Gaussian model is the Swamy and Arora (1972)
+feasible GLS estimator: with
+$\lambda_i = 1 - \sigma_\varepsilon / (\sigma_\varepsilon^2 + T_i\sigma_\alpha^2)^{1/2}$
+it regresses $y_{it} - \lambda_i \bar y_i$ on
+$x_{it} - \lambda_i \bar x_i$, with variance components from the within
+and between residuals. With weights, or with random slopes, the
+Gaussian model is fitted by maximum likelihood instead.
 
-Because pooling does not model within-unit dependence, inference should
-usually use a covariance estimator that is robust to clustering by unit.
+## Nonlinear fixed effects
 
-```{r pooled-cluster}
-sqrt(diag(vcov(fit_pool, type = "cluster")))
-```
+**Poisson.** For one-way models the individual intercept has the
+closed-form profile solution
+$\hat\alpha_i(\beta) = \log\{Y_i / L_i(\beta)\}$, with
+$Y_i = \sum_t y_{it}$ and $L_i(\beta) = \sum_t \exp(x_{it}^{\mathsf T}\beta)$.
+Substitution gives the conditional Poisson estimator (Hausman, Hall and
+Griliches 1984), which is consistent for fixed $T$ when the conditional
+mean is correct. Two-way models use an outer IRLS loop with weighted
+alternating projections (Guimaraes and Portugal 2010).
 
-### Observation weights
+**Negative binomial.** The one-way NB2 model estimates the slopes, one
+intercept per individual and $\theta$ jointly (Allison and Waterman
+2002); all-zero groups are dropped with a message. It is not the
+conditional negative binomial model of Hausman, Hall and Griliches
+(1984), whose scale restriction does not remove an individual
+intercept. Dummy intercepts do not remove the finite-$T$ incidental
+parameter bias in general, so short panels call for caution.
 
-Pooled models accept nonnegative prior weights $w_{it}$ through `weights`,
-which enter the score as $\sum_{it} w_{it} s_{it}(\beta)$. The typical use
-is inverse probability weighting for attrition: when the probability of
-remaining in the panel depends on observed characteristics, weighting each
-observed outcome by the inverse of its estimated retention probability
-restores consistency of the pooled estimator under missingness at random.
-Observations with zero weight do not contribute to the fit, the
-log-likelihood, or the degrees of freedom. Robust and cluster covariances
-use the weighted scores, so they account for the weights but treat them as
-known.
+**Gamma.** With $E(y_{it} \mid x_{it}, \alpha_i) =
+\exp(\alpha_i + x_{it}^{\mathsf T}\beta)$ the gamma log-link estimator
+with one intercept per individual is consistent for fixed $T$ under
+strict exogeneity, because its concentrated score has mean zero, as for
+the Poisson model. The log-link working weights are constant, so each
+IRLS step is a within regression.
 
-```{r weights}
-set.seed(1)
-ipw <- runif(nrow(Grunfeld), 0.5, 2)
-fit_w <- panglm(inv ~ value + capital, data = Grunfeld,
-                index = c("firm", "year"), weights = ipw, vcov = "cluster")
-coef(fit_w)
-```
-
-### Gamma regression for costs
-
-Health care costs are positive and right skewed, with a variance that grows
-with the mean. `family = "gamma"` fits a gamma generalized linear model
-with log link, $\operatorname{Var}(y_{it}) = \phi\,\mu_{it}^2$, which
-models $\log E(y_{it} \mid x_{it})$ directly and so avoids the
-retransformation problem of a linear model for $\log y$. The gamma family
-is available for pooled, fixed-effects, and random-effects models.
-
-## Fixed-effects models
-
-### Gaussian response
-
-The one-way Gaussian estimator applies the within transformation
-
-$$
-\widetilde y_{it} = y_{it} - \overline y_i, \qquad
-\widetilde x_{it} = x_{it} - \overline x_i,
-$$
-
-and estimates $\beta$ by least squares using the transformed variables.
-Time-invariant regressors are removed by this transformation and cannot be
-identified. With `effect = "twoways"`, alternating projections remove both
-individual and time means. This procedure also accommodates unbalanced
-panels.
-
-```{r within-gaussian}
-fit_fe <- panglm(
-  inv ~ value + capital,
-  data = Grunfeld,
-  index = c("firm", "year"),
-  model = "within",
-  family = "gaussian"
-)
-coef(fit_fe)
-```
-
-### Poisson response
-
-For a one-way Poisson model, the individual intercept has a closed-form
-profile solution. If $Y_i = \sum_t y_{it}$ and
-$L_i(\beta) = \sum_t \exp(x_{it}^{\mathsf T}\beta)$, then
-
-$$
-\widehat\alpha_i(\beta) = \log\{Y_i/L_i(\beta)\}.
-$$
-
-Substitution into the likelihood gives the conditional Poisson estimator.
-For two-way Poisson models, `panglm` uses an outer iteratively reweighted
-least-squares loop and weighted alternating projections to absorb the two
-sets of fixed effects.
-
-### Negative binomial response
-
-The one-way fixed-effects NB2 estimator jointly estimates the covariate
-coefficients, one intercept for each individual, and the shape parameter.
-Groups for which every count is zero have an unbounded intercept and are
-excluded with an informative message. The two-way model absorbs individual
-and time effects through weighted alternating projections while updating
-the NB2 shape parameter.
-
-The one-way specification is an unconditional nonlinear fixed-effects
-estimator. It is distinct from the Hausman-Hall-Griliches conditional
-negative binomial model and avoids interpreting that model's scale
-restriction as an individual intercept. Explicit dummy intercepts do not,
-however, remove the general finite-T incidental-parameter concern. Results
-from short panels should therefore be interpreted with appropriate caution.
-
-### Gamma response
-
-With a multiplicative individual effect,
-$E(y_{it} \mid x_{it}, \alpha_i) = \exp(\alpha_i + x_{it}^{\mathsf T}\beta)$,
-the gamma log-link maximum likelihood estimator with one intercept per
-individual is consistent for fixed $T$ under strict exogeneity, because the
-concentrated score has mean zero (as for the Poisson model). Under the log
-link the gamma working weights are constant, so each iteratively
-reweighted least-squares step is a within regression of the working
-response, and the individual intercepts follow in closed form.
-
-### Binomial response
-
-The one-way binomial estimator is the exact conditional logistic model. For
-unit $i$, inference is conditional on the observed number of successes
-$S_i = \sum_t y_{it}$. The contribution to the conditional likelihood is
+**Binomial.** The one-way model is the exact conditional logit
+(Chamberlain 1980). Given $S_i = \sum_t y_{it}$, unit $i$ contributes
 
 $$
 L_i(\beta \mid S_i) =
 \frac{\exp\left(\sum_t y_{it}x_{it}^{\mathsf T}\beta\right)}
 {\sum_{a:\,\sum_t a_t=S_i}
- \exp\left(\sum_t a_tx_{it}^{\mathsf T}\beta\right)}.
+ \exp\left(\sum_t a_tx_{it}^{\mathsf T}\beta\right)},
 $$
 
-The denominator and score are evaluated by a forward and backward dynamic
-program. Units with all-zero or all-one responses do not contribute to this
-conditional likelihood and are excluded.
+evaluated with its score by a forward and backward recursion. Units with
+all-zero or all-one responses carry no information and are dropped.
+With `effect = "twoways"` the individual effects are conditioned out
+and time effects enter as dummies.
 
-## Between estimator
-
-The between estimator uses only the variation between individuals. It is
-least squares on the individual means,
-
-$$
-\bar y_i = \bar x_i^{\mathsf T}\beta + \bar u_i, \qquad i = 1, \dots, N,
-$$
-
-with one row per individual, as in `plm(model = "between")`. Comparing it
-with the within estimator shows how much of an association comes from
-differences between patients rather than changes within a patient. Its
-robust covariance is HC1 on the means regression; clustering by individual
-gives the same matrix, because each individual contributes one row.
-
-```{r between}
-fit_be <- panglm(fev1 ~ crp + age, data = copd, index = c("id", "visit"),
-                 model = "between")
-summary(fit_be)
-```
-
-## Random-effects models
-
-Random-effects models retain time-invariant regressors and account for
-within-unit dependence by integrating over a latent individual effect. The
-implemented specifications are:
-
-* Gaussian responses use the Swamy-Arora feasible generalized least-squares
-  estimator;
-* Poisson responses use a Poisson-Gamma mixture, which yields a closed-form
-  marginal likelihood;
-* negative binomial responses use a two-parameter beta-negative-binomial
-  marginal likelihood;
-* binomial responses use a Gaussian random intercept integrated by
-  Gauss-Hermite quadrature;
-* gamma responses use a Gaussian random intercept on the log scale,
-  integrated by adaptive Gauss-Hermite quadrature centred at each
-  individual's mode (`R = 1` is the Laplace approximation);
-* ordered logit and probit, and beta regression, use a Gaussian random
-  intercept on the link scale with the same adaptive quadrature (see the
-  sections below).
-
-The number of quadrature nodes for the binomial and gamma models is
-controlled by `R`. For the gamma model, response predictions include the
-lognormal factor $\exp(\sigma^2/2)$.
-Random-effects covariance matrices are based on the observed information;
-`vcov = "cluster"` gives the sandwich built from the individual scores of
-the integrated likelihood, for every family.
-
-Random-effects fits also accept `weights` that are constant within
-individuals, typically a baseline sampling or inverse probability weight.
-The fit then maximizes the weighted sum of the individual integrated
-log-likelihoods (the Gaussian model switches from FGLS to maximum
-likelihood), and `vcov = "cluster"` gives design-based standard errors.
-
-```{r random-gaussian}
-fit_re <- panglm(
-  inv ~ value + capital,
-  data = Grunfeld,
-  index = c("firm", "year"),
-  model = "random",
-  family = "gaussian"
-)
-coef(fit_re)
-```
-
-### Correlated random effects
-
-Random effects require the individual effect to be independent of the
-regressors. The correlated random effects device of Mundlak (1978) and
-Chamberlain (1980) relaxes this by modelling the effect as
-$\alpha_i = \overline x_i^{\mathsf T}\gamma + a_i$, where
-$\overline x_i$ holds the individual means of the time-varying
-regressors. With `cre = TRUE` these means are added to the model as
-`mean_<variable>` columns, for pooled and random-effects fits of every
-family. For linear models the coefficients on $x_{it}$ then equal the
-within estimates; for nonlinear models (probit, gamma, count) the device
-gives a fixed-effects-like interpretation without the incidental
-parameters problem and still allows average partial effects. The summary
-reports a Wald test of $\gamma = 0$, the regression form of the Hausman
-test.
-
-```{r cre}
-data(copd)
-fit_cre <- panglm(hospitalized ~ treatment + age + crp, data = copd,
-                  index = c("id", "visit"), model = "random",
-                  family = "probit", cre = TRUE)
-summary(fit_cre)
-```
-
-### Dynamic models and initial conditions
-
-Health outcomes are persistent: a hospital admission this year predicts
-one next year. Part of this is true state dependence, part is unobserved
-heterogeneity, and a random-effects model with a lagged outcome
-separates the two only if the initial condition is handled. With
-`dynamic = TRUE`, `panglm()` applies the solution of Wooldridge (2005):
-it adds the lagged outcome `lag_<y>` and the first observed outcome
-`initial_<y>` to the regressors, drops the first wave, and adds the
-individual means of the time-varying regressors (`cre = TRUE`). The
-coefficient on the lag then measures state dependence, and
-`partialeffects()` reports it on the probability scale.
-
-```{r dynamic}
-fit_dyn <- panglm(hospitalized ~ treatment + crp, data = copd,
-                  index = c("id", "visit"), model = "random",
-                  family = "probit", dynamic = TRUE)
-summary(fit_dyn)
-partialeffects(fit_dyn, variables = "lag_hospitalized")
-```
-
-## Ordered outcomes
-
-Self-assessed health, symptom severity and satisfaction scales are
-ordinal. `family = orderedfamily("logit")` or `orderedfamily("probit")`
-fits $P(y_{it} \le j) = F(c_j - x_{it}^{\mathsf T}\beta - u_i)$. The
-intercept is absorbed in the cutpoints $c_j$, which are reported after
-the slopes. Pooled and random-intercept fits are available for both links.
-For the logit link, `model = "within"` fits the "blow-up and cluster"
-fixed-effects ordered logit of Baetschmann, Staub and Winkelmann (2015):
-each observation is copied once per cutoff, dichotomized, and a
+**Ordered logit.** `model = "within"` fits the blow-up and cluster
+estimator of Baetschmann, Staub and Winkelmann (2015): each observation
+is copied once per cutoff, dichotomized at that cutoff, and a
 conditional logit is fitted to the stacked data with standard errors
-clustered by individual. `predict(type = "prob")` returns the category
-probabilities (averaged over the random intercept), and
-`partialeffects()` gives one effect per category.
+clustered by individual.
 
-```{r ordered}
-copd$severity <- cut(copd$exacerbations, c(-Inf, 0, 2, Inf),
-                     labels = c("none", "1-2", "3+"), ordered_result = TRUE)
-fit_ord <- panglm(severity ~ treatment + age + crp, data = copd,
-                  index = c("id", "visit"), model = "random",
-                  family = orderedfamily("logit"))
-summary(fit_ord)
-partialeffects(fit_ord, variables = "crp")
-coef(panglm(severity ~ crp, data = copd, index = c("id", "visit"),
-            model = "within", family = orderedfamily("logit")))
-```
+## Random-intercept likelihoods
 
-## Beta regression for bounded outcomes
+Random-effects models integrate over $\alpha_i$:
 
-Utility index scores rescaled to the unit interval, adherence fractions
-and proportions of days in hospital are continuous on $(0, 1)$.
-`family = betafamily()` (logit or probit link) fits
-$y_{it} \sim \mathrm{Beta}(\mu_{it}\phi, (1 - \mu_{it})\phi)$ with
-$g(\mu_{it}) = x_{it}^{\mathsf T}\beta$, so $E(y_{it}) = \mu_{it}$ and
+| Family | Mixing distribution | Integration |
+|---|---|---|
+| Gaussian | normal | closed form (FGLS or ML) |
+| Poisson | gamma | closed form (negative binomial marginal) |
+| Negative binomial | beta on the NB2 probability | closed form (Hausman, Hall and Griliches 1984) |
+| Binomial (logit, probit) | normal | Gauss-Hermite quadrature |
+| Gamma, ordered, beta, tobit | normal on the link scale | adaptive Gauss-Hermite quadrature |
+
+`R` sets the number of quadrature nodes. Adaptive quadrature centres the
+nodes at each individual's mode and scales them by the curvature there;
+`R = 1` is the Laplace approximation. Response predictions are marginal
+over $\alpha_i$; for the gamma model this includes the lognormal factor
+$\exp(\sigma_\alpha^2/2)$. Covariances use the observed information, and
+`vcov = "cluster"` gives the sandwich built from the individual scores
+of the integrated likelihood. With weights constant within individuals
+the weighted sum of the individual log-likelihoods is maximized and the
+cluster covariance is design based.
+
+**Correlated random effects.** `cre = TRUE` adds the individual means
+of the time-varying regressors, $\alpha_i = \bar x_i^{\mathsf T}\gamma +
+a_i$ (Mundlak 1978; Chamberlain 1980), as `mean_<variable>` columns. In
+linear models the coefficients on $x_{it}$ then equal the within
+estimates. The summary reports the Wald test of $\gamma = 0$, the
+regression form of the Hausman test.
+
+**Dynamic models.** `dynamic = TRUE` applies the initial-conditions
+solution of Wooldridge (2005): it adds the lagged outcome `lag_<y>`, the
+first observed outcome `initial_<y>` and the individual means of the
+time-varying regressors, and drops the first wave. The coefficient on
+`lag_<y>` measures state dependence.
+
+## Random slopes
+
+`random = ~ z` gives the model
+$g\{E(y_{it} \mid b_i)\} = x_{it}^{\mathsf T}\beta + z_{it}^{\mathsf T}b_i$,
+with $z_{it}$ the intercept and the listed variables and
+$b_i \sim N(0, \Sigma)$, $\Sigma$ unstructured (Laird and Ware 1982).
+The Gaussian model is fitted by exact maximum likelihood. Poisson,
+negative binomial, gamma and binomial (logit or probit) models use
+adaptive Gauss-Hermite quadrature on a product grid of $R^q$ nodes, with
+$q$ the dimension of $b_i$; the cost therefore grows quickly with $q$.
+$\Sigma$ is parametrized by its Cholesky factor. The fit stores
+$\hat\Sigma$ in `varcomp` and the predicted effects (posterior modes, the
+BLUPs in the Gaussian case) in `ranef`.
+
+## Outcome-specific models
+
+**Ordered.** `orderedfamily("logit")` or `orderedfamily("probit")`:
+$P(y_{it} \le j) = F(c_j - x_{it}^{\mathsf T}\beta - \alpha_i)$, with the
+intercept absorbed in the cutpoints $c_j$. Pooled and random-intercept
+fits for both links; the fixed-effects model above for the logit link.
+
+**Beta.** `betafamily()`: $y_{it} \sim \mathrm{Beta}(\mu_{it}\phi,
+(1 - \mu_{it})\phi)$ with $g(\mu_{it}) = x_{it}^{\mathsf T}\beta$, so
 $\mathrm{Var}(y_{it}) = \mu_{it}(1 - \mu_{it})/(1 + \phi)$ (Ferrari and
-Cribari-Neto 2004), pooled or with a random intercept on the link scale.
-The precision is stored as `fit$precision`. Values of exactly 0 or 1 must
-be moved inside the interval first, for example with
-$(y(n - 1) + 0.5)/n$ (Smithson and Verkuilen 2006).
+Cribari-Neto 2004). The precision is `fit$precision`. Responses of
+exactly 0 or 1 must first be moved inside the interval (Smithson and
+Verkuilen 2006). Regressors should be on a moderate scale.
 
-```{r beta}
-set.seed(3)
-u <- rnorm(60, sd = 0.4)[copd$id]
-mu <- plogis(-1 + 0.15 * copd$crp + u)
-copd$adherence <- rbeta(nrow(copd), mu * 20, (1 - mu) * 20)
-fit_beta <- panglm(adherence ~ treatment + crp, data = copd,
-                   index = c("id", "visit"), model = "random",
-                   family = betafamily(), vcov = "cluster")
-summary(fit_beta)
-fit_beta$precision
-```
+**Tobit.** `tobitfamily(left, right)`: a latent
+$y^*_{it} = x_{it}^{\mathsf T}\beta + \alpha_i + \varepsilon_{it}$,
+$\varepsilon_{it} \sim N(0, \sigma_\varepsilon^2)$, is observed as
+$y_{it} = \min\{\max(y^*_{it}, \ell), r\}$ (Tobin 1958). Censored
+observations contribute $\Phi\{(\ell - \eta_{it})/\sigma_\varepsilon\}$
+or $1 - \Phi\{(r - \eta_{it})/\sigma_\varepsilon\}$, the others the
+normal density. Pooled and random-intercept models; the random
+intercept SD is `fit$sigma` and the error SD `fit$sigma_e`.
 
-## Nonlinear effects with regression splines
+**Two-part.** `twopart()` fits the model of Duan et al. (1983),
+$E(y_{it}) = P(y_{it} > 0)\, E(y_{it} \mid y_{it} > 0)$, with a probit or
+logit first part and a gamma (log link) or lognormal positive part,
+pooled or with random intercepts, optionally with `cre = TRUE`. The
+lognormal retransformation uses Duan's smearing factor (default) or
+$\exp(\sigma^2/2)$. With `correlated = TRUE` and a lognormal positive
+part, the two random intercepts are bivariate normal with correlation
+$\rho$ and both parts are fitted jointly (Van Ourti 2004). The positive
+part integrates in closed form given $u_{1i}$, and the integral over
+$u_{1i}$ uses adaptive quadrature. The marginal mean is then
 
-A continuous regressor whose effect is not linear can enter through a
-regression spline, `splines::ns(x, df)` or `splines::bs(x, df)`, or a
-polynomial `poly(x, degree)`. These are ordinary model-formula terms, so
-they work for every model and family: the basis columns are demeaned like
-any other regressor in fixed-effects fits, and the knots chosen on the
-estimation sample are reused by `predict()` and `model.matrix()` on new
-data. Three helpers complete the workflow:
+$$
+E(y_{it}) = \exp\{z_{it}^{\mathsf T}\beta + (\sigma_e^2 + \tau^2)/2\}\,
+E_{u_1}\{F(x_{it}^{\mathsf T}\gamma + u_1)\, e^{c u_1}\},
+\quad c = \rho\sigma_2/\sigma_1,\; \tau^2 = \sigma_2^2(1 - \rho^2).
+$$
 
-* `lineartest(fit, "x")` tests whether the effect of `x` is linear. The
-  spline basis contains the linear function, $x = c + B a$, so linearity
-  means the spline coefficients are proportional to $a$; the test is the
-  joint Wald test of the $q - 1$ restrictions this implies and accepts any
-  covariance type, including cluster-robust ones.
-* `jointtest(fit, pattern = "x")` tests whether `x` matters at all (all
-  of its columns are zero), or any other set of coefficients.
-* `effectcurve(fit, "x")` returns the change in the linear predictor when
-  `x` moves from a reference value (default: the median) to a grid of
-  values, with delta-method pointwise confidence limits; `plot()` draws it.
-  Centering matters in fixed-effects fits, where the level of the curve is
-  absorbed by the individual effects.
+**Hurdle.** `panhurdle()` fits two fixed-effects parts: a conditional
+logit for $1(y_{it} > 0)$ and a zero-truncated Poisson or NB2 model for
+the positive counts, with density
+$f(y \mid \mu, \theta)/\{1 - f(0 \mid \mu, \theta)\}$ for $y > 0$ and
+one intercept per individual.
 
-The example simulates a panel in which the effect of body mass index on
-log health spending is J-shaped and BMI is correlated with the individual
-effect, so pooled estimates are biased and fixed effects are needed.
+## Endogenous regressors
+
+**Two-stage least squares.** `paniv()` takes `y ~ regressors |
+instruments`, where the second part is the full instrument set. With
+$\tilde a$ the within, quasi-demeaned or untransformed version of a
+variable and $\hat X = P_{\tilde Z}\tilde X$,
+
+$$
+\hat\beta_{\mathrm{2SLS}} = (\hat X^{\mathsf T}\tilde X)^{-1}
+\hat X^{\mathsf T}\tilde y .
+$$
+
+`model = "within"` and `"pooling"` give fixed-effects and pooled 2SLS.
+`model = "random"` gives the generalized 2SLS of Balestra and
+Varadharajan-Krishnakumar (`inst.method = "bvk"`) or the EC2SLS of
+Baltagi (1981) (`"baltagi"`, instruments $[QZ, PZ]$), with variance
+components from within and between 2SLS residuals. The summary reports
+the first-stage partial $R^2$ and $F$ of the excluded instruments, and
+a Sargan test (or a cluster-robust Hansen $J$) when overidentified.
+
+**Hausman-Taylor.** `model = "hausmantaylor"` (Hausman and Taylor 1981)
+splits the regressors into time-varying and time-invariant, exogenous
+and endogenous with respect to $\alpha_i$. The second formula part lists
+the exogenous ones. The within-transformed time-varying regressors and
+the exogenous time-varying means and time-invariant regressors are the
+instruments, so the exogenous time-varying regressors must be at least
+as many as the endogenous time-invariant ones.
+
+**Dynamic GMM.** `pangmm()` fits
+$y_{it} = \rho y_{i,t-1} + x_{it}^{\mathsf T}\beta + \alpha_i +
+\varepsilon_{it}$. The difference estimator of Arellano and Bond (1991)
+uses $E(y_{is}\Delta\varepsilon_{it}) = 0$ for $s \le t - 2$; the system
+estimator of Blundell and Bond (1998) (`transformation = "ld"`) adds
+$E(\Delta y_{i,t-1}\varepsilon_{it}) = 0$. `collapse = TRUE` and
+`maxlag` limit the instrument count. The two-step covariance uses the
+Windmeijer (2005) correction. Reported tests: Arellano-Bond AR(1) and
+AR(2), Sargan and Hansen.
+
+**Sample selection.** `panselect()` implements Wooldridge (1995). A
+probit for selection is fitted in each period, with the individual
+means of the selection regressors (`mundlak = TRUE`). The inverse Mills
+ratio, interacted with period dummies (`lambda = "period"`) or common
+(`"common"`), enters the outcome equation, estimated by fixed effects or
+pooled OLS. The joint test of the Mills ratio terms is the test of
+selection bias; it is valid with the cluster covariance under the null.
+Coefficient standard errors come from a cluster bootstrap over both
+steps (`boot` replicates).
+
+## Policy evaluation
+
+**Two-way fixed effects.** `did()` fits
+$g\{E(y_{it})\} = \alpha_i + \lambda_t + \delta D_{it} +
+x_{it}^{\mathsf T}\beta$, with $D_{it} = 1(t \ge g_i)$ and $g_i$ the
+first treated period. Gaussian, Poisson, negative binomial and
+conditional logit fits are available. Poisson TWFE needs only the
+conditional mean to be correct (Wooldridge 2023). `eventstudy()`
+replaces $D_{it}$ with indicators of event time $e = t - g_i$ from
+`-leads` to `lags`, reference `ref = -1`, with the end points binned by
+default. Its Wald test of the leads is the pre-trend test. Under
+staggered adoption with heterogeneous effects the TWFE coefficient is a
+weighted average of two-by-two comparisons with possibly negative
+weights (Goodman-Bacon 2021; Sun and Abraham 2021).
+
+**Group-time effects.** `attgt()` estimates, for each cohort $g$ and
+period $t$,
+
+$$
+\mathrm{ATT}(g, t) = E(y_t - y_{b} \mid G = g) -
+E(y_t - y_{b} \mid C),
+$$
+
+with base period $b = g - 1$ (moved back by `anticipation`) and
+comparison group $C$ never or not yet treated (Callaway and Sant'Anna
+2021). Pre-treatment ATT$(g, t)$ use the previous period as base
+(`base = "varying"`) or $g - 1$ (`base = "universal"`). With covariates the
+comparison is outcome regression, inverse probability weighting or the
+doubly robust combination (Sant'Anna and Zhao 2020). Aggregations
+(`summary(type = "simple", "dynamic", "group", "calendar")`) weight the
+ATT$(g, t)$ by cohort size. Standard errors come from the influence
+functions, or from the multiplier bootstrap (`bstrap`, `biters`), which
+allows a coarser `cluster` and uniform bands (`cband`).
+
+**Extended TWFE.** `etwfe()` (Wooldridge 2021, 2023) fits one pooled
+regression with cohort and period effects and a treatment indicator for
+every treated cohort by post-period cell; covariates enter centred at
+their cohort means and interacted with the cells. In the linear case the cell coefficients
+equal the imputation estimates of ATT$(g, t)$. With `family = "poisson"`
+or `"binomial"` parallel trends holds on the link scale and the effects
+are averaged on the response scale with delta-method standard errors.
+`xvar` gives effects by a covariate; `ivar = TRUE` uses unit instead of
+cohort effects (linear only).
+
+## Finite mixtures
+
+`panfmm()` assumes each individual belongs to one of $k$ latent classes
+for all its observations, so the likelihood contribution is
+
+$$
+L_i = \sum_{c=1}^{k} \pi_c(w_i) \prod_t f_c(y_{it} \mid x_{it};
+\beta_c), \qquad
+\pi_c(w_i) = \frac{\exp(w_i^{\mathsf T}\delta_c)}{\sum_l
+\exp(w_i^{\mathsf T}\delta_l)},
+$$
+
+with Gaussian, Poisson, NB2 or binomial components (Deb and Trivedi
+1997, 2002) and individual-level concomitant variables $w_i$
+(`concomitant`). EM is run from `nstart` random starts and the best fit
+kept; the covariance is the inverse observed information of the full
+likelihood, or its cluster sandwich. `panfmmselect()` compares
+$k$ by AIC and BIC. `predict(type = "posterior")` returns the posterior
+class probabilities.
+
+## Quantile regression
+
+`panqr()` assumes $Q_{y_{it}}(\tau \mid x_{it}, \alpha_i) = \alpha_i +
+x_{it}^{\mathsf T}\beta(\tau)$ with location-shift individual effects.
+
+* `"canay"` (Canay 2011): $\hat\alpha_i$ from the within regression, then
+  `quantreg` regression of $y_{it} - \hat\alpha_i$ on $x_{it}$.
+  Consistent as $N$ and $T$ grow. Analytic or cluster bootstrap
+  standard errors.
+* `"mmqr"` (Machado and Santos Silva 2019): the location-scale model
+  $y_{it} = \alpha_i + x_{it}^{\mathsf T}\beta + (\delta_i +
+  x_{it}^{\mathsf T}\gamma)U_{it}$, estimated by two within regressions
+  and the $\tau$-quantile $q(\tau)$ of the standardized residuals, so
+  $\beta(\tau) = \beta + \gamma q(\tau)$. Analytic covariance as in
+  their paper.
+* `"pooling"`: `quantreg` regression ignoring $\alpha_i$, with a
+  cluster-robust covariance.
+
+## Regression splines
+
+Any formula term works, including `splines::ns(x, df)`,
+`splines::bs(x, df)` and `poly(x, degree)`. Basis columns are demeaned
+like any regressor in fixed-effects fits, and the knots of the
+estimation sample are reused by `predict()` and `model.matrix()`.
+
+* `lineartest(fit, "x")`: the spline basis contains the linear function,
+  $x = c + Ba$, so linearity means the spline coefficients are
+  proportional to $a$; the test is the joint Wald test of the $q - 1$
+  implied restrictions, with any covariance type.
+* `jointtest(fit, pattern = "x")`: Wald test that all columns of `x` are
+  zero.
+* `effectcurve(fit, "x", ref)`: change in the linear predictor from
+  `ref` to a grid of values, with delta-method pointwise limits.
 
 ```{r splines}
 set.seed(2026)
-N <- 300; T <- 5
-sim <- data.frame(id = rep(seq_len(N), each = T), year = rep(seq_len(T), N))
+N <- 150; TT <- 5
+sim <- data.frame(id = rep(seq_len(N), each = TT), year = rep(seq_len(TT), N))
 alpha <- rnorm(N)
-sim$bmi <- 27 + 3 * alpha[sim$id] + rnorm(N * T, sd = 2.5)
-sim$age <- rep(sample(40:70, N, replace = TRUE), each = T) + sim$year
+sim$bmi <- 27 + 3 * alpha[sim$id] + rnorm(N * TT, sd = 2.5)
 sim$logcost <- 6 + alpha[sim$id] + 0.004 * (sim$bmi - 23)^2 +
-  0.02 * sim$age + rnorm(N * T, sd = 0.4)
-
-fit_spline <- panglm(logcost ~ splines::ns(bmi, 4) + age, data = sim,
-                     index = c("id", "year"), model = "within", vcov = "cluster")
+  rnorm(N * TT, sd = 0.4)
+fit_spline <- panglm(logcost ~ splines::ns(bmi, 4), data = sim,
+                     index = c("id", "year"), model = "within",
+                     vcov = "cluster")
 lineartest(fit_spline, "bmi")
-jointtest(fit_spline, pattern = "bmi")
 ```
 
-```{r splines-plot, fig.cap = "Within-individual effect of BMI on log spending relative to BMI 25, with a pointwise 95% band (cluster-robust)."}
-bmi_curve <- effectcurve(fit_spline, "bmi", ref = 25)
-plot(bmi_curve, xlab = "Body mass index",
+```{r splines-plot, fig.alt = "Within effect of BMI on log spending relative to BMI 25 with a pointwise band; the true curve is dashed"}
+plot(effectcurve(fit_spline, "bmi", ref = 25), xlab = "Body mass index",
      ylab = "Change in log spending vs BMI 25")
 curve(0.004 * (x - 23)^2 - 0.004 * (25 - 23)^2, add = TRUE, lty = 2)
 ```
 
-The dashed line is the true curve. A likelihood-ratio test of the nested
-linear and spline fixed-effects models is tempting but biased upwards: the
-maximum likelihood error variance of the dummy-variable fit divides the
-residual sum of squares by $NT$ instead of $N(T - 1)$, which inflates the
-statistic by about $T / (T - 1)$ (the incidental parameters problem), so
-the Wald form above is preferred. For the same reason, choose the degrees
-of freedom of the spline on substantive grounds or by a small number of
-candidate values, not by repeated testing.
+A likelihood ratio test of nested fixed-effects fits is biased upwards
+here: the dummy-variable error variance divides the residual sum of
+squares by $NT$ instead of $N(T - 1)$, which inflates the statistic by
+about $T/(T - 1)$. The Wald form is preferred.
 
 ## Average partial effects
 
-Coefficients of nonlinear models are not on the scale of the outcome.
-`partialeffects()` reports average partial effects, the sample average of
-$\partial E(y_{it} \mid x_{it}) / \partial x_{itj}$ for continuous
-regressors and of the discrete change for binary and factor regressors,
-with delta-method standard errors based on the covariance stored on the
-fit. For random-effects models the mean integrates over the random
-intercept, giving the average structural function of Wooldridge (2005);
-for correlated random effects fits the individual means are held fixed, so
-the effect of a time-varying regressor is a within-individual effect.
+`partialeffects()` averages
+$\partial E(y_{it} \mid x_{it}) / \partial x_{itj}$ over the sample for
+continuous regressors, and the discrete change for binary and factor
+regressors, with delta-method standard errors from the stored
+covariance. For random-effects models the mean integrates over
+$\alpha_i$, the average structural function of Wooldridge (2005); in
+correlated random effects fits the individual means are held fixed.
+Ordered models give one effect per category; two-part models give
+effects on either part or on the unconditional mean.
 
-```{r ape}
-partialeffects(fit_cre)
-```
+## Covariance estimation
 
-## Two-part models for costs
-
-Cost data often combine a mass of zeros with a skewed positive part.
-`twopart()` fits the two-part model of Duan et al. (1983),
+The default covariance is model based. With $B$ the inverse information
+and $s_j$ the score contributions, the sandwich is
 
 $$
-E(y_{it} \mid x_{it}) = P(y_{it} > 0 \mid x_{it})\,
-E(y_{it} \mid y_{it} > 0, x_{it}),
+\hat V(\hat\beta) = B
+\left(\sum_j s_j(\hat\beta)s_j(\hat\beta)^{\mathsf T}\right)B .
 $$
 
-with a probit or logit model for the first part and a gamma (log link) or
-lognormal model for the positive part, pooled or with random intercepts,
-optionally with correlated random effects. For the lognormal part, the
-retransformation from $\log y$ to $y$ uses Duan's smearing estimator
-(default) or the normal-theory factor $\exp(\sigma^2/2)$.
-`predict()` returns the unconditional mean or either part, and
-`partialeffects()` works on any of them.
+`"HC1"` uses observation scores; `"cluster"` sums them within clusters
+first, the individual by default or a coarser `cluster` variable. Linear
+models use the finite-sample factor
+$G/(G - 1) \cdot (n - 1)/(n - k)$ of `plm::vcovHC(type = "sss")`. For the
+conditional logit the independent contribution is a whole stratum, so
+HC1 uses stratum scores and a custom cluster may combine but not split
+strata. For random-effects models the scores are those of the
+individual integrated likelihoods.
 
-```{r twopart}
-set.seed(2)
-copd$cost <- ifelse(copd$exacerbations > 0 | runif(nrow(copd)) < 0.3,
-                    exp(6 + 0.2 * copd$crp + rnorm(nrow(copd), sd = 0.8)), 0)
-fit_2p <- twopart(cost ~ treatment + age + crp, data = copd,
-                  index = c("id", "visit"), positive = "gamma",
-                  vcov = "cluster")
-summary(fit_2p)
-partialeffects(fit_2p, variables = "crp")
+```{r vcov}
+fit_fe <- panglm(fev1 ~ crp, data = copd, index = c("id", "visit"),
+                 model = "within")
+sqrt(c(classical = vcov(fit_fe), HC1 = vcov(fit_fe, type = "HC1"),
+       cluster = vcov(fit_fe, type = "cluster")))
 ```
 
-With random intercepts in both parts, the default treats the two
-intercepts as independent. A person with an unobserved tendency to use care
-often also has expensive episodes, so `correlated = TRUE` lets the
-intercepts $(u_{1i}, u_{2i})$ be bivariate normal with correlation $\rho$
-and fits both parts jointly by maximum likelihood (Van Ourti 2004). It needs
-the lognormal positive part. Given $u_{1i}$, $u_{2i}$ is normal, so the
-positive part integrates over $u_{2i}$ in closed form, and the remaining
-integral over $u_{1i}$ uses adaptive Gauss-Hermite quadrature. The
-population mean becomes
+`panhausman()` compares compatible fixed- and random-effects fits with
+the covariance difference, or in its Mundlak form with any covariance.
+`pandispersiontest()` reports the Pearson statistic over its residual
+degrees of freedom for count fits.
 
-$$
-E(y_{it} \mid x_{it}) = \exp\{z_{it}^{\mathsf T}\beta + (\sigma_e^2 + \tau^2)/2\}\,
-E_{u_1}\{F(x_{it}^{\mathsf T}\gamma + u_1)\, e^{c u_1}\},
-\qquad c = \rho\sigma_2/\sigma_1,\; \tau^2 = \sigma_2^2(1 - \rho^2),
-$$
+## Likelihoods and information criteria
 
-so a positive $\rho$ raises the mean above the product of the two parts.
-`summary()` reports $\sigma_1$, $\sigma_2$, $\sigma_e$ and $\rho$.
+`logLik()`, `AIC()` and `BIC()` count the estimated shape, dispersion,
+variance and absorbed fixed-effect parameters that belong to the
+reported likelihood. Gaussian within fits report the dummy-variable
+normal likelihood, and Swamy-Arora fits the exact (not REML) normal
+random-intercept likelihood at the FGLS estimates. Conditional Poisson
+and conditional logit likelihoods count only the parameters left after
+conditioning. Information criteria compare models of the same response
+fitted on the same observations; they do not compare a conditional with
+an unconditional likelihood.
 
-```{r twopart-correlated}
-set.seed(5)
-d <- data.frame(id = rep(1:300, each = 5), t = rep(1:5, 300), x = rnorm(1500))
-u1 <- rnorm(300, sd = 0.8)
-u2 <- 0.7 * (0.6 * u1 / 0.8 + sqrt(1 - 0.6^2) * rnorm(300))
-d$cost <- ifelse(-0.2 + 0.5 * d$x + u1[d$id] + rnorm(1500) > 0,
-                 exp(6 + 0.3 * d$x + u2[d$id] + rnorm(1500, sd = 0.5)), 0)
-fit_c <- twopart(cost ~ x, data = d, index = c("id", "t"), model = "random",
-                 positive = "lognormal", correlated = TRUE, vcov = "cluster")
-summary(fit_c)
-```
+## Predictions
 
-## Instrumental variables
-
-When a regressor is correlated with the idiosyncratic error, for example
-insurance status chosen in response to a health shock, neither the within
-nor the random-effects estimator is consistent. `paniv()` fits linear panel
-models by two-stage least squares. The formula has two parts,
-`y ~ regressors | instruments`; the second part is the full instrument set,
-so exogenous regressors appear on both sides and the regressors missing
-from the second part are the endogenous ones.
-
-With instrument matrix $Z$, a transformation $\tilde a$ of each variable
-(within demeaning, quasi-demeaning, or none) and
-$\hat X = P_{\tilde Z}\tilde X$, the estimator is
-
-$$
-\widehat\beta_{\mathrm{2SLS}} = (\hat X^{\mathsf T}\tilde X)^{-1}
-\hat X^{\mathsf T}\tilde y .
-$$
-
-`model = "within"` gives fixed-effects 2SLS, `model = "pooling"` pooled
-2SLS, and `model = "random"` the generalized 2SLS of Balestra and
-Varadharajan-Krishnakumar (`inst.method = "bvk"`, with quasi-demeaned
-instruments) or Baltagi's EC2SLS (`inst.method = "baltagi"`, with
-instruments $[QZ, PZ]$). The random-effects variance components are
-estimated from within and between 2SLS residuals. The summary reports, for
-each endogenous regressor, the first-stage partial $R^2$ and $F$ statistic
-of the excluded instruments, and a Sargan test (or a cluster-robust Hansen
-$J$ test) when the model is overidentified.
-
-In the North Carolina crime panel, police per capita is endogenous and is
-instrumented by tax revenue per capita and the offence mix:
-
-```{r iv}
-data(Crime, package = "plm")
-fit_iv <- paniv(lcrmrte ~ lpolpc + lprbarr + lprbconv + ldensity |
-                  ltaxpc + lmix + lprbarr + lprbconv + ldensity,
-                data = Crime, index = c("county", "year"),
-                model = "within", vcov = "cluster")
-summary(fit_iv)
-```
-
-The Hausman and Taylor (1981) estimator (`model = "hausmantaylor"`)
-recovers the effects of time-invariant regressors, such as schooling or
-sex, when some regressors are correlated with the individual effect. The
-second part of the formula lists the regressors that are uncorrelated with
-the individual effect; time variation is detected from the data. The
-individual means of the exogenous time-varying regressors serve as
-instruments for the endogenous time-invariant ones, so there must be at
-least as many of the former as of the latter.
-
-```{r hausman-taylor}
-data(Wages, package = "plm")
-Wages$id <- rep(1:595, each = 7)
-Wages$year <- rep(1:7, 595)
-fit_ht <- paniv(lwage ~ wks + south + smsa + married + exp + I(exp^2) +
-                  bluecol + ind + union + sex + black + ed |
-                  sex + black + bluecol + south + smsa + ind,
-                data = Wages, index = c("id", "year"),
-                model = "hausmantaylor")
-coef(fit_ht)[c("ed", "sexfemale", "blackyes")]
-```
-
-## Covariance estimation and confidence intervals
-
-The default covariance matrix is model based. Pooled and fixed-effects
-models also support `type = "HC1"` and `type = "cluster"`. Let $s_j(\beta)$
-be a score contribution and let $B$ be the inverse information matrix. The
-sandwich estimator has the form
-
-$$
-\widehat V(\widehat\beta) = B
-\left(\sum_j s_j(\widehat\beta)s_j(\widehat\beta)^{\mathsf T}\right)B.
-$$
-
-For cluster-robust inference, observation scores are first summed within
-clusters. The panel individual is used as the default cluster. For exact
-conditional binomial models, the independent likelihood contribution is a
-complete panel stratum. HC1 therefore uses stratum-level scores, and a
-custom clustering variable may combine but cannot split strata. Gaussian,
-Poisson, negative binomial, and conditional binomial fixed-effects fits all
-provide the score information required by these estimators.
-
-```{r inference}
-vcov(fit_fe, type = "cluster")
-confint(fit_fe)
-```
-
-## Difference-in-differences and event studies
-
-Policy evaluations in health economics (a reimbursement reform, a new
-copayment, a hospital payment change) compare treated and untreated units
-before and after the policy. `did()` fits the two-way fixed-effects (TWFE)
-regression $y_{it} = \alpha_i + \lambda_t + \delta D_{it} + x_{it}^{\mathsf T}\beta
-+ \varepsilon_{it}$, where $D_{it} = 1(t \ge g_i)$ and $g_i$ is the first
-treated period of unit $i$ (`NA` for never-treated units). The family can
-be Gaussian, Poisson or negative binomial; for counts $\exp(\delta)$ is a
-rate ratio and Poisson TWFE needs only the conditional mean to be correct
-(Wooldridge 2023). Standard errors are clustered by individual by default.
-
-`eventstudy()` replaces $D_{it}$ with indicators of event time
-$e = t - g_i$, from `-leads` to `lags`, with $e = -1$ as reference. The
-leads estimate differences in trends before the policy; their joint Wald
-test is the usual check of parallel pre-trends. With a single adoption date
-both estimators are unbiased under parallel trends. With staggered adoption
-and effects that change over time, TWFE coefficients mix effects from
-different periods with possibly negative weights (Goodman-Bacon 2021; Sun
-and Abraham 2021), so heterogeneity-robust estimators such as
-`did::att_gt()` or `fixest::sunab()` should then be used instead.
-
-```{r did}
-set.seed(11)
-pol <- expand.grid(id = 1:300, year = 2014:2022)
-pol$first <- ifelse(pol$id <= 150, 2018, NA)   # copayment removed in 2018
-a <- rnorm(300)
-e <- pol$year - pol$first
-pol$visits <- rpois(nrow(pol), exp(0.8 + 0.4 * a[pol$id] + 0.03 * (pol$year - 2014) +
-                                   ifelse(!is.na(e) & e >= 0, 0.15 + 0.03 * e, 0)))
-fit_did <- did(visits ~ 1, data = pol, index = c("id", "year"),
-               treat = "first", family = "poisson")
-exp(coef(fit_did))                  # rate ratio of GP visits
-es <- eventstudy(visits ~ 1, data = pol, index = c("id", "year"),
-                 treat = "first", leads = 4, lags = 4, family = "poisson")
-es
-```
-
-```{r did-plot, fig.cap = "Event-study coefficients (log rate ratios) with 95% cluster-robust intervals; event time -1 is the reference."}
-plot(es, ylab = "Log rate ratio of visits")
-```
-
-## Model assessment
-
-For models that store fitted values, `plot()` provides coefficient,
-residual, and observed-versus-fitted displays. Coefficient plots are
-available for every `panglm` fit.
-
-`fitted()` and in-sample `predict()` return values in the original data row
-order. Random-effects response predictions are marginal over the fitted
-latent-effect distribution. Fixed-effects predictions for new data include
-estimated effects for known panel levels; unseen levels are rejected unless
-`allow.new.levels = TRUE`. For exact conditional logistic regression,
-in-sample fitted values are probabilities conditional on each unit's
-observed success total. Arbitrary new-data probabilities are not identified
-because the individual intercept has been conditioned out.
-
-```{r plots, fig.alt = "Coefficient estimates with confidence intervals"}
-plot(fit_fe, which = "coefficients")
-```
-
-`pandispersiontest()` reports the Pearson statistic divided by its
-residual degrees of freedom for Poisson and negative binomial fits.
-`panhausman()` compares compatible fixed-effects and random-effects
-estimates using their covariance difference.
-
-For likelihood-based estimators, `logLik()`, `AIC()`, and `BIC()` include
-estimated shape, dispersion, variance, and absorbed fixed-effect parameters
-when these parameters belong to the reported likelihood. Conditional
-Poisson and conditional logistic likelihoods count only the regression
-parameters that remain after conditioning. Gaussian within and
-Swamy-Arora random-effects estimators do not report a likelihood, so their
-information criteria are undefined.
-
-```{r hausman}
-panhausman(fit_fe, fit_re)
-```
-
-## Hurdle models for panel counts
-
-For outcomes with a distinct zero-generating process, `panhurdle()`
-fits two fixed-effects components. The first is an exact conditional
-logistic model for $I(y_{it}>0)$. The second is a zero-truncated Poisson or
-NB2 model for positive counts. Its density is
-
-$$
-f_+(y \mid \mu, \theta) =
-\frac{f(y \mid \mu, \theta)}{1-f(0 \mid \mu, \theta)}, \qquad y>0.
-$$
-
-The count distribution is selected with `family`. Both positive-count
-models jointly estimate covariate coefficients and individual intercepts;
-the NB2 model also estimates $\theta$.
-
-```{r hurdle}
-data(copd)
-fit_hurdle <- panhurdle(
-  exacerbations ~ crp,
-  data = copd,
-  index = c("id", "visit"),
-  family = "negbin"
-)
-plot(fit_hurdle)
-```
+`fitted()` and in-sample `predict()` follow the original row order.
+Random-effects predictions are marginal over the latent effects.
+Fixed-effects predictions for new data add the estimated effects of
+known units; unseen units are errors unless `allow.new.levels = TRUE`,
+which sets their effect to zero. For the conditional logit, in-sample
+fitted values are conditional on each unit's success total, and
+new-data probabilities are not identified.
 
 ## Computational validation
 
-The test suite compares estimators with established implementations where
-the statistical models coincide. Comparisons include `stats::glm()` for
-pooled generalized linear models, `MASS::glm.nb()` for pooled NB2,
-`plm::plm()` for Gaussian panel models, `plm::pht()`,
-`AER::ivreg()` and `fixest::feols()` for the instrumental-variable
-estimators, `survival::clogit()` for exact
-conditional logistic regression, `fixest` for absorbed fixed-effects count
-models, `pglm` for compatible random-effects likelihoods, and
-`pscl::hurdle()` for zero-truncated count likelihoods, `glmmTMB` for the
-Laplace random-effects gamma model, and `marginaleffects` for average
-partial effects.
+The test suite (`tests/testthat`) and the scripts in `validation/`
+compare each estimator with an established implementation of the same
+model:
+
+| Estimator | Reference implementation |
+|---|---|
+| Pooled GLMs, pooled NB2 | `stats::glm()`, `MASS::glm.nb()` |
+| Gaussian pooled, within, between, random; HC1 and cluster covariances | `plm::plm()`, `plm::vcovHC()`, `sandwich` |
+| Fixed-effects Poisson and NB2, two-way counts | `fixest`, `pglm` |
+| Conditional logit, fixed-effects ordered logit | `survival::clogit()` |
+| Random-effects Poisson, NB, binomial | `pglm`, `lme4` |
+| Random-effects gamma, beta, ordered | `glmmTMB`, `betareg`, `ordinal::clmm()`, `MASS::polr()` |
+| Tobit | `AER::tobit()`, `censReg` |
+| Hurdle count part | `pscl::hurdle()` |
+| Random slopes | `lme4::lmer()`, `lme4::glmer()`, `glmmTMB`, `GLMMadaptive` |
+| IV, Hausman-Taylor | `plm::plm()`, `plm::pht()`, `AER::ivreg()`, `fixest::feols()` |
+| Difference and system GMM | `plm::pgmm()` |
+| Selection | `stats::glm()`, `plm`, `sandwich`, `sampleSelection::heckit()` (one period) |
+| TWFE DiD and event study | `fixest::feols()`, `survival::clogit()` |
+| Group-time ATT and aggregations | `did::att_gt()`, `did::aggte()` |
+| Extended TWFE | `etwfe::etwfe()`, `etwfe::emfx()` |
+| Finite mixtures | `flexmix` |
+| Quantile regression | `quantreg::rq()`; MM-QR moment conditions as Stata `xtqreg` |
+| Average partial effects | `marginaleffects` |
 
 ## Model scope
 
-The package focuses on Gaussian, Poisson, binomial, NB2, gamma, ordered, beta
-and Tobit panel models, with two-part models for semicontinuous costs. Instrumental
-variables (`paniv()`) and GMM (`pangmm()`) are available for linear models
-only, and so is panel quantile regression (`panqr()`). The binomial
-fixed-effects model is the conditional logit, with individual effects or,
-with `effect = "twoways"`, individual effects conditioned out and time
-effects estimated as dummies; there is no fixed-effects estimator for the
-beta and ordered probit models. These
-restrictions define the current statistical scope and prevent unlike
-estimators from being presented under a common option.
+* Families: Gaussian, Poisson, binomial (logit, probit), NB2, gamma,
+  ordered logit and probit, beta and tobit; two-part and hurdle models
+  for zeros.
+* Fixed effects: Gaussian, Poisson, NB2, gamma, conditional logit and
+  ordered logit. There is no fixed-effects estimator for the probit,
+  ordered probit, beta and tobit models.
+* Random effects: every family; random slopes for Gaussian, Poisson,
+  NB2, gamma and binomial models.
+* Linear only: instrumental variables (`paniv()`), GMM (`pangmm()`),
+  selection (`panselect()`) and quantile regression (`panqr()`).
+* Policy: `did()` and `eventstudy()` for Gaussian, count and binary
+  outcomes; `attgt()` for continuous outcomes; `etwfe()` for Gaussian,
+  Poisson and binary outcomes.
+
+These restrictions keep unlike estimators from being presented under a
+common option.
 
 ## References
 
-Allison, P. D., and Waterman, R. P. (2002). Fixed-effects negative binomial
-regression models. *Sociological Methodology*, 32, 247-265.
+Allison, P. D., and Waterman, R. P. (2002). Fixed-effects negative
+binomial regression models. *Sociological Methodology*, 32, 247-265.
+
+Arellano, M., and Bond, S. (1991). Some tests of specification for panel
+data. *Review of Economic Studies*, 58, 277-297.
 
 Baetschmann, G., Staub, K. E., and Winkelmann, R. (2015). Consistent
-estimation of the fixed effects ordered logit model. *Journal of the Royal
-Statistical Society A*, 178, 685-703.
+estimation of the fixed effects ordered logit model. *Journal of the
+Royal Statistical Society A*, 178, 685-703.
 
 Baltagi, B. H. (1981). Simultaneous equations with error components.
 *Journal of Econometrics*, 17, 189-200.
 
+Blundell, R., and Bond, S. (1998). Initial conditions and moment
+restrictions in dynamic panel data models. *Journal of Econometrics*,
+87, 115-143.
+
+Callaway, B., and Sant'Anna, P. H. C. (2021). Difference-in-differences
+with multiple time periods. *Journal of Econometrics*, 225, 200-230.
+
+Canay, I. A. (2011). A simple approach to quantile regression for panel
+data. *The Econometrics Journal*, 14, 368-386.
+
 Chamberlain, G. (1980). Analysis of covariance with qualitative data.
 *Review of Economic Studies*, 47, 225-238.
+
+Deb, P., and Trivedi, P. K. (1997). Demand for medical care by the
+elderly: a finite mixture approach. *Journal of Applied Econometrics*,
+12, 313-336.
+
+Deb, P., and Trivedi, P. K. (2002). The structure of demand for health
+care: latent class versus two-part models. *Journal of Health
+Economics*, 21, 601-625.
 
 Duan, N., Manning, W. G., Morris, C. N., and Newhouse, J. P. (1983). A
 comparison of alternative models for the demand for medical care.
@@ -760,18 +565,29 @@ rates and proportions. *Journal of Applied Statistics*, 31, 799-815.
 Goodman-Bacon, A. (2021). Difference-in-differences with variation in
 treatment timing. *Journal of Econometrics*, 225, 254-277.
 
-Guimaraes, P., and Portugal, P. (2010). A simple feasible procedure to fit
-models with high-dimensional fixed effects. *Stata Journal*, 10, 628-649.
+Guimaraes, P., and Portugal, P. (2010). A simple feasible procedure to
+fit models with high-dimensional fixed effects. *Stata Journal*, 10,
+628-649.
 
-Hausman, J., Hall, B. H., and Griliches, Z. (1984). Econometric models for
-count data with an application to the patents-R&D relationship.
+Hausman, J., Hall, B. H., and Griliches, Z. (1984). Econometric models
+for count data with an application to the patents-R&D relationship.
 *Econometrica*, 52, 909-938.
 
 Hausman, J. A., and Taylor, W. E. (1981). Panel data and unobservable
 individual effects. *Econometrica*, 49, 1377-1398.
 
-Mundlak, Y. (1978). On the pooling of time series and cross section data.
-*Econometrica*, 46, 69-85.
+Laird, N. M., and Ware, J. H. (1982). Random-effects models for
+longitudinal data. *Biometrics*, 38, 963-974.
+
+Machado, J. A. F., and Santos Silva, J. M. C. (2019). Quantiles via
+moments. *Journal of Econometrics*, 213, 145-173.
+
+Mundlak, Y. (1978). On the pooling of time series and cross section
+data. *Econometrica*, 46, 69-85.
+
+Sant'Anna, P. H. C., and Zhao, J. (2020). Doubly robust
+difference-in-differences estimators. *Journal of Econometrics*, 219,
+101-122.
 
 Smithson, M., and Verkuilen, J. (2006). A better lemon squeezer?
 Maximum-likelihood regression with beta-distributed dependent variables.
@@ -781,15 +597,34 @@ Sun, L., and Abraham, S. (2021). Estimating dynamic treatment effects in
 event studies with heterogeneous treatment effects. *Journal of
 Econometrics*, 225, 175-199.
 
-Van Ourti, T. (2004). Measuring horizontal inequity in Belgian health care
-using a Gaussian random effects two part count data model. *Health
+Swamy, P. A. V. B., and Arora, S. S. (1972). The exact finite sample
+properties of the estimators of coefficients in the error components
+regression models. *Econometrica*, 40, 261-275.
+
+Tobin, J. (1958). Estimation of relationships for limited dependent
+variables. *Econometrica*, 26, 24-36.
+
+Van Ourti, T. (2004). Measuring horizontal inequity in Belgian health
+care using a Gaussian random effects two part count data model. *Health
 Economics*, 13, 705-724.
+
+Windmeijer, F. (2005). A finite sample correction for the variance of
+linear efficient two-step GMM estimators. *Journal of Econometrics*,
+126, 25-51.
+
+Wooldridge, J. M. (1995). Selection corrections for panel data models
+under conditional mean independence assumptions. *Journal of
+Econometrics*, 68, 115-132.
 
 Wooldridge, J. M. (2005). Unobserved heterogeneity and estimation of
 average partial effects. In D. W. K. Andrews and J. H. Stock (Eds.),
 *Identification and Inference for Econometric Models*, 27-55. Cambridge
 University Press.
 
+Wooldridge, J. M. (2021). Two-way fixed effects, the two-way Mundlak
+regression, and difference-in-differences estimators. Working paper,
+SSRN 3906345.
+
 Wooldridge, J. M. (2023). Simple approaches to nonlinear
-difference-in-differences with panel data. *The Econometrics Journal*, 26,
-C31-C66.
+difference-in-differences with panel data. *The Econometrics Journal*,
+26, C31-C66.
