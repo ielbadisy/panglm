@@ -102,3 +102,35 @@ test_that("methods: predict, summary, cluster vcov, seed, panfmmselect", {
   expect_equal(sel$BIC[2], BIC(a), tolerance = 1e-8)
   expect_true(sel$BIC[2] < sel$BIC[1])
 })
+
+test_that("individual weights: weighted GLM at k = 1, replicated individuals at k = 2", {
+  d <- fmm_sim()
+  d$sw <- rep(runif(200, 0.5, 2), each = 3)
+  a <- panfmm(y ~ x, d, c("id", "t"), k = 1, weights = d$sw)
+  g <- suppressWarnings(glm(y ~ x, poisson, d, weights = sw,
+                            control = glm.control(epsilon = 1e-14)))
+  expect_equal(unname(coef(a)), unname(coef(g)), tolerance = 1e-8)
+  expect_equal(a$loglik, as.numeric(logLik(g)), tolerance = 1e-10)
+  expect_equal(unname(sqrt(diag(vcov(a)))), unname(sqrt(diag(vcov(g)))), tolerance = 1e-5)
+  skip_if_missing("sandwich")
+  expect_equal(unname(sqrt(diag(vcov(a, type = "cluster")))),
+               unname(sqrt(diag(sandwich::vcovCL(g, cluster = ~ id, type = "HC0")))),
+               tolerance = 1e-6)
+
+  d$w <- rep(rep(1:2, 100), each = 3)
+  a <- panfmm(y ~ x, d, c("id", "t"), k = 2, weights = d$w, nstart = 3, seed = 1)
+  dr <- d[rep(seq_len(nrow(d)), d$w), ]
+  dr$rid <- paste(dr$id, ave(dr$t, dr$id, dr$t, FUN = seq_along))
+  b <- panfmm(y ~ x, dr, c("rid", "t"), k = 2, nstart = 3, seed = 1)
+  expect_equal(coef(a), coef(b), tolerance = 1e-7)
+  expect_equal(a$loglik, b$loglik, tolerance = 1e-10)
+  expect_equal(sqrt(diag(vcov(a))), sqrt(diag(vcov(b))), tolerance = 1e-6)
+  expect_lt(max(abs(colSums(a$weights * a$score))), 1e-5)
+  expect_length(a$weights, 200L)
+  expect_null(panfmm(y ~ x, d, c("id", "t"), k = 1, weights = rep(1, nrow(d)))$weights)
+
+  expect_error(panfmm(y ~ x, d, c("id", "t"), k = 2, weights = runif(nrow(d))),
+               "constant within individuals")
+  expect_error(panfmm(y ~ x, d, c("id", "t"), k = 2, weights = -d$w), "nonnegative")
+  expect_error(panfmm(y ~ x, d, c("id", "t"), k = 2, weights = d$w[-1]), "nrow")
+})

@@ -29,6 +29,23 @@
 #' default) and the factor `G / (G - 1)`, the convention used in the rest of
 #' the package for likelihoods whose units are individuals.
 #'
+#' @section Weights:
+#' Class membership is a property of the individual, so `weights` are
+#' individual (sampling) weights: they must be constant within individuals
+#' (one weight per individual, repeated over its rows) and `panfmm()` stops
+#' otherwise. The fit maximizes the weighted pseudo log-likelihood
+#' `sum_i w_i log L_i`, the convention of flexmix (whose integer weights must
+#' also be identical within groups). In the EM algorithm the M step weights
+#' become `w_i tau_ic`, and the class probabilities are weighted means of
+#' the posteriors. The classical covariance is `solve(-H_w)` from the
+#' weighted Hessian, which is correct for frequency weights; for sampling
+#' weights use `vcov = "cluster"`, the sandwich `B (sum_g S_g S_g') B` with
+#' the weighted individual scores `S_i = w_i s_i` summed within clusters.
+#' Individuals with zero weight do not contribute. With weights the
+#' reported `loglik` (hence AIC and BIC) is the weighted log-likelihood, and
+#' BIC keeps `n` the number of observations (flexmix uses the sum of the
+#' weights, which differs for sampling weights scaled to population totals).
+#'
 #' Ancillary parameters are estimated on the log scale: `log(sigma)` for the
 #' Gaussian family and `log(theta)` for NB2 (variance
 #' `mu + mu^2 / theta`, i.e. `alpha = 1 / theta`). The class probabilities
@@ -66,6 +83,9 @@
 #' @param tol convergence tolerance on the relative change of the EM
 #'   log-likelihood
 #' @param na.action missing-data action passed to [stats::model.frame()]
+#' @param weights optional nonnegative individual (sampling) weights, one
+#'   per row of `data` and constant within individuals; see the Weights
+#'   section
 #' @return an object of class `"panfmm"`, a list with components
 #'   `coefficients` (all parameters, named `class<c>:<term>` and
 #'   `prior<c>:<term>`), `vcov`, `vcov_type`, `classcoef` (a matrix of
@@ -77,7 +97,8 @@
 #'   rownames the individual identifiers), `class` (the modal posterior
 #'   class), `classmean` (the mean outcome of each class, used for the label
 #'   order), `loglik`, `df`, `starts` (log-likelihood of each EM start),
-#'   `nobs`, `n_groups`, `k`, `family`, `call` and `formula`. It has `print`,
+#'   `nobs`, `n_groups`, `weights` (the individual weights, `NULL` without
+#'   weights), `k`, `family`, `call` and `formula`. It has `print`,
 #'   `summary`, `coef`, `vcov`, `nobs`, `logLik` (hence `AIC` and `BIC`, with
 #'   `n` the number of observations), `confint` and `predict` methods.
 #' @references
@@ -118,7 +139,7 @@
 panfmm <- function(formula, data, index, k = 2, family = "poisson",
                    concomitant = NULL, nstart = 10, seed = NULL,
                    vcov = c("classical", "cluster"), maxit = 1000, tol = 1e-6,
-                   na.action = stats::na.omit) {
+                   na.action = stats::na.omit, weights = NULL) {
   vcov <- match.arg(vcov)
   family <- resolve_family(family)
   if (!family$family %in% c("gaussian", "poisson", "negbin", "binomial")) {
@@ -178,14 +199,25 @@ panfmm <- function(formula, data, index, k = 2, family = "poisson",
   if (k > 1L && panel$n_groups <= k) {
     stop("panfmm() needs more individuals than classes", call. = FALSE)
   }
+  w <- NULL
+  if (!is.null(weights)) {
+    if (!is.numeric(weights) || length(weights) != nrow(data) ||
+        any(!is.finite(weights)) || any(weights < 0)) {
+      stop("'weights' must be a finite nonnegative numeric vector with nrow(data) values",
+           call. = FALSE)
+    }
+    w <- fmm_individual_weights(weights[model_rows][ord], panel$group_size)
+    if (!any(w > 0)) stop("all weights are zero", call. = FALSE)
+    if (all(w == 1)) w <- NULL
+  }
 
-  spec <- fmm_spec(X, Z, y, group, family$family, k)
+  spec <- fmm_spec(X, Z, y, group, family$family, k, w)
   em <- fmm_em_starts(spec, nstart, seed, maxit, tol)
   par <- em$par
   for (pass in 1:3) {
     par <- fmm_reorder(spec, par)
     contrib <- function(theta, score) fmm_contrib(spec, theta, score)
-    opt <- ml_optimize(par, contrib, rep(1, panel$n_groups), maxit = 500, tol = 1e-12)
+    opt <- ml_optimize(par, contrib, spec$w, maxit = 500, tol = 1e-12)
     par <- opt$theta
     if (identical(fmm_class_order(spec, par), seq_len(k))) break
   }
@@ -226,6 +258,7 @@ panfmm <- function(formula, data, index, k = 2, family = "poisson",
   fit$nobs <- length(y)
   fit$n_groups <- panel$n_groups
   fit$group_size <- panel$group_size
+  fit$weights <- w
   fit$y <- y
   fit$X <- X
   fit$Z <- Z
@@ -269,7 +302,7 @@ fmm_formulas <- function(formula, concomitant) {
 #'
 #' @keywords internal
 #' @noRd
-fmm_spec <- function(X, Z, y, group, family, k) {
+fmm_spec <- function(X, Z, y, group, family, k, w = NULL) {
   p <- ncol(X)
   q <- ncol(Z)
   aux <- family %in% c("gaussian", "negbin")
@@ -283,7 +316,22 @@ fmm_spec <- function(X, Z, y, group, family, k) {
   } else character(0)
   list(X = X, Z = Z, y = y, group = group, family = family, k = k, p = p, q = q,
        aux = aux, m = m, N = nrow(Z), names = c(cls, pri),
+       w = if (is.null(w)) rep(1, nrow(Z)) else w,
        lgy = if (family == "negbin") lgamma(y + 1) else NULL)
+}
+
+#' Individual weights from observation weights constant within individuals
+#'
+#' @keywords internal
+#' @noRd
+fmm_individual_weights <- function(weights, group_size) {
+  group <- rep.int(seq_along(group_size), group_size)
+  w <- as.numeric(rowsum(weights, group, reorder = FALSE)) / group_size
+  if (any(abs(weights - w[group]) > 1e-10 * pmax(1, abs(weights)))) {
+    stop("panfmm() weights must be constant within individuals ",
+         "(one weight per individual, e.g. a sampling weight)", call. = FALSE)
+  }
+  w
 }
 
 #' Split the parameter vector into class blocks and the prior matrix
@@ -450,24 +498,24 @@ fmm_mstep_negbin <- function(X, y, w, block, maxit = 5L, tol = 1e-8) {
 
 #' Weighted multinomial logit M step for the class probabilities
 #'
-#' Maximizes `sum_i sum_c tau_ic log pi_ic(z_i)` by Newton steps.
+#' Maximizes `sum_i w_i sum_c tau_ic log pi_ic(z_i)` by Newton steps.
 #'
 #' @keywords internal
 #' @noRd
-fmm_mstep_prior <- function(Z, tau, G) {
+fmm_mstep_prior <- function(Z, tau, G, w) {
   k <- ncol(tau); q <- ncol(Z)
   if (q == 1L && all(Z == 1)) {
-    pm <- pmax(colMeans(tau), 1e-300)
+    pm <- pmax(colSums(w * tau) / sum(w), 1e-300)
     G[1L, ] <- log(pm) - log(pm[1L])
     return(G)
   }
-  obj <- function(G) sum(tau * fmm_logprior(Z, G))
+  obj <- function(G) sum(w * tau * fmm_logprior(Z, G))
   for (it in seq_len(25L)) {
     pr <- exp(fmm_logprior(Z, G))
-    g <- as.numeric(crossprod(Z, tau[, -1L, drop = FALSE] - pr[, -1L, drop = FALSE]))
+    g <- as.numeric(crossprod(Z, w * (tau[, -1L, drop = FALSE] - pr[, -1L, drop = FALSE])))
     H <- matrix(0, q * (k - 1L), q * (k - 1L))
     for (a in 2:k) for (b in 2:k) {
-      wab <- pr[, a] * ((a == b) - pr[, b])
+      wab <- w * pr[, a] * ((a == b) - pr[, b])
       ia <- (a - 2L) * q + seq_len(q); ib <- (b - 2L) * q + seq_len(q)
       H[ia, ib] <- -crossprod(Z * wab, Z)
     }
@@ -505,14 +553,16 @@ fmm_em <- function(spec, tau, maxit, tol) {
   ll <- -Inf
   for (it in seq_len(maxit)) {
     blocks <- lapply(seq_len(k), function(c) {
-      fmm_mstep_class(spec, tau[spec$group, c], blocks[[c]])
+      fmm_mstep_class(spec, (spec$w * tau[, c])[spec$group], blocks[[c]])
     })
-    if (k > 1L) G <- fmm_mstep_prior(spec$Z, tau, G)
+    if (k > 1L) G <- fmm_mstep_prior(spec$Z, tau, G, spec$w)
     par <- fmm_pack(spec, blocks, G)
     st <- fmm_contrib(spec, par, FALSE)
-    ll <- sum(st$ll)
+    ll <- sum(spec$w * st$ll)
     tau <- st$tau
-    if (k > 1L && any(colSums(tau) < 1e-6 * spec$N)) stop("an empty class", call. = FALSE)
+    if (k > 1L && any(colSums(spec$w * tau) < 1e-6 * sum(spec$w))) {
+      stop("an empty class", call. = FALSE)
+    }
     if (k == 1L || abs(ll - old) <= tol * (abs(ll) + tol)) break
     old <- ll
   }
@@ -602,7 +652,7 @@ fmm_unpack <- function(spec, theta) {
   pr <- exp(fmm_logprior(spec$Z, sp$G))
   colnames(pr) <- colnames(cc)
   out$prior <- pr
-  out$prior_mean <- colMeans(pr)
+  out$prior_mean <- colSums(spec$w * pr) / sum(spec$w)
   out$prior_coef <- matrix(sp$G, spec$q, k, dimnames = list(colnames(spec$Z), colnames(cc)))
   out$classmean <- stats::setNames(fmm_class_means(spec, theta), colnames(cc))
   out
@@ -614,7 +664,8 @@ fmm_unpack <- function(spec, theta) {
 #' @param type `NULL` (the covariance stored on the fit), `"classical"`
 #'   (inverse of the negative Hessian of the observed-data log-likelihood)
 #'   or `"cluster"` (sandwich with individual scores summed within
-#'   clusters, factor `G / (G - 1)`)
+#'   clusters, factor `G / (G - 1)`; with weights the individual scores are
+#'   multiplied by the individual weights)
 #' @param cluster optional clustering vector with one value per observation
 #'   used in the fit (in the row order of the data), constant within
 #'   individuals; defaults to the individual
@@ -636,7 +687,8 @@ vcov.panfmm <- function(object, type = NULL, cluster = NULL, ...) {
   } else {
     individual_clusters(panglm_cluster_vector(object, cluster), object$group_size)
   }
-  v <- ml_sandwich(object$vcov_classical, object$score, rep(1, object$n_groups),
+  v <- ml_sandwich(object$vcov_classical, object$score,
+                   object$weights %||% rep(1, object$n_groups),
                    cluster = cl, clusters_only = TRUE)
   dimnames(v) <- dimnames(object$vcov_classical)
   v

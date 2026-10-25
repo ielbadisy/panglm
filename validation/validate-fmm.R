@@ -25,6 +25,11 @@
 # k = 1 reduces to the pooled GLM: compared with glm(), MASS::glm.nb() and
 # panglm(model = "pooling").
 #
+# Individual weights: flexmix(weights = ) with integer weights identical
+# within individuals, the unweighted fit on replicated individuals, and at
+# k = 1 the weighted glm(), MASS::glm.nb() and lm() with sandwich::vcovCL()
+# for the cluster covariance.
+#
 # Data: a simulated panel of doctor visits (500 patients, 4 years, low and
 # high users), and two cross-sections with one row per individual (T = 1):
 # AER::DoctorVisits (5190 Australians, 1977-78) and AER::NMES1988 (4406 US
@@ -76,10 +81,11 @@ FLXMRnb2 <- function(formula = . ~ .) {
 }
 
 # compare a panfmm fit with flexmix started from its posterior ----------
-compare_flexmix <- function(label, dname, fit, ffit, aux = NULL, conc = FALSE) {
+compare_flexmix <- function(label, dname, fit, ffit, aux = NULL, conc = FALSE, bic = TRUE,
+                            ctol = 1e-5) {
   k <- fit$k
   add(label, dname, "logLik", fit$loglik, list(flexmix = as.numeric(logLik(ffit))), 1e-7)
-  add(label, dname, "BIC", BIC(fit), list(flexmix = BIC(ffit)), 1e-7)
+  if (bic) add(label, dname, "BIC", BIC(fit), list(flexmix = BIC(ffit)), 1e-7)
   pars <- parameters(ffit)
   cf <- pars[grepl("^coef\\.", rownames(pars)), , drop = FALSE]
   add(label, dname, "class coefficients", as.numeric(fit$classcoef),
@@ -90,13 +96,13 @@ compare_flexmix <- function(label, dname, fit, ffit, aux = NULL, conc = FALSE) {
   if (conc) {
     pc <- parameters(ffit, which = "concomitant")
     add(label, dname, "concomitant coefficients", as.numeric(fit$prior_coef[, -1]),
-        list(flexmix = as.numeric(pc[, -1])), 1e-5)
+        list(flexmix = as.numeric(pc[, -1])), ctol)
   } else {
     add(label, dname, "class probabilities", fit$prior_mean, list(flexmix = prior(ffit)), 1e-6)
   }
   pf <- posterior(ffit)
   if (length(ffit@group)) pf <- pf[!duplicated(ffit@group), , drop = FALSE]
-  add(label, dname, "posterior", as.numeric(fit$posterior), list(flexmix = as.numeric(pf)), 1e-5)
+  add(label, dname, "posterior", as.numeric(fit$posterior), list(flexmix = as.numeric(pf)), ctol)
 }
 
 # simulated panel of doctor visits -----------------------------------------
@@ -178,6 +184,114 @@ a <- panfmm(logcost ~ chronic + age + income, d, idx, k = 2, family = "gaussian"
 b <- flexmix(logcost ~ chronic + age + income | id, data = d, k = 2,
              cluster = post_obs(a, d$id), model = FLXMRmlnorm(), control = ctrl)
 compare_flexmix("panfmm gaussian k = 2", dname, a, b, aux = "sigma")
+
+# individual (sampling) weights ----------------------------------------------
+# flexmix(weights = ) takes integer weights identical within groups and
+# multiplies each group's log-likelihood by its weight, the panfmm()
+# convention. flexmix computes BIC with n = sum of the weights, panfmm() with
+# n = number of observations, so BIC is not compared here. With integer
+# weights the fit equals the unweighted fit on the data with each
+# individual replicated w_i times (checked below), and at k = 1 the
+# weighted fit is the weighted pooled GLM, with non-integer weights.
+wid <- sample(1:3, N, replace = TRUE)
+d$w <- rep(wid, each = TT)
+lab <- "panfmm weighted"
+a <- panfmm(visits ~ chronic + age + income, d, idx, k = 2, family = "poisson",
+            weights = d$w, nstart = 10, seed = 1)
+b <- flexmix(visits ~ chronic + age + income | id, data = d, k = 2, weights = d$w,
+             cluster = post_obs(a, d$id), model = FLXMRglm(family = "poisson"),
+             control = ctrl)
+compare_flexmix(paste(lab, "poisson k = 2"), dname, a, b, bic = FALSE)
+rf <- refit(b)
+add(paste(lab, "poisson k = 2"), dname, "classical SE (vs refit optim Hessian)", se(vcov(a)),
+    list(flexmix = sqrt(diag(rf@vcov))), 1e-3)
+rep_rows <- rep(seq_len(nrow(d)), d$w)
+dr <- d[rep_rows, ]
+dr$rid <- paste(dr$id, ave(dr$year, dr$id, dr$year, FUN = seq_along), sep = ".")
+ar <- panfmm(visits ~ chronic + age + income, dr, c("rid", "year"), k = 2,
+             family = "poisson", nstart = 10, seed = 1)
+add(paste(lab, "poisson k = 2"), dname, "coefficients (vs replicated individuals)",
+    coef(a), list(panfmm_replicated = coef(ar)), 1e-6)
+add(paste(lab, "poisson k = 2"), dname, "classical SE (vs replicated individuals)",
+    se(vcov(a)), list(panfmm_replicated = se(vcov(ar))), 1e-5)
+
+a <- panfmm(visits ~ chronic + age + income, d, idx, k = 2, family = "poisson",
+            concomitant = ~ female, weights = d$w, nstart = 10, seed = 1)
+b <- flexmix(visits ~ chronic + age + income | id, data = d, k = 2, weights = d$w,
+             cluster = post_obs(a, d$id), model = FLXMRglm(family = "poisson"),
+             concomitant = FLXPmultinom(~ female), control = ctrl)
+# flexmix stops here after 5 EM iterations with a log-likelihood 4e-10
+# below the optimum (its nnet::multinom concomitant M step has relative
+# tolerance 1e-8), so the concomitant coefficients and posteriors agree to
+# 1e-3 only; the replicated-individuals fit, at the optimum, agrees exactly
+compare_flexmix(paste(lab, "poisson k = 2, concomitant"), dname, a, b, conc = TRUE,
+                bic = FALSE, ctol = 1e-3)
+ar <- panfmm(visits ~ chronic + age + income, dr, c("rid", "year"), k = 2,
+             family = "poisson", concomitant = ~ female, nstart = 10, seed = 1)
+add(paste(lab, "poisson k = 2, concomitant"), dname,
+    "coefficients (vs replicated individuals)", coef(a),
+    list(panfmm_replicated = coef(ar)), 1e-6)
+add(paste(lab, "poisson k = 2, concomitant"), dname,
+    "classical SE (vs replicated individuals)", se(vcov(a)),
+    list(panfmm_replicated = se(vcov(ar))), 1e-5)
+
+a <- panfmm(visits_nb ~ chronic + age + income, d, idx, k = 2, family = "negbin",
+            weights = d$w, nstart = 10, seed = 1)
+b <- flexmix(visits_nb ~ chronic + age + income | id, data = d, k = 2, weights = d$w,
+             cluster = post_obs(a, d$id), model = FLXMRnb2(), control = ctrl)
+compare_flexmix(paste(lab, "negbin k = 2"), dname, a, b, aux = "theta", bic = FALSE)
+
+a <- panfmm(anyvisit ~ chronic + age + income, d, idx, k = 2, family = "binomial",
+            weights = d$w, nstart = 10, seed = 1)
+b <- flexmix(cbind(anyvisit, 1 - anyvisit) ~ chronic + age + income | id, data = d, k = 2,
+             weights = d$w, cluster = post_obs(a, d$id),
+             model = FLXMRglm(family = "binomial"), control = ctrl)
+compare_flexmix(paste(lab, "binomial k = 2"), dname, a, b, bic = FALSE)
+
+a <- panfmm(logcost ~ chronic + age + income, d, idx, k = 2, family = "gaussian",
+            weights = d$w, nstart = 10, seed = 1)
+b <- flexmix(logcost ~ chronic + age + income | id, data = d, k = 2, weights = d$w,
+             cluster = post_obs(a, d$id), model = FLXMRmlnorm(), control = ctrl)
+compare_flexmix(paste(lab, "gaussian k = 2"), dname, a, b, aux = "sigma", bic = FALSE)
+
+# k = 1 with non-integer weights: the weighted pooled GLM; the cluster
+# sandwich equals sandwich::vcovCL(type = "HC0") clustered by individual
+# (factor G / (G - 1))
+d$sw <- rep(runif(N, 0.2, 3), each = TT)
+lab <- "panfmm weighted k = 1"
+a <- panfmm(visits ~ chronic + age + income, d, idx, k = 1, family = "poisson",
+            weights = d$sw)
+g <- glm(visits ~ chronic + age + income, poisson, d, weights = sw,
+         control = glm.control(epsilon = 1e-14))
+add(paste(lab, "poisson"), dname, "coefficients", coef(a), list(glm = coef(g)), 1e-8)
+add(paste(lab, "poisson"), dname, "logLik", a$loglik, list(glm = as.numeric(logLik(g))), 1e-8)
+add(paste(lab, "poisson"), dname, "classical SE", se(vcov(a)), list(glm = se(vcov(g))), 1e-5)
+add(paste(lab, "poisson"), dname, "cluster SE", se(vcov(a, type = "cluster")),
+    list(sandwich = se(sandwich::vcovCL(g, cluster = ~ id, type = "HC0"))), 1e-5)
+
+a <- panfmm(visits_nb ~ chronic + age + income, d, idx, k = 1, family = "negbin",
+            weights = d$sw)
+g <- suppressWarnings(glm.nb(visits_nb ~ chronic + age + income, d, weights = sw,
+                             control = glm.control(epsilon = 1e-13)))
+add(paste(lab, "negbin"), dname, "coefficients", coef(a)[1:4], list(MASS = coef(g)), 1e-6)
+add(paste(lab, "negbin"), dname, "theta", a$theta, list(MASS = g$theta), 1e-5)
+add(paste(lab, "negbin"), dname, "logLik", a$loglik, list(MASS = as.numeric(logLik(g))), 1e-8)
+
+a <- panfmm(anyvisit ~ chronic + age + income, d, idx, k = 1, family = "binomial",
+            weights = d$sw)
+g <- suppressWarnings(glm(anyvisit ~ chronic + age + income, binomial, d, weights = sw,
+                          control = glm.control(epsilon = 1e-14)))
+add(paste(lab, "binomial"), dname, "coefficients", coef(a), list(glm = coef(g)), 1e-8)
+add(paste(lab, "binomial"), dname, "classical SE", se(vcov(a)), list(glm = se(vcov(g))), 1e-5)
+add(paste(lab, "binomial"), dname, "cluster SE", se(vcov(a, type = "cluster")),
+    list(sandwich = se(sandwich::vcovCL(g, cluster = ~ id, type = "HC0"))), 1e-5)
+
+a <- panfmm(logcost ~ chronic + age + income, d, idx, k = 1, family = "gaussian",
+            weights = d$sw)
+g <- lm(logcost ~ chronic + age + income, d, weights = sw)
+add(paste(lab, "gaussian"), dname, "coefficients", coef(a)[1:4], list(lm = coef(g)), 1e-8)
+add(paste(lab, "gaussian"), dname, "sigma (weighted ML)", a$sigma,
+    list(lm = sqrt(sum(d$sw * residuals(g)^2) / sum(d$sw))), 1e-8)
 
 # k = 1 is the pooled GLM -------------------------------------------------------
 lab <- "panfmm k = 1"

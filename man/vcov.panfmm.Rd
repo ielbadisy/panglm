@@ -12,7 +12,8 @@
 \item{type}{`NULL` (the covariance stored on the fit), `"classical"`
 (inverse of the negative Hessian of the observed-data log-likelihood)
 or `"cluster"` (sandwich with individual scores summed within
-clusters, factor `G / (G - 1)`)}
+clusters, factor `G / (G - 1)`; with weights the individual scores are
+multiplied by the individual weights)}
 
 \item{cluster}{optional clustering vector with one value per observation
 used in the fit (in the row order of the data), constant within

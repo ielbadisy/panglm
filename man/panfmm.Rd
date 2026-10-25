@@ -16,7 +16,8 @@ panfmm(
   vcov = c("classical", "cluster"),
   maxit = 1000,
   tol = 1e-06,
-  na.action = stats::na.omit
+  na.action = stats::na.omit,
+  weights = NULL
 )
 }
 \arguments{
@@ -53,6 +54,10 @@ random number stream is restored afterwards}
 log-likelihood}
 
 \item{na.action}{missing-data action passed to [stats::model.frame()]}
+
+\item{weights}{optional nonnegative individual (sampling) weights, one
+per row of `data` and constant within individuals; see the Weights
+section}
 }
 \value{
 an object of class `"panfmm"`, a list with components
@@ -66,7 +71,8 @@ an object of class `"panfmm"`, a list with components
   rownames the individual identifiers), `class` (the modal posterior
   class), `classmean` (the mean outcome of each class, used for the label
   order), `loglik`, `df`, `starts` (log-likelihood of each EM start),
-  `nobs`, `n_groups`, `k`, `family`, `call` and `formula`. It has `print`,
+  `nobs`, `n_groups`, `weights` (the individual weights, `NULL` without
+  weights), `k`, `family`, `call` and `formula`. It has `print`,
   `summary`, `coef`, `vcov`, `nobs`, `logLik` (hence `AIC` and `BIC`, with
   `n` the number of observations), `confint` and `predict` methods.
 }
@@ -100,6 +106,25 @@ covariance is the sandwich `B (sum_g s_g s_g') B` with `B = solve(-H)`,
 the individual scores `s_i` summed within clusters (the individual by
 default) and the factor `G / (G - 1)`, the convention used in the rest of
 the package for likelihoods whose units are individuals.
+}
+
+\section{Weights}{
+
+Class membership is a property of the individual, so `weights` are
+individual (sampling) weights: they must be constant within individuals
+(one weight per individual, repeated over its rows) and `panfmm()` stops
+otherwise. The fit maximizes the weighted pseudo log-likelihood
+`sum_i w_i log L_i`, the convention of flexmix (whose integer weights must
+also be identical within groups). In the EM algorithm the M step weights
+become `w_i tau_ic`, and the class probabilities are weighted means of
+the posteriors. The classical covariance is `solve(-H_w)` from the
+weighted Hessian, which is correct for frequency weights; for sampling
+weights use `vcov = "cluster"`, the sandwich `B (sum_g S_g S_g') B` with
+the weighted individual scores `S_i = w_i s_i` summed within clusters.
+Individuals with zero weight do not contribute. With weights the
+reported `loglik` (hence AIC and BIC) is the weighted log-likelihood, and
+BIC keeps `n` the number of observations (flexmix uses the sum of the
+weights, which differs for sampling weights scaled to population totals).
 
 Ancillary parameters are estimated on the log scale: `log(sigma)` for the
 Gaussian family and `log(theta)` for NB2 (variance
