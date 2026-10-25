@@ -34,6 +34,12 @@
   extended two-way FE model for linear, Poisson and logit outcomes and
   reports ATTs on the response scale with delta-method SEs. Validated
   against `etwfe::etwfe()` and `etwfe::emfx()`.
+* Panel sample selection: `panselect()` implements the Wooldridge (1995)
+  correction for attrition or death in cohort studies: per-period probits
+  with Mundlak means, inverse Mills ratio terms (by period or common) in a
+  fixed-effects or pooled Mundlak outcome equation, panel bootstrap SEs by
+  default and a Wald test of selection bias. Validated against `glm`, `plm`
+  and, for one period, `sampleSelection::heckit()`.
 * `validation/`: per-model scripts comparing panglm with established
   packages, summarized in `validation/REPORT.md`.
 

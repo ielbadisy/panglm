@@ -52,6 +52,7 @@ Suggests:
     betareg,
     splines,
     pscl,
+    sampleSelection,
     generics,
     broom,
     did,
