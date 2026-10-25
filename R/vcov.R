@@ -5,11 +5,15 @@
 #' `type = "classical"` returns the model-based covariance, also for a fit
 #' made with a robust `vcov`. `type = "HC1"` (heteroskedasticity-robust / White) and
 #' `type = "cluster"` (cluster-robust sandwich, clustered by the panel
-#' individual unless `cluster` is given) are only available for
-#' `model = "pooling"` and `model = "within"`; random-effects models
-#' already integrate out the individual-level correlation via the
-#' likelihood, so they report model-based (information-matrix) standard
-#' errors, matching the convention used by `lme4`/`glmmTMB`.
+#' individual unless `cluster` is given) are available for pooled and
+#' fixed-effects models. For random-effects models only `"cluster"` is
+#' available: the units of the integrated likelihood are individuals, so
+#' the sandwich is built from individual scores (clusters must contain
+#' whole individuals) with the factor G / (G - 1). It guards against a
+#' misspecified random-effects distribution and is the right choice with
+#' sampling weights. For the unweighted Gaussian (Swamy-Arora) fit it is
+#' the cluster sandwich of the quasi-demeaned regression, as in Stata's
+#' `xtreg, re vce(cluster id)`.
 #' For exact conditional binomial models, the independent likelihood units
 #' are panel strata rather than observations. Their HC1 covariance therefore
 #' uses stratum-level scores. A custom cluster may combine complete strata,
@@ -38,13 +42,12 @@ vcov.panglm <- function(object, type = NULL, cluster = NULL, ...) {
   type <- match.arg(type, c("classical", "HC1", "cluster"))
   if (type == "classical") return(object$vcov_classical %||% object$vcov)
 
-  if (!object$model %in% c("pooling", "within")) {
-    stop("type = '", type, "' is only available for model = 'pooling' or 'within'; ",
-         "random-effects models already integrate out the individual-level ",
-         "correlation via the likelihood, so a sandwich correction on top of ",
-         "that isn't a well-motivated correction here -- they report ",
-         "model-based (information-matrix) standard errors, matching the ",
-         "convention used by lme4/glmmTMB", call. = FALSE)
+  if (object$model == "random") {
+    if (type == "HC1") {
+      stop("type = 'HC1' is not available for model = 'random': the independent units ",
+           "are individuals, so use type = 'cluster'", call. = FALSE)
+    }
+    return(robust_vcov_random(object, cluster))
   }
 
   if (object$model == "within" && object$family$family == "negbin") {

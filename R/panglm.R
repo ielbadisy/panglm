@@ -17,8 +17,13 @@
 #'   row of `data`, e.g. inverse probability weights for attrition.
 #'   Nontrivial weights are supported for `model = "pooling"` (all
 #'   families); the fit then maximizes the weighted (pseudo) log-likelihood
-#'   and robust covariances use the weighted scores. Weighted fixed-effects
-#'   and random-effects likelihoods are not implemented and are rejected.
+#'   and robust covariances use the weighted scores. For `model = "random"`
+#'   the weights must be constant within individuals (one weight per
+#'   individual, e.g. a baseline sampling weight) and the fit maximizes
+#'   the weighted sum of the individual integrated log-likelihoods; the
+#'   Gaussian model is then estimated by maximum likelihood instead of
+#'   Swamy-Arora FGLS. Use `vcov = "cluster"` for design-based standard
+#'   errors. Weighted fixed-effects fits are rejected.
 #' @param offset optional model offset. Nonzero offsets, including offsets
 #'   specified in `formula`, are rejected explicitly rather than ignored.
 #' @param na.action missing-data action passed to [stats::model.frame()]
@@ -30,8 +35,9 @@
 #'   `"binomial"` (no general closed-form two-way conditional logit exists).
 #' @param vcov one of `"classical"`, `"HC1"` (heteroskedasticity-robust) or
 #'   `"cluster"` (cluster-robust, clustered by the panel individual by
-#'   default). Only applies to `model = "pooling"`/`"within"`; random-effects
-#'   models always report model-based (information-matrix) standard errors.
+#'   default). For `model = "random"` only `"classical"` and `"cluster"`
+#'   are available; the cluster covariance uses the individual scores of
+#'   the integrated likelihood, so clusters must contain whole individuals.
 #'   See [vcov.panglm()] to recompute a different type after fitting.
 #' @param cre logical. If `TRUE`, fit a correlated random effects
 #'   (Mundlak) model: the individual means of every time-varying regressor
@@ -230,7 +236,12 @@ panglm <- function(formula, data, index,
     } else {
       fit_within(X_noint, y, family, group_start, group_size, maxit, tol)
     },
-    random  = fit_random(X_full, y, family, group_start, group_size, R, maxit, tol)
+    random  = if (is.null(prior_weights)) {
+      fit_random(X_full, y, family, group_start, group_size, R, maxit, tol)
+    } else {
+      fit_random_weighted(X_full, y, family, group_start, group_size, R, maxit, tol,
+                          prior_weights)
+    }
   )
 
   fit$X <- if (model == "pooling" || model == "random") X_full else X_noint
@@ -626,7 +637,14 @@ fit_random <- function(X, y, family, group_start, group_size, R, maxit, tol) {
   if (family$family == "negbin") {
     scale <- apply(X, 2, function(col) { s <- stats::sd(col); if (s > 0) s else 1 })
     Xs <- sweep(X, 2, scale, "/")
-    res <- random_negbin_fit_cpp(Xs, y, group_start, group_size, maxit, tol)
+    res <- tryCatch(random_negbin_fit_cpp(Xs, y, group_start, group_size, maxit, tol),
+                    error = function(e) NULL)
+    if (is.null(res) || !is.finite(res$loglik) || any(!is.finite(res$vcov_unscaled))) {
+      # the compiled Newton iteration can fail on strongly overdispersed
+      # panels; maximize the same likelihood with the generic optimizer
+      return(fit_random_weighted(X, y, family, group_start, group_size, R, maxit, tol,
+                                 rep(1, nrow(X)), compiled_start = FALSE))
+    }
     coefs <- as.numeric(res$coefficients) / scale
     names(coefs) <- colnames(X)
     scale_full <- c(scale, 1, 1) # a, b are unscaled
@@ -778,5 +796,5 @@ random_binomial_marginal_mean <- function(eta, sigma, family, quadrature = 21L) 
 }
 
 weighted_random_ok <- function(family) {
-  family$family %in% c("ordered")
+  family$family %in% c("ordered", "gaussian", "poisson", "negbin", "binomial", "gamma")
 }

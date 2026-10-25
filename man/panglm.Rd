@@ -40,8 +40,13 @@ individual (and optionally time) columns, e.g. `c("id", "time")`}
 row of `data`, e.g. inverse probability weights for attrition.
 Nontrivial weights are supported for `model = "pooling"` (all
 families); the fit then maximizes the weighted (pseudo) log-likelihood
-and robust covariances use the weighted scores. Weighted fixed-effects
-and random-effects likelihoods are not implemented and are rejected.}
+and robust covariances use the weighted scores. For `model = "random"`
+the weights must be constant within individuals (one weight per
+individual, e.g. a baseline sampling weight) and the fit maximizes
+the weighted sum of the individual integrated log-likelihoods; the
+Gaussian model is then estimated by maximum likelihood instead of
+Swamy-Arora FGLS. Use `vcov = "cluster"` for design-based standard
+errors. Weighted fixed-effects fits are rejected.}
 
 \item{offset}{optional model offset. Nonzero offsets, including offsets
 specified in `formula`, are rejected explicitly rather than ignored.}
@@ -57,8 +62,9 @@ inner-weighted-FWL, the algorithm behind `fixest::feglm()`); not yet for
 
 \item{vcov}{one of `"classical"`, `"HC1"` (heteroskedasticity-robust) or
 `"cluster"` (cluster-robust, clustered by the panel individual by
-default). Only applies to `model = "pooling"`/`"within"`; random-effects
-models always report model-based (information-matrix) standard errors.
+default). For `model = "random"` only `"classical"` and `"cluster"`
+are available; the cluster covariance uses the individual scores of
+the integrated likelihood, so clusters must contain whole individuals.
 See [vcov.panglm()] to recompute a different type after fitting.}
 
 \item{cre}{logical. If `TRUE`, fit a correlated random effects
