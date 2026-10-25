@@ -16,14 +16,25 @@ duplicate_individuals <- function(d) {
   dd
 }
 
+# the counts are Poisson given the effect, so the random-effects negative
+# binomial is at its boundary (a -> Inf) and warns
+fit_case <- function(family, ...) {
+  if (family == "negbin") {
+    expect_warning(m <- panglm(..., family = family), "diverges")
+    m
+  } else {
+    panglm(..., family = family)
+  }
+}
+
 cases <- list(c("yc", "poisson"), c("yc", "negbin"), c("yb", "binomial"),
               c("yb", "probit"), c("yg", "gamma"), c("yn", "gaussian"))
 
 test_that("R individual likelihoods reproduce the compiled random-effects fits", {
   d <- make_re_data()
   for (cs in cases) {
-    m <- panglm(stats::as.formula(paste(cs[1], "~ x")), d, index = c("id", "t"),
-                model = "random", family = cs[2])
+    m <- fit_case(cs[2], stats::as.formula(paste(cs[1], "~ x")), d, index = c("id", "t"),
+                  model = "random")
     grp <- rep(seq_along(m$group_size), m$group_size)
     contrib <- panglm:::random_contrib(m$family, m$X, m$y, grp, m$quadrature_nodes %||% 21L)
     ll <- sum(contrib(panglm:::random_theta(m, m$family), FALSE)$ll)
@@ -36,9 +47,9 @@ test_that("integer individual weights equal duplicated individuals", {
   dd <- duplicate_individuals(d)
   for (cs in cases) {
     f <- stats::as.formula(paste(cs[1], "~ x"))
-    mw <- panglm(f, d, index = c("id", "t"), model = "random", family = cs[2], weights = d$w)
-    md <- panglm(f, dd, index = c("id", "t"), model = "random", family = cs[2],
-                 weights = rep(1 + 1e-9, nrow(dd)))
+    mw <- fit_case(cs[2], f, d, index = c("id", "t"), model = "random", weights = d$w)
+    md <- fit_case(cs[2], f, dd, index = c("id", "t"), model = "random",
+                   weights = rep(1 + 1e-9, nrow(dd)))
     expect_equal(coef(mw)[-1], coef(md)[-1], tolerance = 1e-5, info = cs[2])
     expect_true(all(is.finite(vcov(mw, type = "cluster"))), info = cs[2])
   }

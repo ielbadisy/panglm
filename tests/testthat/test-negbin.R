@@ -79,3 +79,28 @@ test_that("random negbin is NOT the same fit as random poisson (regression guard
   f_pois <- panglm(count ~ value + capital, data = Grunfeld, index = c("firm", "year"), model = "random", family = "poisson")
   expect_false(isTRUE(all.equal(f_nb$loglik, f_pois$loglik)))
 })
+
+test_that("random negbin at the a -> Inf boundary warns and reproduces the gamma Poisson slopes", {
+  f <- exacerbations ~ treatment + age + smoker + crp
+  expect_warning(nb <- panglm(f, copd, index = c("id", "visit"), model = "random",
+                              family = "negbin"), "diverges")
+  pois <- panglm(f, copd, index = c("id", "visit"), model = "random", family = "poisson")
+  expect_gt(nb$negbin_a, 1e4)
+  expect_equal(coef(nb)[-1], coef(pois)[-1], tolerance = 1e-3)
+  expect_equal(nb$loglik, pois$loglik, tolerance = 1e-5)
+  # the slopes keep usable standard errors
+  expect_true(all(diag(vcov(nb))[-1] > 0))
+  # weighted (generic optimizer) path
+  expect_warning(panglm(f, copd, index = c("id", "visit"), model = "random",
+                        family = "negbin", weights = rep(2, nrow(copd))), "diverges")
+})
+
+test_that("random negbin away from the boundary is silent", {
+  set.seed(11)
+  G <- 200; Tt <- 5
+  d <- data.frame(id = rep(seq_len(G), each = Tt), t = rep(seq_len(Tt), G), x = rnorm(G * Tt))
+  d$y <- rnbinom(G * Tt, mu = exp(0.5 + 0.4 * d$x + rep(rnorm(G, 0, 0.5), each = Tt)), size = 1.5)
+  m <- expect_silent(panglm(y ~ x, d, index = c("id", "t"), model = "random", family = "negbin"))
+  expect_lt(m$negbin_a, 1e4)
+  expect_true(all(diag(vcov(m)) > 0))
+})

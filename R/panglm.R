@@ -934,6 +934,7 @@ fit_random <- function(X, y, family, group_start, group_size, R, maxit, tol) {
     vcov_full <- res$vcov_unscaled / outer(scale_full, scale_full)
     vcov <- vcov_full[seq_len(ncol(X)), seq_len(ncol(X)), drop = FALSE]
     dimnames(vcov) <- list(colnames(X), colnames(X))
+    negbin_random_warning(res$a, vcov_full)
     mean_multiplier <- if (res$a > 1) res$b / (res$a - 1) else NA_real_
     fitted <- mean_multiplier * as.numeric(exp(X %*% coefs))
     return(list(coefficients = coefs, vcov = vcov, fitted.values = fitted,
@@ -944,6 +945,34 @@ fit_random <- function(X, y, family, group_start, group_size, R, maxit, tol) {
   if (family$family == "binomial") return(fit_random_binomial(X, y, family, group_start, group_size, R, maxit, tol))
   if (family$family == "gamma") return(fit_random_gamma(X, y, group_start, group_size, R, maxit, tol))
   stop("model = 'random' is not yet implemented for family '", family$family, "'", call. = FALSE)
+}
+
+#' Warn about a random-effects negative binomial fit at the boundary
+#'
+#' In the beta-negative-binomial model of Hausman, Hall and Griliches
+#' (1984) the counts given the individual effect are Poisson when
+#' `a -> Inf` with `exp(intercept) / a` fixed: the model then reduces to
+#' the random-effects Poisson with a gamma effect, the slopes are those of
+#' `family = "poisson"` and the intercept and `a` are not separately
+#' identified (their joint Hessian is singular). Warns in that case, and
+#' whenever the Hessian is not negative definite.
+#'
+#' @keywords internal
+#' @noRd
+negbin_random_warning <- function(a, vcov) {
+  v <- diag(vcov)
+  bad_vcov <- any(!is.finite(vcov)) || any(v <= 0)
+  if (is.finite(a) && a > 1e4) {
+    warning("random-effects negative binomial: the estimate of 'a' diverges (a = ",
+            format(a, digits = 3), "), so the counts show no overdispersion beyond ",
+            "the individual effect. The model reduces to the random-effects Poisson ",
+            "(family = \"poisson\"), whose slopes it reproduces; the intercept is not ",
+            "identified and its standard error is not reliable", call. = FALSE)
+  } else if (bad_vcov) {
+    warning("random-effects negative binomial: the Hessian is not negative definite, ",
+            "so some standard errors are not available", call. = FALSE)
+  }
+  invisible(NULL)
 }
 
 fit_random_gaussian <- function(X, y, group_start, group_size, maxit, tol) {

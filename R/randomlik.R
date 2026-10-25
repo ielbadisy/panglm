@@ -166,12 +166,17 @@ fit_random_weighted <- function(X, y, family, group_start, group_size, R, maxit,
   start_k <- c(0L, cumsum(size_k)[-length(size_k)])
   group <- rep(seq_along(size_k), size_k)
   start <- if (compiled_start) {
-    tryCatch(random_theta(fit_random(Xk, yk, family, start_k, size_k, R, maxit, tol), family),
+    # only a starting value: its warnings are repeated, if they still
+    # apply, by the weighted fit
+    tryCatch(random_theta(suppressWarnings(fit_random(Xk, yk, family, start_k, size_k, R,
+                                                      maxit, tol)), family),
              error = function(e) NULL)
   }
   if (is.null(start) || any(!is.finite(start))) start <- random_default_theta(Xk, yk, family, maxit, tol)
   contrib <- random_contrib(family, Xk, yk, group, R)
-  res <- ml_optimize(start, contrib, w[keep_ind], maxit, tol)
+  res <- ml_optimize(start, contrib, w[keep_ind], maxit, tol,
+                     warn = family$family != "negbin",
+                     what = paste0("the random-effects ", family$family, " fit"))
   score <- matrix(0, length(w), length(res$theta))
   score[keep_ind, ] <- res$score
   res$score <- score
@@ -193,6 +198,7 @@ fit_random_weighted <- function(X, y, family, group_start, group_size, R, maxit,
     },
     negbin = {
       a <- exp(extra[1]); b <- exp(extra[2])
+      negbin_random_warning(a, res$vcov)
       out$negbin_a <- a; out$negbin_b <- b
       out$marginal_mean_multiplier <- if (a > 1) b / (a - 1) else NA_real_
       out$fitted.values <- out$marginal_mean_multiplier * exp(eta)
