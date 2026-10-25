@@ -9,13 +9,16 @@
 #' @param index length-1 or length-2 character vector identifying the
 #'   individual (and optionally time) columns, e.g. `c("id", "time")`
 #' @param model one of `"pooling"`, `"within"`, `"random"`
-#' @param family one of `"gaussian"`, `"poisson"`, `"binomial"`, `"negbin"`,
-#'   or a family spec from [gaussian_family()] / [poisson_family()] /
-#'   [binomial_family()] / [negbin_family()]
-#' @param weights optional observation weights. Only `NULL` or a vector of
-#'   ones is currently accepted; nontrivial weights are rejected explicitly
-#'   because weighted conditional panel likelihoods require different
-#'   estimators.
+#' @param family one of `"gaussian"`, `"poisson"`, `"binomial"`, `"probit"`,
+#'   `"negbin"`, `"gamma"`, or a family spec from [gaussian_family()] /
+#'   [poisson_family()] / [binomial_family()] / [negbin_family()] /
+#'   [gamma_family()]
+#' @param weights optional nonnegative observation (prior) weights, one per
+#'   row of `data`, e.g. inverse probability weights for attrition.
+#'   Nontrivial weights are supported for `model = "pooling"` (all
+#'   families); the fit then maximizes the weighted (pseudo) log-likelihood
+#'   and robust covariances use the weighted scores. Weighted fixed-effects
+#'   and random-effects likelihoods are not implemented and are rejected.
 #' @param offset optional model offset. Nonzero offsets, including offsets
 #'   specified in `formula`, are rejected explicitly rather than ignored.
 #' @param na.action missing-data action passed to [stats::model.frame()]
@@ -30,8 +33,15 @@
 #'   default). Only applies to `model = "pooling"`/`"within"`; random-effects
 #'   models always report model-based (information-matrix) standard errors.
 #'   See [vcov.panglm()] to recompute a different type after fitting.
+#' @param cre logical. If `TRUE`, fit a correlated random effects
+#'   (Mundlak) model: the individual means of every time-varying regressor
+#'   are added to the design matrix, named `mean_<column>`. Available for
+#'   `model = "pooling"` and `model = "random"` and every family. The slopes
+#'   of the time-varying regressors then have a within interpretation, and
+#'   the joint test of the mean terms is a robust Hausman-type test
+#'   (reported by [summary.panglm()]).
 #' @param R number of Gauss-Hermite quadrature nodes (random-effects
-#'   binomial models only)
+#'   binomial and gamma models only)
 #' @param maxit maximum IRLS/Newton iterations
 #' @param tol convergence tolerance
 #' @return an object of class `"panglm"`
@@ -59,6 +69,12 @@
 #' fit_pois <- panglm(exacerbations ~ crp, data = copd,
 #'                     index = c("id", "visit"), model = "within", family = "poisson")
 #' coef(fit_pois)
+#'
+#' # correlated random effects (Mundlak) probit for hospitalization
+#' fit_cre <- panglm(hospitalized ~ treatment + age + crp, data = copd,
+#'                   index = c("id", "visit"), model = "random",
+#'                   family = "probit", cre = TRUE)
+#' summary(fit_cre)
 #' @export
 panglm <- function(formula, data, index,
                     model = c("pooling", "within", "random"),
@@ -67,11 +83,19 @@ panglm <- function(formula, data, index,
                     na.action = stats::na.omit,
                     effect = c("individual", "twoways"),
                     vcov = c("classical", "HC1", "cluster"),
+                    cre = FALSE,
                     R = 21, maxit = 100, tol = 1e-10) {
   model <- match.arg(model)
   effect <- match.arg(effect)
   vcov <- match.arg(vcov)
   family <- resolve_family(family)
+  if (!is.logical(cre) || length(cre) != 1L || is.na(cre)) {
+    stop("'cre' must be TRUE or FALSE", call. = FALSE)
+  }
+  if (cre && model == "within") {
+    stop("cre = TRUE applies to model = 'pooling' or 'random'; the within ",
+         "estimator already removes the individual effect", call. = FALSE)
+  }
 
   if (missing(index)) stop("'index' is required, e.g. index = c(\"id\", \"time\")", call. = FALSE)
   if (!is.character(index) || !length(index) %in% 1:2 || anyDuplicated(index)) {
@@ -91,6 +115,7 @@ panglm <- function(formula, data, index,
   model_rows <- match(rownames(mf), rownames(data))
   if (anyNA(model_rows)) stop("could not align model-frame rows with data", call. = FALSE)
 
+  used_weights <- NULL
   if (!is.null(weights)) {
     if (!is.numeric(weights) || length(weights) != nrow(data) ||
         any(!is.finite(weights)) || any(weights < 0)) {
@@ -98,8 +123,13 @@ panglm <- function(formula, data, index,
            call. = FALSE)
     }
     used_weights <- weights[model_rows]
-    if (any(used_weights != 1)) {
-      stop("nontrivial observation weights are not supported", call. = FALSE)
+    if (all(used_weights == 1)) {
+      used_weights <- NULL
+    } else if (model != "pooling") {
+      stop("nontrivial observation weights are only supported for model = 'pooling'",
+           call. = FALSE)
+    } else if (!any(used_weights > 0)) {
+      stop("at least one observation weight must be positive", call. = FALSE)
     }
   }
   formula_offset <- stats::model.offset(mf)
@@ -121,6 +151,9 @@ panglm <- function(formula, data, index,
   if (family$family %in% c("poisson", "negbin") && any(y < 0)) {
     stop("count-family responses must be nonnegative", call. = FALSE)
   }
+  if (family$family == "gamma" && any(y[if (is.null(used_weights)) TRUE else used_weights > 0] <= 0)) {
+    stop("family = 'gamma' requires a strictly positive response", call. = FALSE)
+  }
   X_full <- stats::model.matrix(formula, data = mf)
   terms_object <- stats::terms(mf)
   xlevels <- stats::.getXlevels(terms_object, mf)
@@ -133,12 +166,20 @@ panglm <- function(formula, data, index,
 
   y <- y[ord]
   X_full <- X_full[ord, , drop = FALSE]
+  prior_weights <- if (is.null(used_weights)) NULL else used_weights[ord]
   group_start <- panel$group_start
   group_size <- panel$group_size
   time_id <- if (length(index) > 1) panel$data[[index[2]]] else NULL
 
   has_intercept <- "(Intercept)" %in% colnames(X_full)
   X_noint <- if (has_intercept) X_full[, setdiff(colnames(X_full), "(Intercept)"), drop = FALSE] else X_full
+
+  cre_columns <- character(0)
+  if (cre) {
+    cre_means <- cre_mean_columns(X_noint, group_start, group_size)
+    cre_columns <- colnames(cre_means)
+    X_full <- cbind(X_full, cre_means)
+  }
 
   candidate_X <- if (model %in% c("pooling", "random")) X_full else X_noint
   estimable <- panglm_estimable_columns(
@@ -156,7 +197,7 @@ panglm <- function(formula, data, index,
   }
 
   fit <- switch(model,
-    pooling = fit_pooled(X_full, y, family, maxit, tol),
+    pooling = fit_pooled(X_full, y, family, maxit, tol, prior_weights),
     within  = if (effect == "twoways" && family$family == "gaussian") {
       fit_within_twoways_gaussian(X_noint, y, group_start, group_size, time_id, maxit, tol)
     } else if (effect == "twoways" && family$family == "poisson") {
@@ -171,6 +212,11 @@ panglm <- function(formula, data, index,
 
   fit$X <- if (model == "pooling" || model == "random") X_full else X_noint
   fit$y <- y
+  fit$weights <- prior_weights
+  fit$cre <- cre
+  fit$cre_columns <- intersect(cre_columns, colnames(fit$X))
+  data_vars <- unique(c(intersect(all.vars(terms_object), names(data)), index))
+  fit$data <- data[model_rows[ord], data_vars, drop = FALSE]
   fit$group_start <- group_start
   fit$group_size <- group_size
   fit$time_id <- time_id
@@ -254,11 +300,11 @@ panglm_estimable_columns <- function(X, model, effect, group_start, group_size, 
 panglm_parameter_count <- function(fit, model, family, effect, n_groups, n_time) {
   k <- length(fit$coefficients)
   if (model == "pooling") {
-    return(k + as.integer(family %in% c("gaussian", "negbin")))
+    return(k + as.integer(family %in% c("gaussian", "negbin", "gamma")))
   }
   if (model == "random") {
     extra <- switch(family, gaussian = 2L, poisson = 1L, negbin = 2L,
-                    binomial = 1L, 0L)
+                    binomial = 1L, gamma = 2L, 0L)
     return(k + extra)
   }
   if (effect == "twoways") {
@@ -267,12 +313,13 @@ panglm_parameter_count <- function(fit, model, family, effect, n_groups, n_time)
   }
   if (family %in% c("poisson", "binomial")) return(k)
   used_groups <- fit$n_used_groups %||% n_groups
-  k + used_groups + as.integer(family %in% c("gaussian", "negbin"))
+  k + used_groups + as.integer(family %in% c("gaussian", "negbin", "gamma"))
 }
 
-fit_pooled <- function(X, y, family, maxit, tol) {
+fit_pooled <- function(X, y, family, maxit, tol, weights = NULL) {
+  n_pos <- if (is.null(weights)) nrow(X) else sum(weights > 0)
   if (family$family == "negbin") {
-    res <- negbin_irls_fit_cpp(X, y, maxit, tol)
+    res <- negbin_irls_fit_cpp(X, y, maxit, tol, weights)
     coefs <- as.numeric(res$coefficients)
     names(coefs) <- colnames(X)
     vcov <- res$vcov_unscaled
@@ -280,17 +327,54 @@ fit_pooled <- function(X, y, family, maxit, tol) {
     fitted <- as.numeric(exp(X %*% res$coefficients))
     return(list(coefficients = coefs, vcov = vcov, bread = vcov, fitted.values = fitted,
                 loglik = res$loglik, theta = res$theta, dispersion = 1,
-                df.residual = nrow(X) - ncol(X) - 1, iterations = res$iterations))
+                df.residual = n_pos - ncol(X) - 1, iterations = res$iterations))
   }
-  res <- irls_fit_cpp(X, y, family$family_id, family$link_id, maxit, tol)
+  res <- irls_fit_cpp(X, y, family$family_id, family$link_id, maxit, tol, weights)
   vcov <- res$vcov_unscaled * res$dispersion
   bread <- res$vcov_unscaled
   coefs <- as.numeric(res$coefficients)
   names(coefs) <- colnames(X)
   dimnames(vcov) <- dimnames(bread) <- list(colnames(X), colnames(X))
-  list(coefficients = coefs, vcov = vcov, bread = bread, fitted.values = as.numeric(res$fitted.values),
-       loglik = res$loglik, dispersion = res$dispersion, df.residual = nrow(X) - ncol(X),
+  fitted <- as.numeric(res$fitted.values)
+  loglik <- res$loglik
+  if (family$family == "gamma") loglik <- gamma_loglik(y, fitted, weights)
+  list(coefficients = coefs, vcov = vcov, bread = bread, fitted.values = fitted,
+       loglik = loglik, dispersion = res$dispersion, df.residual = n_pos - ncol(X),
        iterations = res$iterations)
+}
+
+#' Gamma log-likelihood with the shape estimated from the deviance
+#'
+#' Uses the convention of `stats::Gamma()$aic`: dispersion = deviance / sum(w),
+#' so that logLik() and AIC() agree with `stats::glm(family = Gamma)`.
+#'
+#' @keywords internal
+#' @noRd
+gamma_loglik <- function(y, mu, weights = NULL) {
+  w <- if (is.null(weights)) rep(1, length(y)) else weights
+  keep <- w > 0 & is.finite(mu)
+  y <- y[keep]; mu <- mu[keep]; w <- w[keep]
+  dev <- 2 * sum(w * (-log(y / mu) + (y - mu) / mu))
+  disp <- dev / sum(w)
+  sum(w * stats::dgamma(y, shape = 1 / disp, scale = mu * disp, log = TRUE))
+}
+
+#' Individual means of the time-varying columns (Mundlak device)
+#'
+#' @keywords internal
+#' @noRd
+cre_mean_columns <- function(X, group_start, group_size) {
+  if (!ncol(X)) stop("cre = TRUE needs at least one regressor", call. = FALSE)
+  deviation <- within_demean_cpp(X, rep(0, nrow(X)), group_start, group_size)$X
+  scale <- pmax(1, apply(abs(X), 2, max))
+  varying <- apply(abs(deviation), 2, max) > 1e-8 * scale
+  if (!any(varying)) {
+    stop("cre = TRUE needs at least one regressor that varies within individuals",
+         call. = FALSE)
+  }
+  means <- X[, varying, drop = FALSE] - deviation[, varying, drop = FALSE]
+  colnames(means) <- paste0("mean_", colnames(X)[varying])
+  means
 }
 
 fit_within <- function(X, y, family, group_start, group_size, maxit, tol) {
@@ -358,6 +442,7 @@ fit_within <- function(X, y, family, group_start, group_size, maxit, tol) {
   }
   if (family$family == "negbin") return(fit_within_negbin_dummy(X, y, group_start, group_size, maxit, tol))
   if (family$family == "binomial") return(fit_within_binomial(X, y, group_start, group_size, maxit, tol))
+  if (family$family == "gamma") return(fit_within_gamma(X, y, group_start, group_size, maxit, tol))
   stop("model = 'within' is not yet implemented for family '", family$family, "'", call. = FALSE)
 }
 
@@ -532,6 +617,7 @@ fit_random <- function(X, y, family, group_start, group_size, R, maxit, tol) {
                 df.residual = nrow(X) - ncol(X) - 2, iterations = res$iterations))
   }
   if (family$family == "binomial") return(fit_random_binomial(X, y, family, group_start, group_size, R, maxit, tol))
+  if (family$family == "gamma") return(fit_random_gamma(X, y, group_start, group_size, R, maxit, tol))
   stop("model = 'random' is not yet implemented for family '", family$family, "'", call. = FALSE)
 }
 
@@ -664,10 +750,5 @@ fit_random_binomial <- function(X, y, family, group_start, group_size, R, maxit,
 random_binomial_marginal_mean <- function(eta, sigma, family, quadrature = 21L) {
   gh <- if (is.list(quadrature)) quadrature else gauss_hermite_quadrature(quadrature)
   shifts <- sqrt(2) * sigma * gh$nodes
-  values <- vapply(
-    eta,
-    function(value) sum(gh$weights * linkinv_r(value + shifts, family$link_id)),
-    numeric(1)
-  )
-  as.numeric(values)
+  as.numeric(linkinv_r(outer(eta, shifts, "+"), family$link_id) %*% gh$weights)
 }

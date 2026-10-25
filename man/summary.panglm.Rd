@@ -20,7 +20,11 @@ an object of class `"summary.panglm"`, a list with components
   applicable), `iterations`, and `vcov_type` (which covariance estimator
   produced the reported standard errors). It has an associated
   `print.summary.panglm()` method and is normally printed rather than
-  used programmatically.
+  used programmatically. Also included are `sigma` (random-intercept
+  standard deviation) and `shape` (gamma shape) when estimated, and, for
+  `cre = TRUE` fits, `cre_test`: the Wald (Mundlak) test that the
+  individual-mean coefficients are jointly zero, computed with the
+  covariance stored on the fit.
 }
 \description{
 Produces a classic coefficient table (Estimate, Std. Error, z value,

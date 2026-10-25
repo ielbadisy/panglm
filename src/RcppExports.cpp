@@ -12,8 +12,8 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // irls_fit_cpp
-List irls_fit_cpp(const arma::mat& X, const arma::vec& y, int family_id, int link_id, int maxit, double tol);
-RcppExport SEXP _panglm_irls_fit_cpp(SEXP XSEXP, SEXP ySEXP, SEXP family_idSEXP, SEXP link_idSEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+List irls_fit_cpp(const arma::mat& X, const arma::vec& y, int family_id, int link_id, int maxit, double tol, Rcpp::Nullable<Rcpp::NumericVector> weights);
+RcppExport SEXP _panglm_irls_fit_cpp(SEXP XSEXP, SEXP ySEXP, SEXP family_idSEXP, SEXP link_idSEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP weightsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -23,13 +23,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type link_id(link_idSEXP);
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
-    rcpp_result_gen = Rcpp::wrap(irls_fit_cpp(X, y, family_id, link_id, maxit, tol));
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type weights(weightsSEXP);
+    rcpp_result_gen = Rcpp::wrap(irls_fit_cpp(X, y, family_id, link_id, maxit, tol, weights));
     return rcpp_result_gen;
 END_RCPP
 }
 // negbin_irls_fit_cpp
-List negbin_irls_fit_cpp(const arma::mat& X, const arma::vec& y, int maxit, double tol);
-RcppExport SEXP _panglm_negbin_irls_fit_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+List negbin_irls_fit_cpp(const arma::mat& X, const arma::vec& y, int maxit, double tol, Rcpp::Nullable<Rcpp::NumericVector> weights);
+RcppExport SEXP _panglm_negbin_irls_fit_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP weightsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -37,7 +38,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::vec& >::type y(ySEXP);
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
-    rcpp_result_gen = Rcpp::wrap(negbin_irls_fit_cpp(X, y, maxit, tol));
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type weights(weightsSEXP);
+    rcpp_result_gen = Rcpp::wrap(negbin_irls_fit_cpp(X, y, maxit, tol, weights));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -205,8 +207,8 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_panglm_irls_fit_cpp", (DL_FUNC) &_panglm_irls_fit_cpp, 6},
-    {"_panglm_negbin_irls_fit_cpp", (DL_FUNC) &_panglm_negbin_irls_fit_cpp, 4},
+    {"_panglm_irls_fit_cpp", (DL_FUNC) &_panglm_irls_fit_cpp, 7},
+    {"_panglm_negbin_irls_fit_cpp", (DL_FUNC) &_panglm_negbin_irls_fit_cpp, 5},
     {"_panglm_random_binomial_loglik_grad_cpp", (DL_FUNC) &_panglm_random_binomial_loglik_grad_cpp, 9},
     {"_panglm_group_means_cpp", (DL_FUNC) &_panglm_group_means_cpp, 4},
     {"_panglm_quasi_demean_cpp", (DL_FUNC) &_panglm_quasi_demean_cpp, 5},

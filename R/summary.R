@@ -13,7 +13,11 @@
 #'   applicable), `iterations`, and `vcov_type` (which covariance estimator
 #'   produced the reported standard errors). It has an associated
 #'   `print.summary.panglm()` method and is normally printed rather than
-#'   used programmatically.
+#'   used programmatically. Also included are `sigma` (random-intercept
+#'   standard deviation) and `shape` (gamma shape) when estimated, and, for
+#'   `cre = TRUE` fits, `cre_test`: the Wald (Mundlak) test that the
+#'   individual-mean coefficients are jointly zero, computed with the
+#'   covariance stored on the fit.
 #' @examples
 #' data(copd)
 #' fit <- panglm(fev1 ~ treatment + age + smoker + crp, data = copd,
@@ -34,7 +38,8 @@ summary.panglm <- function(object, ...) {
               coefficients = coeftable, nobs = object$nobs, n_groups = object$n_groups,
               df.residual = object$df.residual, loglik = object$loglik,
               dispersion = object$dispersion, iterations = object$iterations,
-              vcov_type = object$vcov_type)
+              vcov_type = object$vcov_type, sigma = object$sigma, shape = object$shape,
+              weighted = !is.null(object$weights), cre_test = cre_wald_test(object))
   class(out) <- "summary.panglm"
   out
 }
@@ -52,6 +57,30 @@ print.summary.panglm <- function(x, digits = max(3, getOption("digits") - 3), ..
   cat("\n")
   if (!is.na(x$loglik)) cat("Log-likelihood:", format(x$loglik, digits = digits), "\n")
   if (!is.null(x$dispersion)) cat("Dispersion parameter:", format(x$dispersion, digits = digits), "\n")
+  if (!is.null(x$sigma) && identical(x$model, "random")) {
+    cat("Random-intercept SD:", format(x$sigma, digits = digits), "\n")
+  }
+  if (!is.null(x$shape)) cat("Gamma shape:", format(x$shape, digits = digits), "\n")
+  if (isTRUE(x$weighted)) cat("Observation weights: yes (weighted pseudo-likelihood)\n")
+  if (!is.null(x$cre_test)) {
+    cat("Mundlak test (individual means jointly zero): chi2(", x$cre_test$df, ") = ",
+        format(x$cre_test$statistic, digits = digits), ", p = ",
+        format.pval(x$cre_test$p.value, digits = digits), "\n", sep = "")
+  }
   cat("Residual df:", x$df.residual, " Iterations:", x$iterations, "\n\n")
   invisible(x)
+}
+
+#' Wald test that the correlated random effects means are jointly zero
+#'
+#' @keywords internal
+#' @noRd
+cre_wald_test <- function(object) {
+  columns <- object$cre_columns %||% character(0)
+  if (!length(columns)) return(NULL)
+  b <- object$coefficients[columns]
+  V <- object$vcov[columns, columns, drop = FALSE]
+  statistic <- tryCatch(as.numeric(t(b) %*% solve(V, b)), error = function(e) NA_real_)
+  list(statistic = statistic, df = length(columns),
+       p.value = stats::pchisq(statistic, length(columns), lower.tail = FALSE))
 }

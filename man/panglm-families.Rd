@@ -6,6 +6,7 @@
 \alias{poisson_family}
 \alias{binomial_family}
 \alias{negbin_family}
+\alias{gamma_family}
 \title{Family specifications for panglm}
 \usage{
 gaussian_family(link = "identity")
@@ -15,6 +16,8 @@ poisson_family(link = "log")
 binomial_family(link = c("logit", "probit"))
 
 negbin_family(link = "log")
+
+gamma_family(link = "log")
 }
 \arguments{
 \item{link}{canonical link name}
@@ -27,11 +30,18 @@ Lightweight family objects used by [panglm()], analogous in spirit to
 [stats::family] objects but keyed to the integer codes the C++ backend
 expects (see `src/families.h`).
 }
+\details{
+`gamma_family()` is the gamma GLM with a log link, the usual
+  choice for skewed positive outcomes such as health care costs: the
+  variance is proportional to the squared mean and the coefficients act
+  multiplicatively on the mean, with no retransformation needed.
+}
 \examples{
 gaussian_family()
 poisson_family()
 binomial_family("probit")
 negbin_family()
+gamma_family()
 
 data(copd)
 fit <- panglm(hospitalized ~ crp, data = copd, index = c("id", "visit"),

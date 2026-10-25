@@ -15,6 +15,7 @@ panglm(
   na.action = stats::na.omit,
   effect = c("individual", "twoways"),
   vcov = c("classical", "HC1", "cluster"),
+  cre = FALSE,
   R = 21,
   maxit = 100,
   tol = 1e-10
@@ -30,14 +31,17 @@ individual (and optionally time) columns, e.g. `c("id", "time")`}
 
 \item{model}{one of `"pooling"`, `"within"`, `"random"`}
 
-\item{family}{one of `"gaussian"`, `"poisson"`, `"binomial"`, `"negbin"`,
-or a family spec from [gaussian_family()] / [poisson_family()] /
-[binomial_family()] / [negbin_family()]}
+\item{family}{one of `"gaussian"`, `"poisson"`, `"binomial"`, `"probit"`,
+`"negbin"`, `"gamma"`, or a family spec from [gaussian_family()] /
+[poisson_family()] / [binomial_family()] / [negbin_family()] /
+[gamma_family()]}
 
-\item{weights}{optional observation weights. Only `NULL` or a vector of
-ones is currently accepted; nontrivial weights are rejected explicitly
-because weighted conditional panel likelihoods require different
-estimators.}
+\item{weights}{optional nonnegative observation (prior) weights, one per
+row of `data`, e.g. inverse probability weights for attrition.
+Nontrivial weights are supported for `model = "pooling"` (all
+families); the fit then maximizes the weighted (pseudo) log-likelihood
+and robust covariances use the weighted scores. Weighted fixed-effects
+and random-effects likelihoods are not implemented and are rejected.}
 
 \item{offset}{optional model offset. Nonzero offsets, including offsets
 specified in `formula`, are rejected explicitly rather than ignored.}
@@ -57,8 +61,16 @@ default). Only applies to `model = "pooling"`/`"within"`; random-effects
 models always report model-based (information-matrix) standard errors.
 See [vcov.panglm()] to recompute a different type after fitting.}
 
+\item{cre}{logical. If `TRUE`, fit a correlated random effects
+(Mundlak) model: the individual means of every time-varying regressor
+are added to the design matrix, named `mean_<column>`. Available for
+`model = "pooling"` and `model = "random"` and every family. The slopes
+of the time-varying regressors then have a within interpretation, and
+the joint test of the mean terms is a robust Hausman-type test
+(reported by [summary.panglm()]).}
+
 \item{R}{number of Gauss-Hermite quadrature nodes (random-effects
-binomial models only)}
+binomial and gamma models only)}
 
 \item{maxit}{maximum IRLS/Newton iterations}
 
@@ -96,4 +108,10 @@ coef(fit_re)
 fit_pois <- panglm(exacerbations ~ crp, data = copd,
                     index = c("id", "visit"), model = "within", family = "poisson")
 coef(fit_pois)
+
+# correlated random effects (Mundlak) probit for hospitalization
+fit_cre <- panglm(hospitalized ~ treatment + age + crp, data = copd,
+                  index = c("id", "visit"), model = "random",
+                  family = "probit", cre = TRUE)
+summary(fit_cre)
 }

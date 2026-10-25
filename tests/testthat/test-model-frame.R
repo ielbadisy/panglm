@@ -88,8 +88,13 @@ test_that("unsupported weights and offsets are rejected explicitly", {
                       family = "poisson")
   expect_equal(coef(unit_fit), coef(plain_fit))
   expect_error(
-    panglm(y ~ x, d, index = c("id", "time"), weights = seq_len(nrow(d))),
-    "weights are not supported"
+    panglm(y ~ x, d, index = c("id", "time"), model = "within",
+           family = "poisson", weights = seq_len(nrow(d))),
+    "only supported for model = 'pooling'"
+  )
+  expect_error(
+    panglm(y ~ x, d, index = c("id", "time"), weights = -seq_len(nrow(d))),
+    "nonnegative"
   )
   expect_error(
     panglm(y ~ x + offset(x), d, index = c("id", "time")),

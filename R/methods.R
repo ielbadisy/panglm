@@ -139,20 +139,8 @@ predict.panglm <- function(object, newdata = NULL,
          call. = FALSE)
   }
 
-  terms_object <- stats::delete.response(object$terms %||% stats::terms(object$formula))
-  model_frame <- stats::model.frame(
-    terms_object, data = newdata, xlev = object$xlevels, na.action = stats::na.pass
-  )
-  X <- stats::model.matrix(
-    terms_object, data = model_frame, contrasts.arg = object$contrasts
-  )
-  coefficient_names <- names(object$coefficients)
-  missing_columns <- setdiff(coefficient_names, colnames(X))
-  if (length(missing_columns)) {
-    stop("newdata does not produce required model column(s): ",
-         paste(missing_columns, collapse = ", "), call. = FALSE)
-  }
-  eta <- as.numeric(X[, coefficient_names, drop = FALSE] %*% object$coefficients)
+  X <- panglm_design(object, newdata)
+  eta <- as.numeric(X %*% object$coefficients)
 
   if (object$model == "within") {
     id_name <- object$index[1]
@@ -198,8 +186,58 @@ predict.panglm <- function(object, newdata = NULL,
     },
     binomial = random_binomial_marginal_mean(
       eta, object$sigma, object$family, object$quadrature_nodes %||% 21L
-    )
+    ),
+    gamma = exp(eta + object$sigma^2 / 2)
   )
+}
+
+#' Design matrix of a fitted panglm model for new data
+#'
+#' Rebuilds the model matrix from the stored terms, levels and contrasts.
+#' For correlated random effects fits the `mean_*` columns are taken from
+#' `cre_means` when given (one row per row of `newdata`), and otherwise
+#' recomputed as individual means within `newdata`.
+#'
+#' @keywords internal
+#' @noRd
+panglm_design <- function(object, newdata, cre_means = NULL) {
+  terms_object <- stats::delete.response(object$terms %||% stats::terms(object$formula))
+  model_frame <- stats::model.frame(
+    terms_object, data = newdata, xlev = object$xlevels, na.action = stats::na.pass
+  )
+  X <- stats::model.matrix(
+    terms_object, data = model_frame, contrasts.arg = object$contrasts
+  )
+  coefficient_names <- names(object$coefficients)
+  cre_columns <- object$cre_columns %||% character(0)
+  if (length(cre_columns)) {
+    if (is.null(cre_means)) {
+      id_name <- object$index[1]
+      if (!id_name %in% names(newdata)) {
+        stop("newdata must contain panel index column '", id_name,
+             "' to rebuild the correlated random effects means", call. = FALSE)
+      }
+      source <- sub("^mean_", "", cre_columns)
+      missing_source <- setdiff(source, colnames(X))
+      if (length(missing_source)) {
+        stop("newdata does not produce required model column(s): ",
+             paste(missing_source, collapse = ", "), call. = FALSE)
+      }
+      id <- newdata[[id_name]]
+      cre_means <- vapply(source, function(column) {
+        stats::ave(X[, column], id)
+      }, numeric(nrow(X)))
+      if (!is.matrix(cre_means)) cre_means <- matrix(cre_means, nrow = nrow(X))
+    }
+    colnames(cre_means) <- cre_columns
+    X <- cbind(X, cre_means)
+  }
+  missing_columns <- setdiff(coefficient_names, colnames(X))
+  if (length(missing_columns)) {
+    stop("newdata does not produce required model column(s): ",
+         paste(missing_columns, collapse = ", "), call. = FALSE)
+  }
+  X[, coefficient_names, drop = FALSE]
 }
 
 `%||%` <- function(x, y) if (is.null(x)) y else x

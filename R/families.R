@@ -11,6 +11,7 @@
 #' poisson_family()
 #' binomial_family("probit")
 #' negbin_family()
+#' gamma_family()
 #'
 #' data(copd)
 #' fit <- panglm(hospitalized ~ crp, data = copd, index = c("id", "visit"),
@@ -48,6 +49,17 @@ negbin_family <- function(link = "log") {
   list(family = "negbin", link = link, family_id = 1L, link_id = 1L)
 }
 
+#' @details `gamma_family()` is the gamma GLM with a log link, the usual
+#'   choice for skewed positive outcomes such as health care costs: the
+#'   variance is proportional to the squared mean and the coefficients act
+#'   multiplicatively on the mean, with no retransformation needed.
+#' @rdname panglm-families
+#' @export
+gamma_family <- function(link = "log") {
+  link <- match.arg(link, "log")
+  list(family = "gamma", link = link, family_id = 3L, link_id = 1L)
+}
+
 #' @keywords internal
 #' @noRd
 binomial_response_to_numeric <- function(y) {
@@ -68,6 +80,8 @@ resolve_family <- function(family) {
       binomial = binomial_family("logit"),
       probit   = binomial_family("probit"),
       negbin   = negbin_family(),
+      gamma    = gamma_family(),
+      Gamma    = gamma_family(),
       stop("unknown family '", family, "'", call. = FALSE)
     )
   }

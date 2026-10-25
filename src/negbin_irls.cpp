@@ -6,17 +6,19 @@ namespace {
 // One Newton step on the theta profile log-likelihood (mu held fixed),
 // the same update used by MASS::glm.nb's theta.ml. theta is parametrized
 // on the log scale internally to keep it positive without ad hoc clipping.
-double update_theta(const arma::vec& y, const arma::vec& mu, double theta, int newton_steps = 4) {
+double update_theta(const arma::vec& y, const arma::vec& mu, double theta,
+                    const arma::vec& prior, int newton_steps = 4) {
   double kappa = std::log(theta);
   for (int s = 0; s < newton_steps; ++s) {
     double th = std::exp(kappa);
     double g = 0.0, h = 0.0;
     for (arma::uword i = 0; i < y.n_elem; ++i) {
       double ymu = th + mu[i];
-      g += R::digamma(y[i] + th) - R::digamma(th) + std::log(th) + 1.0
-         - std::log(ymu) - (y[i] + th) / ymu;
-      h += R::trigamma(y[i] + th) - R::trigamma(th) + 1.0 / th
-         - 2.0 / ymu + (y[i] + th) / (ymu * ymu);
+      if (prior[i] <= 0.0) continue;
+      g += prior[i] * (R::digamma(y[i] + th) - R::digamma(th) + std::log(th) + 1.0
+         - std::log(ymu) - (y[i] + th) / ymu);
+      h += prior[i] * (R::trigamma(y[i] + th) - R::trigamma(th) + 1.0 / th
+         - 2.0 / ymu + (y[i] + th) / (ymu * ymu));
     }
     // chain rule to kappa = log(theta): d/dkappa = g*th, d2/dkappa2 = h*th^2 + g*th
     double g_k = g * th;
@@ -30,12 +32,14 @@ double update_theta(const arma::vec& y, const arma::vec& mu, double theta, int n
   return std::exp(kappa);
 }
 
-double negbin_loglik(const arma::vec& y, const arma::vec& mu, double theta) {
+double negbin_loglik(const arma::vec& y, const arma::vec& mu, double theta,
+                     const arma::vec& prior) {
   double ll = 0.0;
   for (arma::uword i = 0; i < y.n_elem; ++i) {
-    ll += R::lgammafn(y[i] + theta) - R::lgammafn(theta) - R::lgammafn(y[i] + 1.0)
+    if (prior[i] <= 0.0) continue;
+    ll += prior[i] * (R::lgammafn(y[i] + theta) - R::lgammafn(theta) - R::lgammafn(y[i] + 1.0)
         + theta * std::log(theta) - theta * std::log(theta + mu[i])
-        + y[i] * std::log(mu[i]) - y[i] * std::log(theta + mu[i]);
+        + y[i] * std::log(mu[i]) - y[i] * std::log(theta + mu[i]));
   }
   return ll;
 }
@@ -55,13 +59,23 @@ double negbin_loglik(const arma::vec& y, const arma::vec& mu, double theta) {
 //
 // [[Rcpp::export]]
 List negbin_irls_fit_cpp(const arma::mat& X, const arma::vec& y,
-                         int maxit = 100, double tol = 1e-10) {
+                         int maxit = 100, double tol = 1e-10,
+                         Rcpp::Nullable<Rcpp::NumericVector> weights = R_NilValue) {
   int n = X.n_rows, k = X.n_cols;
+  arma::vec prior = arma::ones<arma::vec>(n);
+  if (weights.isNotNull()) {
+    prior = Rcpp::as<arma::vec>(weights.get());
+    if ((int) prior.n_elem != n) stop("weights must have one value per row of X");
+  }
 
   // Starting values: OLS on log(y + 0.1) for beta; method-of-moments for theta.
   arma::vec ystart = arma::log(y + 0.1);
-  arma::vec beta = arma::solve(X.t() * X, X.t() * ystart, arma::solve_opts::likely_sympd);
-  double ybar = arma::mean(y), yvar = arma::var(y);
+  arma::mat Xp = X.each_col() % prior;
+  arma::vec beta = arma::solve(Xp.t() * X + 1e-12 * arma::eye(k, k), Xp.t() * ystart,
+                               arma::solve_opts::likely_sympd);
+  double psum = arma::accu(prior);
+  double ybar = arma::dot(prior, y) / psum;
+  double yvar = arma::dot(prior, arma::square(y - ybar)) / std::max(1e-12, psum - 1.0);
   double theta = (yvar > ybar && ybar > 0) ? (ybar * ybar) / (yvar - ybar) : 100.0;
   if (!std::isfinite(theta) || theta <= 0) theta = 100.0;
 
@@ -75,7 +89,7 @@ List negbin_irls_fit_cpp(const arma::mat& X, const arma::vec& y,
     for (int inner = 0; inner < 50; ++inner) {
       arma::vec eta = arma::clamp(X * beta_inner, -30.0, 30.0);
       arma::vec mu = arma::clamp(arma::exp(eta), 1e-8, arma::datum::inf);
-      arma::vec w = (mu * theta) / (theta + mu);
+      arma::vec w = prior % (mu * theta) / (theta + mu);
       arma::vec z = eta + (y - mu) / mu;
 
       arma::mat Xw = X.each_col() % arma::sqrt(w);
@@ -93,9 +107,9 @@ List negbin_irls_fit_cpp(const arma::mat& X, const arma::vec& y,
     // --- Newton for theta given beta ---
     arma::vec eta = arma::clamp(X * beta, -30.0, 30.0);
     arma::vec mu = arma::clamp(arma::exp(eta), 1e-8, arma::datum::inf);
-    theta = update_theta(y, mu, theta);
+    theta = update_theta(y, mu, theta, prior);
 
-    double ll_new = negbin_loglik(y, mu, theta);
+    double ll_new = negbin_loglik(y, mu, theta, prior);
     bool converged = std::fabs(ll_new - ll_old) < tol * (std::fabs(ll_old) + 1.0);
     ll_old = ll_new;
     if (converged) { iter++; break; }

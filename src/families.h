@@ -5,7 +5,7 @@
 
 namespace panglm {
 
-enum FamilyType { GAUSSIAN = 0, POISSON = 1, BINOMIAL = 2 };
+enum FamilyType { GAUSSIAN = 0, POISSON = 1, BINOMIAL = 2, GAMMA = 3 };
 enum LinkType    { IDENTITY = 0, LOG = 1, LOGIT = 2, PROBIT = 3 };
 
 inline arma::vec linkinv(const arma::vec& eta, LinkType link) {
@@ -54,6 +54,8 @@ inline arma::vec variance(const arma::vec& mu, FamilyType family) {
       return mu;
     case BINOMIAL:
       return mu % (1.0 - mu);
+    case GAMMA:
+      return mu % mu;
   }
   return arma::ones<arma::vec>(mu.n_elem);
 }
@@ -69,6 +71,10 @@ inline double loglik_obs(double y, double mu, FamilyType family) {
       return y * std::log(mu) - mu - R::lgammafn(y + 1.0);
     case BINOMIAL:
       return y * std::log(mu) + (1.0 - y) * std::log(1.0 - mu);
+    case GAMMA:
+      // shape-one kernel; only used to monitor convergence. The reported
+      // gamma log-likelihood (with its estimated shape) is computed in R.
+      return -(y / mu + std::log(mu));
   }
   return 0.0;
 }

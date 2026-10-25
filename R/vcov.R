@@ -56,6 +56,9 @@ vcov.panglm <- function(object, type = NULL, cluster = NULL, ...) {
 
   score <- panglm_score(object)
   bread <- object$bread
+  # zero-weight observations carry no information and do not count in n
+  positive <- if (is.null(object$weights)) rep(TRUE, nrow(score)) else object$weights > 0
+  score <- score[positive, , drop = FALSE]
 
   if (type == "HC1") {
     n <- nrow(score); k <- ncol(score)
@@ -63,7 +66,7 @@ vcov.panglm <- function(object, type = NULL, cluster = NULL, ...) {
     v <- bread %*% meat %*% bread
     v <- v * n / (n - k)
   } else {
-    cl <- panglm_cluster_vector(object, cluster)
+    cl <- panglm_cluster_vector(object, cluster)[positive]
     score_sum <- rowsum(score, cl)
     G <- nrow(score_sum); n <- nrow(score); k <- ncol(score)
     meat <- crossprod(score_sum)
@@ -144,7 +147,21 @@ panglm_score <- function(object) {
   if (object$model == "pooling") {
     eta <- as.numeric(X %*% beta)
     mu <- linkinv_r(eta, object$family$link_id)
-    return((y - mu) * mu_eta_r(eta, object$family$link_id) / variance_r(mu, object$family$family_id) * X)
+    w <- object$weights %||% rep(1, length(y))
+    if (object$family$family == "negbin") {
+      # NB2 score: (y - mu) / (1 + mu / theta) * x
+      return(w * (y - mu) * object$theta / (object$theta + mu) * X)
+    }
+    return(w * (y - mu) * mu_eta_r(eta, object$family$link_id) /
+             variance_r(mu, object$family$family_id) * X)
+  }
+
+  if (object$model == "within" && object$family$family == "gamma") {
+    # FWL: with unit gamma-log working weights, the slope score is the
+    # working residual times the within-demeaned regressors
+    Xd <- within_demean_cpp(X, y, object$group_start, object$group_size)$X
+    mu <- object$fitted.values
+    return(((y - mu) / mu) * Xd)
   }
 
   if (object$model == "within" && object$family$family == "gaussian" && object$effect == "twoways") {
@@ -263,6 +280,7 @@ variance_r <- function(mu, family_id) {
   switch(family_id + 1L,
     rep(1, length(mu)),
     mu,
-    mu * (1 - mu)
+    mu * (1 - mu),
+    mu^2
   )
 }
