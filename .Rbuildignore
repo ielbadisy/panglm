@@ -12,3 +12,6 @@
 ^\.github$
 ^vignettes/panglm-methods\.pdf$
 ^validation$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$

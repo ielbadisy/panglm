@@ -1,0 +1,144 @@
+url: https://ielbadisy.github.io/panglm/
+
+template:
+  bootstrap: 5
+
+navbar:
+  structure:
+    left: [intro, reference, articles, news]
+    right: [search, github]
+
+home:
+  links:
+  - text: Validation suite
+    href: https://github.com/ielbadisy/panglm/tree/main/validation
+
+reference:
+- title: Model fitting
+  desc: >
+    The main estimator for panel GLMs (pooled, within, between and random
+    effects) and the two models built on it for costs and structural zeros.
+  contents:
+  - panglm
+  - twopart
+  - panhurdle
+  - panglm-package
+
+- title: Outcome families
+  desc: Family objects for the `family` argument of `panglm()`.
+  contents:
+  - panglm-families
+
+- title: Policy evaluation
+  desc: >
+    Difference-in-differences, event studies and staggered-adoption
+    estimators.
+  contents:
+  - did
+  - eventstudy
+  - attgt
+  - etwfe
+
+- title: Endogeneity
+  desc: >
+    Instrumental variables, Hausman-Taylor, dynamic panels by GMM and
+    sample selection.
+  contents:
+  - paniv
+  - pangmm
+  - panselect
+
+- title: Heterogeneity
+  desc: >
+    Quantile regression and latent classes. Random slopes are fitted by
+    `panglm()` with `model = "random"` and its `random` argument.
+  contents:
+  - panqr
+  - panfmm
+  - panfmmselect
+
+- title: Tests
+  desc: Specification and hypothesis tests on fitted models.
+  contents:
+  - panhausman
+  - pandispersiontest
+  - jointtest
+  - lineartest
+
+- title: Post-estimation methods
+  desc: Methods for `panglm()` fits, then for the other model classes.
+- subtitle: panglm fits
+  contents:
+  - summary.panglm
+  - vcov.panglm
+  - confint.panglm
+  - predict.panglm
+  - predict.panordered
+  - fitted.panglm
+  - logLik.panglm
+  - model.matrix.panglm
+  - plot.panglm
+  - partialeffects
+  - effectcurve
+  - plot.panglm_effectcurve
+- subtitle: Other model classes
+  contents:
+  - predict.twopart
+  - confint.twopart
+  - hurdle-methods
+  - plot.panglm_hurdle
+  - eventstudy-methods
+  - plot.panglm_eventstudy
+  - summary.panglm_attgt
+  - plot.panglm_attgt
+  - summary.panglm_etwfe
+  - plot.panglm_etwfe
+  - summary.paniv
+  - vcov.paniv
+  - predict.paniv
+  - summary.pangmm
+  - vcov.pangmm
+  - predict.pangmm
+  - summary.panselect
+  - vcov.panselect
+  - predict.panselect
+  - summary.panqr
+  - vcov.panqr
+  - plot.panqr
+  - summary.panfmm
+  - vcov.panfmm
+  - predict.panfmm
+- subtitle: Tidiers
+  contents:
+  - tidy.panglm
+  - glance.panglm
+  - tidy-methods
+
+- title: Data
+  contents:
+  - copd
+
+- title: Deprecated
+  desc: Former names, kept as wrappers that warn and call the new function.
+  contents:
+  - panglm-deprecated
+
+articles:
+- title: Get started
+  navbar: ~
+  contents:
+  - panglm-intro
+- title: Guides by task
+  navbar: Guides by task
+  contents:
+  - panglm-outcomes
+  - panglm-endogeneity
+  - panglm-policy
+  - panglm-heterogeneity
+- title: Technical reference
+  navbar: Technical reference
+  contents:
+  - panglm-methods
+
+news:
+  cran_dates: true

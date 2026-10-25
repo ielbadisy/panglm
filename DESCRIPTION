@@ -22,7 +22,8 @@ Description: Provides generalized linear models for panel data, including
     Millo (2008) <doi:10.18637/jss.v027.i02>. Core numerical routines are
     implemented using 'Rcpp', 'RcppArmadillo', and 'RcppParallel'.
 License: MIT + file LICENSE
-URL: https://CRAN.R-project.org/package=panglm,
+URL: https://ielbadisy.github.io/panglm/,
+    https://CRAN.R-project.org/package=panglm,
     https://github.com/ielbadisy/panglm
 BugReports: https://github.com/ielbadisy/panglm/issues
 Encoding: UTF-8
