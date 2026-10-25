@@ -68,3 +68,39 @@ test_that("Tobit input checks", {
   expect_error(panglm(y ~ x, d, index = c("id", "t"), family = tobitfamily(1)), "within")
   expect_s3_class(panglm(y ~ x, d, index = c("id", "t"), family = "tobit"), "panglm")
 })
+
+test_that("the Tobit curvature stays negative far in the censored tail", {
+  # reference values of z + lambda(z) computed with Rmpfr at 200 bits
+  z <- -c(10, 30, 1000, 1e5)
+  ref <- c(0.09809323396251196, 0.03325966743367704, 0.0009999980000100000,
+           0.00000999999999800)
+  lam <- panglm:::tobit_mills(z)
+  expect_equal(panglm:::tobit_mills_shift(z, lam), ref, tolerance = 1e-10)
+  ob <- panglm:::tobit_obs(e = c(-10, -1e3), y = c(1, 1), status = c(1L, 1L), se = 1e-4,
+                           left = -Inf, right = 1)
+  expect_equal(ob$d2, rep(-1e8, 2), tolerance = 1e-6)
+})
+
+test_that("random-intercept Tobit far from the start gives no NaN warnings", {
+  set.seed(7)
+  N <- 80; TT <- 4
+  eq <- data.frame(id = rep(1:N, each = TT), wave = rep(1:TT, N))
+  u <- rnorm(N, sd = 0.15)
+  eq$age <- rep(round(runif(N, 40, 85)), each = TT)
+  eq$chronic <- rpois(N * TT, 0.5 + 0.02 * (eq$age - 40))
+  eq$eq5d <- pmin(1.15 - 0.006 * (eq$age - 40) - 0.08 * eq$chronic + u[eq$id] +
+                    rnorm(N * TT, sd = 0.12), 1)
+  # the quasi-Newton path visits sigma_e = 1e-4, where the curvature used to
+  # cancel to a positive number and sqrt() gave NaN
+  m <- expect_silent(panglm(eq5d ~ age + chronic, eq, index = c("id", "wave"),
+                            model = "random", family = tobitfamily(-Inf, 1), R = 5))
+  expect_equal(unname(coef(m)), c(1.56775, -0.0084016, -0.0822763), tolerance = 1e-4)
+  skip_if_not_installed("censReg")
+  skip_if_not_installed("plm")
+  m21 <- panglm(eq5d ~ age + chronic, eq, index = c("id", "wave"), model = "random",
+                family = tobitfamily(-Inf, 1))
+  r <- censReg::censReg(eq5d ~ age + chronic, left = -Inf, right = 1, nGHQ = 40,
+                        data = plm::pdata.frame(eq, c("id", "wave")))
+  expect_equal(unname(coef(m21)), unname(coef(r)[1:3]), tolerance = 1e-4)
+  expect_equal(m21$loglik, as.numeric(stats::logLik(r)), tolerance = 1e-5)
+})

@@ -42,8 +42,42 @@ tobit_status <- function(y, left, right) {
   ifelse(y <= left, -1L, ifelse(y >= right, 1L, 0L))
 }
 
-# log of the inverse Mills ratio dnorm(z) / pnorm(z), stable in the tails
-tobit_mills <- function(z) exp(stats::dnorm(z, log = TRUE) - stats::pnorm(z, log.p = TRUE))
+#' Inverse Mills ratio `lambda(z) = dnorm(z) / pnorm(z)`, stable in the tails
+#'
+#' Below `z = -25` both `lambda(z)` and `z + lambda(z)` come from the
+#' asymptotic series `z + lambda(z) = 1/x - 2/x^3 + 10/x^5 - ...`
+#' (`x = -z`): the ratio of the logged densities loses digits there
+#' (relative error 5e-3 at `z = -1e7`), and `z + lambda(z)` cancels.
+#'
+#' @keywords internal
+#' @noRd
+tobit_mills <- function(z) {
+  out <- exp(stats::dnorm(z, log = TRUE) - stats::pnorm(z, log.p = TRUE))
+  tail <- z < -25
+  if (any(tail)) out[tail] <- tobit_mills_tail(-z[tail]) - z[tail]
+  out
+}
+
+tobit_mills_tail <- function(x) {
+  x2 <- x^2
+  (1 - (2 - (10 - (74 - (706 - (8162 - 110410 / x2) / x2) / x2) / x2) / x2) / x2) / x
+}
+
+#' `z + lambda(z)`, stable in the tail
+#'
+#' `-lambda(z) (z + lambda(z))` is the second derivative of
+#' `log pnorm(z)`, always in `(-1, 0)`. For `z -> -Inf`, `lambda(z) ~ -z`
+#' and the sum cancels: at `z = -1e5` it came out negative, the curvature
+#' positive and the quadrature scale `NaN`.
+#'
+#' @keywords internal
+#' @noRd
+tobit_mills_shift <- function(z, lam) {
+  out <- z + lam
+  tail <- z < -25
+  if (any(tail)) out[tail] <- tobit_mills_tail(-z[tail])
+  out
+}
 
 #' Observation log-likelihood and derivative with respect to the latent mean
 #'
@@ -66,7 +100,7 @@ tobit_obs <- function(e, y, status, se, left, right) {
     lam <- tobit_mills(z)
     ll[l] <- stats::pnorm(z, log.p = TRUE)
     d1[l] <- -lam / se
-    d2[l] <- -lam * (z + lam) / se^2
+    d2[l] <- -lam * tobit_mills_shift(z, lam) / se^2
   }
   r_ <- status == 1L
   if (any(r_)) {
@@ -74,7 +108,7 @@ tobit_obs <- function(e, y, status, se, left, right) {
     lam <- tobit_mills(z)
     ll[r_] <- stats::pnorm(z, log.p = TRUE)
     d1[r_] <- lam / se
-    d2[r_] <- -lam * (z + lam) / se^2
+    d2[r_] <- -lam * tobit_mills_shift(z, lam) / se^2
   }
   list(ll = ll, d1 = d1, d2 = d2)
 }
@@ -129,18 +163,21 @@ tobit_contrib_random <- function(X, y, status, left, right, group, R) {
       as.numeric(rowsum(tobit_obs(eta + u[group], y, status, se, left, right)$ll, group)) +
         stats::dnorm(u, 0, su, log = TRUE)
     }
+    # every observation contributes a negative curvature, so the curvature
+    # of the integrand is at most -1 / su^2 (the bound guards rounding)
+    curv <- function(d2, u) pmin(as.numeric(rowsum(d2, group)) - 1 / su^2, -1 / su^2)
     u <- rep(0, G)
     for (step in seq_len(100L)) {
       ob <- tobit_obs(eta + u[group], y, status, se, left, right)
       g <- as.numeric(rowsum(ob$d1, group)) - u / su^2
-      H <- as.numeric(rowsum(ob$d2, group)) - 1 / su^2
+      H <- curv(ob$d2, u)
       delta <- pmax(-2, pmin(2, g / H))
       if (anyNA(delta)) return(list(ll = rep(-Inf, G)))
       u <- u - delta
       if (max(abs(delta)) < 1e-10) break
     }
     ob <- tobit_obs(eta + u[group], y, status, se, left, right)
-    tau <- 1 / sqrt(-(as.numeric(rowsum(ob$d2, group)) - 1 / su^2))
+    tau <- 1 / sqrt(-curv(ob$d2, u))
     terms <- vapply(seq_along(gh$nodes), function(q) {
       log_w[q] + h(u + sqrt(2) * tau * gh$nodes[q])
     }, numeric(G))
