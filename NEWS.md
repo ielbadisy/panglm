@@ -8,6 +8,16 @@
   flexmix, `glm()`, `MASS::glm.nb()`, `sampleSelection::probit()` and
   `sandwich::vcovCL()`.
 
+* GLM random slopes (`panglm(model = "random", random = ~ ...)`) now take any
+  number of slopes, with the quadrature nodes per dimension adapted to the
+  number of random effects (warning above 2000 nodes), and gain the `"negbin"`
+  (NB2) and `"gamma"` families with lognormal effects. Standard errors stay
+  finite when a variance is on the boundary, with a singular-fit warning.
+  Analytic scores make the fits 3 to 10 times faster with identical
+  estimates. Validated against glmmTMB and GLMMadaptive. The help page
+  explains that random-slope count models use lognormal mixing, unlike the
+  gamma or beta mixing of the random-intercept Poisson and negbin models.
+
 # panglm 1.5.0
 
 * Between estimator: `model = "between"` (OLS on individual means) for the

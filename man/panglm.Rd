@@ -122,9 +122,25 @@ model of `glmmTMB::nbinom2()`, with `theta` stored as `negbin_theta`),
 shape stored as `shape`) and `"binomial"` (logit or probit), with any
 number of slopes, by adaptive Gauss-Hermite product quadrature with
 `R` nodes per dimension, `R^q` nodes for `q` random effects; `R = 1`
-is the Laplace approximation of `lme4::glmer()` and `glmmTMB`. With random slopes the Poisson model has a normal
-(lognormal) random effect, not the gamma mixing of the
-random-intercept Poisson model. The fit stores `varcomp` (the
+is the Laplace approximation of `lme4::glmer()` and `glmmTMB`.
+With random slopes the random effects are always normal on the link
+scale, so for `"poisson"` and `"negbin"` the multiplicative effect
+`exp(z_it' b_i)` is lognormal. These are different models from the
+random-intercept fits of `random = ~ 1`: the random-intercept
+`"poisson"` model uses gamma mixing (the conjugate model of Hausman,
+Hall and Griliches, whose likelihood is in closed form, as Stata's
+`xtpoisson, re`) and the random-intercept `"negbin"` model is the
+beta-mixed negative binomial of Hausman, Hall and Griliches (Stata's
+`xtnbreg, re`), whereas with random slopes `"negbin"` is NB2 with a
+lognormal effect, as `glmmTMB::nbinom2()`. Adding a slope whose
+variance is estimated at zero therefore does not reproduce the
+`random = ~ 1` fit for these two families: the slope coefficients
+keep their conditional (rate ratio) meaning, but the intercept
+(`E[exp(b_i)] = exp(sigma^2 / 2)` under lognormal mixing against 1
+under gamma mixing), the variance parameters and the log-likelihood
+differ. For `"binomial"` and `"gamma"` the random-intercept models are
+already normal on the link scale and are the zero-slope special case.
+The fit stores `varcomp` (the
 covariance matrix `Sigma`), `ranef` (posterior modes, the BLUPs in
 the Gaussian model, one row per individual) and, for the Gaussian
 model, the residual variance `sigma_v2`. Weights, `dynamic = TRUE`
