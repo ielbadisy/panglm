@@ -1,0 +1,255 @@
+---
+title: "Policy evaluation: DiD, event studies and staggered adoption"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Policy evaluation: DiD, event studies and staggered adoption}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>",
+                      fig.width = 6, fig.height = 4)
+```
+
+Health policies are often evaluated by comparing the change in an
+outcome among the units exposed to a policy with the change among units
+not exposed: difference-in-differences (DiD). This vignette covers:
+
+| Design | Tool |
+|---|---|
+| One adoption date, average effect | `did()`, two-way fixed effects (TWFE) |
+| One adoption date, effect over time and pre-trends | `eventstudy()` |
+| Staggered adoption, heterogeneous effects | `attgt()` (Callaway and Sant'Anna 2021) or `etwfe()` (Wooldridge 2021, 2023) |
+
+All functions take the data in long format, `index = c(unit, time)`
+with a numeric time, and `treat`, the name of a column holding each
+unit's first treated period (`NA`, `0` or `Inf` for never treated). The
+examples use small simulated panels and 199 bootstrap draws; the
+companion book uses real data and more draws.
+
+```{r setup}
+library(panglm)
+```
+
+## One adoption date: `did()` and `eventstudy()`
+
+Half of 200 practices adopt a care pathway in 2019. Visits follow a
+common upward trend, and the pathway adds 1 visit at adoption and 0.3
+more for each year after it.
+
+```{r did-data}
+set.seed(1)
+d <- expand.grid(id = 1:200, year = 2015:2022)
+d$first <- ifelse(d$id <= 100, 2019, NA)
+a <- rnorm(200)
+e <- d$year - d$first
+post <- !is.na(e) & e >= 0
+d$visits <- 3 + a[d$id] + 0.1 * (d$year - 2015) +
+  ifelse(post, 1 + 0.3 * e, 0) + rnorm(nrow(d))
+d$admitted <- rbinom(nrow(d), 1, plogis(-1 + a[d$id] +
+                                          0.05 * (d$year - 2015) + 0.8 * post))
+```
+
+`did()` adds the indicator of being treated, `1(t >= first)`, to a model
+with unit and year fixed effects. With a single adoption date its
+coefficient is the average treatment effect on the treated (ATT) under
+parallel trends.
+
+```{r did}
+fit <- did(visits ~ 1, data = d, index = c("id", "year"), treat = "first")
+coef(fit)
+confint(fit)
+```
+
+The pathway adds about 1.7 visits per year on average over the four
+post-adoption years (true value 1.45). For a binary outcome,
+`family = "binomial"` fits a conditional (fixed-effects) logit with year
+effects, so the coefficient is a log odds ratio; `"poisson"` and
+`"negbin"` are available for counts.
+
+```{r did-binomial}
+fitb <- did(admitted ~ 1, data = d, index = c("id", "year"),
+            treat = "first", family = "binomial")
+exp(cbind(OR = coef(fitb), confint(fitb)))
+```
+
+The odds of an admission double after adoption (true odds ratio
+$e^{0.8} = 2.2$). Practices that are never or always admitted carry no
+information in the conditional likelihood and are dropped.
+
+`eventstudy()` replaces the single indicator by one indicator per year
+relative to adoption, with the year before adoption as reference. The
+leads (negative event times) test parallel pre-trends; the lags trace
+the effect over time.
+
+```{r eventstudy, fig.alt = "Event-study estimates with 95% confidence intervals: flat before adoption, positive and rising after"}
+es <- eventstudy(visits ~ 1, data = d, index = c("id", "year"),
+                 treat = "first", leads = 4, lags = 3)
+es
+plot(es)
+```
+
+The leads are close to zero and jointly not significant (p = 0.74); the
+effect rises from about 1.1 at adoption to about 1.9 three years later.
+A non-significant pre-trend test is not proof of parallel trends: it
+has limited power (Roth 2022).
+
+## Why TWFE fails under staggered adoption
+
+When units adopt at different dates and the effect changes with time
+since adoption, the TWFE coefficient of `did()` is a weighted average of
+all two-by-two comparisons, including "forbidden" ones in which units
+treated earlier serve as controls for units treated later. Their
+growing effects are then subtracted, and some weights can be negative
+(Goodman-Bacon 2021; de Chaisemartin and D'Haultfoeuille 2020). The
+estimate can be far from any meaningful average, even with the wrong
+sign.
+
+We simulate 120 provinces joining an insurance scheme in 2016, 2018 or
+2020, or not by 2021. The effect on outpatient visits is 2 at adoption
+and grows by 1 per year.
+
+```{r stag-data}
+set.seed(1)
+s <- expand.grid(province = 1:120, year = 2012:2021)
+s$adoption <- rep(c(2016, 2018, 2020, NA), each = 30)[s$province]
+s$urban <- rep(runif(120), 10)[s$province]
+s$pop <- rep(round(runif(120, 50, 500)), 10)[s$province]
+s$region <- ceiling(s$province / 10)
+a <- rnorm(120)
+e <- s$year - s$adoption
+post <- !is.na(e) & e >= 0
+s$visits <- 50 + 5 * a[s$province] + 0.5 * (s$year - 2012) * (1 + s$urban) +
+  ifelse(post, 2 + e, 0) + rnorm(nrow(s))
+# true ATT averaged over the treated province-years
+mean(2 + e[post])
+coef(did(visits ~ 1, data = s, index = c("province", "year"),
+         treat = "adoption"))
+```
+
+TWFE gives 2.6 against a true average effect of 3.8: it understates the
+effect by about a third, and a bigger growth of the effect over time
+would make it worse.
+
+## Group-time effects: `attgt()`
+
+The estimator of Callaway and Sant'Anna (2021) computes one ATT for
+each adoption cohort $g$ and period $t$, ATT$(g, t)$, from a clean
+two-group, two-period comparison against units never treated (or, with
+`control = "notyet"`, not yet treated), and then aggregates them.
+
+```{r attgt}
+cs <- attgt(visits ~ 1, data = s, index = c("province", "year"),
+            treat = "adoption")
+head(cs$estimates)
+summary(cs)
+```
+
+The overall ATT (the average of the post-adoption ATT$(g, t)$ weighted
+by cohort size) is 3.5, and its confidence interval covers the true
+3.8. `summary()` gives the other
+aggregations: `"dynamic"` (by time since adoption, an event study free
+of the TWFE contamination), `"group"` (by cohort) and `"calendar"` (by
+year).
+
+```{r attgt-agg}
+summary(cs, type = "dynamic")
+summary(cs, type = "group")$estimates
+```
+
+The event study is flat before adoption and rises after it, from about
+2 at adoption to about 6 five years later, as simulated. The early
+cohort gains most because it has been exposed longest.
+
+With covariates, parallel trends holds conditionally on their baseline
+values; `method = "dr"` (the default) is doubly robust (Sant'Anna and
+Zhao 2020). `weights` takes sampling or population weights, constant
+within unit. The multiplier bootstrap (`bstrap = TRUE`) allows clustering
+at a coarser level, and `cband = TRUE` adds uniform confidence bands,
+which cover all event times jointly.
+
+```{r attgt-boot, fig.alt = "Dynamic ATT by event time with pointwise intervals and wider uniform bands"}
+csb <- attgt(visits ~ urban, data = s, index = c("province", "year"),
+             treat = "adoption", control = "notyet", weights = "pop",
+             cluster = "region", cband = TRUE, biters = 199, seed = 1)
+summary(csb, type = "dynamic", min_e = -3)
+plot(csb)
+```
+
+The uniform bands (grey) are wider than the pointwise intervals; use
+them to judge the whole event-time profile at once.
+
+## Extended TWFE: `etwfe()`
+
+The extended TWFE estimator of Wooldridge (2021) keeps the regression
+framework but interacts the treatment with every cohort by period cell,
+so each cohort has its own effect in each period and no forbidden
+comparison is made. In the linear case it is equivalent to an
+imputation estimator. `ivar = TRUE` replaces the cohort effects by unit
+effects (linear model only), which gives the same ATT in a balanced
+panel.
+
+```{r etwfe}
+et <- etwfe(visits ~ urban, data = s, index = c("province", "year"),
+            treat = "adoption")
+summary(et, type = "event")
+summary(etwfe(visits ~ urban, data = s, index = c("province", "year"),
+              treat = "adoption", ivar = TRUE))$overall
+```
+
+The overall ATT is 3.6 and the event-time profile matches that of
+`attgt()`. Its main advantage is for counts and binary outcomes (Wooldridge 2023):
+with `family = "poisson"` or `"binomial"`, parallel trends is assumed on
+the link scale, which respects the nature of the outcome, and the
+effects are reported on the response scale. `xvar` estimates separate
+effects by a covariate.
+
+```{r etwfe-pois}
+s$admissions <- rpois(nrow(s), exp(1 + 0.3 * a[s$province] +
+                                     0.03 * (s$year - 2012) + 0.2 * post))
+s$rural <- as.numeric(s$urban < 0.5)
+etp <- etwfe(admissions ~ 1, data = s, index = c("province", "year"),
+             treat = "adoption", family = "poisson", xvar = "rural")
+summary(etp)
+```
+
+The scheme adds about 0.9 admissions per province-year, with similar
+effects in rural and urban provinces.
+
+## Validated against
+
+`did()` and `eventstudy()` reproduce `fixest::feols()` and, for the
+conditional logit, `survival::clogit()`; `attgt()`, including the
+aggregations, weights, clustering and the multiplier bootstrap,
+reproduces `did::att_gt()` and `did::aggte()`; `etwfe()` reproduces
+`etwfe::etwfe()` and `etwfe::emfx()`. The scripts are in
+`tests/testthat` and `validation/`.
+
+## References
+
+Callaway, B., and Sant'Anna, P. H. C. (2021). Difference-in-differences
+with multiple time periods. *Journal of Econometrics*, 225, 200-230.
+
+de Chaisemartin, C., and D'Haultfoeuille, X. (2020). Two-way fixed
+effects estimators with heterogeneous treatment effects. *American
+Economic Review*, 110, 2964-2996.
+
+Goodman-Bacon, A. (2021). Difference-in-differences with variation in
+treatment timing. *Journal of Econometrics*, 225, 254-277.
+
+Roth, J. (2022). Pretest with caution: event-study estimates after
+testing for parallel trends. *American Economic Review: Insights*, 4,
+305-322.
+
+Sant'Anna, P. H. C., and Zhao, J. (2020). Doubly robust
+difference-in-differences estimators. *Journal of Econometrics*, 219,
+101-122.
+
+Wooldridge, J. M. (2021). Two-way fixed effects, the two-way Mundlak
+regression, and difference-in-differences estimators. Working paper,
+SSRN 3906345.
+
+Wooldridge, J. M. (2023). Simple approaches to nonlinear
+difference-in-differences with panel data. *The Econometrics Journal*,
+26, C31-C66.
