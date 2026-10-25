@@ -133,6 +133,14 @@ panglm <- function(formula, data, index,
     stop("there is no fixed-effects beta regression; use model = 'random' with ",
          "cre = TRUE", call. = FALSE)
   }
+  if (family$family == "tobit" && !model %in% c("pooling", "random")) {
+    stop("the Tobit model is available for model = 'pooling' and model = 'random'; ",
+         "there is no consistent fixed-effects Tobit, use model = 'random' with cre = TRUE",
+         call. = FALSE)
+  }
+  if (family$family == "tobit" && effect != "individual") {
+    stop("the Tobit model uses effect = 'individual'", call. = FALSE)
+  }
   if (model == "between") {
     if (family$family != "gaussian") {
       stop("model = 'between' is available for family = 'gaussian' only", call. = FALSE)
@@ -299,6 +307,8 @@ panglm <- function(formula, data, index,
                 model, group_start, group_size, prior_weights, R, maxit, tol)
   } else if (family$family == "beta") {
     fit_beta(X_full, y, family, model, group_start, group_size, prior_weights, R, maxit, tol)
+  } else if (family$family == "tobit") {
+    fit_tobit(X_full, y, family, model, group_start, group_size, prior_weights, R, maxit, tol)
   } else switch(model,
     pooling = fit_pooled(X_full, y, family, maxit, tol, prior_weights),
     between = fit_between(X_full, y, group_start, group_size),
@@ -907,7 +917,7 @@ random_binomial_marginal_mean <- function(eta, sigma, family, quadrature = 21L) 
 }
 
 weighted_random_ok <- function(family) {
-  family$family %in% c("ordered", "gaussian", "poisson", "negbin", "binomial", "gamma", "beta")
+  family$family %in% c("ordered", "gaussian", "poisson", "negbin", "binomial", "gamma", "beta", "tobit")
 }
 
 #' Build the lagged and initial outcomes of a dynamic panel model

@@ -1,3 +1,14 @@
+# panglm (development version)
+
+* Between estimator: `model = "between"` (OLS on individual means) for the
+  Gaussian family, validated against `plm(model = "between")`.
+* Tobit: `tobit_family(left, right)` for outcomes censored at a floor and/or
+  a ceiling, pooled or with a random intercept (adaptive Gauss-Hermite
+  quadrature). `predict()` and `partialeffects()` work on the observed,
+  censored-mean scale. Validated against `AER::tobit()` and `censReg`.
+* `validation/`: per-model scripts comparing panglm with established
+  packages, summarized in `validation/REPORT.md`.
+
 # panglm 1.4.0
 
 * Ordered outcomes: `ordered_family("logit")` and `ordered_family("probit")`

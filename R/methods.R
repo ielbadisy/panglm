@@ -171,6 +171,10 @@ predict.panglm <- function(object, newdata = NULL,
   }
 
   if (type == "link") return(eta)
+  if (object$family$family == "tobit") {
+    return(tobit_censored_mean(eta, tobit_total_sd(object), object$family$left,
+                               object$family$right))
+  }
   if (object$model != "random") return(linkinv_r(eta, object$family$link_id))
 
   switch(object$family$family,

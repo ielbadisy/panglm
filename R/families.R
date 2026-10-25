@@ -14,6 +14,7 @@
 #' gamma_family()
 #' ordered_family("probit")
 #' beta_family()
+#' tobit_family(left = 0)
 #'
 #' data(copd)
 #' fit <- panglm(hospitalized ~ crp, data = copd, index = c("id", "visit"),
@@ -136,6 +137,7 @@ resolve_family <- function(family) {
       ologit   = ordered_family("logit"),
       oprobit  = ordered_family("probit"),
       beta     = beta_family(),
+      tobit    = tobit_family(),
       stop("unknown family '", family, "'", call. = FALSE)
     )
   }

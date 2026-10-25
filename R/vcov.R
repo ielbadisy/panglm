@@ -42,7 +42,7 @@ vcov.panglm <- function(object, type = NULL, cluster = NULL, ...) {
   type <- match.arg(type, c("classical", "HC1", "cluster"))
   if (type == "classical") return(object$vcov_classical %||% object$vcov)
 
-  if (object$family$family == "beta") {
+  if (object$family$family %in% c("beta", "tobit")) {
     if (object$model == "random" && type == "HC1") {
       stop("type = 'HC1' is not available for model = 'random': the independent units ",
            "are individuals, so use type = 'cluster'", call. = FALSE)

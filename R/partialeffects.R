@@ -102,6 +102,10 @@ print.panglm_ape <- function(x, digits = max(3, getOption("digits") - 3), ...) {
 
 panglm_mean_function <- function(object) {
   family <- object$family
+  if (family$family == "tobit") {
+    s <- tobit_total_sd(object)
+    return(function(eta) tobit_censored_mean(eta, s, family$left, family$right))
+  }
   if (object$model != "random") return(function(eta) linkinv_r(eta, family$link_id))
   switch(family$family,
     gaussian = function(eta) eta,
