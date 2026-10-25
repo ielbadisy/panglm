@@ -25,6 +25,8 @@ test_that("fixed effects with ns() recovers a nonlinear curve and predict agrees
   expect_equal(colnames(model.matrix(fit)), names(coef(fit)))
   expect_equal(nrow(model.matrix(fit)), nrow(d))
   expect_equal(unname(model.matrix(fit, d)), unname(model.matrix(fit)), tolerance = 1e-12)
+  grDevices::pdf(NULL)
+  on.exit(grDevices::dev.off(), add = TRUE)
   expect_invisible(plot(ec))
 })
 
