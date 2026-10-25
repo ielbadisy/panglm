@@ -50,7 +50,8 @@ logLik.panglm_eventstudy <- function(object, ...) stats::logLik(object$fit)
 
 #' Coefficient methods for the hurdle model
 #'
-#' `coef()`, `vcov()`, `confint()` and `nobs()` for hurdle fits (`panglm_hurdle()`).
+#' `coef()`, `vcov()`, `confint()`, `nobs()` and `summary()` for hurdle fits
+#' (`panglm_hurdle()`).
 #' The coefficients of the zero part (conditional logit of `1(y > 0)`) and
 #' of the count part (zero-truncated count model on the positive
 #' observations) are named `"zero:..."` and `"count:..."`. The two parts are
@@ -63,14 +64,21 @@ logLik.panglm_eventstudy <- function(object, ...) stats::logLik(object$fit)
 #' @param object a `"panglm_hurdle"` fit
 #' @param parm names or positions of the coefficients; all by default
 #' @param level confidence level
+#' @param x a `"summary.panglm_hurdle"` object
+#' @param digits significant digits to print
 #' @param ... unused
 #' @return `coef()`: a named vector; `vcov()`: a matrix; `confint()`: a
-#'   two-column matrix; `nobs()`: the number of observations
+#'   two-column matrix; `nobs()`: the number of observations; `summary()`:
+#'   an object of class `"summary.panglm_hurdle"` with one coefficient table
+#'   per part (`zero`, `count`: estimate, standard error, z value and
+#'   p-value, from the inverse Hessian of each part) and the fit
+#'   information.
 #' @examples
 #' data(copd)
 #' fit <- panglm_hurdle(exacerbations ~ crp, data = copd, index = c("id", "visit"))
 #' coef(fit)
 #' confint(fit)
+#' summary(fit)
 #' @name hurdle-methods
 NULL
 
@@ -104,6 +112,45 @@ nobs.panglm_hurdle <- function(object, ...) object$n
 confint.panglm_hurdle <- function(object, parm, level = 0.95, ...) {
   wald_confint(stats::coef(object), stats::vcov(object), if (missing(parm)) NULL else parm,
                level)
+}
+
+#' @rdname hurdle-methods
+#' @export
+summary.panglm_hurdle <- function(object, ...) {
+  tab <- function(fit) {
+    b <- fit$coefficients
+    se <- sqrt(diag(as.matrix(fit$vcov)))
+    z <- b / se
+    cbind(Estimate = b, `Std. Error` = se, `z value` = z,
+          `Pr(>|z|)` = 2 * stats::pnorm(-abs(z)))
+  }
+  out <- list(formula = object$formula, zero = tab(object$zero), count = tab(object$count),
+              count_family = object$count_family, theta = object$count$theta,
+              nobs = object$n, n_positive = object$n_positive,
+              n_groups_zero = object$zero$n_used_groups,
+              n_dropped_zero = object$zero$n_dropped_groups,
+              n_groups_count = object$count$n_used_groups)
+  class(out) <- "summary.panglm_hurdle"
+  out
+}
+
+#' @rdname hurdle-methods
+#' @export
+print.summary.panglm_hurdle <- function(x, digits = max(3, getOption("digits") - 3), ...) {
+  family_label <- if (identical(x$count_family, "negbin")) "NB2" else "Poisson"
+  cat("\nFormula: ", paste(deparse(x$formula), collapse = " "), "\n", sep = "")
+  cat("\nEstimator: fixed-effects hurdle model (conditional logit and zero-truncated ",
+      family_label, ")\n", sep = "")
+  cat("N =", x$nobs, " positive =", x$n_positive, " vcov: model-based (inverse Hessian)\n")
+  cat("\nZero part, 1(y > 0), conditional logit (groups used = ",
+      or_na(x$n_groups_zero, NA_integer_), "):\n", sep = "")
+  stats::printCoefmat(x$zero, digits = digits, signif.stars = TRUE, has.Pvalue = TRUE)
+  cat("\nCount part, y | y > 0, zero-truncated ", family_label, " (groups used = ",
+      or_na(x$n_groups_count, NA_integer_), "):\n", sep = "")
+  stats::printCoefmat(x$count, digits = digits, signif.stars = TRUE, has.Pvalue = TRUE)
+  if (!is.null(x$theta)) cat("Theta:", format(x$theta, digits = digits), "\n")
+  cat("\n")
+  invisible(x)
 }
 
 #' @rdname tidy-methods

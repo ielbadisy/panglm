@@ -356,13 +356,12 @@ nobs.twopart <- function(object, ...) object$nobs
 
 #' @export
 print.twopart <- function(x, digits = max(3, getOption("digits") - 3), ...) {
-  cat("\nTwo-part model (", x$model, if (isTRUE(x$correlated)) ", correlated", "): ",
-      x$link, " for P(y > 0); ",
+  cat("twopart(", x$model, if (isTRUE(x$correlated)) ", correlated", ": ",
+      x$link, " for P(y > 0), ",
       if (x$positive_type == "gamma") "gamma (log link)" else "log-linear",
-      " for E[y | y > 0]\n", sep = "")
-  cat("N =", x$nobs, " positive =", x$n_positive, " groups =", x$binary$n_groups, "\n\n")
-  print(round(stats::coef(x), digits))
-  cat("\n")
+      " for E[y | y > 0])\n\n", sep = "")
+  print(stats::coef(x), digits = digits)
+  cat("\nN =", x$nobs, " groups =", x$binary$n_groups, " positive =", x$n_positive, "\n")
   invisible(x)
 }
 
@@ -383,16 +382,20 @@ summary.twopart <- function(object, ...) {
 #' @export
 print.summary.twopart <- function(x, digits = max(3, getOption("digits") - 3), ...) {
   object <- x$object
-  cat("\nTwo-part model (", object$model, if (isTRUE(object$correlated)) ", correlated",
-      ")\n", sep = "")
-  cat("N =", object$nobs, " positive =", object$n_positive,
-      " groups =", object$binary$n_groups, "\n")
+  cat("\nCall:\n")
+  print(object$call)
+  cat("\nEstimator: two-part model (", object$model,
+      if (isTRUE(object$correlated)) ", correlated", ")\n", sep = "")
+  cat("N =", object$nobs, " groups =", object$binary$n_groups,
+      " positive =", object$n_positive, " vcov:", object$binary$vcov_type, "\n")
   cat("\nPart 1: P(y > 0), binomial", object$link, "\n")
-  stats::printCoefmat(x$binary$coefficients, digits = digits, has.Pvalue = TRUE)
+  stats::printCoefmat(x$binary$coefficients, digits = digits, signif.stars = TRUE,
+                      has.Pvalue = TRUE)
   cat("\nPart 2: E[y | y > 0],",
       if (object$positive_type == "gamma") "gamma GLM with log link" else "linear model for log(y)",
       "\n")
-  stats::printCoefmat(x$positive$coefficients, digits = digits, has.Pvalue = TRUE)
+  stats::printCoefmat(x$positive$coefficients, digits = digits, signif.stars = TRUE,
+                      has.Pvalue = TRUE)
   if (isTRUE(object$correlated)) {
     vp <- object$joint$variance_params
     se <- sqrt(diag(object$joint$variance_vcov))

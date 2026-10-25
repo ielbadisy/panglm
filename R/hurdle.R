@@ -243,14 +243,17 @@ fit_truncated_poisson_dummy <- function(X, y, group, maxit, tol) {
 }
 
 #' @export
-print.panglm_hurdle <- function(x, ...) {
-  cat("\nFixed-effects hurdle model for panel count data\n")
-  cat("Zero part (1(y>0), conditional logit):\n")
-  print(stats::coef(x$zero))
+print.panglm_hurdle <- function(x, digits = max(3, getOption("digits") - 3), ...) {
   family_label <- if (identical(x$count_family, "negbin")) "NB2" else "Poisson"
-  cat("\nCount part (zero-truncated ", family_label, ", N = ", x$n_positive,
-      " positive obs of ", x$n, "):\n", sep = "")
-  print(x$count$coefficients)
-  if (identical(x$count_family, "negbin")) cat("Theta:", x$count$theta, "\n")
+  cat("Fixed-effects hurdle model (zero part: conditional logit; count part: ",
+      "zero-truncated ", family_label, ")\n\n", sep = "")
+  cat("Zero part, 1(y > 0):\n")
+  print(stats::coef(x$zero), digits = digits)
+  cat("\nCount part, y | y > 0:\n")
+  print(x$count$coefficients, digits = digits)
+  if (identical(x$count_family, "negbin")) {
+    cat("Theta:", format(x$count$theta, digits = digits), "\n")
+  }
+  cat("\nN =", x$n, " positive =", x$n_positive, "\n")
   invisible(x)
 }

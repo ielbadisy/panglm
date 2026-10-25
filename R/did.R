@@ -213,8 +213,8 @@ eventstudy <- function(formula, data, index, treat, leads = 4, lags = 4, ref = -
 
 #' @export
 print.panglm_eventstudy <- function(x, digits = max(3, getOption("digits") - 3), ...) {
-  cat("\nEvent study (two-way fixed effects, ", x$fit$family$family, ", vcov: ",
-      x$fit$vcov_type, ")\n", sep = "")
+  cat("\nEvent study (two-way fixed effects, ", x$fit$family$family, ")\n", sep = "")
+  cat("N =", x$fit$nobs, " groups =", x$fit$n_groups, " vcov:", x$fit$vcov_type, "\n")
   cat("Reference event time:", x$ref, if (x$bin) "(end points binned)" else "", "\n\n")
   print(format(x$estimates, digits = digits), row.names = FALSE)
   if (!is.null(x$pretrend)) {

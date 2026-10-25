@@ -6,6 +6,8 @@
 \alias{vcov.panglm_hurdle}
 \alias{nobs.panglm_hurdle}
 \alias{confint.panglm_hurdle}
+\alias{summary.panglm_hurdle}
+\alias{print.summary.panglm_hurdle}
 \title{Coefficient methods for the hurdle model}
 \usage{
 \method{coef}{panglm_hurdle}(object, ...)
@@ -15,6 +17,10 @@
 \method{nobs}{panglm_hurdle}(object, ...)
 
 \method{confint}{panglm_hurdle}(object, parm, level = 0.95, ...)
+
+\method{summary}{panglm_hurdle}(object, ...)
+
+\method{print}{summary.panglm_hurdle}(x, digits = max(3, getOption("digits") - 3), ...)
 }
 \arguments{
 \item{object}{a `"panglm_hurdle"` fit}
@@ -24,13 +30,22 @@
 \item{parm}{names or positions of the coefficients; all by default}
 
 \item{level}{confidence level}
+
+\item{x}{a `"summary.panglm_hurdle"` object}
+
+\item{digits}{significant digits to print}
 }
 \value{
 `coef()`: a named vector; `vcov()`: a matrix; `confint()`: a
-  two-column matrix; `nobs()`: the number of observations
+  two-column matrix; `nobs()`: the number of observations; `summary()`:
+  an object of class `"summary.panglm_hurdle"` with one coefficient table
+  per part (`zero`, `count`: estimate, standard error, z value and
+  p-value, from the inverse Hessian of each part) and the fit
+  information.
 }
 \description{
-`coef()`, `vcov()`, `confint()` and `nobs()` for hurdle fits (`panglm_hurdle()`).
+`coef()`, `vcov()`, `confint()`, `nobs()` and `summary()` for hurdle fits
+(`panglm_hurdle()`).
 The coefficients of the zero part (conditional logit of `1(y > 0)`) and
 of the count part (zero-truncated count model on the positive
 observations) are named `"zero:..."` and `"count:..."`. The two parts are
@@ -45,4 +60,5 @@ data(copd)
 fit <- panglm_hurdle(exacerbations ~ crp, data = copd, index = c("id", "visit"))
 coef(fit)
 confint(fit)
+summary(fit)
 }
