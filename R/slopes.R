@@ -5,8 +5,8 @@
 #' unstructured. The Gaussian model is fitted by exact maximum likelihood
 #' with the residual variance profiled out (the deviance of
 #' `lme4::lmer(REML = FALSE)`, in the relative Cholesky factor of `Sigma`).
-#' The Poisson and binomial models (one slope, two-dimensional effect) use
-#' adaptive Gauss-Hermite product quadrature centred at the mode of each
+#' The Poisson and binomial models (any number of slopes) use adaptive
+#' Gauss-Hermite product quadrature centred at the mode of each
 #' individual's integrand and scaled by its curvature; one node per
 #' dimension is the Laplace approximation.
 #'
@@ -231,109 +231,227 @@ slopes_obs_terms <- function(family, y) {
   }
 }
 
-#' Sigma from the unconstrained parameters (log l11, l21, log l22)
+
+# ------------------------------------- batched small-matrix linear algebra
+# A batch of G symmetric q x q matrices is an array of dimension c(G, q, q);
+# A[, a, c] is the vector of the (a, c) entries over the G individuals.
+
+#' Lower Cholesky factors of a batch of positive definite matrices
 #'
 #' @keywords internal
 #' @noRd
-slopes_sigma2d <- function(par) {
-  L <- matrix(c(exp(par[1]), par[2], 0, exp(par[3])), 2, 2)
-  tcrossprod(L)
+bchol <- function(A) {
+  q <- dim(A)[2]
+  L <- array(0, dim(A))
+  for (c in seq_len(q)) {
+    s <- A[, c, c]
+    for (m in seq_len(c - 1L)) s <- s - L[, c, m]^2
+    L[, c, c] <- sqrt(ifelse(s >= 0, s, NaN))
+    for (a in seq_len(q - c) + c) {
+      t <- A[, a, c]
+      for (m in seq_len(c - 1L)) t <- t - L[, a, m] * L[, c, m]
+      L[, a, c] <- t / L[, c, c]
+    }
+  }
+  L
 }
 
-#' Individual integrated log-likelihoods of the two-dimensional GLMM
+#' Inverses of a batch of lower triangular matrices
 #'
-#' `theta = (beta, log l11, l21, log l22)`, `Sigma = L L'`. The modes of
-#' the last call are kept in `environment(contrib)$state$modes` (and warm
-#' start the next call).
+#' @keywords internal
+#' @noRd
+blowinv <- function(L) {
+  q <- dim(L)[2]
+  M <- array(0, dim(L))
+  for (c in seq_len(q)) {
+    M[, c, c] <- 1 / L[, c, c]
+    for (a in seq_len(q - c) + c) {
+      s <- 0
+      for (m in c:(a - 1L)) s <- s + L[, a, m] * M[, m, c]
+      M[, a, c] <- -s / L[, a, a]
+    }
+  }
+  M
+}
+
+#' Inverses of a batch of positive definite matrices
+#'
+#' @keywords internal
+#' @noRd
+bspdinv <- function(A) {
+  q <- dim(A)[2]
+  M <- blowinv(bchol(A))
+  P <- array(0, dim(A))
+  for (a in seq_len(q)) for (c in seq_len(a)) {
+    s <- 0
+    for (m in a:q) s <- s + M[, m, a] * M[, m, c]
+    P[, a, c] <- s; P[, c, a] <- s
+  }
+  P
+}
+
+#' Batch matrix-vector product: row i of the result is A_i v_i
+#'
+#' @keywords internal
+#' @noRd
+bmatvec <- function(A, v) {
+  q <- dim(A)[2]
+  out <- matrix(0, nrow(v), q)
+  for (a in seq_len(q)) for (c in seq_len(q)) out[, a] <- out[, a] + A[, a, c] * v[, c]
+  out
+}
+
+# ------------------------------------------- GLM families with random slopes
+
+#' Positions of the vech of a q x q lower triangle (column-major)
+#'
+#' @keywords internal
+#' @noRd
+slopes_vech_index <- function(q) {
+  lt <- lower.tri(diag(q), diag = TRUE)
+  data.frame(row = row(lt)[lt], col = col(lt)[lt])
+}
+
+#' Cholesky factor L of Sigma from its parameters
+#'
+#' The parameters are the vech of L with the diagonal on the log scale.
+#'
+#' @keywords internal
+#' @noRd
+slopes_lfactor <- function(par, q) {
+  vi <- slopes_vech_index(q)
+  dg <- vi$row == vi$col
+  par[dg] <- exp(par[dg])
+  L <- matrix(0, q, q)
+  L[cbind(vi$row, vi$col)] <- par
+  L
+}
+
+#' Individual integrated log-likelihoods of a GLMM with q random effects
+#'
+#' `b_i = L u_i` with `u_i ~ N(0, I_q)`, `Sigma = L L'` and
+#' `theta = (beta, vech L)`. The integral over `u_i` is computed by
+#' adaptive Gauss-Hermite product quadrature: `R^q` nodes centred at the
+#' mode of each individual's integrand and scaled by the Cholesky factor
+#' of the inverse curvature there (one node per dimension is the Laplace
+#' approximation). The rule is affine invariant, so it gives the same
+#' value as adaptive quadrature over `b_i` directly. The modes of the last
+#' call are kept in `environment(contrib)$state$modes` (on the `u` scale)
+#' and warm start the next call.
 #'
 #' @keywords internal
 #' @noRd
 slopes_glm_contrib <- function(family, X, y, Z, group, R) {
-  k <- ncol(X); G <- max(group)
-  z1 <- Z[, 1]; z2 <- Z[, 2]
+  k <- ncol(X); G <- max(group); q <- ncol(Z)
   obs <- slopes_obs_terms(family, y)
   gh <- gauss_hermite_quadrature(R)
-  grid <- expand.grid(a = seq_len(R), b = seq_len(R))
-  zn1 <- gh$nodes[grid$a]; zn2 <- gh$nodes[grid$b]
-  log_wk <- log(gh$weights[grid$a]) + log(gh$weights[grid$b]) + zn1^2 + zn2^2
-  rs <- function(v) as.numeric(rowsum(v, group, reorder = FALSE))
+  grid <- as.matrix(expand.grid(rep(list(seq_len(R)), q)))
+  zn <- matrix(gh$nodes[grid], ncol = q)
+  log_wk <- rowSums(matrix(log(gh$weights[grid]), ncol = q)) + rowSums(zn^2)
+  K <- nrow(zn)
+  vi <- slopes_vech_index(q)
+  pairs <- vi[vi$row >= vi$col, ]
+  half_log_2pi <- 0.5 * q * log(2 * pi)
+  rs <- function(v) rowsum(v, group, reorder = FALSE)
   state <- new.env(parent = emptyenv())
-  state$modes <- matrix(0, G, 2)
+  state$modes <- matrix(0, G, q)
+  # an infeasible point: zero scores spare the numerical derivatives
+  fail <- function(p) list(ll = rep(-Inf, G), score = matrix(0, G, p))
   function(theta, score) {
     beta <- theta[seq_len(k)]
-    S <- slopes_sigma2d(theta[k + 1:3])
-    detS <- S[1, 1] * S[2, 2] - S[1, 2]^2
-    if (!is.finite(detS) || detS <= 0) return(list(ll = rep(-Inf, G)))
-    Si <- matrix(c(S[2, 2], -S[1, 2], -S[1, 2], S[1, 1]), 2, 2) / detS
+    L <- slopes_lfactor(theta[k + seq_len(nrow(vi))], q)
+    if (any(!is.finite(L))) return(fail(length(theta)))
+    Zt <- Z %*% L
+    ZZ <- Zt[, pairs$row, drop = FALSE] * Zt[, pairs$col, drop = FALSE]
     eta0 <- as.numeric(X %*% beta)
-    log_prior_const <- -log(2 * pi) - 0.5 * log(detS)
-    hfun <- function(bb1, bb2) {
-      rs(obs(eta0 + z1 * bb1[group] + z2 * bb2[group], deriv = FALSE)) + log_prior_const -
-        0.5 * (Si[1, 1] * bb1^2 + 2 * Si[1, 2] * bb1 * bb2 + Si[2, 2] * bb2^2)
+    lin <- function(u) eta0 + rowSums(Zt * u[group, , drop = FALSE])
+    hfun <- function(u) {
+      as.numeric(rs(obs(lin(u), deriv = FALSE))) - 0.5 * rowSums(u^2) - half_log_2pi
+    }
+    curvature <- function(w) {
+      S <- rs(w * ZZ)
+      H <- array(0, c(G, q, q))
+      for (j in seq_len(nrow(pairs))) {
+        H[, pairs$row[j], pairs$col[j]] <- S[, j]
+        H[, pairs$col[j], pairs$row[j]] <- S[, j]
+      }
+      for (a in seq_len(q)) H[, a, a] <- H[, a, a] + 1
+      H
     }
     # Newton ascent on each individual's (concave) integrand, with
     # per-individual step halving
-    newton <- function(b) {
-      hb <- hfun(b[, 1], b[, 2])
+    newton <- function(u) {
+      hb <- hfun(u)
       if (!all(is.finite(hb))) return(NULL)
       for (step in seq_len(500L)) {
-        o <- obs(eta0 + z1 * b[group, 1] + z2 * b[group, 2])
-        g1 <- rs(o$d1 * z1) - (Si[1, 1] * b[, 1] + Si[1, 2] * b[, 2])
-        g2 <- rs(o$d1 * z2) - (Si[2, 1] * b[, 1] + Si[2, 2] * b[, 2])
-        h11 <- rs(o$w * z1 * z1) + Si[1, 1]
-        h12 <- rs(o$w * z1 * z2) + Si[1, 2]
-        h22 <- rs(o$w * z2 * z2) + Si[2, 2]
-        dh <- h11 * h22 - h12^2
-        d1 <- (h22 * g1 - h12 * g2) / dh
-        d2 <- (h11 * g2 - h12 * g1) / dh
-        if (!all(is.finite(d1)) || !all(is.finite(d2))) return(NULL)
-        if (max(abs(d1), abs(d2)) < 1e-10) {
-          b[, 1] <- b[, 1] + d1; b[, 2] <- b[, 2] + d2
-          return(b)
-        }
-        big <- pmax(1, abs(d1) / 10, abs(d2) / 10)
-        d1 <- d1 / big; d2 <- d2 / big
-        if (max(abs(d1), abs(d2)) < 1e-3) {
+        o <- obs(lin(u))
+        g <- rs(o$d1 * Zt) - u
+        d <- bmatvec(bspdinv(curvature(o$w)), g)
+        if (!all(is.finite(d))) return(NULL)
+        if (max(abs(d)) < 1e-10) return(u + d)
+        d <- d / pmax(1, apply(abs(d), 1L, max) / 10)
+        if (max(abs(d)) < 1e-3) {
           # quadratic convergence region: full Newton steps
-          b[, 1] <- b[, 1] + d1; b[, 2] <- b[, 2] + d2
-          hb <- hfun(b[, 1], b[, 2])
+          u <- u + d
+          hb <- hfun(u)
           next
         }
         for (halving in 0:40) {
-          hn <- hfun(b[, 1] + d1, b[, 2] + d2)
+          hn <- hfun(u + d)
           bad <- !is.finite(hn) | hn < hb - 1e-12 * pmax(1, abs(hb))
           if (!any(bad)) break
-          d1[bad] <- d1[bad] / 2; d2[bad] <- d2[bad] / 2
+          d[bad, ] <- d[bad, ] / 2
         }
-        if (all(bad)) return(b)
-        d1[bad] <- 0; d2[bad] <- 0
-        b[, 1] <- b[, 1] + d1; b[, 2] <- b[, 2] + d2
+        if (all(bad)) return(u)
+        d[bad, ] <- 0
+        u <- u + d
         hb[!bad] <- hn[!bad]
       }
       NULL
     }
-    b <- newton(state$modes)
-    if (is.null(b)) b <- newton(matrix(0, G, 2))
-    if (is.null(b)) return(list(ll = rep(-Inf, G)))
-    state$modes <- b
-    # curvature at the mode
-    o <- obs(eta0 + z1 * b[group, 1] + z2 * b[group, 2])
-    h11 <- rs(o$w * z1 * z1) + Si[1, 1]
-    h12 <- rs(o$w * z1 * z2) + Si[1, 2]
-    h22 <- rs(o$w * z2 * z2) + Si[2, 2]
-    dh <- h11 * h22 - h12^2
-    # C C' = H^{-1}
-    c11 <- sqrt(h22 / dh)
-    c21 <- (-h12 / dh) / c11
-    c22 <- sqrt(pmax(h11 / dh - c21^2, 0))
-    terms <- vapply(seq_along(zn1), function(q) {
-      bb1 <- b[, 1] + sqrt(2) * c11 * zn1[q]
-      bb2 <- b[, 2] + sqrt(2) * (c21 * zn1[q] + c22 * zn2[q])
-      log_wk[q] + hfun(bb1, bb2)
-    }, numeric(G))
-    if (!is.matrix(terms)) terms <- matrix(terms, nrow = G)
-    list(ll = log(2 * pi) + log(c11 * c22) + log_row_sum_exp(terms))
+    u <- newton(state$modes)
+    if (is.null(u)) u <- newton(matrix(0, G, q))
+    if (is.null(u)) return(fail(length(theta)))
+    state$modes <- u
+    # C C' = H^{-1} at the mode; nodes u + sqrt(2) C z_k
+    C <- bchol(bspdinv(curvature(obs(lin(u))$w)))
+    log_det_C <- 0
+    for (a in seq_len(q)) log_det_C <- log_det_C + log(C[, a, a])
+    U <- lapply(seq_len(q), function(a) {
+      Ua <- matrix(u[, a], G, K)
+      for (c in seq_len(a)) Ua <- Ua + sqrt(2) * outer(C[, a, c], zn[, c])
+      Ua
+    })
+    eta <- matrix(eta0, length(eta0), K)
+    for (a in seq_len(q)) eta <- eta + Zt[, a] * U[[a]][group, , drop = FALSE]
+    terms <- rs(obs(eta, deriv = FALSE)) - half_log_2pi +
+      matrix(log_wk, G, K, byrow = TRUE)
+    for (a in seq_len(q)) terms <- terms - 0.5 * U[[a]]^2
+    list(ll = half_log_2pi + log_det_C + log_row_sum_exp(terms))
   }
+}
+
+#' Default number of quadrature nodes per dimension for q random effects
+#'
+#' @keywords internal
+#' @noRd
+slopes_default_nodes <- function(q) {
+  if (q <= 2L) 7L else if (q == 3L) 5L else if (q <= 6L) 3L else 1L
+}
+
+#' Number of nodes per dimension: the default for q effects, or R with a
+#' warning when the product rule is large
+#'
+#' @keywords internal
+#' @noRd
+slopes_nodes <- function(R, q) {
+  if (is.null(R)) return(slopes_default_nodes(q))
+  if (R^q > 2000) {
+    warning("adaptive quadrature with R = ", R, " nodes per dimension and ", q,
+            " random effects uses ", R^q, " nodes per individual and may be slow; ",
+            "consider a smaller R (R = 1 is the Laplace approximation)", call. = FALSE)
+  }
+  R
 }
 
 fit_slopes_glm <- function(X, y, Z, group, family, R, maxit, tol) {
@@ -341,31 +459,32 @@ fit_slopes_glm <- function(X, y, Z, group, family, R, maxit, tol) {
     stop("random slopes are available for family = 'gaussian', 'poisson' and 'binomial' ",
          "(logit or probit) only", call. = FALSE)
   }
-  if (ncol(Z) != 2L) {
-    stop("random slopes for family = '", family$family, "' support one slope ",
-         "(random = ~ x, a two-dimensional random effect); use family = 'gaussian' ",
-         "for more slopes", call. = FALSE)
-  }
   if (family$family == "binomial" && any(!y %in% c(0, 1))) {
     stop("random slopes for family = 'binomial' need a 0/1 response", call. = FALSE)
   }
-  k <- ncol(X); G <- max(group)
+  k <- ncol(X); G <- max(group); q <- ncol(Z)
+  R <- slopes_nodes(R, q)
   fam_id <- if (family$family == "poisson") 1L else 2L
   link_id <- if (fam_id == 2L) family$link_id else 1L
   b0 <- as.numeric(irls_fit_cpp(X, y, fam_id, link_id, maxit, tol)$coefficients)
-  sz <- stats::sd(Z[, 2]); if (!is.finite(sz) || sz <= 0) sz <- 1
-  start <- c(b0, log(0.5), 0, log(0.2 / sz))
+  vi <- slopes_vech_index(q)
+  sz <- vapply(seq_len(q), function(a) {
+    s <- stats::sd(Z[, a]); if (is.finite(s) && s > 0) s else 1
+  }, numeric(1))
+  l0 <- ifelse(vi$row == vi$col, log(ifelse(vi$row == 1L, 0.5, 0.2 / sz[vi$row])), 0)
+  start <- c(b0, l0)
   contrib <- slopes_glm_contrib(family, X, y, Z, group, R)
   res <- ml_optimize(start, contrib, rep(1, G), maxit, tol)
   # recover the modes at the optimum
   contrib(res$theta, FALSE)
-  modes <- environment(contrib)$state$modes
+  L <- slopes_lfactor(res$theta[k + seq_len(nrow(vi))], q)
+  modes <- environment(contrib)$state$modes %*% t(L)
   colnames(modes) <- colnames(Z)
 
   coefs <- res$theta[seq_len(k)]; names(coefs) <- colnames(X)
   vcov <- res$vcov[seq_len(k), seq_len(k), drop = FALSE]
   dimnames(vcov) <- list(colnames(X), colnames(X))
-  varcomp <- slopes_sigma2d(res$theta[k + 1:3])
+  varcomp <- tcrossprod(L)
   dimnames(varcomp) <- list(colnames(Z), colnames(Z))
   eta <- as.numeric(X %*% coefs)
   out <- list(coefficients = coefs, vcov = vcov, loglik = res$loglik,

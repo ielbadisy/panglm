@@ -87,6 +87,45 @@ test_that("Poisson and logit random slopes (Laplace) match glmmTMB", {
   }
 })
 
+test_that("GLM random slopes with two slopes match glmmTMB (Laplace)", {
+  skip_on_cran()
+  skip_if_missing("glmmTMB")
+  set.seed(2)
+  G <- 120; T <- 8
+  d <- data.frame(id = rep(seq_len(G), each = T), time = rep(0:(T - 1), G))
+  d$x <- stats::rnorm(G * T); d$w <- stats::rnorm(G * T)
+  L <- matrix(c(0.8, 0, 0, -0.1, 0.25, 0, 0.2, 0.1, 0.5), 3, 3, byrow = TRUE)
+  b <- matrix(stats::rnorm(G * 3), G) %*% t(L)
+  lin <- 0.1 * d$time + 0.4 * d$x + b[d$id, 1] + b[d$id, 2] * d$time + b[d$id, 3] * d$w
+  d$yc <- stats::rpois(G * T, exp(0.2 + lin))
+  f <- panglm(yc ~ time + x + w, data = d, index = c("id", "time"), model = "random",
+              family = "poisson", random = ~ time + w, R = 1)
+  tm <- glmmTMB::glmmTMB(yc ~ time + x + w + (1 + time + w | id), data = d,
+                         family = stats::poisson())
+  expect_equal(dim(f$varcomp), c(3L, 3L))
+  expect_equal(unname(coef(f)), unname(glmmTMB::fixef(tm)$cond), tolerance = 1e-4)
+  expect_equal(unname(sqrt(diag(vcov(f)))), unname(sqrt(diag(vcov(tm)$cond))),
+               tolerance = 1e-4)
+  expect_equal(as.numeric(logLik(f)), as.numeric(logLik(tm)), tolerance = 1e-6)
+  expect_equal(unname(f$varcomp), unname(glmmTMB::VarCorr(tm)$cond$id[, ]),
+               tolerance = 1e-3)
+  expect_equal(attr(logLik(f), "df"), 10)
+})
+
+test_that("the default number of quadrature nodes adapts to the dimension", {
+  expect_identical(panglm:::slopes_default_nodes(2L), 7L)
+  expect_identical(panglm:::slopes_default_nodes(3L), 5L)
+  expect_identical(panglm:::slopes_default_nodes(5L), 3L)
+  expect_identical(panglm:::slopes_default_nodes(8L), 1L)
+  d <- slopes_sim(G = 30)
+  d$w <- stats::rnorm(nrow(d))
+  f <- panglm(yc ~ time + x, data = d, index = c("id", "time"), model = "random",
+              family = "poisson", random = ~ time + w)
+  expect_identical(f$quadrature_nodes, 5L)
+  expect_warning(panglm:::slopes_nodes(13L, 3L), "nodes per individual")
+  expect_silent(panglm:::slopes_nodes(7L, 3L))
+})
+
 test_that("adaptive quadrature converges and population-averaged methods work", {
   d <- slopes_sim()
   f7 <- panglm(yc ~ time + x, data = d, index = c("id", "time"), model = "random",
@@ -120,8 +159,6 @@ test_that("random slopes give clear errors outside their scope", {
                "intercept")
   expect_error(panglm(yc ~ x, data = d, index = idx, model = "random", family = "negbin",
                       random = ~ time), "random slopes are available")
-  expect_error(panglm(yc ~ x, data = d, index = idx, model = "random", family = "poisson",
-                      random = ~ time + x), "one slope")
   expect_error(panglm(y ~ x, data = d, index = idx, model = "random", random = ~ time,
                       weights = rep(2, nrow(d))), "weights")
   d$time_na <- d$time; d$time_na[3] <- NA

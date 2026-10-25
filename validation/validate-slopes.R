@@ -6,6 +6,8 @@
 # glmmTMB (and lme4::glmer for logit and Poisson), adaptive Gauss-Hermite
 # quadrature (R = 7) vs GLMMadaptive, the quadrature likelihood vs a
 # brute-force dense grid, and population-averaged partial effects by hand.
+# Two slopes (a three-dimensional random effect): Laplace vs glmmTMB and
+# adaptive quadrature (R = 7, 343 nodes) vs GLMMadaptive.
 source("validation/common.R")
 suppressPackageStartupMessages({
   library(lme4); library(glmmTMB); library(GLMMadaptive); library(nlme); library(clubSandwich)
@@ -238,4 +240,54 @@ p1 <- rbind(
            list(hand = exp(eta_p + s2 / 2)[1:12]), 1e-8)
 )
 
-vsave(g1, g2, g3, g4, g5, l1, l2, l3, a1, a2, q1, p1, name = "slopes")
+# ---- Poisson, logit, probit: two random slopes (three-dimensional effect)
+set.seed(2)
+G3 <- 300; T3 <- 10
+d3 <- data.frame(id = rep(seq_len(G3), each = T3), time = rep(0:(T3 - 1), G3))
+d3$x <- rnorm(G3 * T3); d3$w <- rnorm(G3 * T3)
+L3 <- matrix(c(0.8, 0, 0, -0.1, 0.25, 0, 0.2, 0.1, 0.5), 3, 3, byrow = TRUE)
+b3 <- matrix(rnorm(G3 * 3), G3) %*% t(L3)
+lin3 <- 0.1 * d3$time + 0.4 * d3$x - 0.3 * d3$w + b3[d3$id, 1] + b3[d3$id, 2] * d3$time +
+  b3[d3$id, 3] * d3$w
+d3$yc <- rpois(G3 * T3, exp(0.2 + lin3))
+d3$yb <- rbinom(G3 * T3, 1, plogis(-0.2 + lin3))
+d3$yp <- rbinom(G3 * T3, 1, pnorm(-0.2 + 0.7 * lin3))
+
+slopes2_block <- function(y, family, glm_family, label) {
+  fm <- stats::as.formula(paste(y, "~ time + x + w"))
+  f1 <- panglm(fm, data = d3, index = idx, model = "random", family = family,
+               random = ~ time + w, R = 1)
+  tm <- glmmTMB(stats::update(fm, . ~ . + (1 + time + w | id)), data = d3, family = glm_family)
+  f7 <- panglm(fm, data = d3, index = idx, model = "random", family = family,
+               random = ~ time + w, R = 7)
+  ga <- mixed_model(fm, random = ~ time + w | id, data = d3, family = glm_family, nAGQ = 7,
+                    control = list(iter_EM = 0, update_GH_every = 1,
+                                   tol1 = 1e-10, tol2 = 1e-10, tol3 = 1e-12))
+  # with three dimensions the two packages scale the nodes with different
+  # square roots of the curvature: at R = 7 the rules agree to about 1e-3
+  rbind(
+    vcompare("slopes Laplace, 2 slopes", label, "coef", coef(f1),
+             list(glmmTMB = fixef(tm)$cond), 1e-4),
+    vcompare("slopes Laplace, 2 slopes", label, "se", sqrt(diag(vcov(f1))),
+             list(glmmTMB = sqrt(diag(vcov(tm)$cond))), 1e-4),
+    vcompare("slopes Laplace, 2 slopes", label, "varcomp (vech Sigma)", vech(f1$varcomp),
+             list(glmmTMB = tmb_vech(tm)), 1e-4),
+    vcompare("slopes Laplace, 2 slopes", label, "loglik", c(loglik = f1$loglik),
+             list(glmmTMB = as.numeric(logLik(tm))), 1e-6),
+    vcompare("slopes Laplace, 2 slopes", label, "ranef (modes)", c(f1$ranef),
+             list(glmmTMB = c(as.matrix(ranef(tm)$cond$id))), 1e-3),
+    vcompare("slopes AGHQ R = 7, 2 slopes", label, "coef", coef(f7),
+             list(GLMMadaptive = fixef(ga)), 1e-3),
+    vcompare("slopes AGHQ R = 7, 2 slopes", label, "se", sqrt(diag(vcov(f7))),
+             list(GLMMadaptive = sqrt(diag(vcov(ga)))[1:4]), 1e-3),
+    vcompare("slopes AGHQ R = 7, 2 slopes", label, "varcomp (vech Sigma)", vech(f7$varcomp),
+             list(GLMMadaptive = vech(ga$D)), 1e-3),
+    vcompare("slopes AGHQ R = 7, 2 slopes", label, "loglik", c(loglik = f7$loglik),
+             list(GLMMadaptive = as.numeric(logLik(ga))), 1e-5)
+  )
+}
+s1 <- slopes2_block("yc", "poisson", poisson(), "sim Poisson")
+s2 <- slopes2_block("yb", "binomial", binomial(), "sim logit")
+s3 <- slopes2_block("yp", "probit", binomial("probit"), "sim probit")
+
+vsave(g1, g2, g3, g4, g5, l1, l2, l3, a1, a2, q1, p1, s1, s2, s3, name = "slopes")

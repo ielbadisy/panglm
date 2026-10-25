@@ -85,9 +85,9 @@
 #'   The slope variables usually also appear in `formula` (their average
 #'   slope). Available for `family = "gaussian"` (exact maximum likelihood,
 #'   any number of slopes), `"poisson"` and `"binomial"` (logit or probit,
-#'   one slope, adaptive Gauss-Hermite product quadrature with `R` nodes
-#'   per dimension; `R = 1` is the Laplace approximation of
-#'   `lme4::glmer()`). With random slopes the Poisson model has a normal
+#'   any number of slopes, adaptive Gauss-Hermite product quadrature with
+#'   `R` nodes per dimension, `R^q` nodes for `q` random effects; `R = 1`
+#'   is the Laplace approximation of `lme4::glmer()`). With random slopes the Poisson model has a normal
 #'   (lognormal) random effect, not the gamma mixing of the
 #'   random-intercept Poisson model. The fit stores `varcomp` (the
 #'   covariance matrix `Sigma`), `ranef` (posterior modes, the BLUPs in
@@ -98,8 +98,10 @@
 #'   population averages over the random effects.
 #' @param R number of Gauss-Hermite quadrature nodes (random-effects
 #'   binomial and gamma models only). With random slopes, the number of
-#'   nodes per dimension of the adaptive product rule (default 7 when `R`
-#'   is not given; `R = 1` gives the Laplace approximation).
+#'   nodes per dimension of the adaptive product rule. When `R` is not
+#'   given it is 7 for one slope, 5 for two, 3 for three to five and 1
+#'   (Laplace) beyond, so that `R^q` stays moderate; a warning is given
+#'   when `R^q` exceeds 2000. `R = 1` gives the Laplace approximation.
 #' @param maxit maximum IRLS/Newton iterations
 #' @param tol convergence tolerance
 #' @return an object of class `"panglm"`
@@ -189,11 +191,14 @@ panglm <- function(formula, data, index,
     if (isTRUE(dynamic)) {
       stop("dynamic = TRUE is not supported with random slopes", call. = FALSE)
     }
-    if (missing(R)) R <- 7L
-    if (!is.numeric(R) || length(R) != 1L || R < 1) {
-      stop("'R' must be a positive integer", call. = FALSE)
+    if (missing(R)) {
+      R <- NULL # chosen from the number of random effects
+    } else {
+      if (!is.numeric(R) || length(R) != 1L || R < 1) {
+        stop("'R' must be a positive integer", call. = FALSE)
+      }
+      R <- as.integer(R)
     }
-    R <- as.integer(R)
   }
   is_ordered <- identical(family$family, "ordered")
   if (is_ordered && model == "within" && family$link != "logit") {
