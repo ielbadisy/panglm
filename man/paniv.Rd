@@ -106,7 +106,7 @@ regressors as endogenous time-invariant ones.
   set to zero (with a warning), which reduces the estimator to pooled
   2SLS on the same instruments.
 
-In every case the classical covariance is `s2 (Xhat'Xhat)^{-1}` with `s2`
+In every case the classical covariance is `s2 inverse(Xhat'Xhat)` with `s2`
 the mean square of the structural residuals of the transformed
 regression. The cluster covariance is the sandwich
 `B (sum_g u_g u_g') B` with `u_g = Xhat_g' e_g` summed within the panel
