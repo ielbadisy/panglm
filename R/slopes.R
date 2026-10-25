@@ -133,6 +133,11 @@ fit_slopes_gaussian <- function(X, y, Z, group, maxit, tol) {
                        control = list(factr = 1, pgtol = 0, maxit = 500L))
   par <- if (opt2$value < opt$objective) opt2$par else opt$par
   pr <- slopes_gaussian_profile(par, cp, XtX, Xty, yty, n, r)
+  # pr$L is relative to sigma (the lme4 theta), the scale isSingular() uses
+  sz <- vapply(seq_len(r), function(a) {
+    s <- stats::sd(Z[, a]); if (is.finite(s) && s > 0) s else 1
+  }, numeric(1))
+  slopes_boundary_warning(pr$L, sz, colnames(Z), cholesky_se = FALSE)
 
   coefs <- pr$beta; names(coefs) <- colnames(X)
   vcov <- pr$sigma2 * solve(pr$XVX)
@@ -678,14 +683,16 @@ fit_slopes_glm <- function(X, y, Z, group, family, R, maxit, tol) {
 #'
 #' @keywords internal
 #' @noRd
-slopes_boundary_warning <- function(L, scale, names) {
+slopes_boundary_warning <- function(L, scale, names, cholesky_se = TRUE) {
   at_zero <- abs(diag(L)) * scale < 1e-4
   if (any(at_zero)) {
+    se_note <- if (cholesky_se) {
+      ". Standard errors use the Cholesky parameterisation, which stays regular at the boundary"
+    } else ""
     warning("the random-effects covariance matrix is singular (on the boundary of the ",
             "parameter space): the variance of ", paste0("'", names[at_zero], "'", collapse = ", "),
             " given the preceding random effects is estimated at zero; consider a simpler ",
-            "'random' formula. Standard errors use the Cholesky parameterisation, which ",
-            "stays regular at the boundary", call. = FALSE)
+            "'random' formula", se_note, call. = FALSE)
   }
   invisible(at_zero)
 }

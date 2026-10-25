@@ -151,6 +151,24 @@ test_that("negative binomial and gamma random slopes match glmmTMB (Laplace)", {
   expect_output(print(summary(f)), "Gamma shape")
 })
 
+test_that("a Gaussian slope variance at the boundary warns like lme4::isSingular()", {
+  skip_if_missing("lme4")
+  data(copd)
+  expect_warning(
+    f <- panglm(fev1 ~ visit + treatment + age + smoker, data = copd,
+                index = c("id", "visit"), model = "random", random = ~ visit),
+    "singular")
+  m <- suppressMessages(lme4::lmer(fev1 ~ visit + treatment + age + smoker + (visit | id),
+                                   data = copd, REML = FALSE))
+  expect_true(lme4::isSingular(m))
+  expect_equal(unname(coef(f)), unname(lme4::fixef(m)), tolerance = 1e-4)
+  expect_equal(as.numeric(logLik(f)), as.numeric(logLik(m)), tolerance = 1e-6)
+  # an interior fit stays silent
+  d <- slopes_sim()
+  expect_silent(panglm(y ~ time + x, data = d, index = c("id", "time"), model = "random",
+                       random = ~ time))
+})
+
 test_that("a GLM slope variance at the boundary keeps finite standard errors", {
   skip_on_cran()
   skip_if_missing("glmmTMB")
