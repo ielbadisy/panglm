@@ -34,7 +34,7 @@ test_that("hurdle coefficient methods stack the two parts", {
   copd <- methods_data("copd")
   set.seed(5)
   copd$w <- rnorm(nrow(copd))
-  fit <- suppressMessages(panglm_hurdle(exacerbations ~ crp + w, data = copd,
+  fit <- suppressMessages(panhurdle(exacerbations ~ crp + w, data = copd,
                                         index = c("id", "visit")))
   b <- coef(fit)
   expect_equal(names(b), c("zero:crp", "zero:w", "count:crp", "count:w"))

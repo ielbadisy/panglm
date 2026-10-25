@@ -595,7 +595,7 @@ print.summary.panqr <- function(x, digits = max(3, getOption("digits") - 3), ...
   print(x$call)
   cat("\nEstimator:", x$label, "\n")
   cat("N =", x$nobs, " groups =", x$n_groups, " vcov:", x$vcov_type,
-      if (identical(x$vcov_type, "bootstrap")) paste0("(cluster, R = ", x$R, ")") else "", "\n")
+      if (identical(x$vcov_type, "bootstrap")) paste0("(cluster, boot = ", x$R, ")") else "", "\n")
   if (length(x$dropped)) cat("Dropped (time invariant):", paste(x$dropped, collapse = ", "), "\n")
   if (!is.null(x$location)) {
     cat("\nLocation (within regression, cluster-robust):\n")

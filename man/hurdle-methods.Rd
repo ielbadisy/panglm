@@ -45,7 +45,7 @@
 }
 \description{
 `coef()`, `vcov()`, `confint()`, `nobs()` and `summary()` for hurdle fits
-(`panglm_hurdle()`).
+(`panhurdle()`).
 The coefficients of the zero part (conditional logit of `1(y > 0)`) and
 of the count part (zero-truncated count model on the positive
 observations) are named `"zero:..."` and `"count:..."`. The two parts are
@@ -57,7 +57,7 @@ model.
 }
 \examples{
 data(copd)
-fit <- panglm_hurdle(exacerbations ~ crp, data = copd, index = c("id", "visit"))
+fit <- panhurdle(exacerbations ~ crp, data = copd, index = c("id", "visit"))
 coef(fit)
 confint(fit)
 summary(fit)

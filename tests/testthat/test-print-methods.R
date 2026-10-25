@@ -17,7 +17,7 @@ test_that("print methods of the model classes share the layout", {
   }
   es <- expect_print_layout(methods_fit("eventstudy"), vcov_line = TRUE)
   copd <- methods_data("copd")
-  h <- suppressMessages(panglm_hurdle(exacerbations ~ crp, data = copd, index = c("id", "visit")))
+  h <- suppressMessages(panhurdle(exacerbations ~ crp, data = copd, index = c("id", "visit")))
   out <- expect_print_layout(h)
   expect_true(any(grepl("Zero part", out)))
 })
@@ -35,8 +35,8 @@ test_that("summary print methods show the vcov line and significance stars", {
 
 test_that("summary of the hurdle model agrees with coef, vcov and confint", {
   copd <- methods_data("copd")
-  h <- suppressMessages(panglm_hurdle(exacerbations ~ crp, data = copd, index = c("id", "visit"),
-                                      count_family = "negbin"))
+  h <- suppressMessages(panhurdle(exacerbations ~ crp, data = copd, index = c("id", "visit"),
+                                      family = "negbin"))
   s <- summary(h)
   expect_s3_class(s, "summary.panglm_hurdle")
   tab <- rbind(s$zero, s$count)

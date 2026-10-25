@@ -51,7 +51,7 @@ logLik.panglm_eventstudy <- function(object, ...) stats::logLik(object$fit)
 #' Coefficient methods for the hurdle model
 #'
 #' `coef()`, `vcov()`, `confint()`, `nobs()` and `summary()` for hurdle fits
-#' (`panglm_hurdle()`).
+#' (`panhurdle()`).
 #' The coefficients of the zero part (conditional logit of `1(y > 0)`) and
 #' of the count part (zero-truncated count model on the positive
 #' observations) are named `"zero:..."` and `"count:..."`. The two parts are
@@ -75,7 +75,7 @@ logLik.panglm_eventstudy <- function(object, ...) stats::logLik(object$fit)
 #'   information.
 #' @examples
 #' data(copd)
-#' fit <- panglm_hurdle(exacerbations ~ crp, data = copd, index = c("id", "visit"))
+#' fit <- panhurdle(exacerbations ~ crp, data = copd, index = c("id", "visit"))
 #' coef(fit)
 #' confint(fit)
 #' summary(fit)
