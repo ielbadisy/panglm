@@ -44,6 +44,11 @@
 #'   Inference for Econometric Models*, Cambridge University Press.
 #' @family panglm methods
 #' @seealso [effectcurve()] for the effect of a spline term across its range.
+#' @section Validation:
+#' Checked against `marginaleffects::avg_slopes()` (pooled probit) and analytic
+#' values (linear and fixed-effects Poisson) in the package tests, and against
+#' hand computations for the Tobit and the population-averaged random-slope
+#' models in the package's validation suite on GitHub.
 #' @examples
 #' data(copd)
 #' fit <- panglm(hospitalized ~ treatment + age + crp, data = copd,

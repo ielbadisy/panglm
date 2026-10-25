@@ -31,6 +31,9 @@
 #' @return a numeric vector of predictions, one per row of `newdata`
 #'   (`NA` where a regressor is missing)
 #' @family paniv methods
+#' @section Validation:
+#' Checked against `predict()` of `plm::plm()` instrumental-variable fits and
+#' `AER::ivreg()` in the package's validation suite on GitHub.
 #' @examples
 #' set.seed(1)
 #' d <- data.frame(id = rep(1:50, each = 4), t = rep(1:4, 50))
@@ -160,6 +163,10 @@ iv_twoway_effects <- function(fe, id, time) {
 #' @param ... unused
 #' @return a numeric vector with one prediction per row of `newdata`
 #' @family panselect methods
+#' @section Validation:
+#' On one period, checked against `predict()` of
+#' `sampleSelection::selection(method = "2step")` in the package's validation
+#' suite on GitHub.
 #' @examples
 #' set.seed(1)
 #' d <- data.frame(id = rep(1:150, each = 3), t = rep(1:3, 150))
@@ -290,6 +297,9 @@ predict.panselect <- function(object, newdata,
 #' @param ... unused
 #' @return a numeric vector with one prediction per row of `newdata`
 #' @family pangmm methods
+#' @section Validation:
+#' Checked against the transformed equations stored by `plm::pgmm()` in the
+#' package's validation suite on GitHub.
 #' @examples
 #' set.seed(3)
 #' N <- 100; TT <- 6

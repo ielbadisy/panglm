@@ -76,6 +76,12 @@
 #' @family panel models
 #' @seealso [predict.twopart()], [confint.twopart()] and [partialeffects()] for
 #'   the fitted model, [tidy-methods] for `tidy()` and `glance()`.
+#' @section Validation:
+#' Both parts are [panglm()] fits and share its validation. The package tests
+#' also check that the pooled two-part prediction is the product of the two
+#' `stats::glm()` fits, the smearing retransformation of the lognormal part,
+#' and the correlated random-intercept likelihood against two-dimensional
+#' numerical integration.
 #' @examples
 #' data(copd)
 #' set.seed(1)

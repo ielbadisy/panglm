@@ -80,6 +80,12 @@ did_timing <- function(data, index, treat) {
 #' @family policy evaluation
 #' @seealso [summary.panglm()] and the other [panglm()] methods for the fitted
 #'   model.
+#' @section Validation:
+#' The linear and count versions are two-way fixed-effects [panglm()] fits,
+#' checked against fixest in the package tests. The binary version, the two-way
+#' conditional logit, is checked against `survival::clogit()` (coefficients,
+#' classical and cluster-robust standard errors) and, with two periods, against
+#' `fixest::feglm()`, in the package's validation suite on GitHub.
 #' @examples
 #' set.seed(1)
 #' d <- expand.grid(id = 1:200, year = 2015:2022)
@@ -158,6 +164,11 @@ did <- function(formula, data, index, treat, family = "gaussian",
 #' @family policy evaluation
 #' @seealso [eventstudy-methods] and [plot.panglm_eventstudy()] for the fitted
 #'   model, [tidy-methods] for `tidy()` and `glance()`.
+#' @section Validation:
+#' Checked against fixest in the package tests, and, for the binary version,
+#' against `survival::clogit()` with event-time dummies coded by hand
+#' (coefficients, standard errors and the pre-trend Wald statistic) in the
+#' package's validation suite on GitHub.
 #' @examples
 #' set.seed(1)
 #' d <- expand.grid(id = 1:200, year = 2015:2022)

@@ -35,6 +35,12 @@ the spline columns of a regressor (does \code{x} matter at all), of the
 Mundlak means of a correlated random effects fit, or of the leads of an
 event study.
 }
+\section{Validation}{
+
+Checked against a hand computation of the Wald statistic, in both the
+\code{terms} and the \code{R} matrix forms, in the package tests.
+}
+
 \examples{
 data(copd)
 fit <- panglm(fev1 ~ splines::ns(crp, 3), data = copd,

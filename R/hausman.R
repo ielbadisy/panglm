@@ -37,6 +37,11 @@
 #' @family tests
 #' @seealso [panglm()] with `cre = TRUE`, whose summary reports the Mundlak
 #'   test.
+#' @section Validation:
+#' The classical test is checked against `plm::phtest()` in the package tests.
+#' The Mundlak test is the Wald test on the individual means of the correlated
+#' random effects fit of [panglm()], whose pooled and random versions are
+#' checked to reproduce the within slope.
 #' @examples
 #' data(copd)
 #' fit_fe <- panglm(fev1 ~ crp, data = copd, index = c("id", "visit"),

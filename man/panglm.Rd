@@ -169,6 +169,29 @@ Fast pooled, fixed-effects ("within") and random-effects panel GLMs,
 backed by an Rcpp/RcppArmadillo/RcppParallel numerical core. See the
 package vignette for the estimators currently implemented per family.
 }
+\section{Validation}{
+
+Each estimator is checked against an established implementation of the same
+model, on the same data, in the package's validation suite on GitHub and in
+the package tests:
+\itemize{
+\item pooled models: \code{stats::lm()}, \code{stats::glm()}, \code{MASS::glm.nb()},
+\code{plm::plm()} and fixest, with \code{sandwich} robust and cluster covariances;
+\item fixed effects: \code{plm::plm()}, \code{fixest::feols()}, \code{fixest::fepois()},
+\code{fixest::fenegbin()}, \code{pglm::pglm()}, \code{glm()} with individual dummies, and
+\code{survival::clogit()} for the conditional and two-way logit;
+\item between estimator: \code{plm::plm(model = "between")};
+\item random effects: \code{plm::plm()} and \code{pglm::pglm()} (random intercept),
+\code{lme4::lmer()}, \code{lme4::glmer()} and glmmTMB (random intercept and slopes),
+and GLMMadaptive (adaptive quadrature with random slopes);
+\item ordered outcomes: \code{MASS::polr()}, \code{ordinal::clm()}, \code{ordinal::clmm()}, and
+a blow-up and cluster fit with \code{survival::clogit()} for the fixed-effects
+ordered logit;
+\item Tobit: \code{AER::tobit()} and censReg; beta: \code{betareg::betareg()} and glmmTMB;
+gamma: \code{stats::glm()} and glmmTMB.
+}
+}
+
 \examples{
 data(copd)
 

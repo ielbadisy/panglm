@@ -160,6 +160,15 @@ then reports the ATTs separately for each value of the covariate
 row per distinct value, so summarise a binary or discrete version of it.
 }
 
+\section{Validation}{
+
+Checked against \code{etwfe::etwfe()} and \code{etwfe::emfx()} on \code{did::mpdta} in the
+package's validation suite on GitHub: simple, group, calendar and event ATTs
+and their standard errors for the linear, Poisson and logit models, both
+control groups, with and without controls, sampling weights, \code{xvar} and
+\code{ivar}.
+}
+
 \examples{
 # Staggered rollout of a health insurance scheme by region (for example
 # RAMED, then AMO, in Morocco): regions join in 2016, 2018 or 2020, the

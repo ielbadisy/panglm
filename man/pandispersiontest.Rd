@@ -28,6 +28,12 @@ to random-effects models because their marginal variance includes the
 fitted mixing distribution and is not equal to the observation-level
 Poisson variance used by this statistic.
 }
+\section{Validation}{
+
+No reference implementation exists for panel fits; the package tests check
+that it flags simulated overdispersed panels and not equidispersed ones.
+}
+
 \examples{
 data(copd)
 fit <- panglm(exacerbations ~ treatment + age + smoker + crp, data = copd,

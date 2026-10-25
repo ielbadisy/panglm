@@ -70,6 +70,14 @@ variance components, dispersion and fixed-effect intercepts as fixed.
 Exact conditional logit fits are not supported, because their
 individual intercepts are conditioned out and the mean is not identified.
 }
+\section{Validation}{
+
+Checked against \code{marginaleffects::avg_slopes()} (pooled probit) and analytic
+values (linear and fixed-effects Poisson) in the package tests, and against
+hand computations for the Tobit and the population-averaged random-slope
+models in the package's validation suite on GitHub.
+}
+
 \examples{
 data(copd)
 fit <- panglm(hospitalized ~ treatment + age + crp, data = copd,

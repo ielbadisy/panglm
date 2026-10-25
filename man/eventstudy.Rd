@@ -78,6 +78,14 @@ With \code{family = "binomial"} the model is the two-way conditional logit
 (see \code{\link[=did]{did()}}) and the event-time coefficients are log odds ratios
 relative to the reference event time.
 }
+\section{Validation}{
+
+Checked against fixest in the package tests, and, for the binary version,
+against \code{survival::clogit()} with event-time dummies coded by hand
+(coefficients, standard errors and the pre-trend Wald statistic) in the
+package's validation suite on GitHub.
+}
+
 \examples{
 set.seed(1)
 d <- expand.grid(id = 1:200, year = 2015:2022)

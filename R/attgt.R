@@ -137,6 +137,14 @@
 #'   linear models. *The Annals of Statistics*, 21, 255-285.
 #'   \doi{10.1214/aos/1176349025}
 #' @family policy evaluation
+#' @section Validation:
+#' Checked against `did::att_gt()` and `did::aggte()` on `did::mpdta` in the
+#' package's validation suite on GitHub: `ATT(g, t)`, analytic and clustered
+#' standard errors, the pre-trend test and the four aggregations, for the
+#' `"dr"`, `"ipw"` and `"reg"` estimators, both control groups, both base
+#' periods, sampling weights, anticipation and unbalanced panels; the
+#' multiplier bootstrap standard errors and uniform bands against those of did
+#' with the same number of draws.
 #' @examples
 #' # A health insurance scheme (for example the AMO extension in Morocco)
 #' # is rolled out region by region: provinces of region A join in 2016,

@@ -32,6 +32,12 @@ observations), the usual criteria for choosing the number of classes
 fail to converge or return near-empty classes; such fits are reported
 with \code{NA}.
 }
+\section{Validation}{
+
+Each fit is a \code{\link[=panfmm]{panfmm()}} fit, whose log-likelihood and BIC are checked
+against flexmix in the package's validation suite on GitHub.
+}
+
 \examples{
 set.seed(3)
 d <- data.frame(id = rep(1:150, each = 3), t = rep(1:3, 150), x = rnorm(450))

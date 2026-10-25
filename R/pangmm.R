@@ -173,6 +173,12 @@
 #' @family panel models
 #' @seealso [summary.pangmm()], [vcov.pangmm()] and [predict.pangmm()] for the
 #'   fitted model, [tidy-methods] for `tidy()` and `glance()`.
+#' @section Validation:
+#' Checked against `plm::pgmm()` and its `vcovHC()`, `mtest()`, `sargan()` and
+#' `pwaldtest()` methods (difference and system GMM, one and two steps, with
+#' the Windmeijer correction), and `predict()` against the transformed
+#' equations stored by `plm::pgmm()`, on `plm::EmplUK` and a simulated
+#' unbalanced panel, in the package's validation suite on GitHub.
 #' @examples
 #' # Habit persistence in smoking: cigarettes per day depend on last
 #' # wave's consumption (state dependence) and on the price of tobacco,

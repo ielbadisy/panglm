@@ -136,6 +136,16 @@ within covariance of the rest of the package
 (\code{G / (G - 1) * (n - 1) / (n - k)}, as \code{plm::vcovHC(type = "sss")}).
 }
 
+\section{Validation}{
+
+Checked in the package's validation suite on GitHub: the pooled model
+against \code{quantreg::rq()} and its kernel sandwich; the Canay and MM-QR
+estimators against implementations built from \code{plm::plm()}, \code{stats::lm()}
+and \code{quantreg::rq()}, with the MM-QR covariance checked against the formulas
+of the Stata command \code{xtqreg}; and Monte Carlo checks that the analytic
+standard errors match the sampling standard deviation.
+}
+
 \examples{
 # Simulated panel of 300 patients over 6 years. Annual health costs have
 # a patient effect and a heavy upper tail that widens with chronic

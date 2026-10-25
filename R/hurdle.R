@@ -47,6 +47,10 @@
 #' @seealso [hurdle-methods] and [plot.panglm_hurdle()] for the fitted model,
 #'   [pandispersiontest()] to check the count part, [twopart()] for continuous
 #'   costs.
+#' @section Validation:
+#' The zero part is the conditional logit of [panglm()], checked against
+#' `survival::clogit()`. The zero-truncated Poisson and NB2 count parts are
+#' checked against the count part of `pscl::hurdle()` in the package tests.
 #' @examples
 #' data(copd)
 #' fit <- panhurdle(exacerbations ~ crp, data = copd, index = c("id", "visit"))

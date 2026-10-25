@@ -55,6 +55,13 @@ inverse Mills ratio of zero and a missing selection probability; a
 period that is not in the fit gives a missing prediction for the
 conditional and selection types.
 }
+\section{Validation}{
+
+On one period, checked against \code{predict()} of
+\code{sampleSelection::selection(method = "2step")} in the package's validation
+suite on GitHub.
+}
+
 \examples{
 set.seed(1)
 d <- data.frame(id = rep(1:150, each = 3), t = rep(1:3, 150))

@@ -171,6 +171,17 @@ aggregations of \code{\link[=summary.panglm_attgt]{summary.panglm_attgt()}} reus
 critical value with the bootstrap standard errors.
 }
 
+\section{Validation}{
+
+Checked against \code{did::att_gt()} and \code{did::aggte()} on \code{did::mpdta} in the
+package's validation suite on GitHub: \code{ATT(g, t)}, analytic and clustered
+standard errors, the pre-trend test and the four aggregations, for the
+\code{"dr"}, \code{"ipw"} and \code{"reg"} estimators, both control groups, both base
+periods, sampling weights, anticipation and unbalanced panels; the
+multiplier bootstrap standard errors and uniform bands against those of did
+with the same number of draws.
+}
+
 \examples{
 # A health insurance scheme (for example the AMO extension in Morocco)
 # is rolled out region by region: provinces of region A join in 2016,

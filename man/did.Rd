@@ -60,6 +60,15 @@ effects on the treated in probability points use \code{\link[=etwfe]{etwfe()}} w
 \code{family = "binomial"}. Controls that do not vary within individuals are
 absorbed by the individual effects and dropped.
 }
+\section{Validation}{
+
+The linear and count versions are two-way fixed-effects \code{\link[=panglm]{panglm()}} fits,
+checked against fixest in the package tests. The binary version, the two-way
+conditional logit, is checked against \code{survival::clogit()} (coefficients,
+classical and cluster-robust standard errors) and, with two periods, against
+\code{fixest::feglm()}, in the package's validation suite on GitHub.
+}
+
 \examples{
 set.seed(1)
 d <- expand.grid(id = 1:200, year = 2015:2022)

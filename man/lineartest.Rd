@@ -27,6 +27,13 @@ coefficient vector is orthogonal to the complement of \code{a}, so it accepts
 any covariance type, including cluster-robust ones. For a test of whether
 the regressor matters at all, use \code{\link[=jointtest]{jointtest()}} on its columns.
 }
+\section{Validation}{
+
+The package tests check that the test rejects a nonlinear curve and keeps
+its size under linearity, and the fixed-effects likelihood-ratio statistic
+against the Wald statistic.
+}
+
 \examples{
 data(copd)
 fit <- panglm(fev1 ~ splines::ns(crp, 3), data = copd,

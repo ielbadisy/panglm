@@ -41,6 +41,12 @@ formula are evaluated on \code{newdata}; factor regressors must carry the
 levels used in the fit. For within fits \code{newdata} must contain the
 panel index columns.
 }
+\section{Validation}{
+
+Checked against \code{predict()} of \code{plm::plm()} instrumental-variable fits and
+\code{AER::ivreg()} in the package's validation suite on GitHub.
+}
+
 \examples{
 set.seed(1)
 d <- data.frame(id = rep(1:50, each = 4), t = rep(1:4, 50))

@@ -46,6 +46,12 @@ of zero (the reference); a later period that is not in the fit gives a
 missing prediction, with a warning. A prediction is missing whenever a
 required lag is unavailable.
 }
+\section{Validation}{
+
+Checked against the transformed equations stored by \code{plm::pgmm()} in the
+package's validation suite on GitHub.
+}
+
 \examples{
 set.seed(3)
 N <- 100; TT <- 6

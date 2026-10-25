@@ -185,6 +185,15 @@ fixed-effects (downward biased) and pooled OLS (upward biased)
 estimates (Bond 2002).
 }
 
+\section{Validation}{
+
+Checked against \code{plm::pgmm()} and its \code{vcovHC()}, \code{mtest()}, \code{sargan()} and
+\code{pwaldtest()} methods (difference and system GMM, one and two steps, with
+the Windmeijer correction), and \code{predict()} against the transformed
+equations stored by \code{plm::pgmm()}, on \code{plm::EmplUK} and a simulated
+unbalanced panel, in the package's validation suite on GitHub.
+}
+
 \examples{
 # Habit persistence in smoking: cigarettes per day depend on last
 # wave's consumption (state dependence) and on the price of tobacco,

@@ -19,6 +19,9 @@
 #'   individual screened out of a fixed-effects negbin fit)
 #' @family tests
 #' @seealso [negbinfamily()] for the negative binomial alternative.
+#' @section Validation:
+#' No reference implementation exists for panel fits; the package tests check
+#' that it flags simulated overdispersed panels and not equidispersed ones.
 #' @examples
 #' data(copd)
 #' fit <- panglm(exacerbations ~ treatment + age + smoker + crp, data = copd,

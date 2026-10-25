@@ -130,6 +130,24 @@
 #' @seealso [panglm-families] for the outcome families, [summary.panglm()],
 #'   [vcov.panglm()], [predict.panglm()] and [partialeffects()] for the fitted
 #'   model, [tidy-methods] for `tidy()` and `glance()`.
+#' @section Validation:
+#' Each estimator is checked against an established implementation of the same
+#' model, on the same data, in the package's validation suite on GitHub and in
+#' the package tests:
+#' * pooled models: `stats::lm()`, `stats::glm()`, `MASS::glm.nb()`,
+#'   `plm::plm()` and fixest, with `sandwich` robust and cluster covariances;
+#' * fixed effects: `plm::plm()`, `fixest::feols()`, `fixest::fepois()`,
+#'   `fixest::fenegbin()`, `pglm::pglm()`, `glm()` with individual dummies, and
+#'   `survival::clogit()` for the conditional and two-way logit;
+#' * between estimator: `plm::plm(model = "between")`;
+#' * random effects: `plm::plm()` and `pglm::pglm()` (random intercept),
+#'   `lme4::lmer()`, `lme4::glmer()` and glmmTMB (random intercept and slopes),
+#'   and GLMMadaptive (adaptive quadrature with random slopes);
+#' * ordered outcomes: `MASS::polr()`, `ordinal::clm()`, `ordinal::clmm()`, and
+#'   a blow-up and cluster fit with `survival::clogit()` for the fixed-effects
+#'   ordered logit;
+#' * Tobit: `AER::tobit()` and censReg; beta: `betareg::betareg()` and glmmTMB;
+#'   gamma: `stats::glm()` and glmmTMB.
 #' @examples
 #' data(copd)
 #'

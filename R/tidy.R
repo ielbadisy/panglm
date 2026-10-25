@@ -101,6 +101,11 @@ or_na <- function(x, type = NA_real_) if (is.null(x) || !length(x)) type else x
 #'   (attgt, etwfe), otherwise unused
 #' @return a `data.frame`
 #' @seealso [tidy.panglm()] and [glance.panglm()] for [panglm()] fits.
+#' @section Validation:
+#' Estimates and standard errors are checked against the reference fits of each
+#' model (`plm::plm()`, `plm::pgmm()`, `quantreg::rq()`, `did::att_gt()` and
+#' `etwfe::emfx()`) in the package's validation suite on GitHub, and the
+#' intervals against `confint()` of the same fit.
 #' @examples
 #' data(copd)
 #' if (requireNamespace("generics", quietly = TRUE)) {

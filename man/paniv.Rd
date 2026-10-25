@@ -135,6 +135,15 @@ restrictions; it is chi-squared with \code{L - k} degrees of freedom under the
 null.
 }
 
+\section{Validation}{
+
+Checked in the package's validation suite on GitHub: the within, random and
+pooled 2SLS estimators against \code{plm::plm()} (same \code{inst.method}),
+\code{AER::ivreg()} and \code{fixest::feols()} on \code{plm::Crime}, balanced and
+unbalanced; the Hausman-Taylor estimator against \code{plm::pht()} and
+\code{plm::plm(random.method = "ht")} on \code{plm::Wages} (Baltagi 2013, Table 7.4).
+}
+
 \examples{
 # Simulated panel of 500 patients over 4 waves. Private insurance is
 # endogenous for doctor visits (a time-varying health shock drives both)

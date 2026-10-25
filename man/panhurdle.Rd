@@ -66,6 +66,13 @@ fixed-effects estimators in this package; they are not dropped
 explicitly since a perfectly-fit singleton doesn't diverge, it simply
 carries zero weight.
 }
+\section{Validation}{
+
+The zero part is the conditional logit of \code{\link[=panglm]{panglm()}}, checked against
+\code{survival::clogit()}. The zero-truncated Poisson and NB2 count parts are
+checked against the count part of \code{pscl::hurdle()} in the package tests.
+}
+
 \examples{
 data(copd)
 fit <- panhurdle(exacerbations ~ crp, data = copd, index = c("id", "visit"))

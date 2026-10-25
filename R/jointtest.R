@@ -20,6 +20,9 @@
 #' @return an object of class `"panglm_jointtest"`: a list with
 #'   `statistic`, `df`, `p.value`, `terms` and `vcov_type`
 #' @family tests
+#' @section Validation:
+#' Checked against a hand computation of the Wald statistic, in both the
+#' `terms` and the `R` matrix forms, in the package tests.
 #' @examples
 #' data(copd)
 #' fit <- panglm(fev1 ~ splines::ns(crp, 3), data = copd,

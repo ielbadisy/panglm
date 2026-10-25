@@ -130,6 +130,10 @@ plot.panglm_effectcurve <- function(x, xlab = attr(x, "variable"),
 #' @inheritParams effectcurve
 #' @return an object of class `"panglm_jointtest"`
 #' @family tests
+#' @section Validation:
+#' The package tests check that the test rejects a nonlinear curve and keeps
+#' its size under linearity, and the fixed-effects likelihood-ratio statistic
+#' against the Wald statistic.
 #' @examples
 #' data(copd)
 #' fit <- panglm(fev1 ~ splines::ns(crp, 3), data = copd,
