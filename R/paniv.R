@@ -206,6 +206,8 @@ paniv <- function(formula, data, index,
   fit$nobs <- length(y)
   fit$n_groups <- panel$n_groups
   fit$cluster_id <- rep(panel$group_id, panel$group_size)
+  fit$time_id <- time_id
+  fit$xb <- y - fit$residuals
   fit$panel_order <- ord
   fit$na.action <- attr(mf, "na.action")
   fit$vcov_classical <- fit$vcov
