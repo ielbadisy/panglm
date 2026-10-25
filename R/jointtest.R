@@ -1,7 +1,7 @@
 #' Joint Wald test of coefficients
 #'
 #' Tests `H0: R beta = r` with the statistic
-#' `(R b - r)' (R V R')^{-1} (R b - r)`, referred to a chi-squared
+#' `(R b - r)' (R V R')^(-1) (R b - r)`, referred to a chi-squared
 #' distribution with `nrow(R)` degrees of freedom. The coefficients are
 #' chosen by name (`terms`), by a regular expression (`pattern`) or through
 #' an explicit restriction matrix `R`. Typical uses are the joint test of
