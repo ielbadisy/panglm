@@ -13,8 +13,10 @@
 }
 \value{
 a one-row \code{data.frame} including log-likelihood, AIC, BIC, the
-likelihood parameter count when a likelihood is available, and
-(Gaussian-family fits only) R-squared and adjusted R-squared
+likelihood parameter count when a likelihood is available,
+R-squared and adjusted R-squared, and \code{theta}, the NB2
+dispersion parameter of pooled, fixed-effects and random-slope
+negative binomial fits (\code{NA} otherwise)
 }
 \description{
 Implements the \code{generics::glance()} generic.

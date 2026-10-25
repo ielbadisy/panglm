@@ -49,8 +49,10 @@ tidy.panglm <- function(x, conf.int = FALSE, conf.level = 0.95, ...) {
 #' @param x a `"panglm"` fit
 #' @param ... unused
 #' @return a one-row `data.frame` including log-likelihood, AIC, BIC, the
-#'   likelihood parameter count when a likelihood is available, and
-#'   (Gaussian-family fits only) R-squared and adjusted R-squared
+#'   likelihood parameter count when a likelihood is available,
+#'   R-squared and adjusted R-squared, and `theta`, the NB2
+#'   dispersion parameter of pooled, fixed-effects and random-slope
+#'   negative binomial fits (`NA` otherwise)
 #' @family panglm methods
 #' @seealso [tidy-methods] for the other model classes.
 #' @examples
@@ -100,6 +102,7 @@ glance.panglm <- function(x, ...) {
     adj.r.squared = adj_r2,
     nobs = x$nobs,
     n.groups = x$n_groups,
+    theta = negbin_parameters(x)$theta %||% NA_real_,
     stringsAsFactors = FALSE
   )
 }

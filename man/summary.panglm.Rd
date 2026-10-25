@@ -17,13 +17,18 @@ an object of class \code{"summary.panglm"}, a list with components
 the fit), \code{coefficients} (a numeric matrix with one row per parameter
 and columns \code{Estimate}, \verb{Std. Error}, \verb{z value}, \verb{Pr(>|z|)}), \code{nobs},
 \code{n_groups}, \code{df.residual}, \code{loglik}, \code{dispersion} (\code{NULL} when not
-applicable), \code{iterations}, and \code{vcov_type} (which covariance estimator
+applicable, as for negative binomial fits), \code{iterations}, and \code{vcov_type} (which covariance estimator
 produced the reported standard errors). It has an associated
 \code{print.summary.panglm()} method and is normally printed rather than
 used programmatically. Also included are \code{sigma} (random-intercept
 standard deviation) and \code{shape} (gamma shape) when estimated,
 \code{varcomp} (covariance matrix of the random intercept and slopes) for
-random-slope fits, and, for
+random-slope fits, for \code{family = "negbin"} the NB2 \code{negbin_theta}
+(variance \code{mu + mu^2 / theta}) of pooled, fixed-effects and random-slope
+fits, with its standard error \code{negbin_theta_se} (pooled and
+fixed-effects fits, from the observed information at the fitted means,
+as in \code{MASS::glm.nb()}), or \code{negbin_ab}, the beta mixing parameters
+\code{a} and \code{b} of the random-intercept model, and, for
 \code{cre = TRUE} fits, \code{cre_test}: the Wald (Mundlak) test that the
 individual-mean coefficients are jointly zero, computed with the
 covariance stored on the fit.

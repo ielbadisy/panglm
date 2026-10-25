@@ -104,3 +104,43 @@ test_that("random negbin away from the boundary is silent", {
   expect_lt(m$negbin_a, 1e4)
   expect_true(all(diag(vcov(m)) > 0))
 })
+
+test_that("negbin summaries report theta, not a dispersion of 1", {
+  data(copd, package = "panglm", envir = environment())
+  pooled <- panglm(exacerbations ~ crp + treatment, data = copd,
+                   index = c("id", "visit"), model = "pooling", family = "negbin")
+  s <- summary(pooled)
+  expect_null(s$dispersion)
+  expect_equal(s$negbin_theta, pooled$theta)
+  out <- paste(capture.output(s), collapse = "\n")
+  expect_no_match(out, "Dispersion parameter", fixed = TRUE)
+  expect_match(out, "Negative binomial theta (NB2):", fixed = TRUE)
+  expect_match(out, "(SE ", fixed = TRUE)
+  expect_equal(generics::glance(pooled)$theta, pooled$theta)
+  skip_if_not_installed("MASS")
+  ref <- MASS::glm.nb(exacerbations ~ crp + treatment, data = copd)
+  expect_equal(s$negbin_theta, ref$theta, tolerance = 1e-5)
+  expect_equal(s$negbin_theta_se, ref$SE.theta, tolerance = 1e-4)
+
+  within <- suppressMessages(panglm(exacerbations ~ crp, data = copd,
+                                    index = c("id", "visit"), model = "within",
+                                    family = "negbin"))
+  sw <- summary(within)
+  expect_null(sw$dispersion)
+  expect_true(is.finite(sw$negbin_theta) && is.finite(sw$negbin_theta_se))
+  expect_no_match(paste(capture.output(sw), collapse = "\n"), "Dispersion parameter",
+                  fixed = TRUE)
+  expect_equal(generics::glance(within)$theta, within$theta)
+  expect_true(is.na(generics::glance(panglm(exacerbations ~ crp, data = copd,
+    index = c("id", "visit"), model = "pooling", family = "poisson"))$theta))
+})
+
+test_that("random-intercept negbin summaries report the beta mixing parameters", {
+  data(copd, package = "panglm", envir = environment())
+  fit <- suppressWarnings(panglm(exacerbations ~ crp, data = copd, index = c("id", "visit"),
+                                 model = "random", family = "negbin"))
+  s <- suppressWarnings(summary(fit))
+  expect_equal(s$negbin_ab, c(a = fit$negbin_a, b = fit$negbin_b))
+  expect_match(paste(suppressWarnings(capture.output(s)), collapse = "\n"), "Beta mixing parameters", fixed = TRUE)
+  expect_true(is.na(suppressWarnings(generics::glance(fit))$theta))
+})

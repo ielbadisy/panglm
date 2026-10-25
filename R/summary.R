@@ -10,13 +10,18 @@
 #'   the fit), `coefficients` (a numeric matrix with one row per parameter
 #'   and columns `Estimate`, `Std. Error`, `z value`, `Pr(>|z|)`), `nobs`,
 #'   `n_groups`, `df.residual`, `loglik`, `dispersion` (`NULL` when not
-#'   applicable), `iterations`, and `vcov_type` (which covariance estimator
+#'   applicable, as for negative binomial fits), `iterations`, and `vcov_type` (which covariance estimator
 #'   produced the reported standard errors). It has an associated
 #'   `print.summary.panglm()` method and is normally printed rather than
 #'   used programmatically. Also included are `sigma` (random-intercept
 #'   standard deviation) and `shape` (gamma shape) when estimated,
 #'   `varcomp` (covariance matrix of the random intercept and slopes) for
-#'   random-slope fits, and, for
+#'   random-slope fits, for `family = "negbin"` the NB2 `negbin_theta`
+#'   (variance `mu + mu^2 / theta`) of pooled, fixed-effects and random-slope
+#'   fits, with its standard error `negbin_theta_se` (pooled and
+#'   fixed-effects fits, from the observed information at the fitted means,
+#'   as in `MASS::glm.nb()`), or `negbin_ab`, the beta mixing parameters
+#'   `a` and `b` of the random-intercept model, and, for
 #'   `cre = TRUE` fits, `cre_test`: the Wald (Mundlak) test that the
 #'   individual-mean coefficients are jointly zero, computed with the
 #'   covariance stored on the fit.
@@ -37,13 +42,15 @@ summary.panglm <- function(object, ...) {
                       `z value` = zval, `Pr(>|z|)` = pval)
   rownames(coeftable) <- names(coefs)
 
+  nb <- negbin_parameters(object)
   out <- list(call = object$call, model = object$model, effect = object$effect, family = object$family,
               coefficients = coeftable, nobs = object$nobs, n_groups = object$n_groups,
               df.residual = object$df.residual, loglik = object$loglik,
-              dispersion = object$dispersion, iterations = object$iterations,
+              dispersion = if (is.null(nb)) object$dispersion, iterations = object$iterations,
               vcov_type = object$vcov_type,
               sigma = if (is.null(object$varcomp)) object$sigma, shape = object$shape,
-              negbin_theta = object$negbin_theta,
+              negbin_theta = nb$theta, negbin_theta_se = nb$se,
+              negbin_ab = nb$ab,
               varcomp = object$varcomp,
               weighted = !is.null(object$weights), cre_test = cre_wald_test(object))
   class(out) <- "summary.panglm"
@@ -80,7 +87,15 @@ print.summary.panglm <- function(x, digits = max(3, getOption("digits") - 3), ..
   }
   if (!is.null(x$shape)) cat("Gamma shape:", format(x$shape, digits = digits), "\n")
   if (!is.null(x$negbin_theta)) {
-    cat("Negative binomial theta (NB2):", format(x$negbin_theta, digits = digits), "\n")
+    cat("Negative binomial theta (NB2):", format(x$negbin_theta, digits = digits),
+        if (!is.null(x$negbin_theta_se) && is.finite(x$negbin_theta_se)) {
+          paste0("(SE ", format(x$negbin_theta_se, digits = digits), ")")
+        }, "\n")
+  }
+  if (!is.null(x$negbin_ab)) {
+    cat("Beta mixing parameters (Hausman, Hall and Griliches): a =",
+        format(x$negbin_ab[["a"]], digits = digits), " b =",
+        format(x$negbin_ab[["b"]], digits = digits), "\n")
   }
   if (isTRUE(x$weighted)) cat("Observation weights: yes (weighted pseudo-likelihood)\n")
   if (!is.null(x$cre_test)) {
@@ -98,6 +113,39 @@ print.summary.panglm <- function(x, digits = max(3, getOption("digits") - 3), ..
   if (length(df_line)) cat(paste(df_line, collapse = "  "), "\n", sep = "")
   cat("\n")
   invisible(x)
+}
+
+#' Negative binomial parameters of a panglm fit
+#'
+#' The NB2 `theta` of pooled and fixed-effects fits (stored as `theta` by
+#' the estimators) and of random-slope fits (`negbin_theta`), with the
+#' standard error of `theta` from its observed information at the fitted
+#' means, as `MASS::glm.nb()` reports it; the beta mixing parameters `a`
+#' and `b` of the random-intercept model. `NULL` for other families.
+#'
+#' @keywords internal
+#' @noRd
+negbin_parameters <- function(object) {
+  if (!identical(object$family$family, "negbin")) return(NULL)
+  if (!is.null(object$negbin_theta)) return(list(theta = object$negbin_theta))
+  if (identical(object$model, "random")) {
+    if (is.null(object$negbin_a)) return(list())
+    return(list(ab = c(a = object$negbin_a, b = object$negbin_b)))
+  }
+  theta <- object$theta
+  if (length(theta) != 1L || !is.finite(theta)) return(list())
+  list(theta = theta, se = negbin_theta_se(object$y, object$fitted.values, theta,
+                                           object$weights))
+}
+
+negbin_theta_se <- function(y, mu, theta, weights = NULL) {
+  w <- if (is.null(weights)) rep(1, length(y)) else weights
+  if (length(mu) != length(y)) return(NA_real_)
+  ok <- is.finite(mu) & is.finite(y) & w > 0
+  y <- y[ok]; mu <- mu[ok]; w <- w[ok]
+  info <- sum(w * (-trigamma(theta + y) + trigamma(theta) - 1 / theta +
+                     2 / (mu + theta) - (y + theta) / (mu + theta)^2))
+  if (is.finite(info) && info > 0) 1 / sqrt(info) else NA_real_
 }
 
 #' Wald test that the correlated random effects means are jointly zero
