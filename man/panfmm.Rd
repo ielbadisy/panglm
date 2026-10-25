@@ -36,8 +36,9 @@ a row identifier for cross-section data}
 
 \item{k}{number of latent classes}
 
-\item{family}{`"poisson"`, `"negbin"` (NB2), `"gaussian"` or
-`"binomial"` (logit), or the corresponding panglm family spec}
+\item{family}{`"poisson"`, `"negbin"` (NB2), `"gaussian"`, `"binomial"`
+(logit) or `"probit"` (binomial with probit link), or the corresponding
+panglm family spec, e.g. `binomial_family("probit")`}
 
 \item{concomitant}{optional one-sided formula `~ z1 + z2` of
 individual-level (time-invariant) variables for the class

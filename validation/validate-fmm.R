@@ -13,7 +13,9 @@
 # degrees-of-freedom corrected sigma sqrt(RSS_w / (n - p)) in the M step,
 # which is not the maximum likelihood estimate. Both are handled with small
 # custom flexmix drivers: NB2 M steps by MASS::glm.nb() with prior weights,
-# Gaussian M steps by weighted least squares with the ML sigma.
+# Gaussian M steps by weighted least squares with the ML sigma. flexmix's
+# binomial driver has the logit link only; probit M steps use a custom driver
+# with glm.fit(family = binomial(link = "probit")).
 #
 # Standard errors: flexmix::refit() inverts the Hessian computed by
 # stats::optim(hessian = TRUE) (finite differences of its analytic
@@ -81,6 +83,25 @@ FLXMRnb2 <- function(formula = . ~ ., offset = NULL) {
                                          control = glm.control(epsilon = 1e-13, maxit = 200)))
     cf <- coef(fit); names(cf) <- colnames(x)
     z@defineComponent(list(coef = cf, theta = fit$theta, df = ncol(x) + 1))
+  }
+  z
+}
+
+FLXMRprobit <- function(formula = . ~ ., offset = NULL) {
+  z <- new("FLXMR", weighted = TRUE, formula = formula, name = "FLXMR:binomial (probit)")
+  off <- if (is.null(offset)) 0 else offset
+  z@defineComponent <- function(para) {
+    predict <- function(x, ...) pnorm(x %*% para$coef + off)
+    logLik <- function(x, y, ...) dbinom(y, 1, predict(x), log = TRUE)
+    new("FLXcomponent", parameters = list(coef = para$coef),
+        logLik = logLik, predict = predict, df = para$df)
+  }
+  z@fit <- function(x, y, w, component) {
+    fit <- suppressWarnings(glm.fit(x, as.numeric(y), weights = w,
+                                    offset = rep_len(off, nrow(x)),
+                                    family = binomial(link = "probit"),
+                                    control = glm.control(epsilon = 1e-13, maxit = 200)))
+    z@defineComponent(list(coef = fit$coefficients, df = ncol(x)))
   }
   z
 }
@@ -365,6 +386,61 @@ a <- panfmm(logcost ~ chronic + age + income + offset(lexp), d, idx, k = 1,
 g <- glm(logcost ~ chronic + age + income + offset(lexp), gaussian, d)
 add(paste(lab, "gaussian"), dname, "coefficients", coef(a)[1:4], list(glm = coef(g)), 1e-8)
 add(paste(lab, "gaussian"), dname, "logLik", a$loglik, list(glm = as.numeric(logLik(g))), 1e-8)
+
+# probit components -----------------------------------------------------------
+# k = 2 against flexmix with the probit driver (unweighted, and weighted with
+# an offset); k = 1 against glm(binomial(link = "probit")) and
+# panglm(model = "pooling", family = "probit"). For the non-canonical
+# probit link glm() reports standard errors from the expected information
+# (Fisher scoring), which differ from the observed information by about
+# 1e-4 here; panfmm() inverts the observed Hessian, as does
+# sampleSelection::probit() (maxLik, analytic Hessian), the reference for
+# the classical SE and, through sandwich::vcovCL(type = "HC0"), for the
+# cluster SE.
+lab <- "panfmm probit"
+a <- panfmm(anyvisit ~ chronic + age + income, d, idx, k = 2, family = "probit",
+            nstart = 10, seed = 1)
+b <- flexmix(anyvisit ~ chronic + age + income | id, data = d, k = 2,
+             cluster = post_obs(a, d$id), model = FLXMRprobit(), control = ctrl)
+compare_flexmix(paste(lab, "k = 2"), dname, a, b)
+a2 <- panfmm(anyvisit ~ chronic + age + income, d, idx, k = 2,
+             family = binomial_family("probit"), nstart = 10, seed = 1)
+add(paste(lab, "k = 2"), dname, "coefficients (binomial_family(\"probit\") vs \"probit\")",
+    coef(a2), list(panfmm_probit = coef(a)), 1e-12)
+
+a <- panfmm(anyvisit ~ chronic + age + income, d, idx, k = 2, family = "probit",
+            weights = d$w, offset = 0.3 * d$female, nstart = 10, seed = 1)
+b <- flexmix(anyvisit ~ chronic + age + income | id, data = d, k = 2, weights = d$w,
+             cluster = post_obs(a, d$id), model = FLXMRprobit(offset = 0.3 * d$female),
+             control = ctrl)
+compare_flexmix(paste(lab, "k = 2, weighted, offset"), dname, a, b, bic = FALSE)
+
+lab <- "panfmm probit k = 1"
+a <- panfmm(anyvisit ~ chronic + age + income, d, idx, k = 1, family = "probit")
+g <- glm(anyvisit ~ chronic + age + income, binomial(link = "probit"), d,
+         control = glm.control(epsilon = 1e-14))
+p <- panglm(anyvisit ~ chronic + age + income, d, idx, model = "pooling", family = "probit")
+add(lab, dname, "coefficients", coef(a), list(glm = coef(g), panglm = coef(p)), 1e-8)
+add(lab, dname, "logLik", a$loglik,
+    list(glm = as.numeric(logLik(g)), panglm = as.numeric(logLik(p))), 1e-8)
+sp <- sampleSelection::probit(anyvisit ~ chronic + age + income, data = d)
+add(lab, dname, "coefficients", coef(a), list(sampleSelection = coef(sp)), 1e-6)
+add(lab, dname, "classical SE (observed information)", se(vcov(a)),
+    list(sampleSelection = se(vcov(sp))), 1e-6)
+add(lab, dname, "cluster SE", se(vcov(a, type = "cluster")),
+    list(sandwich = se(sandwich::vcovCL(sp, cluster = d$id, type = "HC0"))), 1e-6)
+add(lab, dname, "fitted values", predict(a), list(glm = fitted(g)), 1e-8)
+
+a <- panfmm(anyvisit ~ chronic + age + income, d, idx, k = 1, family = "probit",
+            weights = d$sw)
+g <- suppressWarnings(glm(anyvisit ~ chronic + age + income, binomial(link = "probit"), d,
+                          weights = sw, control = glm.control(epsilon = 1e-14)))
+sp <- sampleSelection::probit(anyvisit ~ chronic + age + income, data = d, weights = d$sw)
+add(paste(lab, "weighted"), dname, "coefficients", coef(a), list(glm = coef(g)), 1e-8)
+add(paste(lab, "weighted"), dname, "classical SE (observed information)", se(vcov(a)),
+    list(sampleSelection = se(vcov(sp))), 1e-6)
+add(paste(lab, "weighted"), dname, "cluster SE", se(vcov(a, type = "cluster")),
+    list(sandwich = se(sandwich::vcovCL(sp, cluster = d$id, type = "HC0"))), 1e-6)
 
 # k = 1 is the pooled GLM -------------------------------------------------------
 lab <- "panfmm k = 1"

@@ -71,8 +71,9 @@
 #'   (and time) columns; class membership is constant within individual. Use
 #'   a row identifier for cross-section data
 #' @param k number of latent classes
-#' @param family `"poisson"`, `"negbin"` (NB2), `"gaussian"` or
-#'   `"binomial"` (logit), or the corresponding panglm family spec
+#' @param family `"poisson"`, `"negbin"` (NB2), `"gaussian"`, `"binomial"`
+#'   (logit) or `"probit"` (binomial with probit link), or the corresponding
+#'   panglm family spec, e.g. `binomial_family("probit")`
 #' @param concomitant optional one-sided formula `~ z1 + z2` of
 #'   individual-level (time-invariant) variables for the class
 #'   probabilities
@@ -153,8 +154,10 @@ panfmm <- function(formula, data, index, k = 2, family = "poisson",
     stop("panfmm() supports family = 'gaussian', 'poisson', 'negbin' and 'binomial'",
          call. = FALSE)
   }
-  if (family$family == "binomial" && family$link != "logit") {
-    stop("panfmm() supports the logit link only for family = 'binomial'", call. = FALSE)
+  link <- if (family$family == "binomial") family$link %||% "logit" else ""
+  if (family$family == "binomial" && !link %in% c("logit", "probit")) {
+    stop("panfmm() supports the logit and probit links for family = 'binomial'",
+         call. = FALSE)
   }
   if (!is.numeric(k) || length(k) != 1L || k < 1 || k != round(k)) {
     stop("'k' must be a positive integer", call. = FALSE)
@@ -230,7 +233,7 @@ panfmm <- function(formula, data, index, k = 2, family = "poisson",
     if (all(w == 1)) w <- NULL
   }
 
-  spec <- fmm_spec(X, Z, y, group, family$family, k, w, off)
+  spec <- fmm_spec(X, Z, y, group, family$family, k, w, off, link)
   em <- fmm_em_starts(spec, nstart, seed, maxit, tol)
   par <- em$par
   for (pass in 1:3) {
@@ -326,7 +329,7 @@ fmm_formulas <- function(formula, concomitant) {
 #'
 #' @keywords internal
 #' @noRd
-fmm_spec <- function(X, Z, y, group, family, k, w = NULL, offset = NULL) {
+fmm_spec <- function(X, Z, y, group, family, k, w = NULL, offset = NULL, link = "") {
   p <- ncol(X)
   q <- ncol(Z)
   aux <- family %in% c("gaussian", "negbin")
@@ -342,7 +345,7 @@ fmm_spec <- function(X, Z, y, group, family, k, w = NULL, offset = NULL) {
        aux = aux, m = m, N = nrow(Z), names = c(cls, pri),
        w = if (is.null(w)) rep(1, nrow(Z)) else w,
        offset = if (is.null(offset)) rep(0, length(y)) else offset,
-       has_offset = !is.null(offset),
+       has_offset = !is.null(offset), probit = identical(link, "probit"),
        lgy = if (family == "negbin") lgamma(y + 1) else NULL)
 }
 
@@ -407,6 +410,15 @@ fmm_component <- function(spec, block, score = FALSE) {
     mu <- exp(eta)
     ll <- stats::dpois(y, mu, log = TRUE)
     if (score) sc <- X * (y - mu)
+  } else if (fam == "binomial" && spec$probit) {
+    mu <- stats::pnorm(eta)
+    lp1 <- stats::pnorm(eta, log.p = TRUE)
+    lp0 <- stats::pnorm(eta, lower.tail = FALSE, log.p = TRUE)
+    ll <- y * lp1 + (1 - y) * lp0
+    if (score) {
+      ld <- stats::dnorm(eta, log = TRUE)
+      sc <- X * (y * exp(ld - lp1) - (1 - y) * exp(ld - lp0))
+    }
   } else if (fam == "binomial") {
     mu <- stats::plogis(eta)
     ll <- stats::dbinom(y, 1, mu, log = TRUE)
@@ -485,7 +497,11 @@ fmm_mstep_class <- function(spec, w, block) {
     }
     return(fmm_mstep_negbin(X, y, w, block, off))
   }
-  famobj <- if (fam == "poisson") stats::poisson() else stats::binomial()
+  famobj <- if (fam == "poisson") {
+    stats::poisson()
+  } else {
+    stats::binomial(link = if (spec$probit) "probit" else "logit")
+  }
   fit <- suppressWarnings(stats::glm.fit(X, y, weights = w, offset = off, family = famobj,
                                          start = start))
   beta <- fit$coefficients
@@ -808,8 +824,11 @@ predict.panfmm <- function(object, newdata = NULL,
   }
   cn <- paste0("class", seq_len(k))
   eta <- X %*% object$classcoef + off
+  probit <- identical(object$family$link, "probit")
   mu <- switch(object$family$family,
-               gaussian = eta, binomial = stats::plogis(eta), exp(eta))
+               gaussian = eta,
+               binomial = if (probit) stats::pnorm(eta) else stats::plogis(eta),
+               exp(eta))
   mu <- matrix(mu, nrow(X), k, dimnames = list(NULL, cn))
   out <- switch(type,
     class = mu,
@@ -843,7 +862,8 @@ print.panfmm <- function(x, digits = max(3, getOption("digits") - 3), ...) {
 
 fmm_label <- function(x) {
   fam <- switch(x$family$family, negbin = "NB2", poisson = "Poisson",
-                gaussian = "Gaussian", binomial = "logit")
+                gaussian = "Gaussian",
+                binomial = if (identical(x$family$link, "probit")) "probit" else "logit")
   paste0(x$k, "-class latent class ", fam, " model")
 }
 

@@ -162,3 +162,22 @@ test_that("offsets in the formula or as an argument", {
   expect_error(panfmm(y ~ x, d, c("id", "t"), concomitant = ~ female + offset(female)),
                "not allowed")
 })
+
+test_that("probit components", {
+  d <- fmm_sim()
+  a <- panfmm(yb ~ x, d, c("id", "t"), k = 1, family = "probit")
+  g <- glm(yb ~ x, binomial(link = "probit"), d, control = glm.control(epsilon = 1e-14))
+  expect_equal(unname(coef(a)), unname(coef(g)), tolerance = 1e-8)
+  expect_equal(a$loglik, as.numeric(logLik(g)), tolerance = 1e-10)
+  expect_equal(predict(a), unname(fitted(g)), tolerance = 1e-8)
+  b <- panfmm(yb ~ x, d, c("id", "t"), k = 1, family = binomial_family("probit"))
+  expect_equal(coef(a), coef(b), tolerance = 1e-12)
+  a <- panfmm(yb ~ x, d, c("id", "t"), k = 2, family = "probit", nstart = 2, seed = 2)
+  expect_lt(max(abs(colSums(a$score))), 1e-4)
+  expect_output(print(a), "latent class probit")
+  nd <- data.frame(x = c(-1, 1))
+  expect_equal(predict(a, newdata = nd, type = "class")[, 2],
+               pnorm(a$classcoef[1, 2] + a$classcoef[2, 2] * nd$x), tolerance = 1e-12)
+  logit <- panfmm(yb ~ x, d, c("id", "t"), k = 2, family = "binomial", nstart = 2, seed = 2)
+  expect_false(isTRUE(all.equal(a$loglik, logit$loglik)))
+})
