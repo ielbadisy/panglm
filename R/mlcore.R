@@ -48,11 +48,65 @@ ml_hessian <- function(contrib, theta, w) {
   (H + t(H)) / 2
 }
 
-#' Maximize sum(w * ll) by BFGS followed by Newton polishing
+#' Linear reparameterisation that standardizes the columns of a design
+#'
+#' Returns the `p x p` matrix `A` with `theta = A theta_s`, where the first
+#' `ncol(X)` entries of `theta_s` are the coefficients of the design whose
+#' non-constant columns are centred (when `X` has a constant column) and
+#' scaled to unit standard deviation; the `p - ncol(X)` remaining
+#' parameters are left unchanged. Badly scaled regressors (age in years
+#' next to dummies, say) otherwise make the first quasi-Newton steps
+#' overshoot into regions where the likelihood is flat.
 #'
 #' @keywords internal
 #' @noRd
-ml_optimize <- function(theta0, contrib, w, maxit = 200, tol = 1e-10) {
+ml_design_scaling <- function(X, p) {
+  k <- ncol(X)
+  A <- diag(p)
+  if (!k || !nrow(X)) return(A)
+  constant <- vapply(seq_len(k), function(j) {
+    r <- range(X[, j]); r[1] == r[2] && r[1] != 0
+  }, logical(1))
+  intercept <- which(constant)[1]
+  for (j in which(!constant)) {
+    s <- stats::sd(X[, j])
+    if (!is.finite(s) || s <= 0) next
+    A[j, j] <- 1 / s
+    if (!is.na(intercept)) A[intercept, j] <- -mean(X[, j]) / (s * X[1, intercept])
+  }
+  A
+}
+
+#' Maximize sum(w * ll) by BFGS followed by Newton polishing
+#'
+#' With `scaling` (a matrix `A`, see [ml_design_scaling()]) the
+#' optimization runs on `theta_s` with `theta = A theta_s`; the returned
+#' parameters, Hessian, covariance and scores are on the original scale.
+#' With `warn = TRUE` a warning is given when the optimum is not a proper
+#' maximum: a Hessian that is not negative definite, non-finite standard
+#' errors or a Newton decrement above `1e-4`.
+#'
+#' @keywords internal
+#' @noRd
+ml_optimize <- function(theta0, contrib, w, maxit = 200, tol = 1e-10, scaling = NULL,
+                        warn = TRUE, what = "the maximum likelihood fit") {
+  if (!is.null(scaling)) {
+    A <- scaling
+    A_inv <- solve(A)
+    original <- contrib
+    contrib <- function(theta, score) {
+      r <- original(as.numeric(A %*% theta), score)
+      if (score && !is.null(r$score)) r$score <- r$score %*% A
+      r
+    }
+    res <- ml_optimize(as.numeric(A_inv %*% theta0), contrib, w, maxit, tol,
+                       warn = warn, what = what)
+    res$theta <- as.numeric(A %*% res$theta)
+    res$hessian <- t(A_inv) %*% res$hessian %*% A_inv
+    res$vcov <- A %*% res$vcov %*% t(A)
+    res$score <- res$score %*% A_inv
+    return(res)
+  }
   cache <- new.env(parent = emptyenv())
   eval_at <- function(theta) {
     if (is.null(cache$theta) || !identical(cache$theta, theta)) {
@@ -101,9 +155,43 @@ ml_optimize <- function(theta0, contrib, w, maxit = 200, tol = 1e-10) {
   vcov <- tryCatch(solve(-H), error = function(e) {
     matrix(NA_real_, length(theta), length(theta))
   })
+  if (warn) ml_convergence_warning(H, vcov, -gradient(theta), value, what)
   list(theta = theta, loglik = -value, hessian = H, vcov = vcov,
        score = ml_scores(contrib, theta), iterations = opt$counts[[1]],
        convergence = opt$convergence)
+}
+
+#' Warn when a maximum likelihood optimum is not a proper maximum
+#'
+#' Checks that the Hessian `H` is negative definite, that the covariance
+#' has finite positive variances and that the Newton decrement
+#' `g' (-H)^{-1} g`, which does not depend on the scale of the parameters,
+#' is small.
+#'
+#' @keywords internal
+#' @noRd
+ml_convergence_warning <- function(H, vcov, g, value, what) {
+  problem <- NULL
+  ev <- tryCatch(eigen((H + t(H)) / 2, symmetric = TRUE, only.values = TRUE)$values,
+                 error = function(e) NA_real_)
+  if (!is.finite(value)) {
+    problem <- "the log-likelihood is not finite"
+  } else if (anyNA(ev) || any(!is.finite(vcov)) || max(ev) >= 0 || any(diag(vcov) <= 0)) {
+    problem <- paste0("the Hessian is not negative definite, so some standard errors ",
+                      "are not available")
+  } else {
+    decrement <- sum(g * (vcov %*% g))
+    if (!is.finite(decrement) || decrement > 1e-4) {
+      problem <- paste0("the gradient is not zero at the estimate (Newton decrement ",
+                        format(decrement, digits = 3), ")")
+    }
+  }
+  if (!is.null(problem)) {
+    warning(what, " did not converge: ", problem, ". Check the scaling of the ",
+            "regressors, the identification of the model and whether a variance ",
+            "parameter is on the boundary (zero or infinite)", call. = FALSE)
+  }
+  invisible(problem)
 }
 
 #' Sandwich covariance from unit scores and a bread matrix

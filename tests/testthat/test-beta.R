@@ -67,3 +67,40 @@ test_that("beta fits support weights, cluster vcov, CRE, predictions and APEs", 
   expect_error(panglm(y ~ x, d, index = c("id", "t"), model = "within", family = "beta"),
                "no fixed-effects beta")
 })
+
+test_that("beta fits are invariant to the scale of the regressors", {
+  skip_if_not_installed("betareg")
+  set.seed(42)
+  G <- 120; Tt <- 4
+  d <- data.frame(id = rep(seq_len(G), each = Tt), t = rep(seq_len(Tt), G))
+  a <- rnorm(G, sd = 0.6)
+  d$age <- rep(round(runif(G, 40, 85)), each = Tt)
+  d$chronic <- rbinom(G * Tt, 1, plogis(-0.5 + a[d$id]))
+  m <- plogis(1 - 0.4 * d$chronic - 0.01 * (d$age - 60) + a[d$id])
+  d$pdc <- rbeta(G * Tt, m * 20, (1 - m) * 20)
+  d$age10 <- (d$age - 60) / 10
+  # age in years used to send the slope to about -70 with NA standard errors
+  mp <- expect_silent(panglm(pdc ~ chronic + age, d, index = c("id", "t"), family = "beta"))
+  b <- betareg::betareg(pdc ~ chronic + age, d)
+  expect_equal(unname(coef(mp)), unname(coef(b)[1:3]), tolerance = 1e-6)
+  expect_equal(unname(sqrt(diag(vcov(mp)))), unname(sqrt(diag(vcov(b)))[1:3]),
+               tolerance = 2e-2)
+  mr <- expect_silent(panglm(pdc ~ chronic + age, d, index = c("id", "t"),
+                             model = "random", family = "beta", R = 5))
+  m10 <- panglm(pdc ~ chronic + age10, d, index = c("id", "t"), model = "random",
+                family = "beta", R = 5)
+  expect_equal(unname(coef(mr)[3]), unname(coef(m10)[3]) / 10, tolerance = 1e-5)
+  expect_equal(unname(sqrt(diag(vcov(mr)))[3]), unname(sqrt(diag(vcov(m10)))[3]) / 10,
+               tolerance = 1e-4)
+  expect_equal(mr$loglik, m10$loglik, tolerance = 1e-8)
+  expect_true(all(is.finite(sqrt(diag(vcov(mr))))))
+})
+
+test_that("a maximum likelihood fit that is not at a proper maximum warns", {
+  expect_warning(panglm:::ml_convergence_warning(diag(c(-1, 0)), diag(c(1, NA)), c(0, 0),
+                                                 1, "the fit"),
+                 "did not converge: the Hessian is not negative definite")
+  expect_warning(panglm:::ml_convergence_warning(-diag(2), diag(2), c(1, 0), 1, "the fit"),
+                 "gradient is not zero")
+  expect_silent(panglm:::ml_convergence_warning(-diag(2), diag(2), c(1e-5, 0), 1, "the fit"))
+})

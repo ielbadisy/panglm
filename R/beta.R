@@ -115,8 +115,12 @@ fit_beta <- function(X, y, family, model, group_start, group_size, weights, R, m
   mu0 <- lf$mu(as.numeric(X %*% b0))
   phi0 <- max(1, stats::weighted.mean(mu0 * (1 - mu0) / pmax((y - mu0)^2, 1e-8), w_obs) - 1)
   phi0 <- min(phi0, 1e3)
+  # the optimizer works on standardized columns: with a badly scaled
+  # regressor the first quasi-Newton steps otherwise push the linear
+  # predictor to where mu is 0 or 1 and the likelihood is flat
   pooled <- ml_optimize(c(b0, log(phi0)), beta_contrib_pooled(X, y, family$link), w_obs,
-                        maxit, tol)
+                        maxit, tol, scaling = ml_design_scaling(X, k + 1L),
+                        warn = model == "pooling", what = "the beta regression fit")
   if (model == "pooling") {
     res <- pooled
     w_units <- w_obs
@@ -128,7 +132,9 @@ fit_beta <- function(X, y, family, model, group_start, group_size, weights, R, m
     contrib <- beta_contrib_random(X[keep_obs, , drop = FALSE], y[keep_obs], family$link, group, R)
     start <- c(pooled$theta, log(0.5))
     start[k + 1L] <- start[k + 1L] + log(1.5)
-    res <- ml_optimize(start, contrib, w_units[keep_ind], maxit, tol)
+    res <- ml_optimize(start, contrib, w_units[keep_ind], maxit, tol,
+                       scaling = ml_design_scaling(X, k + 2L),
+                       what = "the random-effects beta regression fit")
     score <- matrix(0, length(w_units), length(res$theta))
     score[keep_ind, ] <- res$score
     res$score <- score
