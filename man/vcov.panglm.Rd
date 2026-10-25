@@ -43,6 +43,11 @@ For exact conditional binomial models, the independent likelihood units
 are panel strata rather than observations. Their HC1 covariance therefore
 uses stratum-level scores. A custom cluster may combine complete strata,
 but it may not split observations from one conditioned stratum.
+For the two-way conditional logit (`effect = "twoways"`) the time
+dummies are parameters of the conditional likelihood: the sandwich is
+built from the full (slopes + time dummies) stratum scores and bread,
+its small-sample factors count all of them, and the slope block is
+returned.
 }
 \examples{
 data(copd)

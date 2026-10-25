@@ -62,11 +62,19 @@ specified in `formula`, are rejected explicitly rather than ignored.}
 \item{na.action}{missing-data action passed to [stats::model.frame()]}
 
 \item{effect}{one of `"individual"` or `"twoways"` (individual + time
-fixed effects). `"twoways"` is currently only implemented for
-`model = "within"`, `family = "gaussian"` (exact alternating-projections
-demeaning), `"poisson"`, or `"negbin"` (both via outer-IRLS /
-inner-weighted-FWL, the algorithm behind `fixest::feglm()`); not yet for
-`"binomial"` (no general closed-form two-way conditional logit exists).}
+fixed effects). `"twoways"` is implemented for `model = "within"`
+only: `family = "gaussian"` (exact alternating-projections
+demeaning), `"poisson"` and `"negbin"` (both via outer-IRLS /
+inner-weighted-FWL, the algorithm behind `fixest::feglm()`), and
+`"binomial"`, the two-way conditional (Chamberlain) logit: the
+individual effects are conditioned out exactly and the time effects
+are estimated as time dummies inside the conditional likelihood, as in
+`survival::clogit(y ~ x + factor(time) + strata(id), method = "exact")`.
+For the two-way logit `coef()` holds the slopes only; the time effects
+(first time level as reference, `NA` when not identified) and their
+standard errors are in `fit$time_effects` and `fit$time_effects_se`,
+and the classical and robust covariances of the slopes account for
+their estimation.}
 
 \item{vcov}{one of `"classical"`, `"HC1"` (heteroskedasticity-robust) or
 `"cluster"` (cluster-robust, clustered by the panel individual by
@@ -144,6 +152,19 @@ fit_cre <- panglm(hospitalized ~ treatment + age + crp, data = copd,
                   index = c("id", "visit"), model = "random",
                   family = "probit", cre = TRUE)
 summary(fit_cre)
+
+# two-way conditional logit: smoking across survey waves, with year
+# shocks (e.g. a tobacco tax) absorbed by the time effects
+set.seed(1)
+smk <- expand.grid(wave = 1:5, id = 1:200)
+smk$price <- rnorm(nrow(smk)) + 0.2 * smk$wave
+smk$smoking <- rbinom(nrow(smk), 1, plogis(rnorm(200)[smk$id] - 0.5 * smk$price +
+                                               c(0, 0.2, -0.3, -0.6, -0.8)[smk$wave]))
+fit_2w <- panglm(smoking ~ price, data = smk, index = c("id", "wave"),
+                 model = "within", family = "binomial", effect = "twoways",
+                 vcov = "cluster")
+summary(fit_2w)
+fit_2w$time_effects
 
 # nonlinear effect through a natural spline: linearity test and curve
 fit_ns <- panglm(fev1 ~ splines::ns(crp, 3), data = copd,

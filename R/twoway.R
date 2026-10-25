@@ -301,3 +301,133 @@ recover_twoway_effects <- function(effect_observation, group_size, time,
     observation_effect = alpha[id] + gamma[time_code]
   )
 }
+
+#' Two-way fixed-effects conditional (Chamberlain) logit
+#'
+#' The individual effects are conditioned out exactly, as in
+#' [fit_within_binomial()], and the time effects enter the conditional
+#' likelihood as time dummies (first time level as reference), which is
+#' `survival::clogit(y ~ x + factor(time) + strata(id), method = "exact")`.
+#' The time dummies are ordinary parameters of the conditional likelihood:
+#' the covariance of the slopes is the slope block of the inverse of the
+#' full (slopes + time dummies) information, and the robust covariances
+#' use the full score and bread (see robust_vcov_within_binomial()).
+#'
+#' The likelihood is maximized by BFGS with the analytic gradient of the
+#' O(sum T_i^2) recursion, then polished by Newton steps on a Hessian
+#' obtained by central differences of the analytic gradient.
+#'
+#' @keywords internal
+#' @noRd
+fit_within_twoways_binomial <- function(X, y, group_start, group_size, time, maxit, tol) {
+  if (is.null(time)) stop("effect = 'twoways' requires a two-element index = c(id, time)", call. = FALSE)
+
+  k <- ncol(X)
+  time_levels <- sort(unique(time))
+  time_code <- match(time, time_levels)
+  n_time <- length(time_levels)
+  D <- outer(time_code, seq_len(n_time), "==") * 1
+  D <- D[, -1L, drop = FALSE]
+  time_names <- paste0("time", time_levels[-1L])
+  colnames(D) <- time_names
+
+  # Time dummies identified among the informative strata (outcome varies
+  # within the individual), net of the individual effects. A dummy for a
+  # wave observed only in uninformative strata, for instance, is dropped
+  # (its effect is reported as NA). The time dummies come first in the
+  # rank check, so that a slope collinear with the time effects among the
+  # informative strata is detected rather than a time dummy dropped in its
+  # place.
+  panel <- rep.int(seq_along(group_size), group_size)
+  successes <- as.numeric(rowsum(y, panel))
+  informative <- (successes > 0 & successes < group_size)[panel]
+  if (!any(informative)) {
+    stop("no individual has within-individual outcome variation; the conditional ",
+         "logit is not identified", call. = FALSE)
+  }
+  Z <- cbind(D, X)
+  Zd <- within_demean_cpp(Z, y, group_start, group_size)$X[informative, , drop = FALSE]
+  candidate <- which(sqrt(colSums(Zd^2)) > 1e-7 * sqrt(colSums(Z[informative, , drop = FALSE]^2)))
+  decomposition <- qr(Zd[, candidate, drop = FALSE], tol = 1e-7)
+  kept <- candidate[decomposition$pivot[seq_len(decomposition$rank)]]
+  kept_time <- sort(kept[kept <= ncol(D)])
+  if (!all(ncol(D) + seq_len(k) %in% kept)) {
+    stop("a slope is not identified separately from the time effects among the ",
+         "individuals whose outcome varies", call. = FALSE)
+  }
+  Z <- cbind(X, D[, kept_time, drop = FALSE])
+  p <- ncol(Z)
+
+  cache <- new.env(parent = emptyenv())
+  eval_at <- function(beta) {
+    if (is.null(cache$beta) || !identical(cache$beta, beta)) {
+      cache$beta <- beta
+      cache$res <- conditional_logit_loglik_grad_cpp(beta, Z, y, group_start, group_size)
+    }
+    cache$res
+  }
+  objective <- function(beta) -eval_at(beta)$loglik
+  gradient <- function(beta) -as.numeric(eval_at(beta)$gradient)
+  # Hessian of the negative log-likelihood by central differences of the
+  # analytic gradient (truncation error O(h^2), about 1e-10 here)
+  hessian_at <- function(beta) {
+    H <- matrix(0, p, p)
+    for (j in seq_len(p)) {
+      h <- 1e-5 * max(1, abs(beta[j]))
+      up <- beta; up[j] <- up[j] + h
+      dn <- beta; dn[j] <- dn[j] - h
+      H[, j] <- (gradient(up) - gradient(dn)) / (2 * h)
+    }
+    (H + t(H)) / 2
+  }
+
+  opt <- stats::optim(rep(0, p), objective, gradient, method = "BFGS",
+                      control = list(maxit = maxit, reltol = tol))
+  beta <- opt$par
+  newton_steps <- 0L
+  for (step in seq_len(25L)) {
+    H <- hessian_at(beta)
+    delta <- tryCatch(solve(H, gradient(beta)), error = function(e) NULL)
+    if (is.null(delta) || any(!is.finite(delta))) break
+    candidate <- beta - delta
+    if (objective(candidate) > objective(beta) + 1e-12 * (abs(objective(beta)) + 1)) break
+    beta <- candidate
+    newton_steps <- step
+    if (max(abs(delta)) < 1e-10) break
+  }
+  H <- hessian_at(beta)
+
+  info <- conditional_logit_loglik_grad_cpp(beta, Z, y, group_start, group_size)
+  n_dropped <- length(group_size) - info$n_used_groups
+  if (n_dropped > 0) {
+    message(n_dropped, " group(s) with no within-group outcome variation dropped ",
+            "(all-0 or all-1) -- they carry no information for the conditional likelihood.")
+  }
+
+  vcov_full <- tryCatch(solve(H), error = function(e) matrix(NA_real_, p, p))
+  dimnames(vcov_full) <- list(colnames(Z), colnames(Z))
+  slope <- seq_len(k)
+  coefs <- beta[slope]
+  names(coefs) <- colnames(X)
+  vcov <- vcov_full[slope, slope, drop = FALSE]
+  dimnames(vcov) <- list(colnames(X), colnames(X))
+
+  time_effects <- stats::setNames(rep(NA_real_, n_time), as.character(time_levels))
+  time_effects[1L] <- 0
+  estimated_time <- colnames(Z)[-slope]
+  time_effects[match(estimated_time, time_names) + 1L] <- beta[-slope]
+  time_se <- stats::setNames(rep(NA_real_, n_time), as.character(time_levels))
+  time_se[1L] <- 0
+  time_se[match(estimated_time, time_names) + 1L] <- sqrt(diag(vcov_full)[-slope])
+
+  conditional_fitted <- y - as.numeric(info$score_eta)
+  list(coefficients = coefs, vcov = vcov, bread = vcov, fitted.values = conditional_fitted,
+       time_effects = time_effects, time_effects_se = time_se,
+       # full conditional-likelihood design and bread (slopes + time dummies)
+       # for the robust covariances
+       X_aug = Z, vcov_full_aug = vcov_full,
+       loglik = -objective(beta), dispersion = 1, df.residual = NA_real_,
+       npar = p,
+       n_used_groups = info$n_used_groups, n_dropped_groups = n_dropped,
+       iterations = opt$counts[[1]] + newton_steps, convergence = opt$convergence)
+}

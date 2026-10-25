@@ -35,11 +35,19 @@
 #'   specified in `formula`, are rejected explicitly rather than ignored.
 #' @param na.action missing-data action passed to [stats::model.frame()]
 #' @param effect one of `"individual"` or `"twoways"` (individual + time
-#'   fixed effects). `"twoways"` is currently only implemented for
-#'   `model = "within"`, `family = "gaussian"` (exact alternating-projections
-#'   demeaning), `"poisson"`, or `"negbin"` (both via outer-IRLS /
-#'   inner-weighted-FWL, the algorithm behind `fixest::feglm()`); not yet for
-#'   `"binomial"` (no general closed-form two-way conditional logit exists).
+#'   fixed effects). `"twoways"` is implemented for `model = "within"`
+#'   only: `family = "gaussian"` (exact alternating-projections
+#'   demeaning), `"poisson"` and `"negbin"` (both via outer-IRLS /
+#'   inner-weighted-FWL, the algorithm behind `fixest::feglm()`), and
+#'   `"binomial"`, the two-way conditional (Chamberlain) logit: the
+#'   individual effects are conditioned out exactly and the time effects
+#'   are estimated as time dummies inside the conditional likelihood, as in
+#'   `survival::clogit(y ~ x + factor(time) + strata(id), method = "exact")`.
+#'   For the two-way logit `coef()` holds the slopes only; the time effects
+#'   (first time level as reference, `NA` when not identified) and their
+#'   standard errors are in `fit$time_effects` and `fit$time_effects_se`,
+#'   and the classical and robust covariances of the slopes account for
+#'   their estimation.
 #' @param vcov one of `"classical"`, `"HC1"` (heteroskedasticity-robust) or
 #'   `"cluster"` (cluster-robust, clustered by the panel individual by
 #'   default). For `model = "random"` only `"classical"` and `"cluster"`
@@ -103,6 +111,19 @@
 #'                   index = c("id", "visit"), model = "random",
 #'                   family = "probit", cre = TRUE)
 #' summary(fit_cre)
+#'
+#' # two-way conditional logit: smoking across survey waves, with year
+#' # shocks (e.g. a tobacco tax) absorbed by the time effects
+#' set.seed(1)
+#' smk <- expand.grid(wave = 1:5, id = 1:200)
+#' smk$price <- rnorm(nrow(smk)) + 0.2 * smk$wave
+#' smk$smoking <- rbinom(nrow(smk), 1, plogis(rnorm(200)[smk$id] - 0.5 * smk$price +
+#'                                                c(0, 0.2, -0.3, -0.6, -0.8)[smk$wave]))
+#' fit_2w <- panglm(smoking ~ price, data = smk, index = c("id", "wave"),
+#'                  model = "within", family = "binomial", effect = "twoways",
+#'                  vcov = "cluster")
+#' summary(fit_2w)
+#' fit_2w$time_effects
 #'
 #' # nonlinear effect through a natural spline: linearity test and curve
 #' fit_ns <- panglm(fev1 ~ splines::ns(crp, 3), data = copd,
@@ -181,9 +202,15 @@ panglm <- function(formula, data, index,
     stop("index column(s) not found in data: ", paste(missing_index, collapse = ", "),
          call. = FALSE)
   }
-  if (effect == "twoways" && !(model == "within" && family$family %in% c("gaussian", "poisson", "negbin"))) {
+  if (effect == "twoways" &&
+      !(model == "within" && family$family %in% c("gaussian", "poisson", "negbin", "binomial"))) {
     stop("effect = 'twoways' is currently only implemented for ",
-         "model = 'within', family = 'gaussian', 'poisson', or 'negbin'", call. = FALSE)
+         "model = 'within', family = 'gaussian', 'poisson', 'negbin', or 'binomial'",
+         call. = FALSE)
+  }
+  if (effect == "twoways" && family$family == "binomial" && family$link != "logit") {
+    stop("effect = 'twoways' with family = 'binomial' is the conditional logit and ",
+         "is only implemented for the logit link", call. = FALSE)
   }
 
   dynamic_info <- NULL
@@ -318,6 +345,8 @@ panglm <- function(formula, data, index,
       fit_within_twoways_poisson(X_noint, y, group_start, group_size, time_id, maxit, tol)
     } else if (effect == "twoways" && family$family == "negbin") {
       fit_within_twoways_negbin(X_noint, y, group_start, group_size, time_id, maxit, tol)
+    } else if (effect == "twoways" && family$family == "binomial") {
+      fit_within_twoways_binomial(X_noint, y, group_start, group_size, time_id, maxit, tol)
     } else {
       fit_within(X_noint, y, family, group_start, group_size, maxit, tol)
     },
@@ -412,12 +441,23 @@ panglm_estimable_columns <- function(X, model, effect, group_start, group_size, 
   } else {
     within_demean_cpp(X, rep(0, nrow(X)), group_start, group_size)$X
   }
-  decomposition <- qr(transformed, tol = 1e-7)
+  # A column removed by the transformation up to rounding (e.g. a time
+  # trend under two-way demeaning) keeps a norm of order 1e-13 and would
+  # pass qr()'s test, which is relative to the transformed column itself,
+  # so the norm is first compared with that of the original column.
+  raw_norm <- sqrt(colSums(X^2))
+  kept_norm <- sqrt(colSums(transformed^2))
+  candidate <- which(kept_norm > 1e-7 * raw_norm)
+  if (!length(candidate)) {
+    stop("the model contains no covariates identified by the requested estimator",
+         call. = FALSE)
+  }
+  decomposition <- qr(transformed[, candidate, drop = FALSE], tol = 1e-7)
   if (decomposition$rank == 0L) {
     stop("the model contains no covariates identified by the requested estimator",
          call. = FALSE)
   }
-  sort(decomposition$pivot[seq_len(decomposition$rank)])
+  sort(candidate[decomposition$pivot[seq_len(decomposition$rank)]])
 }
 
 panglm_parameter_count <- function(fit, model, family, effect, n_groups, n_time) {

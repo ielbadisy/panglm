@@ -18,6 +18,11 @@
 #' are panel strata rather than observations. Their HC1 covariance therefore
 #' uses stratum-level scores. A custom cluster may combine complete strata,
 #' but it may not split observations from one conditioned stratum.
+#' For the two-way conditional logit (`effect = "twoways"`) the time
+#' dummies are parameters of the conditional likelihood: the sandwich is
+#' built from the full (slopes + time dummies) stratum scores and bread,
+#' its small-sample factors count all of them, and the slope block is
+#' returned.
 #'
 #' @param object a `"panglm"` fit
 #' @param type `NULL` (the covariance stored on the fit) or one of
@@ -111,7 +116,17 @@ panglm_cluster_vector <- function(object, cluster) {
 }
 
 robust_vcov_within_binomial <- function(object, type, cluster) {
-  score <- panglm_score(object)
+  # Two-way conditional logit: the time dummies are parameters of the
+  # conditional likelihood, so the sandwich uses the full (slopes + time
+  # dummies) score and bread, k counts all of them, and the slope block is
+  # returned.
+  two_way <- identical(object$effect, "twoways")
+  if (two_way && is.null(object$X_aug)) {
+    stop("robust/cluster vcov is unavailable for this two-way conditional logit fit: ",
+         "re-fit the model", call. = FALSE)
+  }
+  score <- panglm_score(object, full = two_way)
+  bread <- if (two_way) object$vcov_full_aug else object$bread
   panel <- rep(seq_along(object$group_size), object$group_size)
   successes <- as.numeric(rowsum(object$y, panel))
   used <- successes > 0 & successes < object$group_size
@@ -145,7 +160,11 @@ robust_vcov_within_binomial <- function(object, type, cluster) {
     meat <- meat * (n_cluster / (n_cluster - 1)) * ((m - 1) / (m - k))
   }
 
-  value <- object$bread %*% meat %*% object$bread
+  value <- bread %*% meat %*% bread
+  if (two_way) {
+    slope <- seq_along(object$coefficients)
+    value <- value[slope, slope, drop = FALSE]
+  }
   dimnames(value) <- dimnames(object$vcov)
   value
 }
@@ -164,7 +183,7 @@ robust_vcov_within_binomial <- function(object, type, cluster) {
 #'
 #' @keywords internal
 #' @noRd
-panglm_score <- function(object) {
+panglm_score <- function(object, full = FALSE) {
   X <- object$X
   y <- object$y
   beta <- object$coefficients
@@ -241,6 +260,19 @@ panglm_score <- function(object) {
     mu_sum <- as.numeric(rowsum(mu, group))
     Xbar <- rowsum(mu * X, group) / ifelse(mu_sum > 0, mu_sum, 1)
     return(gradi * (X - Xbar[group, , drop = FALSE]))
+  }
+
+  if (object$model == "within" && object$family$family == "binomial" &&
+      identical(object$effect, "twoways")) {
+    # conditional-logit score in the full parameter vector (slopes + time
+    # dummies); `full = FALSE` keeps the slope columns only
+    Z <- object$X_aug
+    theta <- c(beta, object$time_effects[-1L][!is.na(object$time_effects[-1L])])
+    info <- conditional_logit_loglik_grad_cpp(
+      theta, Z, y, object$group_start, object$group_size
+    )
+    score <- as.numeric(info$score_eta) * Z
+    return(if (full) score else score[, seq_along(beta), drop = FALSE])
   }
 
   if (object$model == "within" && object$family$family == "binomial") {

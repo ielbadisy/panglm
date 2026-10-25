@@ -728,10 +728,11 @@ The package focuses on Gaussian, Poisson, binomial, NB2, gamma, ordered, beta
 and Tobit panel models, with two-part models for semicontinuous costs. It does
 not provide GMM (Arellano-Bond) estimators; packages such as `plm` cover
 those. Instrumental-variable estimation is limited to linear models
-(`paniv()`). A general two-way exact
-conditional logistic likelihood is not available, so the binomial
-fixed-effects model is restricted to individual effects, and there is no
-fixed-effects estimator for the beta and ordered probit models. These
+(`paniv()`). The binomial
+fixed-effects model is the conditional logit, with individual effects or,
+with `effect = "twoways"`, individual effects conditioned out and time
+effects estimated as dummies; there is no fixed-effects estimator for the
+beta and ordered probit models. These
 restrictions define the current statistical scope and prevent unlike
 estimators from being presented under a common option.
 

@@ -13,6 +13,12 @@
 * Fixed-effects Poisson: the HC1 covariance (and clusters that cut across
   individuals) now use the correctly centred scores and match
   `fixest::fepois()`.
+* Two-way fixed-effects logit: `panglm(model = "within", family = "binomial",
+  effect = "twoways")` conditions out the individual effects and estimates
+  time effects as dummies in the conditional likelihood, as in
+  `survival::clogit(y ~ x + factor(time) + strata(id), method = "exact")`.
+  `coef()` holds the slopes; `fit$time_effects` and `fit$time_effects_se`
+  hold the time effects.
 * `validation/`: per-model scripts comparing panglm with established
   packages, summarized in `validation/REPORT.md`.
 
