@@ -225,6 +225,7 @@ fit_random_weighted <- function(X, y, family, group_start, group_size, R, maxit,
 #' @keywords internal
 #' @noRd
 robust_vcov_random <- function(object, cluster) {
+  if (!is.null(object$varcomp)) return(robust_vcov_slopes(object, cluster))
   cl_obs <- panglm_cluster_vector(object, cluster)
   cl <- individual_clusters(cl_obs, object$group_size)
   k <- length(object$coefficients)

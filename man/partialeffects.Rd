@@ -56,7 +56,8 @@ factor codings are handled automatically.
 The mean used is the one returned by `predict(type = "response")`:
 the GLM mean for pooled models; the mean including the estimated
 individual (and time) effects for fixed-effects models; and the
-population-averaged mean (integrating over the random intercept) for
+population-averaged mean (integrating over the random intercept, and
+the random slopes when `random` has slope variables) for
 random-effects models, which is the average structural function of
 Wooldridge (2005). For correlated random effects fits (`cre = TRUE`) the
 individual means are held fixed, so the APE of a time-varying regressor

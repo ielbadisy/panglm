@@ -176,6 +176,10 @@ predict.panglm <- function(object, newdata = NULL,
                                object$family$right))
   }
   if (object$model != "random") return(linkinv_r(eta, object$family$link_id))
+  if (!is.null(object$varcomp)) {
+    return(slopes_marginal_mean(object$family, eta, slopes_z(object$random, newdata),
+                                object$varcomp))
+  }
 
   switch(object$family$family,
     gaussian = eta,

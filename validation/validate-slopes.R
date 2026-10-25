@@ -1,0 +1,241 @@
+# Random slopes: panglm(model = "random", random = ~ time) vs lme4, nlme +
+# clubSandwich, glmmTMB and GLMMadaptive.
+# Gaussian: exact ML vs lme4::lmer(REML = FALSE) with one and two slopes,
+# with cre = TRUE, and the cluster-robust covariance vs clubSandwich CR0 on
+# nlme::lme. Poisson, logit and probit: the Laplace approximation (R = 1) vs
+# glmmTMB (and lme4::glmer for logit and Poisson), adaptive Gauss-Hermite
+# quadrature (R = 7) vs GLMMadaptive, the quadrature likelihood vs a
+# brute-force dense grid, and population-averaged partial effects by hand.
+source("validation/common.R")
+suppressPackageStartupMessages({
+  library(lme4); library(glmmTMB); library(GLMMadaptive); library(nlme); library(clubSandwich)
+})
+
+vech <- function(m) m[lower.tri(m, diag = TRUE)]
+idx <- c("id", "time")
+
+# ---- Gaussian: patient FEV1 trajectories, random intercept and slope
+set.seed(20)
+G <- 150; T <- 6
+pat <- data.frame(id = rep(seq_len(G), each = T), time = rep(0:(T - 1), G))
+pat$age <- rep(round(rnorm(G, 65, 8)), each = T)
+pat$smoker <- rep(rbinom(G, 1, 0.3), each = T)
+pat$crp <- rgamma(G * T, 2, 0.5)
+Lg <- matrix(c(0.45, 0, -0.02, 0.06), 2, 2, byrow = TRUE)
+bg <- matrix(rnorm(G * 2), G) %*% t(Lg)
+pat$fev1 <- 3.5 - 0.08 * pat$time - 0.015 * (pat$age - 65) - 0.25 * pat$smoker -
+  0.02 * pat$crp + bg[pat$id, 1] + bg[pat$id, 2] * pat$time + rnorm(G * T, 0, 0.15)
+# second slope variable (time-varying CRP) for a three-dimensional effect
+pat$fev1b <- pat$fev1 + rep(rnorm(G, 0, 0.03), each = T) * pat$crp
+
+gaussian_block <- function(fm, random, lmer_fm, label, data = pat) {
+  f <- panglm(fm, data = data, index = idx, model = "random", random = random)
+  m <- lmer(lmer_fm, data = data, REML = FALSE,
+            control = lmerControl(optimizer = "bobyqa",
+                                  optCtrl = list(maxfun = 1e5, rhobeg = 1e-2, rhoend = 1e-12)))
+  vc <- VarCorr(m)$id
+  rbind(
+    vcompare("slopes gaussian", label, "coef", coef(f), list(lme4 = fixef(m)), 1e-5),
+    vcompare("slopes gaussian", label, "se", sqrt(diag(vcov(f))),
+             list(lme4 = sqrt(diag(as.matrix(vcov(m))))), 1e-5),
+    vcompare("slopes gaussian", label, "varcomp (vech Sigma)", vech(f$varcomp),
+             list(lme4 = vech(vc)), 1e-5),
+    vcompare("slopes gaussian", label, "correlation", vech(cov2cor(f$varcomp))[-1],
+             list(lme4 = vech(attr(vc, "correlation"))[-1]), 1e-4),
+    vcompare("slopes gaussian", label, "residual variance", c(sigma2 = f$sigma_v2),
+             list(lme4 = sigma(m)^2), 1e-5),
+    vcompare("slopes gaussian", label, "loglik", c(loglik = f$loglik),
+             list(lme4 = as.numeric(logLik(m))), 1e-6),
+    vcompare("slopes gaussian", label, "ranef (BLUP)", c(f$ranef),
+             list(lme4 = c(as.matrix(ranef(m)$id))), 1e-5)
+  )
+}
+
+g1 <- gaussian_block(fev1 ~ time + age + smoker + crp, ~ time,
+                     fev1 ~ time + age + smoker + crp + (1 + time | id), "sim, 1 slope")
+g2 <- gaussian_block(fev1b ~ time + age + smoker + crp, ~ time + crp,
+                     fev1b ~ time + age + smoker + crp + (1 + time + crp | id), "sim, 2 slopes")
+
+# cre = TRUE: Mundlak mean of crp added as a regressor
+pat$mean_crp <- ave(pat$crp, pat$id)
+fc <- suppressWarnings(panglm(fev1 ~ time + age + smoker + crp, data = pat, index = idx, model = "random",
+             random = ~ time, cre = TRUE)) # mean_time is aliased (balanced panel)
+mc <- lmer(fev1 ~ time + age + smoker + crp + mean_crp + (1 + time | id), data = pat,
+           REML = FALSE, control = lmerControl(optimizer = "bobyqa",
+                                               optCtrl = list(maxfun = 1e5, rhoend = 1e-12)))
+g3 <- rbind(
+  vcompare("slopes gaussian", "sim, cre = TRUE", "coef", coef(fc), list(lme4 = fixef(mc)), 1e-5),
+  vcompare("slopes gaussian", "sim, cre = TRUE", "se", sqrt(diag(vcov(fc))),
+           list(lme4 = sqrt(diag(as.matrix(vcov(mc))))), 1e-5),
+  vcompare("slopes gaussian", "sim, cre = TRUE", "loglik", c(loglik = fc$loglik),
+           list(lme4 = as.numeric(logLik(mc))), 1e-6)
+)
+
+# cluster-robust covariance: CR0 sandwich of nlme::lme (ML) times G / (G - 1)
+f1 <- panglm(fev1 ~ time + age + smoker + crp, data = pat, index = idx, model = "random",
+             random = ~ time, vcov = "cluster")
+ml <- lme(fev1 ~ time + age + smoker + crp, random = ~ time | id, data = pat, method = "ML",
+          control = lmeControl(tolerance = 1e-12, msTol = 1e-12, maxIter = 500, msMaxIter = 500))
+cr0 <- as.matrix(vcovCR(ml, cluster = pat$id, type = "CR0")) * G / (G - 1)
+g4 <- rbind(
+  vcompare("slopes gaussian", "sim, 1 slope", "se_cluster", sqrt(diag(vcov(f1))),
+           list(clubSandwich = sqrt(diag(cr0))), 1e-5),
+  vcompare("slopes gaussian", "sim, 1 slope", "coef", coef(f1), list(nlme = fixef(ml)), 1e-5),
+  vcompare("slopes gaussian", "sim, 1 slope", "predict(link)",
+           predict(f1, newdata = pat[1:12, ], type = "link"),
+           list(nlme = predict(ml, newdata = pat[1:12, ], level = 0)), 1e-5)
+)
+
+# copd: FEV1 per visit (the slope variance is at the boundary, a singular fit)
+data(copd)
+fcopd <- panglm(fev1 ~ visit + treatment + age + smoker, data = copd, index = c("id", "visit"),
+                model = "random", random = ~ visit)
+mcopd <- suppressMessages(lmer(fev1 ~ visit + treatment + age + smoker + (1 + visit | id),
+                               data = copd, REML = FALSE))
+g5 <- rbind(
+  vcompare("slopes gaussian", "copd (boundary)", "loglik", c(loglik = fcopd$loglik),
+           list(lme4 = as.numeric(logLik(mcopd))), 1e-6),
+  vcompare("slopes gaussian", "copd (boundary)", "coef", coef(fcopd),
+           list(lme4 = fixef(mcopd)), 1e-4)
+)
+
+# ---- Poisson, logit, probit: one random slope
+set.seed(3)
+G2 <- 200; T2 <- 6
+d <- data.frame(id = rep(seq_len(G2), each = T2), time = rep(0:(T2 - 1), G2))
+d$x <- rnorm(G2 * T2)
+Lb <- matrix(c(0.7, 0, -0.15, 0.25), 2, 2, byrow = TRUE)
+b <- matrix(rnorm(G2 * 2), G2) %*% t(Lb)
+lin <- 0.1 * d$time + 0.4 * d$x + b[d$id, 1] + b[d$id, 2] * d$time
+d$yb <- rbinom(G2 * T2, 1, plogis(-0.5 + lin))
+d$yp <- rbinom(G2 * T2, 1, pnorm(-0.3 + 0.6 * lin))
+d$yc <- rpois(G2 * T2, exp(0.3 + lin))
+
+tmb_vech <- function(m) vech(VarCorr(m)$cond$id)
+
+glm_block <- function(y, family, glm_family, label, with_glmer) {
+  fm <- stats::as.formula(paste(y, "~ time + x"))
+  fr <- stats::as.formula(paste(y, "~ time + x + (1 + time | id)"))
+  f <- panglm(fm, data = d, index = idx, model = "random", family = family,
+              random = ~ time, R = 1)
+  tm <- glmmTMB(fr, data = d, family = glm_family)
+  out <- rbind(
+    vcompare("slopes Laplace", label, "coef", coef(f), list(glmmTMB = fixef(tm)$cond), 1e-4),
+    vcompare("slopes Laplace", label, "se", sqrt(diag(vcov(f))),
+             list(glmmTMB = sqrt(diag(vcov(tm)$cond))), 1e-4),
+    vcompare("slopes Laplace", label, "varcomp (vech Sigma)", vech(f$varcomp),
+             list(glmmTMB = tmb_vech(tm)), 1e-4),
+    vcompare("slopes Laplace", label, "loglik", c(loglik = f$loglik),
+             list(glmmTMB = as.numeric(logLik(tm))), 1e-6),
+    vcompare("slopes Laplace", label, "ranef (modes)", c(f$ranef),
+             list(glmmTMB = c(as.matrix(ranef(tm)$cond$id))), 1e-3)
+  )
+  if (with_glmer) {
+    # glmer stops earlier (bobyqa on a finite-difference deviance): looser tolerance
+    m <- glmer(fr, data = d, family = glm_family, nAGQ = 1,
+               control = glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 1e5)))
+    out <- rbind(out,
+      vcompare("slopes Laplace", label, "coef", coef(f), list(lme4 = fixef(m)), 1e-3),
+      vcompare("slopes Laplace", label, "loglik", c(loglik = f$loglik),
+               list(lme4 = as.numeric(logLik(m))), 1e-4))
+  }
+  out
+}
+
+l1 <- glm_block("yc", "poisson", poisson(), "sim Poisson", TRUE)
+l2 <- glm_block("yb", "binomial", binomial(), "sim logit", TRUE)
+l3 <- glm_block("yp", "probit", binomial("probit"), "sim probit", FALSE)
+
+# adaptive Gauss-Hermite quadrature (7 nodes per dimension) vs GLMMadaptive
+aghq_block <- function(y, family, glm_family, label) {
+  fm <- stats::as.formula(paste(y, "~ time + x"))
+  f <- panglm(fm, data = d, index = idx, model = "random", family = family, random = ~ time)
+  ga <- mixed_model(fm, random = ~ time | id, data = d, family = glm_family, nAGQ = 7,
+                    control = list(iter_EM = 0, update_GH_every = 1,
+                                   tol1 = 1e-10, tol2 = 1e-10, tol3 = 1e-12))
+  rbind(
+    vcompare("slopes AGHQ R = 7", label, "coef", coef(f), list(GLMMadaptive = fixef(ga)), 1e-4),
+    vcompare("slopes AGHQ R = 7", label, "se", sqrt(diag(vcov(f))),
+             list(GLMMadaptive = sqrt(diag(vcov(ga)))[1:3]), 1e-3),
+    vcompare("slopes AGHQ R = 7", label, "varcomp (vech Sigma)", vech(f$varcomp),
+             list(GLMMadaptive = vech(ga$D)), 1e-4),
+    vcompare("slopes AGHQ R = 7", label, "loglik", c(loglik = f$loglik),
+             list(GLMMadaptive = as.numeric(logLik(ga))), 1e-5)
+  )
+}
+a1 <- aghq_block("yc", "poisson", poisson(), "sim Poisson")
+a2 <- aghq_block("yb", "binomial", binomial(), "sim logit")
+
+# quadrature vs Laplace, and the quadrature integral vs a brute-force grid
+fp1 <- panglm(yc ~ time + x, data = d, index = idx, model = "random", family = "poisson",
+              random = ~ time, R = 1)
+fp7 <- panglm(yc ~ time + x, data = d, index = idx, model = "random", family = "poisson",
+              random = ~ time)
+fp15 <- panglm(yc ~ time + x, data = d, index = idx, model = "random", family = "poisson",
+               random = ~ time, R = 15)
+fb7 <- panglm(yb ~ time + x, data = d, index = idx, model = "random", family = "binomial",
+              random = ~ time)
+fb15 <- panglm(yb ~ time + x, data = d, index = idx, model = "random", family = "binomial",
+               random = ~ time, R = 15)
+
+# Brute-force integral: trapezoid rule on a 300 x 300 grid over b, centred
+# at each individual's mode, +- 6 prior standard deviations wide (the
+# trapezoid rule converges geometrically for smooth peaked integrands)
+brute_loglik <- function(fit, y, density) {
+  S <- fit$varcomp; Si <- solve(S)
+  sds <- sqrt(diag(S))
+  eta <- as.numeric(model.matrix(~ time + x, d) %*% coef(fit))
+  rows_by_id <- split(seq_len(nrow(d)), d$id)
+  sum(vapply(seq_along(rows_by_id), function(i) {
+    rows <- rows_by_id[[i]]
+    g1 <- seq(-6, 6, length.out = 300) * sds[1] + fit$ranef[i, 1]
+    g2 <- seq(-6, 6, length.out = 300) * sds[2] + fit$ranef[i, 2]
+    bb1 <- rep(g1, 300); bb2 <- rep(g2, each = 300)
+    lp <- outer(eta[rows], bb1, "+") + outer(d$time[rows], bb2)
+    ll <- colSums(density(y[rows], lp)) - log(2 * pi) - 0.5 * log(det(S)) -
+      0.5 * (Si[1, 1] * bb1^2 + 2 * Si[1, 2] * bb1 * bb2 + Si[2, 2] * bb2^2)
+    top <- max(ll)
+    top + log(sum(exp(ll - top)) * diff(g1[1:2]) * diff(g2[1:2]))
+  }, numeric(1)))
+}
+dpois_log <- function(y, lp) y * lp - exp(lp) - lgamma(y + 1)
+dlogit_log <- function(y, lp) plogis((2 * y - 1) * lp, log.p = TRUE)
+
+q1 <- rbind(
+  vcompare("slopes quadrature", "sim Poisson", "loglik R = 15 vs dense grid",
+           c(loglik = fp15$loglik), list(hand = brute_loglik(fp15, d$yc, dpois_log)), 1e-6),
+  vcompare("slopes quadrature", "sim logit", "loglik R = 15 vs dense grid",
+           c(loglik = fb15$loglik), list(hand = brute_loglik(fb15, d$yb, dlogit_log)), 1e-6),
+  vcompare("slopes quadrature", "sim Poisson", "coef R = 7 vs R = 15", coef(fp7),
+           list(`panglm R = 15` = coef(fp15)), 1e-4),
+  vcompare("slopes quadrature", "sim logit", "coef R = 7 vs R = 15", coef(fb7),
+           list(`panglm R = 15` = coef(fb15)), 1e-3),
+  vcompare("slopes quadrature", "sim Poisson", "coef Laplace vs R = 15", coef(fp1),
+           list(`panglm R = 15` = coef(fp15)), 1e-2),
+  vcompare("slopes quadrature", "sim Poisson", "varcomp Laplace vs R = 15", vech(fp1$varcomp),
+           list(`panglm R = 15` = vech(fp15$varcomp)), 1e-2)
+)
+
+# population-averaged partial effects and predictions by hand
+ape_p <- partialeffects(fp7, "x")
+Zp <- cbind(1, d$time)
+s2 <- rowSums((Zp %*% fp7$varcomp) * Zp)
+eta_p <- predict(fp7, type = "link")
+ape_b <- partialeffects(fb7, "x")
+gh40 <- panglm:::gauss_hermite_quadrature(40)
+eta_b <- predict(fb7, type = "link")
+s2b <- rowSums((Zp %*% fb7$varcomp) * Zp)
+dens_b <- vapply(seq_along(eta_b), function(i) {
+  sum(gh40$weights * dlogis(eta_b[i] + sqrt(2 * s2b[i]) * gh40$nodes))
+}, numeric(1))
+p1 <- rbind(
+  vcompare("slopes APE", "sim Poisson", "APE x (population averaged)",
+           c(x = ape_p$estimate), list(hand = mean(coef(fp7)[["x"]] * exp(eta_p + s2 / 2))), 1e-6),
+  vcompare("slopes APE", "sim logit", "APE x (population averaged)",
+           c(x = ape_b$estimate), list(hand = mean(coef(fb7)[["x"]] * dens_b)), 1e-6),
+  vcompare("slopes APE", "sim Poisson", "predict(response)",
+           predict(fp7, newdata = d[1:12, ], type = "response"),
+           list(hand = exp(eta_p + s2 / 2)[1:12]), 1e-8)
+)
+
+vsave(g1, g2, g3, g4, g5, l1, l2, l3, a1, a2, q1, p1, name = "slopes")

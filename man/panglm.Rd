@@ -17,6 +17,7 @@ panglm(
   vcov = c("classical", "HC1", "cluster"),
   cre = dynamic,
   dynamic = FALSE,
+  random = ~1,
   R = 21,
   maxit = 100,
   tol = 1e-10
@@ -107,8 +108,31 @@ of the lag measures true state dependence net of unobserved
 heterogeneity; [partialeffects()] gives it on the probability or mean
 scale. Available for `model = "pooling"` and `model = "random"`.}
 
+\item{random}{one-sided formula for the random effects of
+`model = "random"`. The default `~ 1` is the random intercept. A
+formula with variables, e.g. `~ time`, adds correlated random slopes:
+`g(E[y_it | b_i]) = x_it' beta + z_it' b_i` with `z_it = (1, time)`
+and `b_i ~ N(0, Sigma)`, `Sigma` unstructured (Cholesky
+parameterized), the model of `lme4::lmer(y ~ x + (1 + time | id))`.
+The slope variables usually also appear in `formula` (their average
+slope). Available for `family = "gaussian"` (exact maximum likelihood,
+any number of slopes), `"poisson"` and `"binomial"` (logit or probit,
+one slope, adaptive Gauss-Hermite product quadrature with `R` nodes
+per dimension; `R = 1` is the Laplace approximation of
+`lme4::glmer()`). With random slopes the Poisson model has a normal
+(lognormal) random effect, not the gamma mixing of the
+random-intercept Poisson model. The fit stores `varcomp` (the
+covariance matrix `Sigma`), `ranef` (posterior modes, the BLUPs in
+the Gaussian model, one row per individual) and, for the Gaussian
+model, the residual variance `sigma_v2`. Weights, `dynamic = TRUE`
+and the other families are not supported with random slopes;
+`cre = TRUE` is. Response predictions and [partialeffects()] are
+population averages over the random effects.}
+
 \item{R}{number of Gauss-Hermite quadrature nodes (random-effects
-binomial and gamma models only)}
+binomial and gamma models only). With random slopes, the number of
+nodes per dimension of the adaptive product rule (default 7 when `R`
+is not given; `R = 1` gives the Laplace approximation).}
 
 \item{maxit}{maximum IRLS/Newton iterations}
 
@@ -152,6 +176,14 @@ fit_cre <- panglm(hospitalized ~ treatment + age + crp, data = copd,
                   index = c("id", "visit"), model = "random",
                   family = "probit", cre = TRUE)
 summary(fit_cre)
+
+# patient trajectories: random intercept and random slope of FEV1
+# decline per visit, correlated
+fit_rs <- panglm(fev1 ~ visit + treatment + age + smoker, data = copd,
+                 index = c("id", "visit"), model = "random",
+                 random = ~ visit)
+summary(fit_rs)
+fit_rs$varcomp
 
 # two-way conditional logit: smoking across survey waves, with year
 # shocks (e.g. a tobacco tax) absorbed by the time effects

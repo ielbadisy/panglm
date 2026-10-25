@@ -14,7 +14,9 @@
 #'   produced the reported standard errors). It has an associated
 #'   `print.summary.panglm()` method and is normally printed rather than
 #'   used programmatically. Also included are `sigma` (random-intercept
-#'   standard deviation) and `shape` (gamma shape) when estimated, and, for
+#'   standard deviation) and `shape` (gamma shape) when estimated,
+#'   `varcomp` (covariance matrix of the random intercept and slopes) for
+#'   random-slope fits, and, for
 #'   `cre = TRUE` fits, `cre_test`: the Wald (Mundlak) test that the
 #'   individual-mean coefficients are jointly zero, computed with the
 #'   covariance stored on the fit.
@@ -38,7 +40,9 @@ summary.panglm <- function(object, ...) {
               coefficients = coeftable, nobs = object$nobs, n_groups = object$n_groups,
               df.residual = object$df.residual, loglik = object$loglik,
               dispersion = object$dispersion, iterations = object$iterations,
-              vcov_type = object$vcov_type, sigma = object$sigma, shape = object$shape,
+              vcov_type = object$vcov_type,
+              sigma = if (is.null(object$varcomp)) object$sigma, shape = object$shape,
+              varcomp = object$varcomp,
               weighted = !is.null(object$weights), cre_test = cre_wald_test(object))
   class(out) <- "summary.panglm"
   out
@@ -59,6 +63,18 @@ print.summary.panglm <- function(x, digits = max(3, getOption("digits") - 3), ..
   if (!is.null(x$dispersion)) cat("Dispersion parameter:", format(x$dispersion, digits = digits), "\n")
   if (!is.null(x$sigma) && identical(x$model, "random")) {
     cat("Random-intercept SD:", format(x$sigma, digits = digits), "\n")
+  }
+  if (!is.null(x$varcomp)) {
+    sds <- sqrt(diag(x$varcomp))
+    cat("Random effects (SD):", paste0(names(sds), " ", format(sds, digits = digits),
+                                       collapse = ", "), "\n")
+    if (length(sds) > 1L) {
+      cors <- stats::cov2cor(x$varcomp)
+      pairs <- which(lower.tri(cors), arr.ind = TRUE)
+      cat("Random-effects correlation:",
+          paste0(rownames(cors)[pairs[, 1]], " ~ ", colnames(cors)[pairs[, 2]], " ",
+                 format(cors[pairs], digits = digits), collapse = ", "), "\n")
+    }
   }
   if (!is.null(x$shape)) cat("Gamma shape:", format(x$shape, digits = digits), "\n")
   if (isTRUE(x$weighted)) cat("Observation weights: yes (weighted pseudo-likelihood)\n")

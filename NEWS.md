@@ -52,6 +52,15 @@
   location-scale estimator and pooled quantile regression, for one or several
   `tau`, with bootstrap or analytic standard errors. Validated against
   `quantreg::rq()` and `plm`.
+* `panglm(model = "random")` gains `random`, a one-sided formula for
+  correlated random slopes (for example `random = ~ time`, unstructured
+  covariance). Gaussian models use exact ML with any number of slopes,
+  matching `lme4::lmer(REML = FALSE)`; Poisson, logit and probit models take
+  one slope and use adaptive Gauss-Hermite quadrature (`R` nodes per
+  dimension, default 7; `R = 1` is the Laplace approximation). Fits store
+  `varcomp` and `ranef`; cluster-robust `vcov()`, `summary()`, `predict()`,
+  `partialeffects()` and `cre = TRUE` are supported. Validated against lme4,
+  nlme with clubSandwich, glmmTMB and GLMMadaptive.
 * `validation/`: per-model scripts comparing panglm with established
   packages, summarized in `validation/REPORT.md`.
 
