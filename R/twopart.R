@@ -20,7 +20,16 @@
 #' With `model = "random"` each part has its own random intercept and the
 #' parts are estimated separately; the combined mean multiplies the two
 #' population-averaged means, which assumes the two random intercepts are
-#' independent. `cre = TRUE` adds the individual means of the time-varying
+#' independent. With `correlated = TRUE` (random effects, lognormal positive
+#' part) the two random intercepts are instead bivariate normal with
+#' correlation `rho` and both parts are estimated jointly by maximum
+#' likelihood (Van Ourti 2004): individuals with a high propensity to use
+#' care may also have high spending when they do. The positive-part random
+#' intercept is integrated out in closed form and the binary-part one by
+#' adaptive Gauss-Hermite quadrature. Predictions then integrate over the
+#' joint distribution (normal-theory retransformation). A likelihood-ratio
+#' test of `rho = 0` compares `logLik()` with the separate fit.
+#' `cre = TRUE` adds the individual means of the time-varying
 #' regressors (computed over all observations of the individual, including
 #' zeros) to both parts, the Mundlak correlated random effects device.
 #'
@@ -37,6 +46,9 @@
 #'   (linear model for `log(y)`)
 #' @param retransform for `positive = "lognormal"`: `"smearing"` or
 #'   `"normal"`
+#' @param correlated logical; with `model = "random"` and
+#'   `positive = "lognormal"`, let the random intercepts of the two parts be
+#'   correlated and fit them jointly
 #' @param cre logical; add individual means of the time-varying regressors
 #'   to both parts
 #' @param weights optional observation weights (`model = "pooling"` only)
@@ -55,6 +67,10 @@
 #'   Duan, N. (1983). Smearing estimate: a nonparametric retransformation
 #'   method. *Journal of the American Statistical Association*, 78,
 #'   605-610. \doi{10.1080/01621459.1983.10478017}
+#'
+#'   Van Ourti, T. (2004). Measuring horizontal inequity in Belgian health
+#'   care using a Gaussian random effects two part count data model.
+#'   *Health Economics*, 13, 705-724. \doi{10.1002/hec.869}
 #' @examples
 #' data(copd)
 #' set.seed(1)
@@ -71,7 +87,7 @@ twopart <- function(formula, data, index, binary_formula = NULL,
                     link = c("probit", "logit"),
                     positive = c("gamma", "lognormal"),
                     retransform = c("smearing", "normal"),
-                    cre = FALSE, weights = NULL,
+                    correlated = FALSE, cre = FALSE, weights = NULL,
                     vcov = c("classical", "HC1", "cluster"),
                     R = 21, maxit = 100, tol = 1e-10) {
   model <- match.arg(model)
@@ -84,6 +100,12 @@ twopart <- function(formula, data, index, binary_formula = NULL,
   if (length(missing_index)) {
     stop("index column(s) not found in data: ", paste(missing_index, collapse = ", "),
          call. = FALSE)
+  }
+  if (correlated && !(model == "random" && positive == "lognormal")) {
+    stop("correlated = TRUE needs model = 'random' and positive = 'lognormal'", call. = FALSE)
+  }
+  if (correlated && vcov == "HC1") {
+    stop("vcov = 'HC1' is not available for random effects: use 'cluster'", call. = FALSE)
   }
   if (!is.null(weights) && (!is.numeric(weights) || length(weights) != nrow(data))) {
     stop("'weights' must be a numeric vector with nrow(data) values", call. = FALSE)
@@ -155,7 +177,25 @@ twopart <- function(formula, data, index, binary_formula = NULL,
     }
   }
 
+  joint <- NULL
+  if (correlated) {
+    joint <- fit_twopart_cre(fit_binary, fit_positive, index, link, vcov, R, maxit, tol)
+    retransform <- "normal"
+    kb <- joint$kb; kp <- joint$kp
+    ib <- seq_len(kb); ip <- kb + seq_len(kp)
+    fit_binary$coefficients[] <- joint$theta[ib]
+    fit_positive$coefficients[] <- joint$theta[ip]
+    fit_binary$vcov[] <- joint$vcov[ib, ib]
+    fit_positive$vcov[] <- joint$vcov[ip, ip]
+    fit_binary$sigma <- joint$sigma_binary
+    fit_positive$sigma_mu2 <- joint$sigma_positive^2
+    fit_positive$sigma_v2 <- joint$sigma_e^2
+    fit_binary$vcov_type <- fit_positive$vcov_type <- vcov
+    phi <- NA_real_
+  }
+
   out <- list(binary = fit_binary, positive = fit_positive, retransformation = phi,
+              correlated = correlated, joint = joint,
               positive_type = positive, retransform = if (positive == "lognormal") retransform,
               link = link, model = model, formula = formula, binary_formula = binary_formula,
               index = index, data = d[, setdiff(names(d), ".twopart_any"), drop = FALSE],
@@ -207,6 +247,14 @@ twopart_predictor <- function(object, part = c("total", "binary", "positive")) {
   k_binary <- length(object$binary$coefficients)
   index_binary <- seq_len(k_binary)
   index_positive <- k_binary + seq_along(object$positive$coefficients)
+  if (isTRUE(object$correlated)) {
+    return(function(theta, data) {
+      a <- as.numeric(panglm_design(object$binary, data) %*% theta[index_binary])
+      b <- as.numeric(panglm_design(object$positive, data) %*% theta[index_positive])
+      m <- twopart_cre_means(a, b, object$joint, object$link)
+      switch(part, total = m$total, binary = m$prob, positive = m$total / m$prob)
+    })
+  }
   binary_mean <- panglm_mean_function(object$binary)
   positive_mean <- if (object$positive_type == "gamma") {
     panglm_mean_function(object$positive)
@@ -264,6 +312,11 @@ coef.twopart <- function(object, ...) {
 
 #' @export
 vcov.twopart <- function(object, ...) {
+  if (isTRUE(object$correlated)) {
+    v <- object$joint$vcov
+    dimnames(v) <- list(names(stats::coef(object)), names(stats::coef(object)))
+    return(v)
+  }
   vb <- object$binary$vcov
   vp <- object$positive$vcov
   kb <- nrow(vb); kp <- nrow(vp)
@@ -276,6 +329,10 @@ vcov.twopart <- function(object, ...) {
 
 #' @export
 logLik.twopart <- function(object, ...) {
+  if (isTRUE(object$correlated)) {
+    return(structure(object$joint$loglik, df = object$joint$npar, nobs = object$nobs,
+                     class = "logLik"))
+  }
   lb <- stats::logLik(object$binary)
   lp <- stats::logLik(object$positive)
   value <- as.numeric(lb) + as.numeric(lp)
@@ -295,7 +352,7 @@ nobs.twopart <- function(object, ...) object$nobs
 
 #' @export
 print.twopart <- function(x, digits = max(3, getOption("digits") - 3), ...) {
-  cat("\nTwo-part model (", x$model, "): ",
+  cat("\nTwo-part model (", x$model, if (isTRUE(x$correlated)) ", correlated", "): ",
       x$link, " for P(y > 0); ",
       if (x$positive_type == "gamma") "gamma (log link)" else "log-linear",
       " for E[y | y > 0]\n", sep = "")
@@ -322,7 +379,8 @@ summary.twopart <- function(object, ...) {
 #' @export
 print.summary.twopart <- function(x, digits = max(3, getOption("digits") - 3), ...) {
   object <- x$object
-  cat("\nTwo-part model (", object$model, ")\n", sep = "")
+  cat("\nTwo-part model (", object$model, if (isTRUE(object$correlated)) ", correlated",
+      ")\n", sep = "")
   cat("N =", object$nobs, " positive =", object$n_positive,
       " groups =", object$binary$n_groups, "\n")
   cat("\nPart 1: P(y > 0), binomial", object$link, "\n")
@@ -331,7 +389,12 @@ print.summary.twopart <- function(x, digits = max(3, getOption("digits") - 3), .
       if (object$positive_type == "gamma") "gamma GLM with log link" else "linear model for log(y)",
       "\n")
   stats::printCoefmat(x$positive$coefficients, digits = digits, has.Pvalue = TRUE)
-  if (object$positive_type == "lognormal") {
+  if (isTRUE(object$correlated)) {
+    vp <- object$joint$variance_params
+    se <- sqrt(diag(object$joint$variance_vcov))
+    cat("\nCorrelated random intercepts (joint maximum likelihood)\n")
+    print(round(cbind(Estimate = vp, `Std. Error` = se), digits))
+  } else if (object$positive_type == "lognormal") {
     cat("\nRetransformation (", object$retransform, "): ",
         format(object$retransformation, digits = digits), "\n", sep = "")
   }

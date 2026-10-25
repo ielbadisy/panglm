@@ -379,6 +379,37 @@ summary(fit_2p)
 partialeffects(fit_2p, variables = "crp")
 ```
 
+With random intercepts in both parts, the default treats the two
+intercepts as independent. A person with an unobserved tendency to use care
+often also has expensive episodes, so `correlated = TRUE` lets the
+intercepts $(u_{1i}, u_{2i})$ be bivariate normal with correlation $\rho$
+and fits both parts jointly by maximum likelihood (Van Ourti 2004). It needs
+the lognormal positive part. Given $u_{1i}$, $u_{2i}$ is normal, so the
+positive part integrates over $u_{2i}$ in closed form, and the remaining
+integral over $u_{1i}$ uses adaptive Gauss-Hermite quadrature. The
+population mean becomes
+
+$$
+E(y_{it} \mid x_{it}) = \exp\{z_{it}^{\mathsf T}\beta + (\sigma_e^2 + \tau^2)/2\}\,
+E_{u_1}\{F(x_{it}^{\mathsf T}\gamma + u_1)\, e^{c u_1}\},
+\qquad c = \rho\sigma_2/\sigma_1,\; \tau^2 = \sigma_2^2(1 - \rho^2),
+$$
+
+so a positive $\rho$ raises the mean above the product of the two parts.
+`summary()` reports $\sigma_1$, $\sigma_2$, $\sigma_e$ and $\rho$.
+
+```{r twopart-correlated}
+set.seed(5)
+d <- data.frame(id = rep(1:300, each = 5), t = rep(1:5, 300), x = rnorm(1500))
+u1 <- rnorm(300, sd = 0.8)
+u2 <- 0.7 * (0.6 * u1 / 0.8 + sqrt(1 - 0.6^2) * rnorm(300))
+d$cost <- ifelse(-0.2 + 0.5 * d$x + u1[d$id] + rnorm(1500) > 0,
+                 exp(6 + 0.3 * d$x + u2[d$id] + rnorm(1500, sd = 0.5)), 0)
+fit_c <- twopart(cost ~ x, data = d, index = c("id", "t"), model = "random",
+                 positive = "lognormal", correlated = TRUE, vcov = "cluster")
+summary(fit_c)
+```
+
 ## Covariance estimation and confidence intervals
 
 The default covariance matrix is model based. Pooled and fixed-effects
@@ -559,6 +590,10 @@ Mundlak, Y. (1978). On the pooling of time series and cross section data.
 Sun, L., and Abraham, S. (2021). Estimating dynamic treatment effects in
 event studies with heterogeneous treatment effects. *Journal of
 Econometrics*, 225, 175-199.
+
+Van Ourti, T. (2004). Measuring horizontal inequity in Belgian health care
+using a Gaussian random effects two part count data model. *Health
+Economics*, 13, 705-724.
 
 Wooldridge, J. M. (2005). Unobserved heterogeneity and estimation of
 average partial effects. In D. W. K. Andrews and J. H. Stock (Eds.),

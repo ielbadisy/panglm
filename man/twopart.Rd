@@ -13,6 +13,7 @@ twopart(
   link = c("probit", "logit"),
   positive = c("gamma", "lognormal"),
   retransform = c("smearing", "normal"),
+  correlated = FALSE,
   cre = FALSE,
   weights = NULL,
   vcov = c("classical", "HC1", "cluster"),
@@ -42,6 +43,10 @@ part, e.g. `~ age + treatment + smoker`}
 
 \item{retransform}{for `positive = "lognormal"`: `"smearing"` or
 `"normal"`}
+
+\item{correlated}{logical; with `model = "random"` and
+`positive = "lognormal"`, let the random intercepts of the two parts be
+correlated and fit them jointly}
 
 \item{cre}{logical; add individual means of the time-varying regressors
 to both parts}
@@ -81,7 +86,16 @@ errors.
 With `model = "random"` each part has its own random intercept and the
 parts are estimated separately; the combined mean multiplies the two
 population-averaged means, which assumes the two random intercepts are
-independent. `cre = TRUE` adds the individual means of the time-varying
+independent. With `correlated = TRUE` (random effects, lognormal positive
+part) the two random intercepts are instead bivariate normal with
+correlation `rho` and both parts are estimated jointly by maximum
+likelihood (Van Ourti 2004): individuals with a high propensity to use
+care may also have high spending when they do. The positive-part random
+intercept is integrated out in closed form and the binary-part one by
+adaptive Gauss-Hermite quadrature. Predictions then integrate over the
+joint distribution (normal-theory retransformation). A likelihood-ratio
+test of `rho = 0` compares `logLik()` with the separate fit.
+`cre = TRUE` adds the individual means of the time-varying
 regressors (computed over all observations of the individual, including
 zeros) to both parts, the Mundlak correlated random effects device.
 }
@@ -105,4 +119,8 @@ Duan, N., Manning, W. G., Morris, C. N. and Newhouse, J. P.
   Duan, N. (1983). Smearing estimate: a nonparametric retransformation
   method. *Journal of the American Statistical Association*, 78,
   605-610. \doi{10.1080/01621459.1983.10478017}
+
+  Van Ourti, T. (2004). Measuring horizontal inequity in Belgian health
+  care using a Gaussian random effects two part count data model.
+  *Health Economics*, 13, 705-724. \doi{10.1002/hec.869}
 }
