@@ -112,6 +112,32 @@ test_that("GLM random slopes with two slopes match glmmTMB (Laplace)", {
   expect_equal(attr(logLik(f), "df"), 10)
 })
 
+test_that("a GLM slope variance at the boundary keeps finite standard errors", {
+  skip_on_cran()
+  skip_if_missing("glmmTMB")
+  set.seed(4)
+  G <- 200; T <- 6
+  d <- data.frame(id = rep(seq_len(G), each = T), time = rep(0:(T - 1), G))
+  d$x <- stats::rnorm(G * T)
+  u <- stats::rnorm(G, 0, 0.6)
+  d$yc <- stats::rpois(G * T, exp(0.3 + 0.1 * d$time + 0.4 * d$x + u[d$id]))
+  expect_warning(
+    f <- panglm(yc ~ time + x, data = d, index = c("id", "time"), model = "random",
+                family = "poisson", random = ~ time, R = 1),
+    "singular")
+  se <- sqrt(diag(vcov(f)))
+  expect_true(all(is.finite(se)))
+  tm <- suppressWarnings(glmmTMB::glmmTMB(yc ~ time + x + (1 + time | id), data = d,
+                                          family = stats::poisson()))
+  expect_equal(unname(se), unname(sqrt(diag(vcov(tm)$cond))), tolerance = 1e-4)
+  expect_equal(as.numeric(logLik(f)), as.numeric(logLik(tm)), tolerance = 1e-6)
+  # a singular information matrix falls back on its generalized inverse
+  H <- -diag(c(4, 1, 0))
+  V <- slopes_theta_vcov(H)
+  expect_true(all(is.finite(V)))
+  expect_equal(V, diag(c(0.25, 1, 0)))
+})
+
 test_that("the default number of quadrature nodes adapts to the dimension", {
   expect_identical(panglm:::slopes_default_nodes(2L), 7L)
   expect_identical(panglm:::slopes_default_nodes(3L), 5L)
@@ -119,8 +145,9 @@ test_that("the default number of quadrature nodes adapts to the dimension", {
   expect_identical(panglm:::slopes_default_nodes(8L), 1L)
   d <- slopes_sim(G = 30)
   d$w <- stats::rnorm(nrow(d))
-  f <- panglm(yc ~ time + x, data = d, index = c("id", "time"), model = "random",
-              family = "poisson", random = ~ time + w)
+  # w carries no random effect in these data: a boundary fit
+  f <- suppressWarnings(panglm(yc ~ time + x, data = d, index = c("id", "time"),
+                               model = "random", family = "poisson", random = ~ time + w))
   expect_identical(f$quadrature_nodes, 5L)
   expect_warning(panglm:::slopes_nodes(13L, 3L), "nodes per individual")
   expect_silent(panglm:::slopes_nodes(7L, 3L))

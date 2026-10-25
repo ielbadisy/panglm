@@ -7,7 +7,8 @@
 # quadrature (R = 7) vs GLMMadaptive, the quadrature likelihood vs a
 # brute-force dense grid, and population-averaged partial effects by hand.
 # Two slopes (a three-dimensional random effect): Laplace vs glmmTMB and
-# adaptive quadrature (R = 7, 343 nodes) vs GLMMadaptive.
+# adaptive quadrature (R = 7, 343 nodes) vs GLMMadaptive. A singular
+# (boundary) GLM fit: finite standard errors vs glmmTMB.
 source("validation/common.R")
 suppressPackageStartupMessages({
   library(lme4); library(glmmTMB); library(GLMMadaptive); library(nlme); library(clubSandwich)
@@ -286,8 +287,36 @@ slopes2_block <- function(y, family, glm_family, label) {
              list(GLMMadaptive = as.numeric(logLik(ga))), 1e-5)
   )
 }
-s1 <- slopes2_block("yc", "poisson", poisson(), "sim Poisson")
-s2 <- slopes2_block("yb", "binomial", binomial(), "sim logit")
-s3 <- slopes2_block("yp", "probit", binomial("probit"), "sim probit")
+m1 <- slopes2_block("yc", "poisson", poisson(), "sim Poisson")
+m2 <- slopes2_block("yb", "binomial", binomial(), "sim logit")
+m3 <- slopes2_block("yp", "probit", binomial("probit"), "sim probit")
 
-vsave(g1, g2, g3, g4, g5, l1, l2, l3, a1, a2, q1, p1, s1, s2, s3, name = "slopes")
+# ---- boundary: GLM slope variance at zero (singular covariance)
+# Data with a random intercept only: the fitted intercept-slope correlation
+# is 1 (a singular Sigma, lme4 reports a boundary fit). The fixed-effect
+# standard errors stay finite and match glmmTMB; panglm warns.
+set.seed(4)
+G4 <- 200; T4 <- 6
+d4 <- data.frame(id = rep(seq_len(G4), each = T4), time = rep(0:(T4 - 1), G4))
+d4$x <- rnorm(G4 * T4)
+u4 <- rnorm(G4, 0, 0.6)
+d4$yc <- rpois(G4 * T4, exp(0.3 + 0.1 * d4$time + 0.4 * d4$x + u4[d4$id]))
+w4 <- NULL
+f4 <- withCallingHandlers(
+  panglm(yc ~ time + x, data = d4, index = idx, model = "random", family = "poisson",
+         random = ~ time, R = 1),
+  warning = function(w) { w4 <<- conditionMessage(w); invokeRestart("muffleWarning") })
+stopifnot(grepl("singular", w4), all(is.finite(sqrt(diag(vcov(f4))))))
+tm4 <- suppressWarnings(glmmTMB(yc ~ time + x + (1 + time | id), data = d4, family = poisson()))
+gm4 <- suppressMessages(glmer(yc ~ time + x + (1 + time | id), data = d4, family = poisson()))
+stopifnot(isSingular(gm4))
+b1 <- rbind(
+  vcompare("slopes boundary", "sim Poisson", "coef", coef(f4),
+           list(glmmTMB = fixef(tm4)$cond), 1e-4),
+  vcompare("slopes boundary", "sim Poisson", "se", sqrt(diag(vcov(f4))),
+           list(glmmTMB = sqrt(diag(vcov(tm4)$cond))), 1e-4),
+  vcompare("slopes boundary", "sim Poisson", "loglik", c(loglik = f4$loglik),
+           list(glmmTMB = as.numeric(logLik(tm4)), lme4 = as.numeric(logLik(gm4))), 1e-5)
+)
+
+vsave(g1, g2, g3, g4, g5, l1, l2, l3, a1, a2, q1, p1, m1, m2, m3, b1, name = "slopes")

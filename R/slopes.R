@@ -231,7 +231,6 @@ slopes_obs_terms <- function(family, y) {
   }
 }
 
-
 # ------------------------------------- batched small-matrix linear algebra
 # A batch of G symmetric q x q matrices is an array of dimension c(G, q, q);
 # A[, a, c] is the vector of the (a, c) entries over the G individuals.
@@ -314,14 +313,17 @@ slopes_vech_index <- function(q) {
 
 #' Cholesky factor L of Sigma from its parameters
 #'
-#' The parameters are the vech of L with the diagonal on the log scale.
+#' The parameters are the vech of L, unconstrained: changing the sign of a
+#' column of L leaves Sigma unchanged, and a zero diagonal entry is a
+#' singular Sigma (a variance on the boundary). Unlike a log-scale
+#' diagonal, this parameterisation stays regular at the boundary (the
+#' likelihood is even in a zero diagonal entry), so the information matrix
+#' and the fixed-effect standard errors remain finite there, as in lme4.
 #'
 #' @keywords internal
 #' @noRd
 slopes_lfactor <- function(par, q) {
   vi <- slopes_vech_index(q)
-  dg <- vi$row == vi$col
-  par[dg] <- exp(par[dg])
   L <- matrix(0, q, q)
   L[cbind(vi$row, vi$col)] <- par
   L
@@ -471,7 +473,7 @@ fit_slopes_glm <- function(X, y, Z, group, family, R, maxit, tol) {
   sz <- vapply(seq_len(q), function(a) {
     s <- stats::sd(Z[, a]); if (is.finite(s) && s > 0) s else 1
   }, numeric(1))
-  l0 <- ifelse(vi$row == vi$col, log(ifelse(vi$row == 1L, 0.5, 0.2 / sz[vi$row])), 0)
+  l0 <- ifelse(vi$row == vi$col, ifelse(vi$row == 1L, 0.5, 0.2 / sz[vi$row]), 0)
   start <- c(b0, l0)
   contrib <- slopes_glm_contrib(family, X, y, Z, group, R)
   res <- ml_optimize(start, contrib, rep(1, G), maxit, tol)
@@ -481,19 +483,60 @@ fit_slopes_glm <- function(X, y, Z, group, family, R, maxit, tol) {
   modes <- environment(contrib)$state$modes %*% t(L)
   colnames(modes) <- colnames(Z)
 
+  slopes_boundary_warning(L, sz, colnames(Z))
+  theta_vcov <- slopes_theta_vcov(res$hessian)
+
   coefs <- res$theta[seq_len(k)]; names(coefs) <- colnames(X)
-  vcov <- res$vcov[seq_len(k), seq_len(k), drop = FALSE]
+  vcov <- theta_vcov[seq_len(k), seq_len(k), drop = FALSE]
   dimnames(vcov) <- list(colnames(X), colnames(X))
   varcomp <- tcrossprod(L)
   dimnames(varcomp) <- list(colnames(Z), colnames(Z))
   eta <- as.numeric(X %*% coefs)
   out <- list(coefficients = coefs, vcov = vcov, loglik = res$loglik,
-              theta = res$theta, theta_vcov = res$vcov, theta_score = res$score,
+              theta = res$theta, theta_vcov = theta_vcov, theta_score = res$score,
               varcomp = varcomp, ranef = modes, dispersion = 1,
               quadrature_nodes = R, df.residual = length(y) - length(res$theta),
               iterations = res$iterations, convergence = res$convergence)
   out$fitted.values <- slopes_marginal_mean(family, eta, Z, varcomp)
   out
+}
+
+#' Warn when the random-effects covariance is singular
+#'
+#' `|L_aa|` is the standard deviation of effect `a` given the preceding
+#' ones; it is compared with 1e-4 on the scale of the slope variable (the
+#' singularity tolerance of `lme4::isSingular()`).
+#'
+#' @keywords internal
+#' @noRd
+slopes_boundary_warning <- function(L, scale, names) {
+  at_zero <- abs(diag(L)) * scale < 1e-4
+  if (any(at_zero)) {
+    warning("the random-effects covariance matrix is singular (on the boundary of the ",
+            "parameter space): the variance of ", paste0("'", names[at_zero], "'", collapse = ", "),
+            " given the preceding random effects is estimated at zero; consider a simpler ",
+            "'random' formula. Standard errors use the Cholesky parameterisation, which ",
+            "stays regular at the boundary", call. = FALSE)
+  }
+  invisible(at_zero)
+}
+
+#' Covariance of the parameters from the Hessian of the log-likelihood
+#'
+#' The inverse of the observed information; when it is singular (a
+#' parameter not identified at the boundary), its Moore-Penrose generalized
+#' inverse, which leaves the identified directions, among them the fixed
+#' effects, finite.
+#'
+#' @keywords internal
+#' @noRd
+slopes_theta_vcov <- function(H) {
+  V <- tryCatch(solve(-H), error = function(e) NULL)
+  if (!is.null(V) && all(is.finite(V)) && all(diag(V) > 0)) return((V + t(V)) / 2)
+  e <- eigen(-(H + t(H)) / 2, symmetric = TRUE)
+  keep <- e$values > 1e-8 * max(e$values)
+  V <- e$vectors[, keep, drop = FALSE] %*% (t(e$vectors[, keep, drop = FALSE]) / e$values[keep])
+  (V + t(V)) / 2
 }
 
 #' Population-averaged mean: E over b of g^{-1}(eta + z'b)
