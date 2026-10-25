@@ -7,6 +7,7 @@
 \alias{binomial_family}
 \alias{negbin_family}
 \alias{gamma_family}
+\alias{ordered_family}
 \title{Family specifications for panglm}
 \usage{
 gaussian_family(link = "identity")
@@ -18,6 +19,8 @@ binomial_family(link = c("logit", "probit"))
 negbin_family(link = "log")
 
 gamma_family(link = "log")
+
+ordered_family(link = c("logit", "probit"))
 }
 \arguments{
 \item{link}{canonical link name}
@@ -35,6 +38,18 @@ expects (see `src/families.h`).
   choice for skewed positive outcomes such as health care costs: the
   variance is proportional to the squared mean and the coefficients act
   multiplicatively on the mean, with no retransformation needed.
+
+`ordered_family()` is the ordered logit or ordered probit model
+  for ordinal outcomes such as self-assessed health:
+  `P(y <= j) = F(c_j - x'beta - u_i)`. The response may be a factor, an
+  ordered factor or integer-valued; categories follow the factor levels
+  or the sorted values. The intercept is absorbed in the cutpoints `c_j`,
+  which are reported after the slopes. `model = "pooling"` and
+  `model = "random"` (Gaussian random intercept by Gauss-Hermite
+  quadrature) are available for both links, `model = "within"` for the
+  logit link only (the "blow-up and cluster" fixed-effects ordered logit
+  of Baetschmann, Staub and Winkelmann 2015). The fit has class
+  `c("panordered", "panglm")`; see [predict.panordered()].
 }
 \examples{
 gaussian_family()
@@ -42,9 +57,16 @@ poisson_family()
 binomial_family("probit")
 negbin_family()
 gamma_family()
+ordered_family("probit")
 
 data(copd)
 fit <- panglm(hospitalized ~ crp, data = copd, index = c("id", "visit"),
               model = "within", family = binomial_family("logit"))
 coef(fit)
+}
+\references{
+Baetschmann, G., Staub, K. E. and Winkelmann, R. (2015).
+  Consistent estimation of the fixed effects ordered logit model.
+  *Journal of the Royal Statistical Society A*, 178, 685-703.
+  \doi{10.1111/rssa.12090}
 }

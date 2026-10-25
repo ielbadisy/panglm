@@ -89,6 +89,12 @@ panglm <- function(formula, data, index,
   effect <- match.arg(effect)
   vcov <- match.arg(vcov)
   family <- resolve_family(family)
+  is_ordered <- identical(family$family, "ordered")
+  if (is_ordered && model == "within" && family$link != "logit") {
+    stop("the fixed-effects ordered model is available for the logit link only ",
+         "(blow-up and cluster); use model = 'random' with cre = TRUE for the probit",
+         call. = FALSE)
+  }
   if (!is.logical(cre) || length(cre) != 1L || is.na(cre)) {
     stop("'cre' must be TRUE or FALSE", call. = FALSE)
   }
@@ -125,9 +131,9 @@ panglm <- function(formula, data, index,
     used_weights <- weights[model_rows]
     if (all(used_weights == 1)) {
       used_weights <- NULL
-    } else if (model != "pooling") {
+    } else if (model == "within" || (model == "random" && !weighted_random_ok(family))) {
       stop("nontrivial observation weights are only supported for model = 'pooling'",
-           call. = FALSE)
+           " and model = 'random'", call. = FALSE)
     } else if (!any(used_weights > 0)) {
       stop("at least one observation weight must be positive", call. = FALSE)
     }
@@ -144,6 +150,12 @@ panglm <- function(formula, data, index,
     stop("nonzero offsets are not supported", call. = FALSE)
   }
   y <- stats::model.response(mf)
+  ordered_levels <- NULL
+  if (is_ordered) {
+    coded <- ordered_response(y)
+    y <- coded$code
+    ordered_levels <- coded$levels
+  }
   if (family$family == "binomial") y <- binomial_response_to_numeric(y)
   if (!is.numeric(y) || any(!is.finite(y))) {
     stop("the response must be finite and numeric", call. = FALSE)
@@ -180,11 +192,19 @@ panglm <- function(formula, data, index,
     cre_columns <- colnames(cre_means)
     X_full <- cbind(X_full, cre_means)
   }
+  if (is_ordered && model != "within") {
+    # the cutpoints play the role of the intercept
+    X_full <- X_full[, setdiff(colnames(X_full), "(Intercept)"), drop = FALSE]
+  }
 
   candidate_X <- if (model %in% c("pooling", "random")) X_full else X_noint
-  estimable <- panglm_estimable_columns(
-    candidate_X, model, effect, group_start, group_size, time_id
-  )
+  estimable <- if (is_ordered && model != "within") {
+    setdiff(panglm_estimable_columns(cbind(`(Intercept)` = 1, candidate_X), model, effect,
+                                     group_start, group_size, time_id), 1L) - 1L
+  } else {
+    panglm_estimable_columns(candidate_X, model, effect, group_start, group_size, time_id)
+  }
+  if (!length(estimable)) stop("the model contains no estimable covariates", call. = FALSE)
   aliased <- setdiff(colnames(candidate_X), colnames(candidate_X)[estimable])
   if (length(aliased)) {
     warning("rank-deficient model matrix: dropping unidentified column(s): ",
@@ -196,7 +216,10 @@ panglm <- function(formula, data, index,
     X_noint <- X_noint[, estimable, drop = FALSE]
   }
 
-  fit <- switch(model,
+  fit <- if (is_ordered) {
+    fit_ordered(if (model == "within") X_noint else X_full, y, ordered_levels, family$link,
+                model, group_start, group_size, prior_weights, R, maxit, tol)
+  } else switch(model,
     pooling = fit_pooled(X_full, y, family, maxit, tol, prior_weights),
     within  = if (effect == "twoways" && family$family == "gaussian") {
       fit_within_twoways_gaussian(X_noint, y, group_start, group_size, time_id, maxit, tol)
@@ -262,19 +285,20 @@ panglm <- function(formula, data, index,
   fit$index <- index
   fit$nobs <- length(y)
   fit$n_groups <- panel$n_groups
-  fit$npar <- panglm_parameter_count(
+  fit$npar <- fit$npar %||% panglm_parameter_count(
     fit, model, family$family, effect, panel$n_groups,
     if (is.null(time_id)) 0L else length(unique(time_id))
   )
   fit$nobs_likelihood <- if (!is.null(fit$keep_rows)) sum(fit$keep_rows) else length(y)
   fit$vcov_type <- "classical"
-  class(fit) <- "panglm"
+  class(fit) <- c(if (is_ordered) "panordered", "panglm")
 
   # The model-based covariance is kept so that vcov(fit, type = "classical")
   # stays available after a robust covariance replaces fit$vcov.
   fit$vcov_classical <- fit$vcov
+  if (is_ordered && model == "within" && vcov == "classical") vcov <- "cluster"
   if (vcov != "classical") {
-    fit$vcov <- vcov.panglm(fit, type = vcov)
+    fit$vcov <- stats::vcov(fit, type = vcov)
     fit$vcov_type <- vcov
   }
   fit
@@ -751,4 +775,8 @@ random_binomial_marginal_mean <- function(eta, sigma, family, quadrature = 21L) 
   gh <- if (is.list(quadrature)) quadrature else gauss_hermite_quadrature(quadrature)
   shifts <- sqrt(2) * sigma * gh$nodes
   as.numeric(linkinv_r(outer(eta, shifts, "+"), family$link_id) %*% gh$weights)
+}
+
+weighted_random_ok <- function(family) {
+  family$family %in% c("ordered")
 }

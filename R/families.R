@@ -12,6 +12,7 @@
 #' binomial_family("probit")
 #' negbin_family()
 #' gamma_family()
+#' ordered_family("probit")
 #'
 #' data(copd)
 #' fit <- panglm(hospitalized ~ crp, data = copd, index = c("id", "visit"),
@@ -60,6 +61,29 @@ gamma_family <- function(link = "log") {
   list(family = "gamma", link = link, family_id = 3L, link_id = 1L)
 }
 
+#' @details `ordered_family()` is the ordered logit or ordered probit model
+#'   for ordinal outcomes such as self-assessed health:
+#'   `P(y <= j) = F(c_j - x'beta - u_i)`. The response may be a factor, an
+#'   ordered factor or integer-valued; categories follow the factor levels
+#'   or the sorted values. The intercept is absorbed in the cutpoints `c_j`,
+#'   which are reported after the slopes. `model = "pooling"` and
+#'   `model = "random"` (Gaussian random intercept by Gauss-Hermite
+#'   quadrature) are available for both links, `model = "within"` for the
+#'   logit link only (the "blow-up and cluster" fixed-effects ordered logit
+#'   of Baetschmann, Staub and Winkelmann 2015). The fit has class
+#'   `c("panordered", "panglm")`; see [predict.panordered()].
+#' @references Baetschmann, G., Staub, K. E. and Winkelmann, R. (2015).
+#'   Consistent estimation of the fixed effects ordered logit model.
+#'   *Journal of the Royal Statistical Society A*, 178, 685-703.
+#'   \doi{10.1111/rssa.12090}
+#' @rdname panglm-families
+#' @export
+ordered_family <- function(link = c("logit", "probit")) {
+  link <- match.arg(link)
+  list(family = "ordered", link = link, family_id = NA_integer_,
+       link_id = if (link == "logit") 2L else 3L)
+}
+
 #' @keywords internal
 #' @noRd
 binomial_response_to_numeric <- function(y) {
@@ -82,10 +106,12 @@ resolve_family <- function(family) {
       negbin   = negbin_family(),
       gamma    = gamma_family(),
       Gamma    = gamma_family(),
+      ologit   = ordered_family("logit"),
+      oprobit  = ordered_family("probit"),
       stop("unknown family '", family, "'", call. = FALSE)
     )
   }
-  if (!is.list(family) || is.null(family$family_id)) {
+  if (!is.list(family) || is.null(family$family)) {
     stop("family must be a character string or a panglm family spec ",
          "(see ?`panglm-families`)", call. = FALSE)
   }
