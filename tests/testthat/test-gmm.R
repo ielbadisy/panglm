@@ -203,3 +203,13 @@ test_that("pangmm warns about too many instruments and notes it in the summary",
                                  effect = "twoways", model = "twosteps"))
   expect_equal(unname(coef(fit)[1]), unname(coef(p)[1]), tolerance = 1e-6)
 })
+
+test_that("pangmm() accepts vcov = 'cluster' as a synonym of 'robust'", {
+  d <- gmm_sim(N = 150, TT = 6, seed = 4)
+  f <- y ~ lag(y, 1) + x | lag(y, 2:99)
+  a <- pangmm(f, d, index = c("id", "t"), model = "twostep")
+  b <- pangmm(f, d, index = c("id", "t"), model = "twostep", vcov = "cluster")
+  expect_identical(vcov(b), vcov(a))
+  expect_identical(b$vcov_type, "robust")
+  expect_identical(vcov(a, type = "cluster"), vcov(a, type = "robust"))
+})

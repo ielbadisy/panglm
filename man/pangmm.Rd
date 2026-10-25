@@ -13,7 +13,7 @@ pangmm(
   effect = c("twoways", "individual"),
   collapse = FALSE,
   maxlag = NULL,
-  vcov = c("robust", "classical")
+  vcov = c("robust", "classical", "cluster")
 )
 }
 \arguments{
@@ -43,7 +43,9 @@ GMM-style instruments, overriding larger upper lags in the formula
 (`lag(y, 2:99)` with `maxlag = 4` uses lags 2 to 4)}
 
 \item{vcov}{`"robust"` (one-step sandwich or Windmeijer-corrected
-two-step) or `"classical"`; see [vcov.pangmm()] to switch after
+two-step, both clustered by individual) or `"classical"`; `"cluster"`
+is accepted as a synonym of `"robust"`, the name used by the other
+estimators of the package. See [vcov.pangmm()] to switch after
 fitting}
 }
 \value{

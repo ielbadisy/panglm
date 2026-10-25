@@ -130,7 +130,9 @@
 #'   GMM-style instruments, overriding larger upper lags in the formula
 #'   (`lag(y, 2:99)` with `maxlag = 4` uses lags 2 to 4)
 #' @param vcov `"robust"` (one-step sandwich or Windmeijer-corrected
-#'   two-step) or `"classical"`; see [vcov.pangmm()] to switch after
+#'   two-step, both clustered by individual) or `"classical"`; `"cluster"`
+#'   is accepted as a synonym of `"robust"`, the name used by the other
+#'   estimators of the package. See [vcov.pangmm()] to switch after
 #'   fitting
 #' @return an object of class `"pangmm"`, a list with components
 #'   `coefficients` (the final estimates; time dummies are named by their
@@ -216,11 +218,12 @@ pangmm <- function(formula, data, index,
                    model = c("onestep", "twostep"),
                    effect = c("twoways", "individual"),
                    collapse = FALSE, maxlag = NULL,
-                   vcov = c("robust", "classical")) {
+                   vcov = c("robust", "classical", "cluster")) {
   transformation <- match.arg(transformation)
   model <- match.arg(model)
   effect <- match.arg(effect)
   vcov <- match.arg(vcov)
+  if (vcov == "cluster") vcov <- "robust"
   if (missing(index)) stop("'index' is required, e.g. index = c(\"id\", \"time\")", call. = FALSE)
   if (!is.character(index) || length(index) != 2L || anyDuplicated(index)) {
     stop("'index' must contain two distinct column names, c(id, time)", call. = FALSE)
@@ -743,7 +746,8 @@ gmm_wald <- function(object, V) {
 #' @param type `NULL` (the covariance stored on the fit), `"robust"` (the
 #'   one-step sandwich, or the Windmeijer-corrected two-step covariance) or
 #'   `"classical"` (the homoskedastic one-step covariance, or the
-#'   uncorrected two-step covariance)
+#'   uncorrected two-step covariance); `"cluster"` is a synonym of
+#'   `"robust"`
 #' @param ... unused
 #' @return the covariance matrix of the coefficients
 #' @examples
@@ -760,7 +764,8 @@ gmm_wald <- function(object, V) {
 #' @export
 vcov.pangmm <- function(object, type = NULL, ...) {
   if (is.null(type)) return(object$vcov)
-  type <- match.arg(type, c("robust", "classical"))
+  type <- match.arg(type, c("robust", "classical", "cluster"))
+  if (type == "cluster") type <- "robust"
   object$vcov_list[[type]]
 }
 

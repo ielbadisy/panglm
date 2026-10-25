@@ -12,7 +12,8 @@
 \item{type}{`NULL` (the covariance stored on the fit), `"robust"` (the
 one-step sandwich, or the Windmeijer-corrected two-step covariance) or
 `"classical"` (the homoskedastic one-step covariance, or the
-uncorrected two-step covariance)}
+uncorrected two-step covariance); `"cluster"` is a synonym of
+`"robust"`}
 
 \item{...}{unused}
 }
