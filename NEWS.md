@@ -1,3 +1,13 @@
+# panglm (development version)
+
+* `panfmm()` gains `weights` (individual sampling weights, constant within
+  individuals; use `vcov = "cluster"` for design-based standard errors),
+  offsets (`offset()` in the formula or an `offset` argument) and probit
+  components (`family = "probit"`). The Poisson and binomial EM steps use a
+  warm-started IRLS (1.5 to 2.4 times faster, same optimum). Validated against
+  flexmix, `glm()`, `MASS::glm.nb()`, `sampleSelection::probit()` and
+  `sandwich::vcovCL()`.
+
 # panglm 1.5.0
 
 * Between estimator: `model = "between"` (OLS on individual means) for the

@@ -181,3 +181,19 @@ test_that("probit components", {
   logit <- panfmm(yb ~ x, d, c("id", "t"), k = 2, family = "binomial", nstart = 2, seed = 2)
   expect_false(isTRUE(all.equal(a$loglik, logit$loglik)))
 })
+
+test_that("the warm-started IRLS M step equals glm.fit()", {
+  d <- fmm_sim()
+  X <- cbind(1, d$x)
+  w <- runif(nrow(d)); w[1:5] <- 0
+  off <- 0.1 * d$x
+  for (fam in list(poisson(), binomial(), binomial(link = "probit"))) {
+    y <- if (fam$family == "poisson") d$y else d$yb
+    # non-integer weights: glm.fit() warns about non-integer successes
+    g <- suppressWarnings(glm.fit(X, y, weights = w, offset = off, family = fam,
+                                  control = glm.control(epsilon = 1e-14, maxit = 100)))
+    b <- panglm:::fmm_irls(X, y, w, off, fam, c(0, 0), eps = 1e-14, maxit = 100L)
+    # Fisher scoring converges linearly for the non-canonical probit link
+    expect_equal(b, unname(g$coefficients), tolerance = 1e-8)
+  }
+})

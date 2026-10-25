@@ -105,8 +105,9 @@ individuals: the first splits them by the quantiles of their mean
 outcome, the others are random. The E step computes the posterior class
 probabilities `tau_ic` of each individual from the whole history
 `y_i1, ..., y_iT`; the M step fits one weighted GLM per class (weights
-`tau_ic` repeated over the individual's observations; NB2 by iteratively
-reweighted least squares and a Newton step for `theta`) and the class
+`tau_ic` repeated over the individual's observations, iteratively
+reweighted least squares warm-started at the previous iteration's
+coefficients; NB2 by IRLS and a Newton step for `theta`) and the class
 probabilities (sample means of `tau_ic`, or a weighted multinomial logit
 on the concomitant variables). The run with the largest log-likelihood is
 then polished by BFGS and Newton steps on the observed-data
