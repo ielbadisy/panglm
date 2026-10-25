@@ -150,6 +150,11 @@ panglm <- function(formula, data, index,
          "(blow-up and cluster); use model = 'random' with cre = TRUE for the probit",
          call. = FALSE)
   }
+  if (family$family == "binomial" && model == "within" && family$link != "logit") {
+    stop("the fixed-effects binomial model is the conditional logit; there is no ",
+         "consistent fixed-effects probit, use model = 'random' with cre = TRUE",
+         call. = FALSE)
+  }
   if (family$family == "beta" && model == "within") {
     stop("there is no fixed-effects beta regression; use model = 'random' with ",
          "cre = TRUE", call. = FALSE)

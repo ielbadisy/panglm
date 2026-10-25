@@ -124,5 +124,5 @@ test_that("effect = 'twoways' is still rejected for unsupported binomial models"
   expect_error(panglm(smoking ~ price, d, c("id", "wave"), model = "pooling",
                       family = "binomial", effect = "twoways"), "only implemented")
   expect_error(panglm(smoking ~ price, d, c("id", "wave"), model = "within",
-                      family = "probit", effect = "twoways"), "logit link")
+                      family = "probit", effect = "twoways"), "conditional logit")
 })

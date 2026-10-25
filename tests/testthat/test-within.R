@@ -85,3 +85,9 @@ test_that("within binomial drops all-0/all-1 groups and messages about it", {
     "no within-group outcome variation"
   )
 })
+
+test_that("fixed-effects probit is rejected instead of fitting a logit", {
+  data(copd)
+  expect_error(panglm(hospitalized ~ crp, data = copd, index = c("id", "visit"),
+                      model = "within", family = "probit"), "conditional logit")
+})
