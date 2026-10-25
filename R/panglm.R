@@ -84,10 +84,13 @@
 #'   parameterized), the model of `lme4::lmer(y ~ x + (1 + time | id))`.
 #'   The slope variables usually also appear in `formula` (their average
 #'   slope). Available for `family = "gaussian"` (exact maximum likelihood,
-#'   any number of slopes), `"poisson"` and `"binomial"` (logit or probit,
-#'   any number of slopes, adaptive Gauss-Hermite product quadrature with
+#'   any number of slopes), and for `"poisson"`, `"negbin"` (NB2, the
+#'   model of `glmmTMB::nbinom2()`, with `theta` stored as `negbin_theta`),
+#'   `"gamma"` (log link, the model of `glmmTMB` with `Gamma(link = "log")`,
+#'   shape stored as `shape`) and `"binomial"` (logit or probit), with any
+#'   number of slopes, by adaptive Gauss-Hermite product quadrature with
 #'   `R` nodes per dimension, `R^q` nodes for `q` random effects; `R = 1`
-#'   is the Laplace approximation of `lme4::glmer()`). With random slopes the Poisson model has a normal
+#'   is the Laplace approximation of `lme4::glmer()` and `glmmTMB`. With random slopes the Poisson model has a normal
 #'   (lognormal) random effect, not the gamma mixing of the
 #'   random-intercept Poisson model. The fit stores `varcomp` (the
 #'   covariance matrix `Sigma`), `ranef` (posterior modes, the BLUPs in
@@ -181,9 +184,9 @@ panglm <- function(formula, data, index,
     if (model != "random") {
       stop("'random' with slope variables applies to model = 'random'", call. = FALSE)
     }
-    if (!family$family %in% c("gaussian", "poisson", "binomial")) {
-      stop("random slopes are available for family = 'gaussian', 'poisson' and ",
-           "'binomial' only", call. = FALSE)
+    if (!family$family %in% c("gaussian", "poisson", "negbin", "gamma", "binomial")) {
+      stop("random slopes are available for family = 'gaussian', 'poisson', 'negbin', ",
+           "'gamma' and 'binomial' only", call. = FALSE)
     }
     if (!is.null(weights)) {
       stop("observation weights are not supported with random slopes", call. = FALSE)

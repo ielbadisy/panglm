@@ -42,6 +42,7 @@ summary.panglm <- function(object, ...) {
               dispersion = object$dispersion, iterations = object$iterations,
               vcov_type = object$vcov_type,
               sigma = if (is.null(object$varcomp)) object$sigma, shape = object$shape,
+              negbin_theta = object$negbin_theta,
               varcomp = object$varcomp,
               weighted = !is.null(object$weights), cre_test = cre_wald_test(object))
   class(out) <- "summary.panglm"
@@ -77,6 +78,9 @@ print.summary.panglm <- function(x, digits = max(3, getOption("digits") - 3), ..
     }
   }
   if (!is.null(x$shape)) cat("Gamma shape:", format(x$shape, digits = digits), "\n")
+  if (!is.null(x$negbin_theta)) {
+    cat("Negative binomial theta (NB2):", format(x$negbin_theta, digits = digits), "\n")
+  }
   if (isTRUE(x$weighted)) cat("Observation weights: yes (weighted pseudo-likelihood)\n")
   if (!is.null(x$cre_test)) {
     cat("Mundlak test (individual means jointly zero): chi2(", x$cre_test$df, ") = ",

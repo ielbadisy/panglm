@@ -112,6 +112,45 @@ test_that("GLM random slopes with two slopes match glmmTMB (Laplace)", {
   expect_equal(attr(logLik(f), "df"), 10)
 })
 
+test_that("negative binomial and gamma random slopes match glmmTMB (Laplace)", {
+  skip_on_cran()
+  skip_if_missing("glmmTMB")
+  set.seed(7)
+  G <- 120; T <- 6
+  d <- data.frame(id = rep(seq_len(G), each = T), time = rep(0:(T - 1), G))
+  d$x <- stats::rnorm(G * T)
+  b <- matrix(stats::rnorm(G * 2), G) %*% t(matrix(c(0.6, 0, -0.1, 0.2), 2, 2, byrow = TRUE))
+  mu <- exp(0.5 + 0.1 * d$time + 0.4 * d$x + b[d$id, 1] + b[d$id, 2] * d$time)
+  d$yn <- stats::rnbinom(G * T, mu = mu, size = 2)
+  d$yg <- stats::rgamma(G * T, shape = 3, rate = 3 / mu)
+  fits <- list(
+    negbin = list(y = "yn", family = glmmTMB::nbinom2(), disp = function(f, s) c(f$negbin_theta, s)),
+    gamma = list(y = "yg", family = stats::Gamma(link = "log"),
+                 disp = function(f, s) c(f$shape, 1 / s^2)))
+  for (nm in names(fits)) {
+    sp <- fits[[nm]]
+    fm <- stats::as.formula(paste(sp$y, "~ time + x"))
+    f <- panglm(fm, data = d, index = c("id", "time"), model = "random", family = nm,
+                random = ~ time, R = 1)
+    tm <- glmmTMB::glmmTMB(stats::update(fm, . ~ . + (1 + time | id)), data = d,
+                           family = sp$family)
+    expect_equal(unname(coef(f)), unname(glmmTMB::fixef(tm)$cond), tolerance = 1e-4)
+    expect_equal(unname(sqrt(diag(vcov(f)))), unname(sqrt(diag(vcov(tm)$cond))),
+                 tolerance = 1e-4)
+    expect_equal(as.numeric(logLik(f)), as.numeric(logLik(tm)), tolerance = 1e-6)
+    expect_equal(attr(logLik(f), "df"), attr(logLik(tm), "df"))
+    expect_equal(unname(f$varcomp), unname(glmmTMB::VarCorr(tm)$cond$id[, ]),
+                 tolerance = 1e-3)
+    dd <- sp$disp(f, stats::sigma(tm))
+    expect_equal(dd[1], dd[2], tolerance = 1e-4)
+    Z <- cbind(1, d$time)
+    m <- exp(predict(f, type = "link") + rowSums((Z %*% f$varcomp) * Z) / 2)
+    expect_equal(fitted(f), m)
+    expect_equal(partialeffects(f, "x")$estimate, mean(coef(f)[["x"]] * m), tolerance = 1e-7)
+  }
+  expect_output(print(summary(f)), "Gamma shape")
+})
+
 test_that("a GLM slope variance at the boundary keeps finite standard errors", {
   skip_on_cran()
   skip_if_missing("glmmTMB")
@@ -207,7 +246,8 @@ test_that("random slopes give clear errors outside their scope", {
                "one-sided")
   expect_error(panglm(y ~ x, data = d, index = idx, model = "random", random = ~ 0 + time),
                "intercept")
-  expect_error(panglm(yc ~ x, data = d, index = idx, model = "random", family = "negbin",
+  d$yo <- stats::plogis(d$x + stats::rnorm(nrow(d)))
+  expect_error(panglm(yo ~ x, data = d, index = idx, model = "random", family = "beta",
                       random = ~ time), "random slopes are available")
   expect_error(panglm(y ~ x, data = d, index = idx, model = "random", random = ~ time,
                       weights = rep(2, nrow(d))), "weights")

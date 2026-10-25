@@ -60,7 +60,8 @@ fit_random_slopes <- function(X, y, Z, family, group_size, R, maxit, tol) {
     fit_slopes_glm(X, y, Z, group, family, R, maxit, tol)
   }
   r <- ncol(Z)
-  out$npar <- ncol(X) + r * (r + 1L) / 2L + as.integer(family$family == "gaussian")
+  out$npar <- ncol(X) + r * (r + 1L) / 2L +
+    as.integer(family$family %in% c("gaussian", "negbin", "gamma"))
   out
 }
 
@@ -198,25 +199,65 @@ robust_vcov_slopes <- function(object, cluster) {
 
 # ----------------------------------------------------- Poisson and binomial
 
-#' Observation log-density and its first two eta-derivatives
+#' Observation log-density and its eta-derivatives
 #'
-#' Returns `ll`, `d1` and `w = -d2` (nonnegative, the observed information).
+#' Returns a function of `eta` (a vector or a matrix of columns of `eta`)
+#' and of `alpha`, the log of the dispersion parameter of the negative
+#' binomial (NB2 `theta`) and gamma (`shape`) families. With `deriv = 0`
+#' it returns the log density `ll`; with `deriv = 1` also `d1` (its
+#' derivative in eta), `w = -d2` (nonnegative, the observed information)
+#' and `w1 = dw / deta`; with `deriv = 2` also the derivatives of `ll`,
+#' `d1` and `w` in `alpha` (`da_ll`, `da_d1`, `da_w`).
 #'
 #' @keywords internal
 #' @noRd
 slopes_obs_terms <- function(family, y) {
-  # ll: log density; d1: its derivative in eta; w = -d2; w1 = dw / deta
   if (family$family == "poisson") {
     lfy <- lgamma(y + 1)
-    return(function(eta, deriv = TRUE) {
+    return(function(eta, deriv = 1L, alpha = NULL) {
       mu <- exp(eta)
-      if (!deriv) return(y * eta - mu - lfy)
-      list(ll = y * eta - mu - lfy, d1 = y - mu, w = mu, w1 = mu)
+      ll <- y * eta - mu - lfy
+      if (!deriv) return(ll)
+      list(ll = ll, d1 = y - mu, w = mu, w1 = mu)
+    })
+  }
+  if (family$family == "negbin") {
+    lfy <- lgamma(y + 1)
+    return(function(eta, deriv = 1L, alpha) {
+      th <- exp(alpha)
+      mu <- exp(eta)
+      tm <- th + mu
+      ll <- lgamma(y + th) - lgamma(th) - lfy + th * alpha + y * eta - (y + th) * log(tm)
+      if (!deriv) return(ll)
+      w <- th * mu * (th + y) / tm^2
+      out <- list(ll = ll, d1 = th * (y - mu) / tm, w = w, w1 = w * (th - mu) / tm)
+      if (deriv >= 2L) {
+        out$da_ll <- th * (digamma(y + th) - digamma(th) + alpha + 1 - log(tm) - (y + th) / tm)
+        out$da_d1 <- th * (y - mu) * mu / tm^2
+        out$da_w <- th * mu * (2 * th * mu + y * mu - th * y) / tm^3
+      }
+      out
+    })
+  }
+  if (family$family == "gamma") {
+    ly <- log(y)
+    return(function(eta, deriv = 1L, alpha) {
+      nu <- exp(alpha)
+      r <- y * exp(-eta)
+      ll <- nu * alpha - lgamma(nu) + (nu - 1) * ly - nu * eta - nu * r
+      if (!deriv) return(ll)
+      out <- list(ll = ll, d1 = nu * (r - 1), w = nu * r, w1 = -nu * r)
+      if (deriv >= 2L) {
+        out$da_ll <- nu * (alpha + 1 - digamma(nu) + ly - eta - r)
+        out$da_d1 <- out$d1
+        out$da_w <- out$w
+      }
+      out
     })
   }
   s <- 2 * y - 1
   if (family$link == "logit") {
-    return(function(eta, deriv = TRUE) {
+    return(function(eta, deriv = 1L, alpha = NULL) {
       ll <- stats::plogis(s * eta, log.p = TRUE)
       if (!deriv) return(ll)
       p <- stats::plogis(eta)
@@ -224,7 +265,7 @@ slopes_obs_terms <- function(family, y) {
       list(ll = ll, d1 = y - p, w = w, w1 = w * (1 - 2 * p))
     })
   }
-  function(eta, deriv = TRUE) {
+  function(eta, deriv = 1L, alpha = NULL) {
     se <- s * eta
     ll <- stats::pnorm(se, log.p = TRUE)
     if (!deriv) return(ll)
@@ -361,7 +402,8 @@ slopes_lfactor <- function(par, q) {
 #' @noRd
 slopes_glm_contrib <- function(family, X, y, Z, group, R) {
   k <- ncol(X); G <- max(group); q <- ncol(Z)
-  obs <- slopes_obs_terms(family, y)
+  obs_alpha <- slopes_obs_terms(family, y)
+  has_alpha <- family$family %in% c("negbin", "gamma")
   gh <- gauss_hermite_quadrature(R)
   grid <- as.matrix(expand.grid(rep(list(seq_len(R)), q)))
   zn <- matrix(gh$nodes[grid], ncol = q)
@@ -379,12 +421,15 @@ slopes_glm_contrib <- function(family, X, y, Z, group, R) {
     beta <- theta[seq_len(k)]
     L <- slopes_lfactor(theta[k + seq_len(nrow(vi))], q)
     if (any(!is.finite(L))) return(fail(length(theta)))
+    alpha <- if (has_alpha) theta[length(theta)]
+    if (has_alpha && (!is.finite(alpha) || abs(alpha) > 30)) return(fail(length(theta)))
+    obs <- function(eta, deriv = 1L) obs_alpha(eta, deriv, alpha)
     Zt <- Z %*% L
     ZZ <- Zt[, pairs$row, drop = FALSE] * Zt[, pairs$col, drop = FALSE]
     eta0 <- as.numeric(X %*% beta)
     lin <- function(u) eta0 + rowSums(Zt * u[group, , drop = FALSE])
     hfun <- function(u) {
-      as.numeric(rs(obs(lin(u), deriv = FALSE))) - 0.5 * rowSums(u^2) - half_log_2pi
+      as.numeric(rs(obs(lin(u), deriv = 0L))) - 0.5 * rowSums(u^2) - half_log_2pi
     }
     curvature <- function(w) {
       S <- rs(w * ZZ)
@@ -432,7 +477,7 @@ slopes_glm_contrib <- function(family, X, y, Z, group, R) {
     if (is.null(u)) return(fail(length(theta)))
     state$modes <- u
     # C C' = H^{-1} at the mode; nodes u + sqrt(2) C z_k
-    o <- obs(lin(u))
+    o <- obs(lin(u), if (score && has_alpha) 2L else 1L)
     P <- bspdinv(curvature(o$w))
     C <- bchol(P)
     log_det_C <- 0
@@ -444,7 +489,7 @@ slopes_glm_contrib <- function(family, X, y, Z, group, R) {
     })
     eta <- matrix(eta0, length(eta0), K)
     for (a in seq_len(q)) eta <- eta + Zt[, a] * U[[a]][group, , drop = FALSE]
-    on <- obs(eta, deriv = score)
+    on <- obs(eta, if (!score) 0L else if (has_alpha) 2L else 1L)
     terms <- rs(if (score) on$ll else on) - half_log_2pi +
       matrix(log_wk, G, K, byrow = TRUE)
     for (a in seq_len(q)) terms <- terms - 0.5 * U[[a]]^2
@@ -452,7 +497,7 @@ slopes_glm_contrib <- function(family, X, y, Z, group, R) {
     ll <- half_log_2pi + log_det_C + lse
     if (!score) return(list(ll = ll))
     list(ll = ll, score = slopes_glm_score(X, Z, Zt, group, u, P, C, U, zn,
-                                           exp(terms - lse), on$d1, o, vi))
+                                           exp(terms - lse), on, o, vi, has_alpha))
   }
 }
 
@@ -463,15 +508,17 @@ slopes_glm_contrib <- function(family, X, y, Z, group, R) {
 #' with the mode `u` (implicit function theorem: `du = H^{-1} g`) and with
 #' the Cholesky factor `C` of `H^{-1}` (`dC = -C Phi(C' dH C)`, `Phi` the
 #' lower triangle with half the diagonal). `pk` holds the normalised node
-#' weights of each individual, `d1` the derivatives of the log density at
-#' the nodes and `o` the observation terms at the mode.
+#' weights of each individual, `on` the observation terms at the nodes and
+#' `o` those at the mode. With `has_alpha` the last parameter is the log
+#' dispersion parameter, which enters the log density only.
 #'
 #' @keywords internal
 #' @noRd
-slopes_glm_score <- function(X, Z, Zt, group, u, P, C, U, zn, pk, d1, o, vi) {
+slopes_glm_score <- function(X, Z, Zt, group, u, P, C, U, zn, pk, on, o, vi,
+                             has_alpha = FALSE) {
   k <- ncol(X); q <- ncol(Z); G <- nrow(u)
   rs <- function(v) rowsum(v, group, reorder = FALSE)
-  E1 <- pk[group, , drop = FALSE] * d1
+  E1 <- pk[group, , drop = FALSE] * on$d1
   e1 <- rowSums(E1)
   EU <- vapply(U, function(Ua) rowSums(pk * Ua), numeric(G))
   if (G == 1L) EU <- matrix(EU, 1L)
@@ -484,9 +531,19 @@ slopes_glm_score <- function(X, Z, Zt, group, u, P, C, U, zn, pk, d1, o, vi) {
     for (c in seq_len(q)) M[, m, c] <- rs(Zt[, m] * Ez[, c]) - PU[, c]
   }
   W <- o$w; W1 <- o$w1
-  p <- k + nrow(vi)
+  p <- k + nrow(vi) + has_alpha
   out <- matrix(0, G, p)
-  for (j in seq_len(p)) {
+  ZZ <- Zt[, rep(seq_len(q), q), drop = FALSE] * Zt[, rep(seq_len(q), each = q), drop = FALSE]
+  # derivatives of the mode (du), of the curvature (dH) and the expected
+  # direct derivative of h for parameter j
+  pieces <- function(j) {
+    if (j > k + nrow(vi)) {
+      # the log dispersion: no direct effect on eta
+      du <- bmatvec(P, rs(o$da_d1 * Zt))
+      deta <- rowSums(Zt * du[group, , drop = FALSE])
+      return(list(du = du, dH = array(rs((W1 * deta + o$da_w) * ZZ), c(G, q, q)),
+                  Edirect = rs(rowSums(pk[group, , drop = FALSE] * on$da_ll))))
+    }
     if (j <= k) {
       direct <- X[, j]
       Edirect <- rs(e1 * direct)
@@ -499,10 +556,7 @@ slopes_glm_score <- function(X, Z, Zt, group, u, P, C, U, zn, pk, d1, o, vi) {
     if (j > k) g[, cc] <- g[, cc] + rs(o$d1 * Z[, a])
     du <- bmatvec(P, g)
     deta <- direct + rowSums(Zt * du[group, , drop = FALSE])
-    dH <- array(0, c(G, q, q))
-    S <- rs((W1 * deta) * Zt[, rep(seq_len(q), q), drop = FALSE] *
-              Zt[, rep(seq_len(q), each = q), drop = FALSE])
-    dH[] <- S
+    dH <- array(rs((W1 * deta) * ZZ), c(G, q, q))
     if (j > k) {
       v <- rs(W * Z[, a] * Zt)
       for (m in seq_len(q)) {
@@ -510,6 +564,11 @@ slopes_glm_score <- function(X, Z, Zt, group, u, P, C, U, zn, pk, d1, o, vi) {
         dH[, cc, m] <- dH[, cc, m] + v[, m]
       }
     }
+    list(du = du, dH = dH, Edirect = Edirect)
+  }
+  for (j in seq_len(p)) {
+    pj <- pieces(j)
+    du <- pj$du; dH <- pj$dH
     dlogC <- 0
     for (m in seq_len(q)) for (c in seq_len(q)) dlogC <- dlogC - 0.5 * P[, m, c] * dH[, c, m]
     Phi <- bmatmul(C, bmatmul(dH, C), tA = TRUE)
@@ -518,7 +577,7 @@ slopes_glm_score <- function(X, Z, Zt, group, u, P, C, U, zn, pk, d1, o, vi) {
       for (c in seq_len(q)) if (c > m) Phi[, m, c] <- 0
     }
     dC <- -bmatmul(C, Phi)
-    out[, j] <- dlogC + Edirect + rowSums(Egrad * du) + sqrt(2) * rowSums(M * dC, dims = 1L)
+    out[, j] <- dlogC + pj$Edirect + rowSums(Egrad * du) + sqrt(2) * rowSums(M * dC, dims = 1L)
   }
   out
 }
@@ -547,24 +606,33 @@ slopes_nodes <- function(R, q) {
 }
 
 fit_slopes_glm <- function(X, y, Z, group, family, R, maxit, tol) {
-  if (!family$family %in% c("poisson", "binomial")) {
-    stop("random slopes are available for family = 'gaussian', 'poisson' and 'binomial' ",
-         "(logit or probit) only", call. = FALSE)
+  if (!family$family %in% c("poisson", "binomial", "negbin", "gamma")) {
+    stop("random slopes are available for family = 'gaussian', 'poisson', 'negbin', ",
+         "'gamma' and 'binomial' (logit or probit) only", call. = FALSE)
   }
   if (family$family == "binomial" && any(!y %in% c(0, 1))) {
     stop("random slopes for family = 'binomial' need a 0/1 response", call. = FALSE)
   }
   k <- ncol(X); G <- max(group); q <- ncol(Z)
   R <- slopes_nodes(R, q)
-  fam_id <- if (family$family == "poisson") 1L else 2L
-  link_id <- if (fam_id == 2L) family$link_id else 1L
-  b0 <- as.numeric(irls_fit_cpp(X, y, fam_id, link_id, maxit, tol)$coefficients)
+  alpha0 <- NULL
+  if (family$family == "negbin") {
+    pooled <- negbin_irls_fit_cpp(X, y, maxit, tol, NULL)
+    b0 <- as.numeric(pooled$coefficients)
+    alpha0 <- log(pooled$theta)
+  } else {
+    fam_id <- switch(family$family, poisson = 1L, binomial = 2L, gamma = 3L)
+    link_id <- if (fam_id == 2L) family$link_id else 1L
+    pooled <- irls_fit_cpp(X, y, fam_id, link_id, maxit, tol)
+    b0 <- as.numeric(pooled$coefficients)
+    if (family$family == "gamma") alpha0 <- -log(max(1e-3, pooled$dispersion))
+  }
   vi <- slopes_vech_index(q)
   sz <- vapply(seq_len(q), function(a) {
     s <- stats::sd(Z[, a]); if (is.finite(s) && s > 0) s else 1
   }, numeric(1))
   l0 <- ifelse(vi$row == vi$col, ifelse(vi$row == 1L, 0.5, 0.2 / sz[vi$row]), 0)
-  start <- c(b0, l0)
+  start <- c(b0, l0, alpha0)
   contrib <- slopes_glm_contrib(family, X, y, Z, group, R)
   res <- ml_optimize(start, contrib, rep(1, G), maxit, tol)
   # recover the modes at the optimum
@@ -582,13 +650,24 @@ fit_slopes_glm <- function(X, y, Z, group, family, R, maxit, tol) {
   varcomp <- tcrossprod(L)
   dimnames(varcomp) <- list(colnames(Z), colnames(Z))
   eta <- as.numeric(X %*% coefs)
+  dispersion <- 1
+  extra <- list()
+  if (!is.null(alpha0)) {
+    alpha <- exp(res$theta[length(res$theta)])
+    if (family$family == "negbin") {
+      extra$negbin_theta <- alpha
+    } else {
+      extra$shape <- alpha
+      dispersion <- 1 / alpha
+    }
+  }
   out <- list(coefficients = coefs, vcov = vcov, loglik = res$loglik,
               theta = res$theta, theta_vcov = theta_vcov, theta_score = res$score,
-              varcomp = varcomp, ranef = modes, dispersion = 1,
+              varcomp = varcomp, ranef = modes, dispersion = dispersion,
               quadrature_nodes = R, df.residual = length(y) - length(res$theta),
               iterations = res$iterations, convergence = res$convergence)
   out$fitted.values <- slopes_marginal_mean(family, eta, Z, varcomp)
-  out
+  c(out, extra)
 }
 
 #' Warn when the random-effects covariance is singular
@@ -637,7 +716,7 @@ slopes_marginal_mean <- function(family, eta, Z, varcomp, nodes = 21L) {
   s2 <- as.numeric(rowSums((Z %*% varcomp) * Z))
   switch(family$family,
     gaussian = eta,
-    poisson = exp(eta + s2 / 2),
+    poisson = , negbin = , gamma = exp(eta + s2 / 2),
     binomial = {
       gh <- gauss_hermite_quadrature(nodes)
       shifts <- sqrt(2) * outer(sqrt(s2), gh$nodes)

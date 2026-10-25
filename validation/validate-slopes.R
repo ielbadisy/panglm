@@ -8,7 +8,9 @@
 # brute-force dense grid, and population-averaged partial effects by hand.
 # Two slopes (a three-dimensional random effect): Laplace vs glmmTMB and
 # adaptive quadrature (R = 7, 343 nodes) vs GLMMadaptive. A singular
-# (boundary) GLM fit: finite standard errors vs glmmTMB.
+# (boundary) GLM fit: finite standard errors vs glmmTMB. Negative binomial
+# (NB2) and gamma (log link) with lognormal random effects vs glmmTMB
+# (Laplace) and, for NB2, GLMMadaptive (R = 7).
 source("validation/common.R")
 suppressPackageStartupMessages({
   library(lme4); library(glmmTMB); library(GLMMadaptive); library(nlme); library(clubSandwich)
@@ -323,4 +325,65 @@ b1 <- rbind(
            list(glmmTMB = as.numeric(logLik(tm4)), lme4 = as.numeric(logLik(gm4))), 1e-5)
 )
 
-vsave(g1, g2, g3, g4, g5, l1, l2, l3, a1, a2, q1, p1, m1, m2, m3, b1, name = "slopes")
+# ---- negative binomial (NB2) and gamma (log link) with a random slope
+# Lognormal (normal on the log scale) random effects, as glmmTMB's nbinom2
+# and Gamma(link = "log"): NB2 theta is glmmTMB's sigma, and the gamma
+# shape is 1 / sigma^2 (glmmTMB's sigma is the coefficient of variation).
+set.seed(7)
+G5 <- 200; T5 <- 6
+d5 <- data.frame(id = rep(seq_len(G5), each = T5), time = rep(0:(T5 - 1), G5))
+d5$x <- rnorm(G5 * T5)
+b5 <- matrix(rnorm(G5 * 2), G5) %*% t(matrix(c(0.6, 0, -0.1, 0.2), 2, 2, byrow = TRUE))
+mu5 <- exp(0.5 + 0.1 * d5$time + 0.4 * d5$x + b5[d5$id, 1] + b5[d5$id, 2] * d5$time)
+d5$yn <- rnbinom(G5 * T5, mu = mu5, size = 2)
+d5$yg <- rgamma(G5 * T5, shape = 3, rate = 3 / mu5)
+
+disp_block <- function(y, family, tmb_family, label, disp, tmb_disp) {
+  fm <- stats::as.formula(paste(y, "~ time + x"))
+  f <- panglm(fm, data = d5, index = idx, model = "random", family = family,
+              random = ~ time, R = 1)
+  tm <- glmmTMB(stats::update(fm, . ~ . + (1 + time | id)), data = d5, family = tmb_family)
+  rbind(
+    vcompare("slopes Laplace", label, "coef", coef(f), list(glmmTMB = fixef(tm)$cond), 1e-4),
+    vcompare("slopes Laplace", label, "se", sqrt(diag(vcov(f))),
+             list(glmmTMB = sqrt(diag(vcov(tm)$cond))), 1e-4),
+    vcompare("slopes Laplace", label, "varcomp (vech Sigma)", vech(f$varcomp),
+             list(glmmTMB = tmb_vech(tm)), 1e-4),
+    vcompare("slopes Laplace", label, "dispersion parameter", c(disp = disp(f)),
+             list(glmmTMB = tmb_disp(sigma(tm))), 1e-4),
+    vcompare("slopes Laplace", label, "loglik", c(loglik = f$loglik),
+             list(glmmTMB = as.numeric(logLik(tm))), 1e-6),
+    vcompare("slopes Laplace", label, "ranef (modes)", c(f$ranef),
+             list(glmmTMB = c(as.matrix(ranef(tm)$cond$id))), 1e-3)
+  )
+}
+n1 <- disp_block("yn", "negbin", nbinom2(), "sim NB2", function(f) f$negbin_theta,
+                 function(s) s)
+n2 <- disp_block("yg", "gamma", Gamma(link = "log"), "sim gamma", function(f) f$shape,
+                 function(s) 1 / s^2)
+
+# NB2 adaptive quadrature (R = 7) vs GLMMadaptive (its negative.binomial()
+# is NB2 with phi = theta); GLMMadaptive's Gamma.fam() fails to start here
+tm5 <- glmmTMB(yn ~ time + x + (1 + time | id), data = d5, family = nbinom2())
+fn7 <- panglm(yn ~ time + x, data = d5, index = idx, model = "random", family = "negbin",
+              random = ~ time, R = 7)
+gan <- mixed_model(yn ~ time + x, random = ~ time | id, data = d5,
+                   family = negative.binomial(), nAGQ = 7,
+                   initial_values = list(betas = fixef(tm5)$cond,
+                                         D = unname(VarCorr(tm5)$cond$id[, ])),
+                   control = list(iter_EM = 0, update_GH_every = 1,
+                                  tol1 = 1e-10, tol2 = 1e-10, tol3 = 1e-12))
+n3 <- rbind(
+  vcompare("slopes AGHQ R = 7", "sim NB2", "coef", coef(fn7), list(GLMMadaptive = fixef(gan)), 1e-4),
+  vcompare("slopes AGHQ R = 7", "sim NB2", "se", sqrt(diag(vcov(fn7))),
+           list(GLMMadaptive = sqrt(diag(vcov(gan)))[1:3]), 1e-4),
+  vcompare("slopes AGHQ R = 7", "sim NB2", "varcomp (vech Sigma)", vech(fn7$varcomp),
+           list(GLMMadaptive = vech(gan$D)), 1e-4),
+  vcompare("slopes AGHQ R = 7", "sim NB2", "dispersion parameter", c(theta = fn7$negbin_theta),
+           list(GLMMadaptive = exp(gan$phis)), 1e-4),
+  vcompare("slopes AGHQ R = 7", "sim NB2", "loglik", c(loglik = fn7$loglik),
+           list(GLMMadaptive = as.numeric(logLik(gan))), 1e-6)
+)
+
+vsave(g1, g2, g3, g4, g5, l1, l2, l3, a1, a2, q1, p1, m1, m2, m3, b1, n1, n2, n3,
+      name = "slopes")
