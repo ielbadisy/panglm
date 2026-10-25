@@ -520,7 +520,7 @@ nobs.panqr <- function(object, ...) object$nobs
 confint.panqr <- function(object, parm, level = 0.95, tau = NULL, ...) {
   if (missing(parm)) parm <- rownames(object$coefficients)
   one <- function(j) {
-    cf <- object$coefficients[, j]
+    cf <- stats::setNames(object$coefficients[, j], rownames(object$coefficients))
     se <- sqrt(diag(object$vcov[[j]]))[parm]
     crit <- stats::qnorm(1 - (1 - level) / 2)
     out <- cbind(cf[parm] - crit * se, cf[parm] + crit * se)
@@ -574,7 +574,8 @@ summary.panqr <- function(object, ...) {
           `Pr(>|z|)` = 2 * stats::pnorm(-abs(z)))
   }
   tables <- lapply(seq_along(object$tau), function(j)
-    tab(object$coefficients[, j], object$vcov[[j]]))
+    tab(stats::setNames(object$coefficients[, j], rownames(object$coefficients)),
+        object$vcov[[j]]))
   names(tables) <- colnames(object$coefficients)
   out <- list(call = object$call, label = qr_label(object), coefficients = tables,
               model = object$model, tau = object$tau, nobs = object$nobs,
