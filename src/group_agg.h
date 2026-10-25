@@ -3,6 +3,7 @@
 
 #include <RcppArmadillo.h>
 #include <RcppParallel.h>
+#include "threads.h"
 
 namespace panglm {
 
@@ -52,7 +53,7 @@ inline void compute_group_agg(const arma::mat& X, const arma::vec& lit,
   Rcpp::NumericMatrix lXi_r(G, k);
 
   GroupAggWorker worker(Xr, litr, group_start, group_size, Li_r, lXi_r);
-  RcppParallel::parallelFor(0, G, worker);
+  RcppParallel::parallelFor(0, G, worker, panglm::grain(G));
 
   Li.set_size(G);
   lXi.set_size(G, k);

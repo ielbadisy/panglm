@@ -125,6 +125,16 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// panglm_num_threads_cpp
+int panglm_num_threads_cpp();
+RcppExport SEXP _panglm_panglm_num_threads_cpp() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(panglm_num_threads_cpp());
+    return rcpp_result_gen;
+END_RCPP
+}
 // twoway_demean_cpp
 List twoway_demean_cpp(NumericMatrix M, IntegerVector id_code, IntegerVector time_code, int n_id, int n_time, int maxit, double tol);
 RcppExport SEXP _panglm_twoway_demean_cpp(SEXP MSEXP, SEXP id_codeSEXP, SEXP time_codeSEXP, SEXP n_idSEXP, SEXP n_timeSEXP, SEXP maxitSEXP, SEXP tolSEXP) {
@@ -214,6 +224,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_panglm_quasi_demean_cpp", (DL_FUNC) &_panglm_quasi_demean_cpp, 5},
     {"_panglm_random_negbin_fit_cpp", (DL_FUNC) &_panglm_random_negbin_fit_cpp, 6},
     {"_panglm_random_poisson_fit_cpp", (DL_FUNC) &_panglm_random_poisson_fit_cpp, 8},
+    {"_panglm_panglm_num_threads_cpp", (DL_FUNC) &_panglm_panglm_num_threads_cpp, 0},
     {"_panglm_twoway_demean_cpp", (DL_FUNC) &_panglm_twoway_demean_cpp, 7},
     {"_panglm_twoway_demean_weighted_cpp", (DL_FUNC) &_panglm_twoway_demean_weighted_cpp, 8},
     {"_panglm_conditional_logit_loglik_grad_cpp", (DL_FUNC) &_panglm_conditional_logit_loglik_grad_cpp, 5},

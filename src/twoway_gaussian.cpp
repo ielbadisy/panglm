@@ -1,5 +1,6 @@
 #include "families.h"
 #include <RcppParallel.h>
+#include "threads.h"
 using namespace Rcpp;
 using namespace RcppParallel;
 
@@ -61,7 +62,7 @@ struct DemeanApplyWorker : public Worker {
 
 void demean_by(NumericMatrix& M, const IntegerVector& code, int n_groups) {
   GroupSumWorker worker(M, code, n_groups);
-  parallelReduce(0, M.nrow(), worker);
+  parallelReduce(0, M.nrow(), worker, panglm::grain(M.nrow()));
 
   std::vector<double> means(worker.sums.size());
   std::size_t p = M.ncol();
@@ -71,7 +72,7 @@ void demean_by(NumericMatrix& M, const IntegerVector& code, int n_groups) {
   }
 
   DemeanApplyWorker applier(M, code, means);
-  parallelFor(0, M.nrow(), applier);
+  parallelFor(0, M.nrow(), applier, panglm::grain(M.nrow()));
 }
 
 // Weighted analogue: group_mean = sum(w_i * M_i) / sum(w_i). Used by the
@@ -113,7 +114,7 @@ struct GroupSumWorkerW : public Worker {
 
 void demean_by_weighted(NumericMatrix& M, const NumericVector& w, const IntegerVector& code, int n_groups) {
   GroupSumWorkerW worker(M, w, code, n_groups);
-  parallelReduce(0, M.nrow(), worker);
+  parallelReduce(0, M.nrow(), worker, panglm::grain(M.nrow()));
 
   std::vector<double> means(worker.sums.size());
   std::size_t p = M.ncol();
@@ -123,7 +124,7 @@ void demean_by_weighted(NumericMatrix& M, const NumericVector& w, const IntegerV
   }
 
   DemeanApplyWorker applier(M, code, means);
-  parallelFor(0, M.nrow(), applier);
+  parallelFor(0, M.nrow(), applier, panglm::grain(M.nrow()));
 }
 
 } // namespace

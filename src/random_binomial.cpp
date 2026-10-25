@@ -1,5 +1,6 @@
 #include "families.h"
 #include <RcppParallel.h>
+#include "threads.h"
 using namespace Rcpp;
 using namespace RcppParallel;
 using namespace panglm;
@@ -117,7 +118,7 @@ List random_binomial_loglik_grad_cpp(const arma::vec& beta, double sigma,
 
   LinkType link = link_from_int(link_id);
   GHReduceWorker worker(Xr, yr, group_start, group_size, beta, sigma, nodes, weights, link);
-  parallelReduce(0, group_start.size(), worker);
+  parallelReduce(0, group_start.size(), worker, panglm::grain(group_start.size()));
 
   return List::create(
     Named("loglik") = worker.loglik,

@@ -29,6 +29,10 @@ random_poisson_fit_cpp <- function(X, y, group_start, group_size, maxit = 100L, 
     .Call(`_panglm_random_poisson_fit_cpp`, X, y, group_start, group_size, maxit, tol, beta_start, d_start)
 }
 
+panglm_num_threads_cpp <- function() {
+    .Call(`_panglm_panglm_num_threads_cpp`)
+}
+
 twoway_demean_cpp <- function(M, id_code, time_code, n_id, n_time, maxit = 10000L, tol = 1e-10) {
     .Call(`_panglm_twoway_demean_cpp`, M, id_code, time_code, n_id, n_time, maxit, tol)
 }

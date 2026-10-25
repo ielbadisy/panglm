@@ -7,6 +7,20 @@
 \description{
 Provides generalized linear models for panel data, including pooled, fixed-effects, and random-effects estimators for continuous, binary, count, ordinal, positive (gamma), and bounded (beta) outcomes, with the fixed-effects ordered logit of Baetschmann, Staub and Winkelmann (2015) \doi{10.1111/rssa.12090} and beta regression (Ferrari and Cribari-Neto 2004) \doi{10.1080/0266476042000214501}. Also offers correlated random effects (Mundlak 1978) \doi{10.2307/1913646}, dynamic models with the Wooldridge (2005) \doi{10.1002/jae.770} initial conditions solution, observation weights, average partial effects, regression-spline curves and linearity tests, difference-in-differences and event studies, and two-part models for costs (Duan et al. 1983) \doi{10.1080/07350015.1983.10509330}, including correlated random intercepts (Van Ourti 2004) \doi{10.1002/hec.869}. Estimators and tests follow standard panel-data references, including Hausman (1978) \doi{10.2307/1913827}, Chamberlain (1980) \doi{10.2307/2297110}, Allison and Waterman (2002) \doi{10.1111/1467-9531.00117}, and Croissant and Millo (2008) \doi{10.18637/jss.v027.i02}. Core numerical routines are implemented using 'Rcpp', 'RcppArmadillo', and 'RcppParallel'.
 }
+\section{Threads}{
+
+The within and random-effects estimators for Gaussian, binomial and
+Poisson models compute per-group quantities in parallel with
+RcppParallel. By default they use all available cores. Set
+\code{options(panglm.threads = k)} to use at most \code{k} threads; the
+environment variable \code{RCPP_PARALLEL_NUM_THREADS} is also honoured. When
+\code{OMP_THREAD_LIMIT} is set, it caps the number of threads, and under
+\verb{R CMD check} (when \verb{_R_CHECK_LIMIT_CORES_} is set) at most 2 threads
+are used. Matrix algebra done in R goes through the BLAS library R is
+linked to, whose threads are controlled outside panglm (for example with
+\code{OMP_NUM_THREADS}, \code{OPENBLAS_NUM_THREADS} or \code{MKL_NUM_THREADS}).
+}
+
 \seealso{
 Useful links:
 \itemize{

@@ -1,5 +1,6 @@
 #include "families.h"
 #include <RcppParallel.h>
+#include "threads.h"
 using namespace Rcpp;
 using namespace RcppParallel;
 
@@ -50,7 +51,7 @@ List within_demean_cpp(NumericMatrix X, NumericVector y,
   NumericVector yd(n);
 
   DemeanWorker worker(X, y, group_start, group_size, Xd, yd);
-  parallelFor(0, group_start.size(), worker);
+  parallelFor(0, group_start.size(), worker, panglm::grain(group_start.size()));
 
   return List::create(Named("X") = Xd, Named("y") = yd);
 }

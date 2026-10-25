@@ -1,5 +1,6 @@
 #include <RcppArmadillo.h>
 #include <RcppParallel.h>
+#include "threads.h"
 using namespace Rcpp;
 using namespace RcppParallel;
 
@@ -134,7 +135,7 @@ List conditional_logit_loglik_grad_cpp(const arma::vec& beta, const arma::mat& X
   NumericVector yr(y.begin(), y.end());
 
   ConditionalLogitWorker worker(Xr, eta, yr, group_start, group_size);
-  parallelReduce(0, group_start.size(), worker);
+  parallelReduce(0, group_start.size(), worker, panglm::grain(group_start.size()));
 
   return List::create(
     Named("loglik") = worker.ll,

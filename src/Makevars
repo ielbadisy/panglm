@@ -3,6 +3,9 @@ CXX_STD = CXX17
 # libraries bundled with this RcppParallel build are ABI-incompatible with
 # its own RcppParallel.so (missing tbb::task::note_affinity), so linking
 # against them fails at load time. tinythread avoids that dependency.
+# OpenMP is not used: the code has no OpenMP regions of its own, and
+# enabling it only made Armadillo start extra threads in elementwise
+# operations, against CRAN's limit on CPU time per elapsed time.
+# The number of RcppParallel threads is capped in src/threads.h.
 PKG_CPPFLAGS = -DRCPP_PARALLEL_USE_TBB=0
-PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS)
-PKG_LIBS = $(SHLIB_OPENMP_CXXFLAGS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+PKG_LIBS = $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)

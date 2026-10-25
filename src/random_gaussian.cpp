@@ -1,5 +1,6 @@
 #include "families.h"
 #include <RcppParallel.h>
+#include "threads.h"
 using namespace Rcpp;
 using namespace RcppParallel;
 
@@ -85,7 +86,7 @@ List group_means_cpp(NumericMatrix X, NumericVector y,
   NumericMatrix Xbar(G, k);
   NumericVector ybar(G);
   GroupMeanWorker worker(X, y, group_start, group_size, Xbar, ybar);
-  parallelFor(0, G, worker);
+  parallelFor(0, G, worker, panglm::grain(G));
   return List::create(Named("Xbar") = Xbar, Named("ybar") = ybar);
 }
 
@@ -97,6 +98,6 @@ List quasi_demean_cpp(NumericMatrix X, NumericVector y,
   NumericMatrix Xq(n, k);
   NumericVector yq(n);
   QuasiDemeanWorker worker(X, y, group_start, group_size, theta, Xq, yq);
-  parallelFor(0, group_start.size(), worker);
+  parallelFor(0, group_start.size(), worker, panglm::grain(group_start.size()));
   return List::create(Named("X") = Xq, Named("y") = yq);
 }
