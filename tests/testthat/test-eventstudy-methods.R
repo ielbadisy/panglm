@@ -1,0 +1,52 @@
+test_that("vcov, nobs and confint of an event study agree with the fit", {
+  es <- methods_fit("eventstudy")
+  b <- coef(es)
+  V <- vcov(es)
+  expect_equal(dim(V), c(length(b), length(b)))
+  expect_equal(rownames(V), names(b))
+  expect_equal(unname(sqrt(diag(V))), es$estimates$se)
+  ref <- names(b) == as.character(es$ref)
+  expect_true(all(V[ref, ] == 0) && all(V[, ref] == 0))
+  V0 <- vcov(es$fit)
+  expect_equal(unname(V["-3", "2"]), unname(V0["event_lead3", "event_lag2"]))
+  expect_equal(unname(V["0", "1"]), unname(V0["event_lag0", "event_lag1"]))
+  expect_equal(nobs(es), es$fit$nobs)
+
+  ci <- confint(es)
+  expect_equal(unname(ci[, 1]), es$estimates$lower)
+  expect_equal(unname(ci[, 2]), es$estimates$upper)
+  expect_equal(unname(ci[ref, ]), c(0, 0))
+  ci90 <- confint(es, level = 0.9)
+  expect_equal(unname(ci90[, 2] - ci90[, 1]), 2 * qnorm(0.95) * es$estimates$se)
+  expect_equal(confint(es, parm = c(0, 1)), ci[c("0", "1"), ])
+  expect_equal(confint(es, parm = "-2"), ci["-2", , drop = FALSE])
+  expect_error(confint(es, parm = "7"), "event times")
+})
+
+test_that("summary of an event study has a Wald coefficient table", {
+  es <- methods_fit("eventstudy")
+  s <- summary(es)
+  expect_s3_class(s, "summary.panglm_eventstudy")
+  tab <- s$coefficients
+  expect_equal(unname(tab[, "Estimate"]), es$estimates$estimate)
+  expect_equal(unname(tab[, "Std. Error"]), es$estimates$se)
+  ok <- es$estimates$se > 0
+  expect_equal(unname(tab[ok, "z value"]), es$estimates$estimate[ok] / es$estimates$se[ok])
+  expect_true(is.na(tab[!ok, "z value"]))
+  expect_equal(s$pretrend$statistic, es$pretrend$statistic)
+  expect_equal(s$conf.int, confint(es))
+  out <- capture.output(print(s))
+  expect_true(any(grepl("Pre-trend test", out)))
+  expect_true(any(grepl("vcov: cluster", out)))
+})
+
+test_that("event times that the data do not identify are missing", {
+  es <- suppressWarnings(eventstudy(y ~ 1, data = methods_data("did"), index = c("id", "t"),
+                   treat = "first", leads = 7, lags = 2, bin = FALSE))
+  miss <- !is.finite(es$estimates$estimate)
+  expect_true(any(miss))
+  V <- vcov(es)
+  expect_true(all(is.na(diag(V)[miss])))
+  expect_true(all(is.na(confint(es)[miss, ])))
+  expect_output(print(summary(es)), "Event-time coefficients")
+})
