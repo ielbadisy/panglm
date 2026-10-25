@@ -32,8 +32,9 @@ did_timing <- function(data, index, treat) {
 #' cohorts the TWFE coefficient is a weighted average that can put negative
 #' weight on some effects (Goodman-Bacon 2021; de Chaisemartin and
 #' D'Haultfoeuille 2020): use [eventstudy()] to look at the dynamics and a
-#' heterogeneity-robust estimator (for example `did::att_gt()` or
-#' `fixest::sunab()`) when adoption is staggered.
+#' heterogeneity-robust estimator ([attgt()] for Callaway and Sant'Anna
+#' 2021, or [etwfe()] for the extended TWFE of Wooldridge 2021, 2023) when
+#' adoption is staggered.
 #'
 #' The family can be Gaussian (effect on the mean), Poisson or negative
 #' binomial (effect on the log rate: `exp(coef)` is a ratio, and Poisson FE
@@ -107,7 +108,7 @@ did <- function(formula, data, index, treat, family = "gaussian",
 #' second coefficient is dropped (with a warning). With staggered adoption
 #' and heterogeneous effects the TWFE event-study coefficients are
 #' contaminated by effects from other periods (Sun and Abraham 2021); use a
-#' heterogeneity-robust estimator such as `fixest::sunab()` there.
+#' heterogeneity-robust estimator such as [attgt()] or [etwfe()] there.
 #'
 #' @inheritParams did
 #' @param leads,lags number of pre- and post-treatment event times in the

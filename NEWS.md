@@ -24,6 +24,16 @@
   Windmeijer-corrected SEs), with AR(1)/AR(2) tests, Sargan and Hansen J
   tests, collapsed instruments (`collapse`) and lag-depth limits (`maxlag`).
   Uses the `plm::pgmm()` formula syntax and is validated against it.
+* Staggered difference-in-differences: `attgt()` gives the Callaway and
+  Sant'Anna (2021) group-time ATTs (never- or not-yet-treated controls;
+  outcome regression, IPW or doubly robust; analytic influence-function
+  SEs), aggregated by `summary(type = "simple", "dynamic", "group" or
+  "calendar")` with a pre-trend Wald test and an event-study `plot()`.
+  Validated against `did::att_gt()` and `did::aggte()`.
+* Nonlinear difference-in-differences: `etwfe()` fits the Wooldridge (2023)
+  extended two-way FE model for linear, Poisson and logit outcomes and
+  reports ATTs on the response scale with delta-method SEs. Validated
+  against `etwfe::etwfe()` and `etwfe::emfx()`.
 * `validation/`: per-model scripts comparing panglm with established
   packages, summarized in `validation/REPORT.md`.
 

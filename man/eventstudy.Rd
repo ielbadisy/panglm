@@ -71,7 +71,7 @@ or a window narrower than the observed event times; without them a
 second coefficient is dropped (with a warning). With staggered adoption
 and heterogeneous effects the TWFE event-study coefficients are
 contaminated by effects from other periods (Sun and Abraham 2021); use a
-heterogeneity-robust estimator such as `fixest::sunab()` there.
+heterogeneity-robust estimator such as [attgt()] or [etwfe()] there.
 }
 \examples{
 set.seed(1)

@@ -54,6 +54,8 @@ Suggests:
     pscl,
     generics,
     broom,
+    did,
+    etwfe,
     knitr,
     rmarkdown
 Config/testthat/edition: 3

@@ -39,8 +39,9 @@ trends. With staggered adoption and effects that vary over time or across
 cohorts the TWFE coefficient is a weighted average that can put negative
 weight on some effects (Goodman-Bacon 2021; de Chaisemartin and
 D'Haultfoeuille 2020): use [eventstudy()] to look at the dynamics and a
-heterogeneity-robust estimator (for example `did::att_gt()` or
-`fixest::sunab()`) when adoption is staggered.
+heterogeneity-robust estimator ([attgt()] for Callaway and Sant'Anna
+2021, or [etwfe()] for the extended TWFE of Wooldridge 2021, 2023) when
+adoption is staggered.
 }
 \details{
 The family can be Gaussian (effect on the mean), Poisson or negative
