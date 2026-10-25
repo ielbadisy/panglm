@@ -7,19 +7,19 @@
 pandispersiontest(object)
 }
 \arguments{
-\item{object}{a `"panglm"` fit with `family` `"poisson"` or `"negbin"`}
+\item{object}{a \code{"panglm"} fit with \code{family} \code{"poisson"} or \code{"negbin"}}
 }
 \value{
-a list of class `"panglm_dispersiontest"` with the Pearson
-  statistic, its degrees of freedom, the ratio (statistic/df), a
-  one-sided p-value against `chisq(df)`, and `n_excluded`: the number of
-  observations dropped from the statistic because their fitted value was
-  exactly zero or unavailable (e.g. rows in a structurally-zero panel
-  individual screened out of a fixed-effects negbin fit)
+a list of class \code{"panglm_dispersiontest"} with the Pearson
+statistic, its degrees of freedom, the ratio (statistic/df), a
+one-sided p-value against \code{chisq(df)}, and \code{n_excluded}: the number of
+observations dropped from the statistic because their fitted value was
+exactly zero or unavailable (e.g. rows in a structurally-zero panel
+individual screened out of a fixed-effects negbin fit)
 }
 \description{
 A quick diagnostic for count models: the Pearson goodness-of-fit
-statistic `sum((y - mu)^2 / mu)` divided by its residual degrees of
+statistic \code{sum((y - mu)^2 / mu)} divided by its residual degrees of
 freedom should be close to 1 under a correctly-specified Poisson model;
 values well above 1 indicate overdispersion (evidence for a negative
 binomial specification instead). The diagnostic is available for pooled

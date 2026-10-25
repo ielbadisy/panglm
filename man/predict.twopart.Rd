@@ -7,20 +7,20 @@
 \method{predict}{twopart}(object, newdata = NULL, type = c("response", "prob", "positive"), ...)
 }
 \arguments{
-\item{object}{a `"twopart"` fit}
+\item{object}{a \code{"twopart"} fit}
 
 \item{newdata}{optional data frame; defaults to the (complete-case) data
-used for fitting. For `cre = TRUE` fits, the individual means are
-recomputed within `newdata` unless its `mean_*` columns are supplied.}
+used for fitting. For \code{cre = TRUE} fits, the individual means are
+recomputed within \code{newdata} unless its \verb{mean_*} columns are supplied.}
 
-\item{type}{`"response"` for `E[y] = P(y > 0) E[y | y > 0]`, `"prob"`
-for `P(y > 0)`, or `"positive"` for `E[y | y > 0]` (retransformed for
+\item{type}{\code{"response"} for \verb{E[y] = P(y > 0) E[y | y > 0]}, \code{"prob"}
+for \code{P(y > 0)}, or \code{"positive"} for \code{E[y | y > 0]} (retransformed for
 the lognormal part)}
 
 \item{...}{unused}
 }
 \value{
-a numeric vector with one prediction per row of `newdata`
+a numeric vector with one prediction per row of \code{newdata}
 }
 \description{
 Predict from a two-part model

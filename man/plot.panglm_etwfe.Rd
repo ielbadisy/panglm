@@ -10,20 +10,20 @@
 \method{plot}{summary.panglm_etwfe}(x, type = NULL, xlab = NULL, ylab = "ATT", ...)
 }
 \arguments{
-\item{x}{an `"panglm_etwfe"` fit from [etwfe()], or its summary}
+\item{x}{an \code{"panglm_etwfe"} fit from \code{\link[=etwfe]{etwfe()}}, or its summary}
 
-\item{type}{aggregation to plot (for a fit): `"event"`, `"group"` or
-`"calendar"`}
+\item{type}{aggregation to plot (for a fit): \code{"event"}, \code{"group"} or
+\code{"calendar"}}
 
 \item{xlab, ylab}{axis labels}
 
-\item{...}{passed to [graphics::plot()]}
+\item{...}{passed to \code{\link[graphics:plot.default]{graphics::plot()}}}
 }
 \value{
 the plotted summary, invisibly
 }
 \description{
-Plots the event-study aggregation of an [etwfe()] fit (or the cohort or
+Plots the event-study aggregation of an \code{\link[=etwfe]{etwfe()}} fit (or the cohort or
 calendar aggregation) with pointwise confidence intervals.
 }
 \examples{

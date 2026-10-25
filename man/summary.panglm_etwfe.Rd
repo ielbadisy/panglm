@@ -13,37 +13,37 @@
 )
 }
 \arguments{
-\item{object}{an `"panglm_etwfe"` fit from [etwfe()]}
+\item{object}{an \code{"panglm_etwfe"} fit from \code{\link[=etwfe]{etwfe()}}}
 
-\item{type}{`"simple"`, `"group"`, `"calendar"` or `"event"`}
+\item{type}{\code{"simple"}, \code{"group"}, \code{"calendar"} or \code{"event"}}
 
 \item{level}{confidence level; defaults to that of the fit}
 
-\item{byxvar}{logical; for a fit with `xvar`, report the ATTs separately
+\item{byxvar}{logical; for a fit with \code{xvar}, report the ATTs separately
 for each value of the covariate (by aggregation level and value). The
-default is `TRUE` for such fits; `overall` is always the ATT over all
+default is \code{TRUE} for such fits; \code{overall} is always the ATT over all
 treated observations.}
 
 \item{...}{unused}
 }
 \value{
-an object of class `"summary.panglm_etwfe"`: a list with
-  `overall` (the simple ATT: `estimate`, `se`, `statistic`, `p.value`,
-  `lower`, `upper`), `estimates` (the same columns by `level` of the
-  aggregation, and by value of the `xvar` covariate in a column named
-  after it when `byxvar = TRUE`; `NULL` for `"simple"` without
-  `byxvar`), `cells` and the fit information.
+an object of class \code{"summary.panglm_etwfe"}: a list with
+\code{overall} (the simple ATT: \code{estimate}, \code{se}, \code{statistic}, \code{p.value},
+\code{lower}, \code{upper}), \code{estimates} (the same columns by \code{level} of the
+aggregation, and by value of the \code{xvar} covariate in a column named
+after it when \code{byxvar = TRUE}; \code{NULL} for \code{"simple"} without
+\code{byxvar}), \code{cells} and the fit information.
 }
 \description{
 Averages, over the treated observations, the difference between the
 predicted mean with and without the observation's cohort by period
 effect (on the response scale). The averages are taken over all treated
-observations (`"simple"`), by cohort (`"group"`), by calendar period
-(`"calendar"`) or by time since treatment (`"event"`), with delta-method
-standard errors. With sampling weights in [etwfe()], the averages are
-weighted. They correspond to `etwfe::emfx()`. With
-`control = "never"`, the event study also reports the pre-treatment
-placebo effects, with event time `-1` as the reference (zero).
+observations (\code{"simple"}), by cohort (\code{"group"}), by calendar period
+(\code{"calendar"}) or by time since treatment (\code{"event"}), with delta-method
+standard errors. With sampling weights in \code{\link[=etwfe]{etwfe()}}, the averages are
+weighted. They correspond to \code{etwfe::emfx()}. With
+\code{control = "never"}, the event study also reports the pre-treatment
+placebo effects, with event time \code{-1} as the reference (zero).
 }
 \examples{
 set.seed(2)

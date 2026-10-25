@@ -16,23 +16,23 @@
 \method{plot}{summary.panglm_attgt}(x, type = NULL, xlab = NULL, ylab = "ATT", ...)
 }
 \arguments{
-\item{x}{an `"panglm_attgt"` fit from [attgt()], or its summary}
+\item{x}{an \code{"panglm_attgt"} fit from \code{\link[=attgt]{attgt()}}, or its summary}
 
-\item{type}{aggregation to plot (for a fit): `"dynamic"`, `"group"` or
-`"calendar"`}
+\item{type}{aggregation to plot (for a fit): \code{"dynamic"}, \code{"group"} or
+\code{"calendar"}}
 
 \item{xlab, ylab}{axis labels}
 
-\item{...}{passed to [summary.panglm_attgt()] (for example `min_e`,
-`max_e`) and then to [graphics::plot()]}
+\item{...}{passed to \code{\link[=summary.panglm_attgt]{summary.panglm_attgt()}} (for example \code{min_e},
+\code{max_e}) and then to \code{\link[graphics:plot.default]{graphics::plot()}}}
 }
 \value{
 the plotted summary, invisibly
 }
 \description{
-Plots the dynamic aggregation of [attgt()] (`ATT(e)` by event time with
+Plots the dynamic aggregation of \code{\link[=attgt]{attgt()}} (\code{ATT(e)} by event time with
 pointwise confidence intervals), or the cohort or calendar aggregation.
-When the fit has uniform confidence bands (`cband = TRUE`), they are
+When the fit has uniform confidence bands (\code{cband = TRUE}), they are
 drawn as thin grey whiskers behind the pointwise intervals.
 }
 \examples{

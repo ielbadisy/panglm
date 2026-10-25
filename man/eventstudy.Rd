@@ -20,48 +20,48 @@ eventstudy(
 )
 }
 \arguments{
-\item{formula}{outcome and control variables, e.g. `y ~ age` or `y ~ 1`;
+\item{formula}{outcome and control variables, e.g. \code{y ~ age} or \code{y ~ 1};
 the treatment indicator is added}
 
 \item{data}{a data.frame in long format}
 
-\item{index}{`c(individual, time)`; the time index must be numeric}
+\item{index}{\code{c(individual, time)}; the time index must be numeric}
 
 \item{treat}{name of the column holding each individual's first treated
-period (in the units of the time index); `NA`, `0` or `Inf` for units
+period (in the units of the time index); \code{NA}, \code{0} or \code{Inf} for units
 that are never treated}
 
 \item{leads, lags}{number of pre- and post-treatment event times in the
-window (event times `-leads, ..., lags`)}
+window (event times \verb{-leads, ..., lags})}
 
-\item{ref}{omitted reference event time, default `-1`}
+\item{ref}{omitted reference event time, default \code{-1}}
 
 \item{bin}{logical; bin event times outside the window into the end
-points (`TRUE`) or drop those observations (`FALSE`)}
+points (\code{TRUE}) or drop those observations (\code{FALSE})}
 
-\item{family}{`"gaussian"`, `"poisson"`, `"negbin"` or `"binomial"`
+\item{family}{\code{"gaussian"}, \code{"poisson"}, \code{"negbin"} or \code{"binomial"}
 (conditional logit, logit link only; see Details)}
 
 \item{vcov}{covariance type, cluster-robust by individual by default}
 
 \item{level}{confidence level of the reported intervals}
 
-\item{...}{further arguments passed to [panglm()]}
+\item{...}{further arguments passed to \code{\link[=panglm]{panglm()}}}
 }
 \value{
-an object of class `"panglm_eventstudy"`: a list with `fit` (the
-  [panglm()] fit), `estimates` (a data frame with `event`, `estimate`,
-  `se`, `lower`, `upper`; the reference row is zero) and `pretrend` (the
-  joint test of the leads, from [jointtest()]). Methods: `print`, `coef`,
-  `plot`.
+an object of class \code{"panglm_eventstudy"}: a list with \code{fit} (the
+\code{\link[=panglm]{panglm()}} fit), \code{estimates} (a data frame with \code{event}, \code{estimate},
+\code{se}, \code{lower}, \code{upper}; the reference row is zero) and \code{pretrend} (the
+joint test of the leads, from \code{\link[=jointtest]{jointtest()}}). Methods: \code{print}, \code{coef},
+\code{plot}.
 }
 \description{
-Replaces the single treatment indicator of [did()] by indicators of event
-time `e = t - first treated period`, from `-leads` to `lags`, with
-`e = ref` (by default the period before treatment) as the omitted
+Replaces the single treatment indicator of \code{\link[=did]{did()}} by indicators of event
+time \verb{e = t - first treated period}, from \code{-leads} to \code{lags}, with
+\code{e = ref} (by default the period before treatment) as the omitted
 reference, in a two-way fixed-effects model. Event times beyond the
-window are binned into the end points (`bin = TRUE`) or dropped from the
-sample (`bin = FALSE`). The lead coefficients estimate differences in
+window are binned into the end points (\code{bin = TRUE}) or dropped from the
+sample (\code{bin = FALSE}). The lead coefficients estimate differences in
 trends before treatment; their joint Wald test is the usual check of
 parallel pre-trends (Freyaldenhoven et al. 2019). The lag coefficients
 trace the effect over time since treatment.
@@ -72,10 +72,10 @@ or a window narrower than the observed event times; without them a
 second coefficient is dropped (with a warning). With staggered adoption
 and heterogeneous effects the TWFE event-study coefficients are
 contaminated by effects from other periods (Sun and Abraham 2021); use a
-heterogeneity-robust estimator such as [attgt()] or [etwfe()] there.
+heterogeneity-robust estimator such as \code{\link[=attgt]{attgt()}} or \code{\link[=etwfe]{etwfe()}} there.
 
-With `family = "binomial"` the model is the two-way conditional logit
-(see [did()]) and the event-time coefficients are log odds ratios
+With \code{family = "binomial"} the model is the two-way conditional logit
+(see \code{\link[=did]{did()}}) and the event-time coefficients are log odds ratios
 relative to the reference event time.
 }
 \examples{
@@ -93,10 +93,10 @@ plot(es)
 }
 \references{
 Freyaldenhoven, S., Hansen, C. and Shapiro, J. M. (2019).
-  Pre-event trends in the panel event-study design. *American Economic
-  Review*, 109, 3307-3338. \doi{10.1257/aer.20180609}
+Pre-event trends in the panel event-study design. \emph{American Economic
+Review}, 109, 3307-3338. \doi{10.1257/aer.20180609}
 
-  Sun, L. and Abraham, S. (2021). Estimating dynamic treatment effects in
-  event studies with heterogeneous treatment effects. *Journal of
-  Econometrics*, 225, 175-199. \doi{10.1016/j.jeconom.2020.09.006}
+Sun, L. and Abraham, S. (2021). Estimating dynamic treatment effects in
+event studies with heterogeneous treatment effects. \emph{Journal of
+Econometrics}, 225, 175-199. \doi{10.1016/j.jeconom.2020.09.006}
 }

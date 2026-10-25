@@ -7,10 +7,10 @@
 \method{vcov}{paniv}(object, type = NULL, cluster = NULL, ...)
 }
 \arguments{
-\item{object}{a `"paniv"` fit}
+\item{object}{a \code{"paniv"} fit}
 
-\item{type}{`NULL` (the covariance stored on the fit), `"classical"` or
-`"cluster"`}
+\item{type}{\code{NULL} (the covariance stored on the fit), \code{"classical"} or
+\code{"cluster"}}
 
 \item{cluster}{optional clustering vector with one value per observation
 used in the fit (in the row order of the data); defaults to the panel

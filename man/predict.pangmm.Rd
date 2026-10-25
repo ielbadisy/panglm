@@ -7,37 +7,39 @@
 \method{predict}{pangmm}(object, newdata, type = c("level", "difference"), ...)
 }
 \arguments{
-\item{object}{a `"pangmm"` fit}
+\item{object}{a \code{"pangmm"} fit}
 
 \item{newdata}{a data frame in long format; the fit does not store its
-data, so `newdata` is required (pass the fitting data for in-sample
+data, so \code{newdata} is required (pass the fitting data for in-sample
 predictions)}
 
-\item{type}{`"level"` or `"difference"`}
+\item{type}{\code{"level"} or \code{"difference"}}
 
 \item{...}{unused}
 }
 \value{
-a numeric vector with one prediction per row of `newdata`
+a numeric vector with one prediction per row of \code{newdata}
 }
 \description{
-Linear predictions from a [pangmm()] fit on `newdata`, a long data frame
+Linear predictions from a \code{\link[=pangmm]{pangmm()}} fit on \code{newdata}, a long data frame
 with the panel index columns and the variables of the first part of the
 formula. Lags are taken within individuals over the sorted periods of
-`newdata`, as in the fit.
+\code{newdata}, as in the fit.
 }
 \details{
-* `type = "level"`: `x_it'b + d_t (+ c)`, the regressors (with their
-  lags, including the lagged dependent variable) times their
-  coefficients, plus the time effect and, for system GMM, the constant.
-  The individual effect is not identified by GMM and is excluded, so for
-  difference GMM (no constant) this is the level up to an individual
-  intercept. On the fitting data these are the fitted values of the
-  level equations of system GMM.
-* `type = "difference"`: the prediction of the first difference
-  `y_it - y_i,t-1`, the difference of the level predictions, in which
-  the individual effect cancels. On the fitting data these are the
-  fitted values of the differenced equations.
+\itemize{
+\item \code{type = "level"}: \verb{x_it'b + d_t (+ c)}, the regressors (with their
+lags, including the lagged dependent variable) times their
+coefficients, plus the time effect and, for system GMM, the constant.
+The individual effect is not identified by GMM and is excluded, so for
+difference GMM (no constant) this is the level up to an individual
+intercept. On the fitting data these are the fitted values of the
+level equations of system GMM.
+\item \code{type = "difference"}: the prediction of the first difference
+\verb{y_it - y_i,t-1}, the difference of the level predictions, in which
+the individual effect cancels. On the fitting data these are the
+fitted values of the differenced equations.
+}
 
 Periods that precede the first time effect of the fit have a time effect
 of zero (the reference); a later period that is not in the fit gives a

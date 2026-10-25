@@ -71,18 +71,18 @@ Exported function names in panglm are glued lowercase, without
 underscores:
 
 \tabular{ll}{
-  \strong{Deprecated} \tab \strong{Replacement} \cr
-  \code{gaussian_family()} \tab \code{\link{gaussianfamily}()} \cr
-  \code{binomial_family()} \tab \code{\link{binomialfamily}()} \cr
-  \code{poisson_family()} \tab \code{\link{poissonfamily}()} \cr
-  \code{negbin_family()} \tab \code{\link{negbinfamily}()} \cr
-  \code{gamma_family()} \tab \code{\link{gammafamily}()} \cr
-  \code{beta_family()} \tab \code{\link{betafamily}()} \cr
-  \code{ordered_family()} \tab \code{\link{orderedfamily}()} \cr
-  \code{tobit_family()} \tab \code{\link{tobitfamily}()} \cr
-  \code{panglm_dispersiontest()} \tab \code{\link{pandispersiontest}()} \cr
-  \code{panglm_hausman()} \tab \code{\link{panhausman}()} \cr
-  \code{panglm_hurdle()} \tab \code{\link{panhurdle}()} \cr
+\strong{Deprecated} \tab \strong{Replacement} \cr
+\code{gaussian_family()} \tab \code{\link{gaussianfamily}()} \cr
+\code{binomial_family()} \tab \code{\link{binomialfamily}()} \cr
+\code{poisson_family()} \tab \code{\link{poissonfamily}()} \cr
+\code{negbin_family()} \tab \code{\link{negbinfamily}()} \cr
+\code{gamma_family()} \tab \code{\link{gammafamily}()} \cr
+\code{beta_family()} \tab \code{\link{betafamily}()} \cr
+\code{ordered_family()} \tab \code{\link{orderedfamily}()} \cr
+\code{tobit_family()} \tab \code{\link{tobitfamily}()} \cr
+\code{panglm_dispersiontest()} \tab \code{\link{pandispersiontest}()} \cr
+\code{panglm_hausman()} \tab \code{\link{panhausman}()} \cr
+\code{panglm_hurdle()} \tab \code{\link{panhurdle}()} \cr
 }
 
 \code{panglm_hurdle(count_family = )} is \code{panhurdle(family = )}.

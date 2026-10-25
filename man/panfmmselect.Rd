@@ -15,22 +15,22 @@ panfmmselect(
 )
 }
 \arguments{
-\item{formula, data, index, family, concomitant, ...}{passed to [panfmm()]}
+\item{formula, data, index, family, concomitant, ...}{passed to \code{\link[=panfmm]{panfmm()}}}
 
 \item{k}{integer vector of numbers of classes}
 }
 \value{
-a data.frame with columns `k`, `logLik`, `df`, `AIC`, `BIC` and
-  `smallest` (the smallest mean class probability), with the fits in the
-  attribute `"fits"`
+a data.frame with columns \code{k}, \code{logLik}, \code{df}, \code{AIC}, \code{BIC} and
+\code{smallest} (the smallest mean class probability), with the fits in the
+attribute \code{"fits"}
 }
 \description{
-Fits [panfmm()] for each number of classes in `k` and tabulates the
-log-likelihood, number of parameters, AIC and BIC (with `n` the number of
+Fits \code{\link[=panfmm]{panfmm()}} for each number of classes in \code{k} and tabulates the
+log-likelihood, number of parameters, AIC and BIC (with \code{n} the number of
 observations), the usual criteria for choosing the number of classes
 (Deb and Trivedi 2002 prefer BIC). Mixtures with too many classes may
 fail to converge or return near-empty classes; such fits are reported
-with `NA`.
+with \code{NA}.
 }
 \examples{
 set.seed(3)

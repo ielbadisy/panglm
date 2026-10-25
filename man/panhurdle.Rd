@@ -14,50 +14,49 @@ panhurdle(
 )
 }
 \arguments{
-\item{formula}{a model formula, e.g. `y ~ x1 + x2`}
+\item{formula}{a model formula, e.g. \code{y ~ x1 + x2}}
 
-\item{data}{a data.frame containing the variables in `formula` and `index`}
+\item{data}{a data.frame containing the variables in \code{formula} and \code{index}}
 
 \item{index}{length-2 character vector identifying the individual and
-time columns, e.g. `c("id", "time")`}
+time columns, e.g. \code{c("id", "time")}}
 
 \item{family}{count distribution for positive observations, either
-`"poisson"` or `"negbin"` (NB2 parameterization). It is stored on the
-fit as `count_family`.}
+\code{"poisson"} or \code{"negbin"} (NB2 parameterization). It is stored on the
+fit as \code{count_family}.}
 
 \item{maxit}{maximum IRLS/Newton iterations}
 
 \item{tol}{convergence tolerance}
 }
 \value{
-an object of class `"panglm_hurdle"`: a list with `zero` (the
-  `panglm` binomial fit for the zero-vs-positive part) and `count` (the
-  zero-truncated fixed-effects fit for the count part)
+an object of class \code{"panglm_hurdle"}: a list with \code{zero} (the
+\code{panglm} binomial fit for the zero-vs-positive part) and \code{count} (the
+zero-truncated fixed-effects fit for the count part)
 }
 \description{
 A hurdle decomposition for panels where a large fraction of groups report
-*structural* zeros (never observed to occur), rather than zeros arising
+\emph{structural} zeros (never observed to occur), rather than zeros arising
 from ordinary Poisson/NB sampling variation at a low mean -- a pattern
 that shows up as extreme, family-invariant overdispersion under either
-`family = "poisson"` or `family = "negbin"` in [panglm()].
+\code{family = "poisson"} or \code{family = "negbin"} in \code{\link[=panglm]{panglm()}}.
 }
 \details{
 The model is fit in two independent parts, both using fixed effects, and
-reported together rather than folded into `panglm()`'s single-family
+reported together rather than folded into \code{panglm()}'s single-family
 dispatch, since they operate on different sample sizes (the count part
 drops the zeros):
 
 \enumerate{
-  \item **Zero vs. positive.** `1(y > 0)` fit via the exact conditional
-    logistic regression already used for `panglm(..., family =
-    "binomial")` (Chamberlain 1980) -- no new estimator, just a new
-    outcome vector.
-  \item **Count given `y > 0`.** A zero-truncated Poisson or NB2
-    fixed-effects model (Allison-Waterman-style dummy-variable
-    intercepts, the same unconditional approach used for FE-NB2) on the
-    subsample where `y > 0`. The log-density is the ordinary count
-    log-density minus `log(1 - P(Y = 0))`; see `pscl::hurdle()` for the
-    reference form of the truncated-count likelihood.
+\item \strong{Zero vs. positive.} \code{1(y > 0)} fit via the exact conditional
+logistic regression already used for \code{panglm(..., family = "binomial")} (Chamberlain 1980) -- no new estimator, just a new
+outcome vector.
+\item \strong{Count given \code{y > 0}.} A zero-truncated Poisson or NB2
+fixed-effects model (Allison-Waterman-style dummy-variable
+intercepts, the same unconditional approach used for FE-NB2) on the
+subsample where \code{y > 0}. The log-density is the ordinary count
+log-density minus \code{log(1 - P(Y = 0))}; see \code{pscl::hurdle()} for the
+reference form of the truncated-count likelihood.
 }
 
 Groups with no remaining within-group variation after truncation (a

@@ -7,16 +7,16 @@
 \method{plot}{panglm_hurdle}(x, which = c("both", "zero", "count"), level = 0.95, ...)
 }
 \arguments{
-\item{x}{a fitted `"panglm_hurdle"` object}
+\item{x}{a fitted \code{"panglm_hurdle"} object}
 
-\item{which}{one of `"both"`, `"zero"`, or `"count"`}
+\item{which}{one of \code{"both"}, \code{"zero"}, or \code{"count"}}
 
 \item{level}{confidence level for coefficient intervals}
 
-\item{...}{additional arguments passed to [graphics::plot.default()]}
+\item{...}{additional arguments passed to \code{\link[graphics:plot.default]{graphics::plot.default()}}}
 }
 \value{
-`x`, invisibly
+\code{x}, invisibly
 }
 \description{
 Displays coefficient estimates and Wald confidence intervals for the

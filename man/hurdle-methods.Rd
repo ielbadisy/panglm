@@ -23,7 +23,7 @@
 \method{print}{summary.panglm_hurdle}(x, digits = max(3, getOption("digits") - 3), ...)
 }
 \arguments{
-\item{object}{a `"panglm_hurdle"` fit}
+\item{object}{a \code{"panglm_hurdle"} fit}
 
 \item{...}{unused}
 
@@ -31,26 +31,26 @@
 
 \item{level}{confidence level}
 
-\item{x}{a `"summary.panglm_hurdle"` object}
+\item{x}{a \code{"summary.panglm_hurdle"} object}
 
 \item{digits}{significant digits to print}
 }
 \value{
-`coef()`: a named vector; `vcov()`: a matrix; `confint()`: a
-  two-column matrix; `nobs()`: the number of observations; `summary()`:
-  an object of class `"summary.panglm_hurdle"` with one coefficient table
-  per part (`zero`, `count`: estimate, standard error, z value and
-  p-value, from the inverse Hessian of each part) and the fit
-  information.
+\code{coef()}: a named vector; \code{vcov()}: a matrix; \code{confint()}: a
+two-column matrix; \code{nobs()}: the number of observations; \code{summary()}:
+an object of class \code{"summary.panglm_hurdle"} with one coefficient table
+per part (\code{zero}, \code{count}: estimate, standard error, z value and
+p-value, from the inverse Hessian of each part) and the fit
+information.
 }
 \description{
-`coef()`, `vcov()`, `confint()`, `nobs()` and `summary()` for hurdle fits
-(`panhurdle()`).
-The coefficients of the zero part (conditional logit of `1(y > 0)`) and
+\code{coef()}, \code{vcov()}, \code{confint()}, \code{nobs()} and \code{summary()} for hurdle fits
+(\code{panhurdle()}).
+The coefficients of the zero part (conditional logit of \code{1(y > 0)}) and
 of the count part (zero-truncated count model on the positive
-observations) are named `"zero:..."` and `"count:..."`. The two parts are
-estimated from separate factors of the hurdle likelihood, so `vcov()` is
-block diagonal. No `logLik()` method is provided: the zero part maximises
+observations) are named \code{"zero:..."} and \code{"count:..."}. The two parts are
+estimated from separate factors of the hurdle likelihood, so \code{vcov()} is
+block diagonal. No \code{logLik()} method is provided: the zero part maximises
 a conditional likelihood and the count part an unconditional likelihood
 with individual intercepts, so their sum is not the log-likelihood of one
 model.

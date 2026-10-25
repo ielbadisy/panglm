@@ -23,7 +23,7 @@
 \method{logLik}{panglm_eventstudy}(object, ...)
 }
 \arguments{
-\item{object}{an `"panglm_eventstudy"` fit from [eventstudy()]}
+\item{object}{an \code{"panglm_eventstudy"} fit from \code{\link[=eventstudy]{eventstudy()}}}
 
 \item{...}{unused}
 
@@ -32,28 +32,28 @@ coefficients; all by default}
 
 \item{level}{confidence level}
 
-\item{x}{a `"summary.panglm_eventstudy"` object}
+\item{x}{a \code{"summary.panglm_eventstudy"} object}
 
 \item{digits}{significant digits to print}
 
-\item{signif.stars}{passed to [stats::printCoefmat()]}
+\item{signif.stars}{passed to \code{\link[stats:printCoefmat]{stats::printCoefmat()}}}
 }
 \value{
-`vcov()`: a square matrix with one row per event time; `nobs()`:
-  the number of observations of the fit; `confint()`: a two-column matrix;
-  `summary()`: an object of class `"summary.panglm_eventstudy"` with the
-  coefficient table `coefficients` (estimate, standard error, z value,
-  p-value), the intervals `conf.int`, the pre-trend test `pretrend` and
-  the fit description.
+\code{vcov()}: a square matrix with one row per event time; \code{nobs()}:
+the number of observations of the fit; \code{confint()}: a two-column matrix;
+\code{summary()}: an object of class \code{"summary.panglm_eventstudy"} with the
+coefficient table \code{coefficients} (estimate, standard error, z value,
+p-value), the intervals \code{conf.int}, the pre-trend test \code{pretrend} and
+the fit description.
 }
 \description{
-`vcov()`, `nobs()`, `confint()` and `summary()` for the fits of
-[eventstudy()]. The coefficients are labelled by event time, as in
-`coef()`. The reference period enters as a coefficient fixed at zero, with
+\code{vcov()}, \code{nobs()}, \code{confint()} and \code{summary()} for the fits of
+\code{\link[=eventstudy]{eventstudy()}}. The coefficients are labelled by event time, as in
+\code{coef()}. The reference period enters as a coefficient fixed at zero, with
 zero variance and covariance and a degenerate interval at zero; an event
 time that the data do not identify has missing values throughout.
 Intervals and tests are Wald (normal) based, from the variance of the
-underlying two-way fixed-effects fit (`object$fit`).
+underlying two-way fixed-effects fit (\code{object$fit}).
 }
 \examples{
 set.seed(1)

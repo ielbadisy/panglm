@@ -89,7 +89,7 @@ orderedfamily <- function(link = c("logit", "probit")) {
 #' @details `betafamily()` is beta regression for continuous outcomes in
 #'   the open interval (0, 1), such as utility index scores rescaled to
 #'   (0, 1), proportions of days in hospital or adherence fractions:
-#'   `y ~ Beta(mu phi, (1 - mu) phi)` with `g(mu) = x'beta`, so `E(y) = mu`
+#'   `y ~ Beta(mu * phi, (1 - mu) * phi)` with `g(mu) = x'beta`, so `E(y) = mu`
 #'   and `Var(y) = mu (1 - mu) / (1 + phi)`. The precision `phi` is
 #'   reported as `fit$precision`. `model = "pooling"` and `model = "random"`
 #'   (Gaussian random intercept on the link scale, adaptive Gauss-Hermite

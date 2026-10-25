@@ -13,31 +13,31 @@
 )
 }
 \arguments{
-\item{object}{a `"panfmm"` fit}
+\item{object}{a \code{"panfmm"} fit}
 
 \item{newdata}{optional data.frame; by default the estimation sample (in
 its original row order). Offsets are included in the class means:
-the estimation-sample offsets without `newdata`, the `offset()` terms
-of the formula evaluated in `newdata` otherwise (an `offset` argument
-of [panfmm()] cannot be evaluated in `newdata` and is not applied,
+the estimation-sample offsets without \code{newdata}, the \code{offset()} terms
+of the formula evaluated in \code{newdata} otherwise (an \code{offset} argument
+of \code{\link[=panfmm]{panfmm()}} cannot be evaluated in \code{newdata} and is not applied,
 with a warning)}
 
-\item{type}{`"response"` for the marginal mean
-`sum_c w_ic mu_c(x_it)`, `"class"` for the matrix of class-specific
-means `mu_c(x_it)` (one column per class), or `"prior"` /
-`"posterior"` for the class probabilities of each observation's
+\item{type}{\code{"response"} for the marginal mean
+\verb{sum_c w_ic mu_c(x_it)}, \code{"class"} for the matrix of class-specific
+means \code{mu_c(x_it)} (one column per class), or \code{"prior"} /
+\code{"posterior"} for the class probabilities of each observation's
 individual}
 
-\item{weights}{for `type = "response"`: `"prior"` (the class
+\item{weights}{for \code{type = "response"}: \code{"prior"} (the class
 probabilities, from the concomitant variables when there are some) or
-`"posterior"` (the in-sample posterior probabilities; only without
-`newdata`)}
+\code{"posterior"} (the in-sample posterior probabilities; only without
+\code{newdata})}
 
 \item{...}{unused}
 }
 \value{
-a numeric vector (`"response"`) or a matrix with one column per
-  class
+a numeric vector (\code{"response"}) or a matrix with one column per
+class
 }
 \description{
 Predictions from a latent class panel model

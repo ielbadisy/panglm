@@ -7,20 +7,20 @@
 \method{tidy}{panglm}(x, conf.int = FALSE, conf.level = 0.95, ...)
 }
 \arguments{
-\item{x}{a `"panglm"` fit}
+\item{x}{a \code{"panglm"} fit}
 
-\item{conf.int}{if `TRUE`, add `conf.low`/`conf.high` columns}
+\item{conf.int}{if \code{TRUE}, add \code{conf.low}/\code{conf.high} columns}
 
 \item{conf.level}{confidence level for the interval}
 
 \item{...}{unused}
 }
 \value{
-a `data.frame` with one row per coefficient
+a \code{data.frame} with one row per coefficient
 }
 \description{
-Implements the `generics::tidy()` generic so `panglm` results work with
-`broom`/`modelsummary` table-building workflows.
+Implements the \code{generics::tidy()} generic so \code{panglm} results work with
+\code{broom}/\code{modelsummary} table-building workflows.
 }
 \examples{
 data(copd)

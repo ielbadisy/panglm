@@ -7,25 +7,25 @@
 lineartest(object, variable, vcov = NULL)
 }
 \arguments{
-\item{object}{a `"panglm"` fit}
+\item{object}{a \code{"panglm"} fit}
 
 \item{variable}{name of the regressor}
 
-\item{vcov}{`NULL` (the covariance stored on the fit) or a type passed to
-[vcov.panglm()]}
+\item{vcov}{\code{NULL} (the covariance stored on the fit) or a type passed to
+\code{\link[=vcov.panglm]{vcov.panglm()}}}
 }
 \value{
-an object of class `"panglm_jointtest"`
+an object of class \code{"panglm_jointtest"}
 }
 \description{
 For a regressor entered through a spline or polynomial basis whose span
-contains the linear function (true for `splines::ns()`, `splines::bs()`
-and `poly()`), linearity means the basis coefficients are proportional
-to the coefficients `a` that reproduce `x` itself (`x = c + B a`). The
-test is the joint Wald test of the `q - 1` restrictions that the
-coefficient vector is orthogonal to the complement of `a`, so it accepts
+contains the linear function (true for \code{splines::ns()}, \code{splines::bs()}
+and \code{poly()}), linearity means the basis coefficients are proportional
+to the coefficients \code{a} that reproduce \code{x} itself (\verb{x = c + B a}). The
+test is the joint Wald test of the \code{q - 1} restrictions that the
+coefficient vector is orthogonal to the complement of \code{a}, so it accepts
 any covariance type, including cluster-robust ones. For a test of whether
-the regressor matters at all, use [jointtest()] on its columns.
+the regressor matters at all, use \code{\link[=jointtest]{jointtest()}} on its columns.
 }
 \examples{
 data(copd)

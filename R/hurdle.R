@@ -175,7 +175,7 @@ fit_truncated_negbin_dummy <- function(X, y, group, maxit, tol) {
 #' Zero-truncated Poisson via the Allison-Waterman-style unconditional
 #' dummy-variable estimator
 #'
-#' Same dummy-augmentation trick as [fit_within_negbin_dummy()] (append one
+#' Same dummy-augmentation trick as `fit_within_negbin_dummy()` (append one
 #' column per surviving group, jointly estimate covariate slopes and
 #' per-group intercepts), but for the zero-truncated Poisson log-density
 #' instead of NB2, fit by Newton-Raphson with the exact Fisher information

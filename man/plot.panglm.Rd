@@ -14,9 +14,9 @@
 )
 }
 \arguments{
-\item{x}{a fitted `"panglm"` object}
+\item{x}{a fitted \code{"panglm"} object}
 
-\item{which}{one of `"coefficients"`, `"residuals"`, or `"fitted"`}
+\item{which}{one of \code{"coefficients"}, \code{"residuals"}, or \code{"fitted"}}
 
 \item{level}{confidence level for coefficient intervals}
 
@@ -24,10 +24,10 @@
 
 \item{xlab}{optional horizontal-axis label}
 
-\item{...}{additional arguments passed to [graphics::plot.default()]}
+\item{...}{additional arguments passed to \code{\link[graphics:plot.default]{graphics::plot.default()}}}
 }
 \value{
-`x`, invisibly
+\code{x}, invisibly
 }
 \description{
 Provides base-graphics coefficient and diagnostic plots. The coefficient

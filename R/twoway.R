@@ -76,7 +76,7 @@ fit_within_twoways_gaussian <- function(X, y, group_start, group_size, time, max
 #' effects from `z` and `X` via *weighted* (weight = IRLS weight = mu)
 #' alternating projections, fits beta by weighted least squares on the
 #' partialled-out variables, then reconstructs the full linear predictor as
-#' `eta_new = X_tilde \%*\% beta_new + (z - z_tilde)` (the demeaned-away part
+#' `eta_new = X_tilde %*% beta_new + (z - z_tilde)` (the demeaned-away part
 #' of z, `z - z_tilde`, is exactly the fitted two-way effect contribution).
 #'
 #' @keywords internal
@@ -168,7 +168,7 @@ fit_within_twoways_poisson <- function(X, y, group_start, group_size, time, maxi
 #' (theta+mu)` instead of `mu`, from the NB2 variance function `mu +
 #' mu^2/theta`) and the working response formula is unchanged (`eta + (y -
 #' mu)/mu`); the outer loop and the two-way weighted-demeaning step carry
-#' over unchanged from [fit_within_twoways_poisson()]. `theta` is profiled
+#' over unchanged from `fit_within_twoways_poisson()`. `theta` is profiled
 #' out via a 1-D optimization of the NB2 log-likelihood at each outer
 #' iteration's converged mu (this model has no independent reference
 #' implementation to match exactly, unlike the alternating IRLS-for-beta /
@@ -305,7 +305,7 @@ recover_twoway_effects <- function(effect_observation, group_size, time,
 #' Two-way fixed-effects conditional (Chamberlain) logit
 #'
 #' The individual effects are conditioned out exactly, as in
-#' [fit_within_binomial()], and the time effects enter the conditional
+#' `fit_within_binomial()`, and the time effects enter the conditional
 #' likelihood as time dummies (first time level as reference), which is
 #' `survival::clogit(y ~ x + factor(time) + strata(id), method = "exact")`.
 #' The time dummies are ordinary parameters of the conditional likelihood:

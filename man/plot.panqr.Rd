@@ -18,7 +18,7 @@
 )
 }
 \arguments{
-\item{x}{a `"panqr"` fit}
+\item{x}{a \code{"panqr"} fit}
 
 \item{parm}{names or positions of the terms to plot; all by default}
 
@@ -37,18 +37,18 @@ default}
 
 \item{ylab}{vertical-axis label}
 
-\item{...}{additional arguments passed to [graphics::plot.default()]}
+\item{...}{additional arguments passed to \code{\link[graphics:plot.default]{graphics::plot.default()}}}
 }
 \value{
-`x`, invisibly
+\code{x}, invisibly
 }
 \description{
-Base-graphics plot of the coefficients of a [panqr()] fit across the
+Base-graphics plot of the coefficients of a \code{\link[=panqr]{panqr()}} fit across the
 estimated quantiles, one panel per term: the estimates joined by a line,
 a shaded pointwise Wald confidence band (from the same variances as
-`confint()`), and a dashed reference line at zero. With a single quantile
+\code{confint()}), and a dashed reference line at zero. With a single quantile
 each panel shows the estimate and its interval. Without a covariance
-(`vcov = "none"`) only the estimates are drawn.
+(\code{vcov = "none"}) only the estimates are drawn.
 }
 \examples{
 set.seed(2)

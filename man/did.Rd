@@ -7,58 +7,57 @@
 did(formula, data, index, treat, family = "gaussian", vcov = "cluster", ...)
 }
 \arguments{
-\item{formula}{outcome and control variables, e.g. `y ~ age` or `y ~ 1`;
+\item{formula}{outcome and control variables, e.g. \code{y ~ age} or \code{y ~ 1};
 the treatment indicator is added}
 
 \item{data}{a data.frame in long format}
 
-\item{index}{`c(individual, time)`; the time index must be numeric}
+\item{index}{\code{c(individual, time)}; the time index must be numeric}
 
 \item{treat}{name of the column holding each individual's first treated
-period (in the units of the time index); `NA`, `0` or `Inf` for units
+period (in the units of the time index); \code{NA}, \code{0} or \code{Inf} for units
 that are never treated}
 
-\item{family}{`"gaussian"`, `"poisson"`, `"negbin"` or `"binomial"`
+\item{family}{\code{"gaussian"}, \code{"poisson"}, \code{"negbin"} or \code{"binomial"}
 (conditional logit, logit link only; see Details)}
 
 \item{vcov}{covariance type, cluster-robust by individual by default}
 
-\item{...}{further arguments passed to [panglm()]}
+\item{...}{further arguments passed to \code{\link[=panglm]{panglm()}}}
 }
 \value{
-a [panglm()] fit whose coefficient `treated` is the DiD estimate
-  (a log odds ratio for `family = "binomial"`), with a component `did` (number of treated and never-treated
-  individuals, treatment cohorts)
+a \code{\link[=panglm]{panglm()}} fit whose coefficient \code{treated} is the DiD estimate
+(a log odds ratio for \code{family = "binomial"}), with a component \code{did} (number of treated and never-treated
+individuals, treatment cohorts)
 }
 \description{
-Adds the indicator `treated = 1(t >= first treated period)` to the model
+Adds the indicator \verb{treated = 1(t >= first treated period)} to the model
 and fits it with individual and time fixed effects (two-way fixed
 effects, TWFE). With a single treatment date (the canonical two-group,
 two-period design and its multi-period extension) the coefficient on
-`treated` is the average treatment effect on the treated under parallel
+\code{treated} is the average treatment effect on the treated under parallel
 trends. With staggered adoption and effects that vary over time or across
 cohorts the TWFE coefficient is a weighted average that can put negative
 weight on some effects (Goodman-Bacon 2021; de Chaisemartin and
-D'Haultfoeuille 2020): use [eventstudy()] to look at the dynamics and a
-heterogeneity-robust estimator ([attgt()] for Callaway and Sant'Anna
-2021, or [etwfe()] for the extended TWFE of Wooldridge 2021, 2023) when
+D'Haultfoeuille 2020): use \code{\link[=eventstudy]{eventstudy()}} to look at the dynamics and a
+heterogeneity-robust estimator (\code{\link[=attgt]{attgt()}} for Callaway and Sant'Anna
+2021, or \code{\link[=etwfe]{etwfe()}} for the extended TWFE of Wooldridge 2021, 2023) when
 adoption is staggered.
 }
 \details{
 The family can be Gaussian (effect on the mean), Poisson or negative
-binomial (effect on the log rate: `exp(coef)` is a ratio, and Poisson FE
+binomial (effect on the log rate: \code{exp(coef)} is a ratio, and Poisson FE
 DiD needs only the conditional mean to be correct, Wooldridge 2023), or
 binomial for a binary outcome. The binomial model is the two-way
-conditional (Chamberlain) logit of [panglm()]: the individual effects
+conditional (Chamberlain) logit of \code{\link[=panglm]{panglm()}}: the individual effects
 are conditioned out exactly and the time effects enter as dummies inside
-the conditional likelihood, as in `survival::clogit(y ~ treated +
-factor(time) + strata(id))`. Its coefficient `treated` is then a log
-odds ratio, conditional on the individual effect (`exp(coef)` is the
+the conditional likelihood, as in \code{survival::clogit(y ~ treated + factor(time) + strata(id))}. Its coefficient \code{treated} is then a log
+odds ratio, conditional on the individual effect (\code{exp(coef)} is the
 odds ratio), parallel trends is assumed on the log-odds scale, and
 individuals whose outcome never changes carry no information and are
 dropped. It is not an effect on the probability scale: for average
-effects on the treated in probability points use [etwfe()] with
-`family = "binomial"`. Controls that do not vary within individuals are
+effects on the treated in probability points use \code{\link[=etwfe]{etwfe()}} with
+\code{family = "binomial"}. Controls that do not vary within individuals are
 absorbed by the individual effects and dropped.
 }
 \examples{
@@ -79,14 +78,14 @@ exp(coef(fitb))                                  # odds ratio
 }
 \references{
 Goodman-Bacon, A. (2021). Difference-in-differences with
-  variation in treatment timing. *Journal of Econometrics*, 225, 254-277.
-  \doi{10.1016/j.jeconom.2021.03.014}
+variation in treatment timing. \emph{Journal of Econometrics}, 225, 254-277.
+\doi{10.1016/j.jeconom.2021.03.014}
 
-  de Chaisemartin, C. and D'Haultfoeuille, X. (2020). Two-way fixed
-  effects estimators with heterogeneous treatment effects. *American
-  Economic Review*, 110, 2964-2996. \doi{10.1257/aer.20181169}
+de Chaisemartin, C. and D'Haultfoeuille, X. (2020). Two-way fixed
+effects estimators with heterogeneous treatment effects. \emph{American
+Economic Review}, 110, 2964-2996. \doi{10.1257/aer.20181169}
 
-  Wooldridge, J. M. (2023). Simple approaches to nonlinear
-  difference-in-differences with panel data. *The Econometrics Journal*,
-  26, C31-C66. \doi{10.1093/ectj/utad016}
+Wooldridge, J. M. (2023). Simple approaches to nonlinear
+difference-in-differences with panel data. \emph{The Econometrics Journal},
+26, C31-C66. \doi{10.1093/ectj/utad016}
 }

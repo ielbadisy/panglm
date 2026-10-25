@@ -7,12 +7,12 @@
 \method{vcov}{panfmm}(object, type = NULL, cluster = NULL, ...)
 }
 \arguments{
-\item{object}{a `"panfmm"` fit}
+\item{object}{a \code{"panfmm"} fit}
 
-\item{type}{`NULL` (the covariance stored on the fit), `"classical"`
+\item{type}{\code{NULL} (the covariance stored on the fit), \code{"classical"}
 (inverse of the negative Hessian of the observed-data log-likelihood)
-or `"cluster"` (sandwich with individual scores summed within
-clusters, factor `G / (G - 1)`; with weights the individual scores are
+or \code{"cluster"} (sandwich with individual scores summed within
+clusters, factor \code{G / (G - 1)}; with weights the individual scores are
 multiplied by the individual weights)}
 
 \item{cluster}{optional clustering vector with one value per observation

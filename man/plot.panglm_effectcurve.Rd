@@ -13,16 +13,16 @@
 )
 }
 \arguments{
-\item{x}{a `"panglm_effectcurve"` object from [effectcurve()]}
+\item{x}{a \code{"panglm_effectcurve"} object from \code{\link[=effectcurve]{effectcurve()}}}
 
 \item{xlab, ylab}{axis labels}
 
 \item{band_col}{colour of the confidence band}
 
-\item{...}{passed to [graphics::plot()]}
+\item{...}{passed to \code{\link[graphics:plot.default]{graphics::plot()}}}
 }
 \value{
-`x`, invisibly
+\code{x}, invisibly
 }
 \description{
 Plot an effect curve

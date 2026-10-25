@@ -7,30 +7,30 @@
 \method{summary}{panglm}(object, ...)
 }
 \arguments{
-\item{object}{a `"panglm"` object}
+\item{object}{a \code{"panglm"} object}
 
 \item{...}{unused}
 }
 \value{
-an object of class `"summary.panglm"`, a list with components
-  `call` (the matched call), `model`, `effect`, and `family` (as stored on
-  the fit), `coefficients` (a numeric matrix with one row per parameter
-  and columns `Estimate`, `Std. Error`, `z value`, `Pr(>|z|)`), `nobs`,
-  `n_groups`, `df.residual`, `loglik`, `dispersion` (`NULL` when not
-  applicable), `iterations`, and `vcov_type` (which covariance estimator
-  produced the reported standard errors). It has an associated
-  `print.summary.panglm()` method and is normally printed rather than
-  used programmatically. Also included are `sigma` (random-intercept
-  standard deviation) and `shape` (gamma shape) when estimated,
-  `varcomp` (covariance matrix of the random intercept and slopes) for
-  random-slope fits, and, for
-  `cre = TRUE` fits, `cre_test`: the Wald (Mundlak) test that the
-  individual-mean coefficients are jointly zero, computed with the
-  covariance stored on the fit.
+an object of class \code{"summary.panglm"}, a list with components
+\code{call} (the matched call), \code{model}, \code{effect}, and \code{family} (as stored on
+the fit), \code{coefficients} (a numeric matrix with one row per parameter
+and columns \code{Estimate}, \verb{Std. Error}, \verb{z value}, \verb{Pr(>|z|)}), \code{nobs},
+\code{n_groups}, \code{df.residual}, \code{loglik}, \code{dispersion} (\code{NULL} when not
+applicable), \code{iterations}, and \code{vcov_type} (which covariance estimator
+produced the reported standard errors). It has an associated
+\code{print.summary.panglm()} method and is normally printed rather than
+used programmatically. Also included are \code{sigma} (random-intercept
+standard deviation) and \code{shape} (gamma shape) when estimated,
+\code{varcomp} (covariance matrix of the random intercept and slopes) for
+random-slope fits, and, for
+\code{cre = TRUE} fits, \code{cre_test}: the Wald (Mundlak) test that the
+individual-mean coefficients are jointly zero, computed with the
+covariance stored on the fit.
 }
 \description{
 Produces a classic coefficient table (Estimate, Std. Error, z value,
-Pr(>|z|)) in the style of [summary.glm()].
+Pr(>|z|)) in the style of \code{\link[=summary.glm]{summary.glm()}}.
 }
 \examples{
 data(copd)

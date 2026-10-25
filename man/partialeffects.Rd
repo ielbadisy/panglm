@@ -22,7 +22,7 @@ partialeffects(object, ...)
 )
 }
 \arguments{
-\item{object}{a `"panglm"` or `"twopart"` fit}
+\item{object}{a \code{"panglm"} or \code{"twopart"} fit}
 
 \item{variables}{character vector of variable names (as they appear in
 the data); defaults to every regressor in the model formula(s)}
@@ -31,15 +31,15 @@ the data); defaults to every regressor in the model formula(s)}
 
 \item{...}{unused}
 
-\item{part}{for two-part models: `"total"` (the unconditional mean),
-`"binary"` (the probability of a positive outcome) or `"positive"` (the
+\item{part}{for two-part models: \code{"total"} (the unconditional mean),
+\code{"binary"} (the probability of a positive outcome) or \code{"positive"} (the
 mean conditional on a positive outcome)}
 }
 \value{
-a data frame of class `"panglm_ape"` with columns `term`,
-  `contrast`, `estimate`, `std.error`, `statistic`, `p.value`,
-  `conf.low` and `conf.high`, one row per continuous or binary regressor
-  and one row per non-reference factor level.
+a data frame of class \code{"panglm_ape"} with columns \code{term},
+\code{contrast}, \code{estimate}, \code{std.error}, \code{statistic}, \code{p.value},
+\code{conf.low} and \code{conf.high}, one row per continuous or binary regressor
+and one row per non-reference factor level.
 }
 \description{
 Average partial effects (APE, also called average marginal effects) of
@@ -53,19 +53,19 @@ taken through the model formula, so interactions, polynomial terms and
 factor codings are handled automatically.
 }
 \details{
-The mean used is the one returned by `predict(type = "response")`:
+The mean used is the one returned by \code{predict(type = "response")}:
 the GLM mean for pooled models; the mean including the estimated
 individual (and time) effects for fixed-effects models; and the
 population-averaged mean (integrating over the random intercept, and
-the random slopes when `random` has slope variables) for
+the random slopes when \code{random} has slope variables) for
 random-effects models, which is the average structural function of
-Wooldridge (2005). For correlated random effects fits (`cre = TRUE`) the
+Wooldridge (2005). For correlated random effects fits (\code{cre = TRUE}) the
 individual means are held fixed, so the APE of a time-varying regressor
 is the within-individual effect. For two-part models the mean is
-`P(y > 0) * E[y | y > 0]` (or one of its parts, see `part`).
+\code{P(y > 0) * E[y | y > 0]} (or one of its parts, see \code{part}).
 
 Standard errors use the covariance stored on the fit (so a fit made with
-`vcov = "cluster"` gives cluster-robust APE standard errors) and treat
+\code{vcov = "cluster"} gives cluster-robust APE standard errors) and treat
 variance components, dispersion and fixed-effect intercepts as fixed.
 Exact conditional logit fits are not supported, because their
 individual intercepts are conditioned out and the mean is not identified.
@@ -79,6 +79,6 @@ partialeffects(fit)
 }
 \references{
 Wooldridge, J. M. (2005). Unobserved heterogeneity and
-  estimation of average partial effects. In *Identification and
-  Inference for Econometric Models*, Cambridge University Press.
+estimation of average partial effects. In \emph{Identification and
+Inference for Econometric Models}, Cambridge University Press.
 }

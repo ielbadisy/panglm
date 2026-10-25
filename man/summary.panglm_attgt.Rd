@@ -15,53 +15,55 @@
 )
 }
 \arguments{
-\item{object}{an `"panglm_attgt"` fit from [attgt()]}
+\item{object}{an \code{"panglm_attgt"} fit from \code{\link[=attgt]{attgt()}}}
 
-\item{type}{`"simple"`, `"dynamic"`, `"group"` or `"calendar"`}
+\item{type}{\code{"simple"}, \code{"dynamic"}, \code{"group"} or \code{"calendar"}}
 
-\item{min_e, max_e}{for `"dynamic"`: event-time window}
+\item{min_e, max_e}{for \code{"dynamic"}: event-time window}
 
-\item{balance_e}{for `"dynamic"`: if not `NULL`, only cohorts observed for
-at least `balance_e` periods after treatment are used, so that the
+\item{balance_e}{for \code{"dynamic"}: if not \code{NULL}, only cohorts observed for
+at least \code{balance_e} periods after treatment are used, so that the
 composition of cohorts is the same at every event time up to
-`balance_e`}
+\code{balance_e}}
 
 \item{level}{confidence level; defaults to that of the fit}
 
 \item{...}{unused}
 }
 \value{
-an object of class `"summary.panglm_attgt"`: a list with
-  `overall` (a one-row data frame with `estimate`, `se`, `lower`,
-  `upper`), `estimates` (the effects by event time, cohort or period:
-  column `level` plus the same columns; `NULL` for `"simple"`), `type`,
-  `pretrend`, `inf` (the influence functions of the overall effect),
-  `crit` (the simultaneous critical value of the uniform bands, or
-  `NULL`), `boot` and the fit settings. The influence functions of the
-  effects by level are the attribute `"inf"` of `estimates`.
+an object of class \code{"summary.panglm_attgt"}: a list with
+\code{overall} (a one-row data frame with \code{estimate}, \code{se}, \code{lower},
+\code{upper}), \code{estimates} (the effects by event time, cohort or period:
+column \code{level} plus the same columns; \code{NULL} for \code{"simple"}), \code{type},
+\code{pretrend}, \code{inf} (the influence functions of the overall effect),
+\code{crit} (the simultaneous critical value of the uniform bands, or
+\code{NULL}), \code{boot} and the fit settings. The influence functions of the
+effects by level are the attribute \code{"inf"} of \code{estimates}.
 }
 \description{
-Combines the `ATT(g, t)` of an [attgt()] fit into summary effects, as in
-Callaway and Sant'Anna (2021, Section 3) and `did::aggte()`:
-* `"simple"`: the average of all post-treatment `ATT(g, t)` weighted by
-  cohort size;
-* `"dynamic"`: the event study, `ATT(e)` for each event time
-  `e = t - g`, averaging across cohorts weighted by cohort size; the
-  overall effect is the mean of the post-treatment `ATT(e)`, `e >= 0`;
-* `"group"`: the average effect of each cohort over its post-treatment
-  periods; the overall effect weights cohorts by size;
-* `"calendar"`: the average effect in each calendar period across the
-  cohorts treated by then (weighted by size); the overall effect is the
-  mean over periods.
+Combines the \code{ATT(g, t)} of an \code{\link[=attgt]{attgt()}} fit into summary effects, as in
+Callaway and Sant'Anna (2021, Section 3) and \code{did::aggte()}:
+\itemize{
+\item \code{"simple"}: the average of all post-treatment \code{ATT(g, t)} weighted by
+cohort size;
+\item \code{"dynamic"}: the event study, \code{ATT(e)} for each event time
+\code{e = t - g}, averaging across cohorts weighted by cohort size; the
+overall effect is the mean of the post-treatment \code{ATT(e)}, \code{e >= 0};
+\item \code{"group"}: the average effect of each cohort over its post-treatment
+periods; the overall effect weights cohorts by size;
+\item \code{"calendar"}: the average effect in each calendar period across the
+cohorts treated by then (weighted by size); the overall effect is the
+mean over periods.
+}
 }
 \details{
 Standard errors come from the influence functions and account for the
 estimation of the cohort-size weights. When the fit was bootstrapped
-([attgt()] with `bstrap = TRUE`), the standard errors of the aggregated
-effects come from the same multiplier draws and, with `cband = TRUE`, the
-effects by level get uniform confidence bands (`band_lower`,
-`band_upper`) from the simultaneous critical value `crit`, as in
-`did::aggte()`. Clustering follows the fit.
+(\code{\link[=attgt]{attgt()}} with \code{bstrap = TRUE}), the standard errors of the aggregated
+effects come from the same multiplier draws and, with \code{cband = TRUE}, the
+effects by level get uniform confidence bands (\code{band_lower},
+\code{band_upper}) from the simultaneous critical value \code{crit}, as in
+\code{did::aggte()}. Clustering follows the fit.
 }
 \examples{
 set.seed(2)

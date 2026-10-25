@@ -7,17 +7,17 @@
 \method{summary}{panqr}(object, ...)
 }
 \arguments{
-\item{object}{a `"panqr"` fit}
+\item{object}{a \code{"panqr"} fit}
 
 \item{...}{unused}
 }
 \value{
-an object of class `"summary.panqr"`: a list with one
-  coefficient table per quantile (`coefficients`: estimate, standard
-  error, z value and p-value), the location and scale tables and the
-  quantiles `q` of the standardized errors for MM-QR, and the fit
-  information (`call`, `model`, `tau`, `nobs`, `n_groups`, `vcov_type`,
-  `R`, `dropped`).
+an object of class \code{"summary.panqr"}: a list with one
+coefficient table per quantile (\code{coefficients}: estimate, standard
+error, z value and p-value), the location and scale tables and the
+quantiles \code{q} of the standardized errors for MM-QR, and the fit
+information (\code{call}, \code{model}, \code{tau}, \code{nobs}, \code{n_groups}, \code{vcov_type},
+\code{R}, \code{dropped}).
 }
 \description{
 Summarize a panqr fit

@@ -7,18 +7,18 @@
 \method{summary}{panfmm}(object, ...)
 }
 \arguments{
-\item{object}{a `"panfmm"` fit}
+\item{object}{a \code{"panfmm"} fit}
 
 \item{...}{unused}
 }
 \value{
-an object of class `"summary.panfmm"`: a list with one
-  coefficient table per class (`classes`: estimate, standard error, z
-  value and p-value, ancillary parameter on the log scale), the table of
-  the class-probability (multinomial logit) parameters (`prior`), the mean
-  class probabilities, the class sizes by modal posterior class, and the
-  fit information (`call`, `loglik`, `AIC`, `BIC`, `nobs`, `n_groups`,
-  `vcov_type`).
+an object of class \code{"summary.panfmm"}: a list with one
+coefficient table per class (\code{classes}: estimate, standard error, z
+value and p-value, ancillary parameter on the log scale), the table of
+the class-probability (multinomial logit) parameters (\code{prior}), the mean
+class probabilities, the class sizes by modal posterior class, and the
+fit information (\code{call}, \code{loglik}, \code{AIC}, \code{BIC}, \code{nobs}, \code{n_groups},
+\code{vcov_type}).
 }
 \description{
 Summarize a panfmm fit

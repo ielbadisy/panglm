@@ -7,7 +7,7 @@
 \method{confint}{panglm}(object, parm, level = 0.95, ...)
 }
 \arguments{
-\item{object}{a `"panglm"` fit}
+\item{object}{a \code{"panglm"} fit}
 
 \item{parm}{which parameters (names or indices); defaults to all}
 
@@ -17,14 +17,14 @@
 }
 \value{
 a numeric matrix with one row per requested parameter and two
-  columns giving the lower and upper confidence limits, named after the
-  quantiles implied by `level` (e.g. `"2.5 %"` and `"97.5 %"`). Row names
-  are the parameter names.
+columns giving the lower and upper confidence limits, named after the
+quantiles implied by \code{level} (e.g. \code{"2.5 \%"} and \code{"97.5 \%"}). Row names
+are the parameter names.
 }
 \description{
-Wald-type intervals `estimate +/- z * se`, using whichever `vcov()` the
+Wald-type intervals \verb{estimate +/- z * se}, using whichever \code{vcov()} the
 object currently carries (classical by default; HC1/cluster if the fit
-or a prior [vcov.panglm()] call set it).
+or a prior \code{\link[=vcov.panglm]{vcov.panglm()}} call set it).
 }
 \examples{
 data(copd)

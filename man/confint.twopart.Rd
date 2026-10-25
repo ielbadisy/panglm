@@ -7,7 +7,7 @@
 \method{confint}{twopart}(object, parm, level = 0.95, ...)
 }
 \arguments{
-\item{object}{a `"twopart"` fit}
+\item{object}{a \code{"twopart"} fit}
 
 \item{parm}{names or positions of the coefficients; all by default}
 
@@ -19,10 +19,10 @@
 a two-column matrix
 }
 \description{
-Wald intervals for the coefficients of both parts of a [twopart()] fit,
-named as in `coef()` (`"binary:..."`, `"positive:..."`), from `vcov()`
+Wald intervals for the coefficients of both parts of a \code{\link[=twopart]{twopart()}} fit,
+named as in \code{coef()} (\code{"binary:..."}, \code{"positive:..."}), from \code{vcov()}
 (block diagonal for independent parts, the joint covariance for
-`correlated = TRUE`).
+\code{correlated = TRUE}).
 }
 \examples{
 data(copd)

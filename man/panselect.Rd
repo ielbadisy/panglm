@@ -18,12 +18,12 @@ panselect(
 )
 }
 \arguments{
-\item{selection}{a two-sided formula `s ~ z1 + x1 + ...` for the
-selection equation; `s` is a 0/1 (or logical) indicator equal to one
+\item{selection}{a two-sided formula \code{s ~ z1 + x1 + ...} for the
+selection equation; \code{s} is a 0/1 (or logical) indicator equal to one
 when the outcome is observed}
 
-\item{outcome}{a two-sided formula `y ~ x1 + ...` for the outcome
-equation, fitted on the observations with `s == 1`}
+\item{outcome}{a two-sided formula \code{y ~ x1 + ...} for the outcome
+equation, fitted on the observations with \code{s == 1}}
 
 \item{data}{a data.frame in long format, with one row per individual and
 period whether or not the outcome is observed}
@@ -31,39 +31,39 @@ period whether or not the outcome is observed}
 \item{index}{length-2 character vector giving the individual and period
 columns}
 
-\item{model}{`"within"` (fixed effects in the outcome equation) or
-`"pooling"` (pooled OLS, with Mundlak means when `mundlak = TRUE`)}
+\item{model}{\code{"within"} (fixed effects in the outcome equation) or
+\code{"pooling"} (pooled OLS, with Mundlak means when \code{mundlak = TRUE})}
 
 \item{mundlak}{logical; add the individual means of the time-varying
 selection regressors to the probits (and to the pooled outcome
 equation)}
 
-\item{lambda}{`"period"` (inverse Mills ratio interacted with period
-dummies) or `"common"` (a single inverse Mills ratio term)}
+\item{lambda}{\code{"period"} (inverse Mills ratio interacted with period
+dummies) or \code{"common"} (a single inverse Mills ratio term)}
 
-\item{boot}{number of panel bootstrap replicates; `0` skips the
+\item{boot}{number of panel bootstrap replicates; \code{0} skips the
 bootstrap and makes the cluster-robust covariance the default}
 
 \item{seed}{optional random seed for the bootstrap; the global random
 number state is restored afterwards}
 
-\item{na.action}{missing-data action passed to [stats::model.frame()]
+\item{na.action}{missing-data action passed to \code{\link[stats:model.frame]{stats::model.frame()}}
 for each formula}
 }
 \value{
-an object of class `"panselect"`, a list with components
-  `coefficients`, `vcov` (the default covariance), `vcov_type`
-  (`"boot"` or `"cluster"`), `vcov_boot`, `vcov_cluster`,
-  `vcov_classical`, `boot` (the replicate estimates, the number of
-  requested and failed replicates), `probit` (a list with the probit
-  coefficients of each period, `NULL` for a period without probit),
-  `lambda_terms` (names of the correction terms), `selection_test` (the
-  cluster-robust and bootstrap Wald tests), `imr` (the inverse Mills
-  ratio of every observation of the selection sample, in the row order
-  of the data), `residuals`, `nobs` (selected observations used),
-  `nobs_selection`, `n_groups`, `n_groups_selection`, `df.residual`,
-  `periods`, `model`, `mundlak`, `lambda`, `call`. It has `print`,
-  `summary`, `coef`, `vcov`, `nobs` and `confint` methods.
+an object of class \code{"panselect"}, a list with components
+\code{coefficients}, \code{vcov} (the default covariance), \code{vcov_type}
+(\code{"boot"} or \code{"cluster"}), \code{vcov_boot}, \code{vcov_cluster},
+\code{vcov_classical}, \code{boot} (the replicate estimates, the number of
+requested and failed replicates), \code{probit} (a list with the probit
+coefficients of each period, \code{NULL} for a period without probit),
+\code{lambda_terms} (names of the correction terms), \code{selection_test} (the
+cluster-robust and bootstrap Wald tests), \code{imr} (the inverse Mills
+ratio of every observation of the selection sample, in the row order
+of the data), \code{residuals}, \code{nobs} (selected observations used),
+\code{nobs_selection}, \code{n_groups}, \code{n_groups_selection}, \code{df.residual},
+\code{periods}, \code{model}, \code{mundlak}, \code{lambda}, \code{call}. It has \code{print},
+\code{summary}, \code{coef}, \code{vcov}, \code{nobs} and \code{confint} methods.
 }
 \description{
 Two-step selection correction of Wooldridge (1995) for linear panel
@@ -73,13 +73,13 @@ may depend on the idiosyncratic error of the outcome equation.
 }
 \section{Estimator}{
 
-Step 1. For each period `t` a probit of the selection indicator `s_it`
-on the selection regressors `z_it` and, with `mundlak = TRUE`, the
-individual means `zbar_i` of the time-varying selection regressors (the
+Step 1. For each period \code{t} a probit of the selection indicator \code{s_it}
+on the selection regressors \code{z_it} and, with \code{mundlak = TRUE}, the
+individual means \code{zbar_i} of the time-varying selection regressors (the
 Mundlak version of Chamberlain's device) is fitted on all observations
 of that period (by iteratively reweighted least squares, as
-[stats::glm()], with the convergence tolerance `1e-12`). The inverse Mills ratio is
-`lambda_it = dnorm(xb_it) / pnorm(xb_it)` with `xb_it` the probit
+\code{\link[stats:glm]{stats::glm()}}, with the convergence tolerance \code{1e-12}). The inverse Mills ratio is
+\code{lambda_it = dnorm(xb_it) / pnorm(xb_it)} with \code{xb_it} the probit
 index. The means are taken over all observations of the individual in
 the selection sample, selected or not. A period in which every
 observation (or none) is selected has no probit; its inverse Mills
@@ -88,15 +88,15 @@ first wave of a cohort, before any attrition).
 
 Step 2. The outcome equation is fitted on the selected observations,
 adding the inverse Mills ratio interacted with period dummies,
-`lambda_it * d_t` (`lambda = "period"`, Wooldridge's specification, one
-coefficient per period with a probit) or a single term `lambda_it`
-(`lambda = "common"`). With `model = "within"` the individual effects
+\code{lambda_it * d_t} (\code{lambda = "period"}, Wooldridge's specification, one
+coefficient per period with a probit) or a single term \code{lambda_it}
+(\code{lambda = "common"}). With \code{model = "within"} the individual effects
 are removed by the within transformation on the selected sample; with
-`model = "pooling"` the outcome equation is estimated by pooled OLS and,
-when `mundlak = TRUE`, includes the same Mundlak means `zbar_i` to
+\code{model = "pooling"} the outcome equation is estimated by pooled OLS and,
+when \code{mundlak = TRUE}, includes the same Mundlak means \code{zbar_i} to
 account for the correlation between the individual effect and the
 regressors. Period effects are not added automatically; include them in
-`outcome` (e.g. `+ factor(wave)`) when needed.
+\code{outcome} (e.g. \code{+ factor(wave)}) when needed.
 
 The selection regressors should contain the outcome regressors plus at
 least one excluded variable (an instrument that affects selection but
@@ -109,14 +109,14 @@ nonlinearity of the inverse Mills ratio, and a warning is given.
 The coefficient standard errors default to a panel (cluster) bootstrap:
 whole individuals are resampled with replacement and both steps,
 including the Mundlak means and the per-period probits, are re-estimated
-in each replicate. The covariance is the sample covariance of the `boot`
+in each replicate. The covariance is the sample covariance of the \code{boot}
 replicate estimates; replicates that fail are dropped and counted.
 
-The cluster-robust covariance `vcov(fit, type = "cluster")` treats the
+The cluster-robust covariance \code{vcov(fit, type = "cluster")} treats the
 inverse Mills ratios as known regressors. It ignores the estimation of
 the first step and is therefore not valid for the coefficients when
 there is selection bias. It uses the factor
-`G / (G - 1) * (n - 1) / (n - k)`, as in `plm::vcovHC(type = "sss")`.
+\code{G / (G - 1) * (n - 1) / (n - k)}, as in \code{plm::vcovHC(type = "sss")}.
 
 The test of selection bias is the joint Wald test that all inverse
 Mills ratio coefficients are zero. Under this null hypothesis the first
@@ -149,9 +149,9 @@ summary(fit)
 }
 \references{
 Wooldridge, J. M. (1995). Selection corrections for panel data models
-under conditional mean independence assumptions. *Journal of
-Econometrics*, 68, 115-132.
+under conditional mean independence assumptions. \emph{Journal of
+Econometrics}, 68, 115-132.
 
-Wooldridge, J. M. (2010). *Econometric Analysis of Cross Section and
-Panel Data*, 2nd edition, section 19.9. MIT Press.
+Wooldridge, J. M. (2010). \emph{Econometric Analysis of Cross Section and
+Panel Data}, 2nd edition, section 19.9. MIT Press.
 }

@@ -97,58 +97,57 @@
 \arguments{
 \item{x}{a fitted model or test object}
 
-\item{conf.int}{if `TRUE`, add `conf.low`/`conf.high` columns}
+\item{conf.int}{if \code{TRUE}, add \code{conf.low}/\code{conf.high} columns}
 
 \item{conf.level}{confidence level for the interval}
 
-\item{...}{further arguments passed to the `summary()` aggregation
+\item{...}{further arguments passed to the \code{summary()} aggregation
 (attgt, etwfe), otherwise unused}
 
-\item{type}{for [attgt()] and [etwfe()] fits, which effects to tidy (see
+\item{type}{for \code{\link[=attgt]{attgt()}} and \code{\link[=etwfe]{etwfe()}} fits, which effects to tidy (see
 Details)}
 }
 \value{
-a `data.frame`
+a \code{data.frame}
 }
 \description{
-Implement the `generics::tidy()` and `generics::glance()` generics for the
-fits of [twopart()], [pangmm()], [paniv()], [panqr()], [panselect()],
-[panfmm()], [attgt()], [etwfe()] and [eventstudy()], the hurdle model, and for the test
+Implement the \code{generics::tidy()} and \code{generics::glance()} generics for the
+fits of \code{\link[=twopart]{twopart()}}, \code{\link[=pangmm]{pangmm()}}, \code{\link[=paniv]{paniv()}}, \code{\link[=panqr]{panqr()}}, \code{\link[=panselect]{panselect()}},
+\code{\link[=panfmm]{panfmm()}}, \code{\link[=attgt]{attgt()}}, \code{\link[=etwfe]{etwfe()}} and \code{\link[=eventstudy]{eventstudy()}}, the hurdle model, and for the test
 objects of the Hausman, joint Wald and dispersion tests, so that they work
-with `broom` and `modelsummary`.
+with \code{broom} and \code{modelsummary}.
 }
 \details{
-`tidy()` returns one row per coefficient with columns `term`, `estimate`,
-`std.error`, `statistic` (the Wald z), `p.value` and, with
-`conf.int = TRUE`, the Wald interval `conf.low`, `conf.high`. The
-estimates and standard errors are those of `coef()` and `vcov()`, so the
-interval equals `confint()`. Extra columns identify the rows where a fit
-has several blocks of coefficients: `component` (twopart: `"binary"` or
-`"positive"`; panfmm: `"class"` or `"prior"`), `class` (panfmm), `tau`
-(panqr: one row per term and quantile), `group`, `time`, `event`
+\code{tidy()} returns one row per coefficient with columns \code{term}, \code{estimate},
+\code{std.error}, \code{statistic} (the Wald z), \code{p.value} and, with
+\code{conf.int = TRUE}, the Wald interval \code{conf.low}, \code{conf.high}. The
+estimates and standard errors are those of \code{coef()} and \code{vcov()}, so the
+interval equals \code{confint()}. Extra columns identify the rows where a fit
+has several blocks of coefficients: \code{component} (twopart: \code{"binary"} or
+\code{"positive"}; panfmm: \code{"class"} or \code{"prior"}), \code{class} (panfmm), \code{tau}
+(panqr: one row per term and quantile), \code{group}, \code{time}, \code{event}
 (attgt, etwfe, eventstudy).
 
-For [attgt()], `type = "attgt"` (the default) gives one row per group-time
-effect `ATT(g, t)`, named as in `coef()`; the other types are the
-aggregations of [summary.panglm_attgt()]. For [etwfe()], `type =
-"simple"` (the default) gives the overall ATT, `"group"`, `"calendar"` and
-`"event"` the aggregations of [summary.panglm_etwfe()], and
-`"coefficients"` the coefficients of the underlying regression. For
-[eventstudy()] the reference period is a row with estimate and standard
+For \code{\link[=attgt]{attgt()}}, \code{type = "attgt"} (the default) gives one row per group-time
+effect \code{ATT(g, t)}, named as in \code{coef()}; the other types are the
+aggregations of \code{\link[=summary.panglm_attgt]{summary.panglm_attgt()}}. For \code{\link[=etwfe]{etwfe()}}, \code{type = "simple"} (the default) gives the overall ATT, \code{"group"}, \code{"calendar"} and
+\code{"event"} the aggregations of \code{\link[=summary.panglm_etwfe]{summary.panglm_etwfe()}}, and
+\code{"coefficients"} the coefficients of the underlying regression. For
+\code{\link[=eventstudy]{eventstudy()}} the reference period is a row with estimate and standard
 error zero and a missing statistic. A statistic is missing whenever its
 standard error is zero or missing.
 
-For the test objects, `tidy()` and `glance()` both return a one-row data
-frame in the style of `broom`'s `htest` methods: `statistic`, `p.value`,
-`parameter` (the degrees of freedom; for an F test also `den.df`),
-`distribution` and `method`.
+For the test objects, \code{tidy()} and \code{glance()} both return a one-row data
+frame in the style of \code{broom}'s \code{htest} methods: \code{statistic}, \code{p.value},
+\code{parameter} (the degrees of freedom; for an F test also \code{den.df}),
+\code{distribution} and \code{method}.
 
-`glance()` returns one row with the estimator, the variance type, the
+\code{glance()} returns one row with the estimator, the variance type, the
 numbers of observations and individuals, the log-likelihood, AIC and BIC
 where the model is fitted by maximum likelihood (twopart, panfmm), and
-the specification tests reported by `summary()` (for example the Sargan,
-Hansen and Arellano-Bond tests of [pangmm()], the pre-trend test of
-[attgt()] and [eventstudy()]).
+the specification tests reported by \code{summary()} (for example the Sargan,
+Hansen and Arellano-Bond tests of \code{\link[=pangmm]{pangmm()}}, the pre-trend test of
+\code{\link[=attgt]{attgt()}} and \code{\link[=eventstudy]{eventstudy()}}).
 }
 \examples{
 data(copd)

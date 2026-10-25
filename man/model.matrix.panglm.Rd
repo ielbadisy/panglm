@@ -7,13 +7,13 @@
 \method{model.matrix}{panglm}(object, data = NULL, cre_means = NULL, ...)
 }
 \arguments{
-\item{object}{a `"panglm"` fit}
+\item{object}{a \code{"panglm"} fit}
 
 \item{data}{optional new data containing the regressors}
 
 \item{cre_means}{for correlated random effects fits with new data: a
-matrix of the `mean_*` columns, one row per row of `data`; when
-`NULL` they are recomputed as individual means within `data`, which
+matrix of the \verb{mean_*} columns, one row per row of \code{data}; when
+\code{NULL} they are recomputed as individual means within \code{data}, which
 then needs the individual index}
 
 \item{...}{unused}
@@ -22,12 +22,12 @@ then needs the individual index}
 a numeric matrix with one column per coefficient
 }
 \description{
-Returns the model matrix used for the fit (`data = NULL`) or rebuilt for
+Returns the model matrix used for the fit (\code{data = NULL}) or rebuilt for
 new data with the stored terms, factor levels, contrasts and spline
-knots (`splines::ns()`, `splines::bs()` and `poly()` keep the basis of
-the fit). Its columns match `coef(object)`. With a regression spline,
-`model.matrix(fit, grid) %*% coef(fit)` traces the fitted curve, and the
-covariance `vcov(fit)` gives pointwise confidence bands; for
+knots (\code{splines::ns()}, \code{splines::bs()} and \code{poly()} keep the basis of
+the fit). Its columns match \code{coef(object)}. With a regression spline,
+\code{model.matrix(fit, grid) \%*\% coef(fit)} traces the fitted curve, and the
+covariance \code{vcov(fit)} gives pointwise confidence bands; for
 fixed-effects fits the curve is identified up to a constant, so center
 it at a reference value.
 }

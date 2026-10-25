@@ -7,7 +7,7 @@
 \method{summary}{pangmm}(object, time.dummies = FALSE, ...)
 }
 \arguments{
-\item{object}{a `"pangmm"` fit}
+\item{object}{a \code{"pangmm"} fit}
 
 \item{time.dummies}{logical: show the time effects (and the system-GMM
 constant) in the coefficient table}
@@ -15,11 +15,11 @@ constant) in the coefficient table}
 \item{...}{unused}
 }
 \value{
-an object of class `"summary.pangmm"`: a list with the
-  coefficient table (`coefficients`: estimate, standard error, z value
-  and p-value), the Arellano-Bond tests (`artest`), `sargan`, `hansen`,
-  `wald` and the fit information (`call`, `label`, `vcov_type`, `nobs`,
-  `n_groups`, `n_periods`, `n_instruments`).
+an object of class \code{"summary.pangmm"}: a list with the
+coefficient table (\code{coefficients}: estimate, standard error, z value
+and p-value), the Arellano-Bond tests (\code{artest}), \code{sargan}, \code{hansen},
+\code{wald} and the fit information (\code{call}, \code{label}, \code{vcov_type}, \code{nobs},
+\code{n_groups}, \code{n_periods}, \code{n_instruments}).
 }
 \description{
 Summarize a pangmm fit

@@ -22,9 +22,9 @@ panfmm(
 )
 }
 \arguments{
-\item{formula}{a model formula `y ~ x1 + x2` for the class-specific
+\item{formula}{a model formula \code{y ~ x1 + x2} for the class-specific
 regressions (the same regressors in every class). It may contain
-`offset()` terms, e.g. `offset(log(exposure))` for counts over
+\code{offset()} terms, e.g. \code{offset(log(exposure))} for counts over
 different exposure periods; the offset enters the linear predictor of
 every class with coefficient 1}
 
@@ -36,11 +36,11 @@ a row identifier for cross-section data}
 
 \item{k}{number of latent classes}
 
-\item{family}{`"poisson"`, `"negbin"` (NB2), `"gaussian"`, `"binomial"`
-(logit) or `"probit"` (binomial with probit link), or the corresponding
-panglm family spec, e.g. `binomialfamily("probit")`}
+\item{family}{\code{"poisson"}, \code{"negbin"} (NB2), \code{"gaussian"}, \code{"binomial"}
+(logit) or \code{"probit"} (binomial with probit link), or the corresponding
+panglm family spec, e.g. \code{binomialfamily("probit")}}
 
-\item{concomitant}{optional one-sided formula `~ z1 + z2` of
+\item{concomitant}{optional one-sided formula \code{~ z1 + z2} of
 individual-level (time-invariant) variables for the class
 probabilities}
 
@@ -50,109 +50,109 @@ random)}
 \item{seed}{optional random seed for the random starts; the global
 random number stream is restored afterwards}
 
-\item{vcov}{`"classical"` (inverse negative Hessian) or `"cluster"`
-(sandwich clustered by individual); see [vcov.panfmm()]}
+\item{vcov}{\code{"classical"} (inverse negative Hessian) or \code{"cluster"}
+(sandwich clustered by individual); see \code{\link[=vcov.panfmm]{vcov.panfmm()}}}
 
 \item{maxit}{maximum number of EM iterations per start}
 
 \item{tol}{convergence tolerance on the relative change of the EM
 log-likelihood}
 
-\item{na.action}{missing-data action passed to [stats::model.frame()]}
+\item{na.action}{missing-data action passed to \code{\link[stats:model.frame]{stats::model.frame()}}}
 
 \item{weights}{optional nonnegative individual (sampling) weights: the
-name of a column of `data` or a numeric vector with one value per row
-of `data`, constant within individuals; see the Weights section}
+name of a column of \code{data} or a numeric vector with one value per row
+of \code{data}, constant within individuals; see the Weights section}
 
-\item{offset}{optional numeric offset (the name of a column of `data` or
-a vector with one value per row of `data`), added
-to the linear predictor of every class (in addition to any `offset()`
-terms of `formula`), as in [stats::glm()]}
+\item{offset}{optional numeric offset (the name of a column of \code{data} or
+a vector with one value per row of \code{data}), added
+to the linear predictor of every class (in addition to any \code{offset()}
+terms of \code{formula}), as in \code{\link[stats:glm]{stats::glm()}}}
 }
 \value{
-an object of class `"panfmm"`, a list with components
-  `coefficients` (all parameters, named `class<c>:<term>` and
-  `prior<c>:<term>`), `vcov`, `vcov_type`, `classcoef` (a matrix of
-  class-specific regression coefficients, one column per class), `sigma`
-  (Gaussian) or `theta` (NB2) by class, `prior` (the class probabilities
-  of each individual, one row per individual; with no concomitant
-  variables all rows are equal), `prior_mean` (their averages),
-  `posterior` (posterior class probabilities, one row per individual,
-  rownames the individual identifiers), `class` (the modal posterior
-  class), `classmean` (the mean outcome of each class, used for the label
-  order), `loglik`, `df`, `starts` (log-likelihood of each EM start),
-  `nobs`, `n_groups`, `weights` (the individual weights, `NULL` without
-  weights), `offset` (the total offset of each observation in panel
-  order, `NULL` without offsets), `k`, `family`, `call` and `formula`. It has `print`,
-  `summary`, `coef`, `vcov`, `nobs`, `logLik` (hence `AIC` and `BIC`, with
-  `n` the number of observations), `confint` and `predict` methods.
+an object of class \code{"panfmm"}, a list with components
+\code{coefficients} (all parameters, named \verb{class<c>:<term>} and
+\verb{prior<c>:<term>}), \code{vcov}, \code{vcov_type}, \code{classcoef} (a matrix of
+class-specific regression coefficients, one column per class), \code{sigma}
+(Gaussian) or \code{theta} (NB2) by class, \code{prior} (the class probabilities
+of each individual, one row per individual; with no concomitant
+variables all rows are equal), \code{prior_mean} (their averages),
+\code{posterior} (posterior class probabilities, one row per individual,
+rownames the individual identifiers), \code{class} (the modal posterior
+class), \code{classmean} (the mean outcome of each class, used for the label
+order), \code{loglik}, \code{df}, \code{starts} (log-likelihood of each EM start),
+\code{nobs}, \code{n_groups}, \code{weights} (the individual weights, \code{NULL} without
+weights), \code{offset} (the total offset of each observation in panel
+order, \code{NULL} without offsets), \code{k}, \code{family}, \code{call} and \code{formula}. It has \code{print},
+\code{summary}, \code{coef}, \code{vcov}, \code{nobs}, \code{logLik} (hence \code{AIC} and \code{BIC}, with
+\code{n} the number of observations), \code{confint} and \code{predict} methods.
 }
 \description{
 Finite mixture regression in which every individual belongs to one of
-`k` latent classes for all of its observations, the panel latent class
+\code{k} latent classes for all of its observations, the panel latent class
 model of Deb and Trivedi (1997, 2002) and Bago d'Uva (2006). Within class
-`c` the outcome follows a GLM with class-specific coefficients `beta_c`
+\code{c} the outcome follows a GLM with class-specific coefficients \code{beta_c}
 (and dispersion), and the individual likelihood is
-`L_i = sum_c pi_ic prod_t f_c(y_it | x_it)`. Class probabilities are
-constant (`pi_c`) or depend on individual-level concomitant variables
+\verb{L_i = sum_c pi_ic prod_t f_c(y_it | x_it)}. Class probabilities are
+constant (\code{pi_c}) or depend on individual-level concomitant variables
 through a multinomial logit. In health economics the classes typically
 separate a large group of low users of care from a smaller group of high
 users with a different response to income, insurance or health status.
 }
 \section{Estimation}{
 
-The EM algorithm is run from `nstart` starting partitions of the
+The EM algorithm is run from \code{nstart} starting partitions of the
 individuals: the first splits them by the quantiles of their mean
 outcome, the others are random. The E step computes the posterior class
-probabilities `tau_ic` of each individual from the whole history
-`y_i1, ..., y_iT`; the M step fits one weighted GLM per class (weights
-`tau_ic` repeated over the individual's observations, iteratively
+probabilities \code{tau_ic} of each individual from the whole history
+\verb{y_i1, ..., y_iT}; the M step fits one weighted GLM per class (weights
+\code{tau_ic} repeated over the individual's observations, iteratively
 reweighted least squares warm-started at the previous iteration's
-coefficients; NB2 by IRLS and a Newton step for `theta`) and the class
-probabilities (sample means of `tau_ic`, or a weighted multinomial logit
+coefficients; NB2 by IRLS and a Newton step for \code{theta}) and the class
+probabilities (sample means of \code{tau_ic}, or a weighted multinomial logit
 on the concomitant variables). The run with the largest log-likelihood is
 then polished by BFGS and Newton steps on the observed-data
-log-likelihood `sum_i log L_i`, whose numerical Hessian (from analytic
-scores) gives the classical covariance `solve(-H)`. The cluster
-covariance is the sandwich `B (sum_g s_g s_g') B` with `B = solve(-H)`,
-the individual scores `s_i` summed within clusters (the individual by
-default) and the factor `G / (G - 1)`, the convention used in the rest of
+log-likelihood \verb{sum_i log L_i}, whose numerical Hessian (from analytic
+scores) gives the classical covariance \code{solve(-H)}. The cluster
+covariance is the sandwich \verb{B (sum_g s_g s_g') B} with \code{B = solve(-H)},
+the individual scores \code{s_i} summed within clusters (the individual by
+default) and the factor \code{G / (G - 1)}, the convention used in the rest of
 the package for likelihoods whose units are individuals.
 }
 
 \section{Weights}{
 
-Class membership is a property of the individual, so `weights` are
+Class membership is a property of the individual, so \code{weights} are
 individual (sampling) weights: they must be constant within individuals
-(one weight per individual, repeated over its rows) and `panfmm()` stops
+(one weight per individual, repeated over its rows) and \code{panfmm()} stops
 otherwise. The fit maximizes the weighted pseudo log-likelihood
-`sum_i w_i log L_i`, the convention of flexmix (whose integer weights must
+\verb{sum_i w_i log L_i}, the convention of flexmix (whose integer weights must
 also be identical within groups). In the EM algorithm the M step weights
-become `w_i tau_ic`, and the class probabilities are weighted means of
-the posteriors. The classical covariance is `solve(-H_w)` from the
+become \verb{w_i tau_ic}, and the class probabilities are weighted means of
+the posteriors. The classical covariance is \code{solve(-H_w)} from the
 weighted Hessian, which is correct for frequency weights; for sampling
-weights use `vcov = "cluster"`, the sandwich `B (sum_g S_g S_g') B` with
-the weighted individual scores `S_i = w_i s_i` summed within clusters.
+weights use \code{vcov = "cluster"}, the sandwich \verb{B (sum_g S_g S_g') B} with
+the weighted individual scores \verb{S_i = w_i s_i} summed within clusters.
 Individuals with zero weight do not contribute. With weights the
-reported `loglik` (hence AIC and BIC) is the weighted log-likelihood, and
-BIC keeps `n` the number of observations (flexmix uses the sum of the
+reported \code{loglik} (hence AIC and BIC) is the weighted log-likelihood, and
+BIC keeps \code{n} the number of observations (flexmix uses the sum of the
 weights, which differs for sampling weights scaled to population totals).
 
-Ancillary parameters are estimated on the log scale: `log(sigma)` for the
-Gaussian family and `log(theta)` for NB2 (variance
-`mu + mu^2 / theta`, i.e. `alpha = 1 / theta`). The class probabilities
+Ancillary parameters are estimated on the log scale: \code{log(sigma)} for the
+Gaussian family and \code{log(theta)} for NB2 (variance
+\code{mu + mu^2 / theta}, i.e. \code{alpha = 1 / theta}). The class probabilities
 are parameterized by the multinomial logit coefficients of classes
-`2, ..., k` against class 1 (an intercept only when there are no
+\verb{2, ..., k} against class 1 (an intercept only when there are no
 concomitant variables), and these are the parameters reported in
-`coef()` and `vcov()`; the implied probabilities are in `fit$prior`.
+\code{coef()} and \code{vcov()}; the implied probabilities are in \code{fit$prior}.
 }
 
 \section{Label switching}{
 
 Mixture likelihoods are invariant to permutations of the class labels.
-`panfmm()` orders the classes by ascending mean outcome: the mean over
-all observations of the class-specific fitted mean `mu_c(x_it)`, so that
-class 1 is the low-use class and class `k` the high-use class. The
+\code{panfmm()} orders the classes by ascending mean outcome: the mean over
+all observations of the class-specific fitted mean \code{mu_c(x_it)}, so that
+class 1 is the low-use class and class \code{k} the high-use class. The
 multinomial logit of the class probabilities uses class 1 as reference.
 }
 
@@ -177,20 +177,20 @@ head(predict(fit, type = "class"))
 }
 \references{
 Deb, P. and Trivedi, P. K. (1997). Demand for medical care by the
-elderly: a finite mixture approach. *Journal of Applied Econometrics*,
+elderly: a finite mixture approach. \emph{Journal of Applied Econometrics},
 12, 313-336.
 
 Deb, P. and Trivedi, P. K. (2002). The structure of demand for health
-care: latent class versus two-part models. *Journal of Health
-Economics*, 21, 601-625. \doi{10.1016/S0167-6296(02)00008-5}
+care: latent class versus two-part models. \emph{Journal of Health
+Economics}, 21, 601-625. \doi{10.1016/S0167-6296(02)00008-5}
 
 Bago d'Uva, T. (2006). Latent class models for utilisation of health
-care. *Health Economics*, 15, 329-343. \doi{10.1002/hec.1112}
+care. \emph{Health Economics}, 15, 329-343. \doi{10.1002/hec.1112}
 
 Gruen, B. and Leisch, F. (2008). FlexMix version 2: finite mixtures with
-concomitant variables and varying and constant parameters. *Journal of
-Statistical Software*, 28(4). \doi{10.18637/jss.v028.i04}
+concomitant variables and varying and constant parameters. \emph{Journal of
+Statistical Software}, 28(4). \doi{10.18637/jss.v028.i04}
 }
 \seealso{
-[panfmmselect()] to compare numbers of classes
+\code{\link[=panfmmselect]{panfmmselect()}} to compare numbers of classes
 }

@@ -24,145 +24,145 @@ panglm(
 )
 }
 \arguments{
-\item{formula}{a model formula, e.g. `y ~ x1 + x2`}
+\item{formula}{a model formula, e.g. \code{y ~ x1 + x2}}
 
-\item{data}{a data.frame containing the variables in `formula` and `index`}
+\item{data}{a data.frame containing the variables in \code{formula} and \code{index}}
 
 \item{index}{length-1 or length-2 character vector identifying the
-individual (and optionally time) columns, e.g. `c("id", "time")`}
+individual (and optionally time) columns, e.g. \code{c("id", "time")}}
 
-\item{model}{one of `"pooling"`, `"within"`, `"random"`, `"between"`.
-The between estimator (`family = "gaussian"` only) is least squares on
+\item{model}{one of \code{"pooling"}, \code{"within"}, \code{"random"}, \code{"between"}.
+The between estimator (\code{family = "gaussian"} only) is least squares on
 the individual means of the outcome and the regressors, one row per
-individual, as in `plm(model = "between")`; it uses only the variation
+individual, as in \code{plm(model = "between")}; it uses only the variation
 between individuals and is the cross-sectional counterpart of the
-within estimator. Its robust covariances (`"HC1"`, `"cluster"`) are the
+within estimator. Its robust covariances (\code{"HC1"}, \code{"cluster"}) are the
 same, since each individual is one observation of the means regression.}
 
-\item{family}{one of `"gaussian"`, `"poisson"`, `"binomial"`, `"probit"`,
-`"negbin"`, `"gamma"`, `"ologit"`, `"oprobit"`, `"beta"`, `"tobit"`,
-or a family spec from [gaussianfamily()] / [poissonfamily()] /
-[binomialfamily()] / [negbinfamily()] / [gammafamily()] /
-[orderedfamily()] / [betafamily()] / [tobitfamily()]}
+\item{family}{one of \code{"gaussian"}, \code{"poisson"}, \code{"binomial"}, \code{"probit"},
+\code{"negbin"}, \code{"gamma"}, \code{"ologit"}, \code{"oprobit"}, \code{"beta"}, \code{"tobit"},
+or a family spec from \code{\link[=gaussianfamily]{gaussianfamily()}} / \code{\link[=poissonfamily]{poissonfamily()}} /
+\code{\link[=binomialfamily]{binomialfamily()}} / \code{\link[=negbinfamily]{negbinfamily()}} / \code{\link[=gammafamily]{gammafamily()}} /
+\code{\link[=orderedfamily]{orderedfamily()}} / \code{\link[=betafamily]{betafamily()}} / \code{\link[=tobitfamily]{tobitfamily()}}}
 
 \item{weights}{optional nonnegative observation (prior) weights: the
-name of a column of `data` or a numeric vector with one value per row
-of `data`, e.g. inverse probability weights for attrition.
-Nontrivial weights are supported for `model = "pooling"` (all
+name of a column of \code{data} or a numeric vector with one value per row
+of \code{data}, e.g. inverse probability weights for attrition.
+Nontrivial weights are supported for \code{model = "pooling"} (all
 families); the fit then maximizes the weighted (pseudo) log-likelihood
-and robust covariances use the weighted scores. For `model = "random"`
+and robust covariances use the weighted scores. For \code{model = "random"}
 the weights must be constant within individuals (one weight per
 individual, e.g. a baseline sampling weight) and the fit maximizes
 the weighted sum of the individual integrated log-likelihoods; the
 Gaussian model is then estimated by maximum likelihood instead of
-Swamy-Arora FGLS. Use `vcov = "cluster"` for design-based standard
+Swamy-Arora FGLS. Use \code{vcov = "cluster"} for design-based standard
 errors. Weighted fixed-effects fits are rejected.}
 
-\item{offset}{optional model offset (the name of a column of `data` or a
-numeric vector with one value per row of `data`). Nonzero offsets, including offsets
-specified in `formula`, are rejected explicitly rather than ignored.}
+\item{offset}{optional model offset (the name of a column of \code{data} or a
+numeric vector with one value per row of \code{data}). Nonzero offsets, including offsets
+specified in \code{formula}, are rejected explicitly rather than ignored.}
 
-\item{na.action}{missing-data action passed to [stats::model.frame()]}
+\item{na.action}{missing-data action passed to \code{\link[stats:model.frame]{stats::model.frame()}}}
 
-\item{effect}{one of `"individual"` or `"twoways"` (individual + time
-fixed effects). `"twoways"` is implemented for `model = "within"`
-only: `family = "gaussian"` (exact alternating-projections
-demeaning), `"poisson"` and `"negbin"` (both via outer-IRLS /
-inner-weighted-FWL, the algorithm behind `fixest::feglm()`), and
-`"binomial"`, the two-way conditional (Chamberlain) logit: the
+\item{effect}{one of \code{"individual"} or \code{"twoways"} (individual + time
+fixed effects). \code{"twoways"} is implemented for \code{model = "within"}
+only: \code{family = "gaussian"} (exact alternating-projections
+demeaning), \code{"poisson"} and \code{"negbin"} (both via outer-IRLS /
+inner-weighted-FWL, the algorithm behind \code{fixest::feglm()}), and
+\code{"binomial"}, the two-way conditional (Chamberlain) logit: the
 individual effects are conditioned out exactly and the time effects
 are estimated as time dummies inside the conditional likelihood, as in
-`survival::clogit(y ~ x + factor(time) + strata(id), method = "exact")`.
-For the two-way logit `coef()` holds the slopes only; the time effects
-(first time level as reference, `NA` when not identified) and their
-standard errors are in `fit$time_effects` and `fit$time_effects_se`,
+\code{survival::clogit(y ~ x + factor(time) + strata(id), method = "exact")}.
+For the two-way logit \code{coef()} holds the slopes only; the time effects
+(first time level as reference, \code{NA} when not identified) and their
+standard errors are in \code{fit$time_effects} and \code{fit$time_effects_se},
 and the classical and robust covariances of the slopes account for
 their estimation.}
 
-\item{vcov}{one of `"classical"`, `"HC1"` (heteroskedasticity-robust) or
-`"cluster"` (cluster-robust, clustered by the panel individual by
-default). For `model = "random"` only `"classical"` and `"cluster"`
+\item{vcov}{one of \code{"classical"}, \code{"HC1"} (heteroskedasticity-robust) or
+\code{"cluster"} (cluster-robust, clustered by the panel individual by
+default). For \code{model = "random"} only \code{"classical"} and \code{"cluster"}
 are available; the cluster covariance uses the individual scores of
 the integrated likelihood, so clusters must contain whole individuals.
-See [vcov.panglm()] to recompute a different type after fitting.}
+See \code{\link[=vcov.panglm]{vcov.panglm()}} to recompute a different type after fitting.}
 
-\item{cre}{logical. If `TRUE`, fit a correlated random effects
+\item{cre}{logical. If \code{TRUE}, fit a correlated random effects
 (Mundlak) model: the individual means of every time-varying regressor
-are added to the design matrix, named `mean_<column>`. Available for
-`model = "pooling"` and `model = "random"` and every family. The slopes
+are added to the design matrix, named \verb{mean_<column>}. Available for
+\code{model = "pooling"} and \code{model = "random"} and every family. The slopes
 of the time-varying regressors then have a within interpretation, and
 the joint test of the mean terms is a robust Hausman-type test
-(reported by [summary.panglm()]).
-Defaults to `dynamic`.}
+(reported by \code{\link[=summary.panglm]{summary.panglm()}}).
+Defaults to \code{dynamic}.}
 
-\item{dynamic}{logical. If `TRUE`, fit a dynamic model with the
+\item{dynamic}{logical. If \code{TRUE}, fit a dynamic model with the
 Wooldridge (2005) solution to the initial conditions problem: the
-outcome of the previous wave (`lag_<y>`) and the outcome of the first
-observed wave (`initial_<y>`) are added to the regressors, the first
+outcome of the previous wave (\verb{lag_<y>}) and the outcome of the first
+observed wave (\verb{initial_<y>}) are added to the regressors, the first
 wave is dropped, and the individual means of the time-varying
-regressors are added (`cre = TRUE` by default; the lag is not
-averaged). The second element of `index` must be a numeric time
-variable; a lag is only defined when the previous wave `t - 1` is
+regressors are added (\code{cre = TRUE} by default; the lag is not
+averaged). The second element of \code{index} must be a numeric time
+variable; a lag is only defined when the previous wave \code{t - 1} is
 observed, other rows are dropped. Factor and logical outcomes (ordered
 and binary models) give factor or logical lags, so their partial
-effects are discrete changes. With `model = "random"` the coefficient
+effects are discrete changes. With \code{model = "random"} the coefficient
 of the lag measures true state dependence net of unobserved
-heterogeneity; [partialeffects()] gives it on the probability or mean
-scale. Available for `model = "pooling"` and `model = "random"`.}
+heterogeneity; \code{\link[=partialeffects]{partialeffects()}} gives it on the probability or mean
+scale. Available for \code{model = "pooling"} and \code{model = "random"}.}
 
 \item{random}{one-sided formula for the random effects of
-`model = "random"`. The default `~ 1` is the random intercept. A
-formula with variables, e.g. `~ time`, adds correlated random slopes:
-`g(E[y_it | b_i]) = x_it' beta + z_it' b_i` with `z_it = (1, time)`
-and `b_i ~ N(0, Sigma)`, `Sigma` unstructured (Cholesky
-parameterized), the model of `lme4::lmer(y ~ x + (1 + time | id))`.
-The slope variables usually also appear in `formula` (their average
-slope). Available for `family = "gaussian"` (exact maximum likelihood,
-any number of slopes), and for `"poisson"`, `"negbin"` (NB2, the
-model of `glmmTMB::nbinom2()`, with `theta` stored as `negbin_theta`),
-`"gamma"` (log link, the model of `glmmTMB` with `Gamma(link = "log")`,
-shape stored as `shape`) and `"binomial"` (logit or probit), with any
+\code{model = "random"}. The default \code{~ 1} is the random intercept. A
+formula with variables, e.g. \code{~ time}, adds correlated random slopes:
+\verb{g(E[y_it | b_i]) = x_it' beta + z_it' b_i} with \verb{z_it = (1, time)}
+and \code{b_i ~ N(0, Sigma)}, \code{Sigma} unstructured (Cholesky
+parameterized), the model of \code{lme4::lmer(y ~ x + (1 + time | id))}.
+The slope variables usually also appear in \code{formula} (their average
+slope). Available for \code{family = "gaussian"} (exact maximum likelihood,
+any number of slopes), and for \code{"poisson"}, \code{"negbin"} (NB2, the
+model of \code{glmmTMB::nbinom2()}, with \code{theta} stored as \code{negbin_theta}),
+\code{"gamma"} (log link, the model of \code{glmmTMB} with \code{Gamma(link = "log")},
+shape stored as \code{shape}) and \code{"binomial"} (logit or probit), with any
 number of slopes, by adaptive Gauss-Hermite product quadrature with
-`R` nodes per dimension, `R^q` nodes for `q` random effects; `R = 1`
-is the Laplace approximation of `lme4::glmer()` and `glmmTMB`.
+\code{R} nodes per dimension, \code{R^q} nodes for \code{q} random effects; \code{R = 1}
+is the Laplace approximation of \code{lme4::glmer()} and \code{glmmTMB}.
 With random slopes the random effects are always normal on the link
-scale, so for `"poisson"` and `"negbin"` the multiplicative effect
-`exp(z_it' b_i)` is lognormal. These are different models from the
-random-intercept fits of `random = ~ 1`: the random-intercept
-`"poisson"` model uses gamma mixing (the conjugate model of Hausman,
+scale, so for \code{"poisson"} and \code{"negbin"} the multiplicative effect
+\verb{exp(z_it' b_i)} is lognormal. These are different models from the
+random-intercept fits of \code{random = ~ 1}: the random-intercept
+\code{"poisson"} model uses gamma mixing (the conjugate model of Hausman,
 Hall and Griliches, whose likelihood is in closed form, as Stata's
-`xtpoisson, re`) and the random-intercept `"negbin"` model is the
+\verb{xtpoisson, re}) and the random-intercept \code{"negbin"} model is the
 beta-mixed negative binomial of Hausman, Hall and Griliches (Stata's
-`xtnbreg, re`), whereas with random slopes `"negbin"` is NB2 with a
-lognormal effect, as `glmmTMB::nbinom2()`. Adding a slope whose
+\verb{xtnbreg, re}), whereas with random slopes \code{"negbin"} is NB2 with a
+lognormal effect, as \code{glmmTMB::nbinom2()}. Adding a slope whose
 variance is estimated at zero therefore does not reproduce the
-`random = ~ 1` fit for these two families: the slope coefficients
+\code{random = ~ 1} fit for these two families: the slope coefficients
 keep their conditional (rate ratio) meaning, but the intercept
-(`E[exp(b_i)] = exp(sigma^2 / 2)` under lognormal mixing against 1
+(\code{E[exp(b_i)] = exp(sigma^2 / 2)} under lognormal mixing against 1
 under gamma mixing), the variance parameters and the log-likelihood
-differ. For `"binomial"` and `"gamma"` the random-intercept models are
+differ. For \code{"binomial"} and \code{"gamma"} the random-intercept models are
 already normal on the link scale and are the zero-slope special case.
-The fit stores `varcomp` (the
-covariance matrix `Sigma`), `ranef` (posterior modes, the BLUPs in
+The fit stores \code{varcomp} (the
+covariance matrix \code{Sigma}), \code{ranef} (posterior modes, the BLUPs in
 the Gaussian model, one row per individual) and, for the Gaussian
-model, the residual variance `sigma_v2`. Weights, `dynamic = TRUE`
+model, the residual variance \code{sigma_v2}. Weights, \code{dynamic = TRUE}
 and the other families are not supported with random slopes;
-`cre = TRUE` is. Response predictions and [partialeffects()] are
+\code{cre = TRUE} is. Response predictions and \code{\link[=partialeffects]{partialeffects()}} are
 population averages over the random effects.}
 
 \item{R}{number of Gauss-Hermite quadrature nodes (random-effects
 binomial and gamma models only). With random slopes, the number of
-nodes per dimension of the adaptive product rule. When `R` is not
+nodes per dimension of the adaptive product rule. When \code{R} is not
 given it is 7 for one slope, 5 for two, 3 for three to five and 1
-(Laplace) beyond, so that `R^q` stays moderate; a warning is given
-when `R^q` exceeds 2000. `R = 1` gives the Laplace approximation.}
+(Laplace) beyond, so that \code{R^q} stays moderate; a warning is given
+when \code{R^q} exceeds 2000. \code{R = 1} gives the Laplace approximation.}
 
 \item{maxit}{maximum IRLS/Newton iterations}
 
 \item{tol}{convergence tolerance}
 }
 \value{
-an object of class `"panglm"`
+an object of class \code{"panglm"}
 }
 \description{
 Fast pooled, fixed-effects ("within") and random-effects panel GLMs,

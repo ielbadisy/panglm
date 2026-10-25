@@ -13,13 +13,13 @@
 )
 }
 \arguments{
-\item{object}{a fitted `"panglm"` object}
+\item{object}{a fitted \code{"panglm"} object}
 
 \item{newdata}{optional data frame; when omitted, return in-sample values}
 
-\item{type}{either `"link"` or `"response"`}
+\item{type}{either \code{"link"} or \code{"response"}}
 
-\item{allow.new.levels}{if `TRUE`, assign zero to unseen fixed-effect
+\item{allow.new.levels}{if \code{TRUE}, assign zero to unseen fixed-effect
 levels; otherwise unseen levels are an error}
 
 \item{...}{unused}
@@ -32,12 +32,12 @@ Pooled predictions use the ordinary GLM mean. Random-effects response
 predictions are population averages over the fitted latent-effect
 distribution. Fixed-effects predictions include the estimated individual
 and, where applicable, time effects. New fixed-effect levels produce an
-error unless `allow.new.levels = TRUE`, in which case their contribution
+error unless \code{allow.new.levels = TRUE}, in which case their contribution
 is set to zero.
 }
 \details{
 Exact conditional binomial fits provide in-sample conditional inclusion
-probabilities. They cannot provide predictions for arbitrary `newdata`
+probabilities. They cannot provide predictions for arbitrary \code{newdata}
 because the individual intercept is conditioned out and the probability
 depends on the complete response set and its success total.
 }

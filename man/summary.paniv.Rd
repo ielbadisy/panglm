@@ -7,16 +7,16 @@
 \method{summary}{paniv}(object, ...)
 }
 \arguments{
-\item{object}{a `"paniv"` fit}
+\item{object}{a \code{"paniv"} fit}
 
 \item{...}{unused}
 }
 \value{
-an object of class `"summary.paniv"`: a list with the coefficient
-  table (`coefficients`: estimate, standard error, z value and p-value),
-  `first_stage`, `overid`, `ercomp`, `endogenous`, `instruments`,
-  `varlist` (Hausman-Taylor) and the fit information (`call`, `model`,
-  `nobs`, `n_groups`, `df.residual`, `vcov_type`).
+an object of class \code{"summary.paniv"}: a list with the coefficient
+table (\code{coefficients}: estimate, standard error, z value and p-value),
+\code{first_stage}, \code{overid}, \code{ercomp}, \code{endogenous}, \code{instruments},
+\code{varlist} (Hausman-Taylor) and the fit information (\code{call}, \code{model},
+\code{nobs}, \code{n_groups}, \code{df.residual}, \code{vcov_type}).
 }
 \description{
 Summarize a paniv fit

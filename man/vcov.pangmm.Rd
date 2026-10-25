@@ -7,13 +7,13 @@
 \method{vcov}{pangmm}(object, type = NULL, ...)
 }
 \arguments{
-\item{object}{a `"pangmm"` fit}
+\item{object}{a \code{"pangmm"} fit}
 
-\item{type}{`NULL` (the covariance stored on the fit), `"robust"` (the
+\item{type}{\code{NULL} (the covariance stored on the fit), \code{"robust"} (the
 one-step sandwich, or the Windmeijer-corrected two-step covariance) or
-`"classical"` (the homoskedastic one-step covariance, or the
-uncorrected two-step covariance); `"cluster"` is a synonym of
-`"robust"`}
+\code{"classical"} (the homoskedastic one-step covariance, or the
+uncorrected two-step covariance); \code{"cluster"} is a synonym of
+\code{"robust"}}
 
 \item{...}{unused}
 }

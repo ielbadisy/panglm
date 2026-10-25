@@ -19,76 +19,76 @@ etwfe(
 )
 }
 \arguments{
-\item{formula}{`outcome ~ 1`, or `outcome ~ controls`}
+\item{formula}{\code{outcome ~ 1}, or \code{outcome ~ controls}}
 
 \item{data}{a data.frame in long format}
 
-\item{index}{`c(individual, time)`; the time index must be numeric. The
+\item{index}{\code{c(individual, time)}; the time index must be numeric. The
 individual identifies the clusters for the standard errors.}
 
 \item{treat}{name of the column holding each individual's first treated
-period; `NA`, `0` or `Inf` for units that are never treated}
+period; \code{NA}, \code{0} or \code{Inf} for units that are never treated}
 
-\item{family}{`"gaussian"` (linear), `"poisson"` (counts, log link) or
-`"binomial"` (binary, logit link; `"logit"` is accepted)}
+\item{family}{\code{"gaussian"} (linear), \code{"poisson"} (counts, log link) or
+\code{"binomial"} (binary, logit link; \code{"logit"} is accepted)}
 
-\item{control}{`"notyet"` or `"never"`; see Specification}
+\item{control}{\code{"notyet"} or \code{"never"}; see Specification}
 
-\item{vcov}{`"cluster"` (by individual, the default) or `"classical"`.
+\item{vcov}{\code{"cluster"} (by individual, the default) or \code{"classical"}.
 The cluster covariance uses the factor
-`G / (G - 1) * (n - 1) / (n - k)` with `k` counting all coefficients,
-cohort and period dummies included (with `ivar = TRUE`, the individual
-effects, nested in the clusters, count as one), as `fixest` does.}
+\code{G / (G - 1) * (n - 1) / (n - k)} with \code{k} counting all coefficients,
+cohort and period dummies included (with \code{ivar = TRUE}, the individual
+effects, nested in the clusters, count as one), as \code{fixest} does.}
 
 \item{level}{confidence level of the reported intervals}
 
-\item{weights}{optional sampling weights: the name of a column of `data`
+\item{weights}{optional sampling weights: the name of a column of \code{data}
 or a non-negative numeric vector with one value per row (rows with a
 missing weight are dropped). They weight the quasi-likelihood (as
-`weights = ~w` in `etwfe::etwfe()` and `fixest`) and the averages of
+\code{weights = ~w} in \code{etwfe::etwfe()} and \code{fixest}) and the averages of
 the treatment effects over the treated observations in
-[summary.panglm_etwfe()] (as `wts` in `etwfe::emfx()`). The centring
-of the controls at their cohort means (and of `xvar` at its cell
-means) is unweighted, as in `etwfe`. Unlike in [attgt()], the weights
+\code{\link[=summary.panglm_etwfe]{summary.panglm_etwfe()}} (as \code{wts} in \code{etwfe::emfx()}). The centring
+of the controls at their cohort means (and of \code{xvar} at its cell
+means) is unweighted, as in \code{etwfe}. Unlike in \code{\link[=attgt]{attgt()}}, the weights
 need not be constant within individuals: the model is a weighted
 pooled (quasi-)likelihood over the rows, so observation-level weights
 are well defined, and the cluster-robust covariance by individual
-remains valid (as in `fixest`). Use weights constant within
+remains valid (as in \code{fixest}). Use weights constant within
 individuals when they are sampling weights of the individuals, so that
-the estimates are comparable with [attgt()].}
+the estimates are comparable with \code{\link[=attgt]{attgt()}}.}
 
-\item{xvar}{optional name of one numeric or logical column of `data`: a
+\item{xvar}{optional name of one numeric or logical column of \code{data}: a
 covariate by which the treatment effects may vary (see Heterogeneity
 by a covariate)}
 
-\item{ivar}{logical; `TRUE` uses individual (the first element of
-`index`) instead of cohort fixed effects, for `family = "gaussian"`
+\item{ivar}{logical; \code{TRUE} uses individual (the first element of
+\code{index}) instead of cohort fixed effects, for \code{family = "gaussian"}
 only (see Specification)}
 }
 \value{
-an object of class `"panglm_etwfe"`: a list with
-  `coefficients`, `vcov`, `cells` (a data frame of the cohort by period
-  cells with their coefficient on the index scale), `family`, `control`,
-  `reference` (the reference cohort), `xvar`, `ivar`, `nobs`,
-  `n_groups`, the design
-  (`X`, `y`, `rows`) and the call. Methods: `print`, `summary` (the
-  ATTs), `coef`, `vcov`, `nobs`, `plot`.
+an object of class \code{"panglm_etwfe"}: a list with
+\code{coefficients}, \code{vcov}, \code{cells} (a data frame of the cohort by period
+cells with their coefficient on the index scale), \code{family}, \code{control},
+\code{reference} (the reference cohort), \code{xvar}, \code{ivar}, \code{nobs},
+\code{n_groups}, the design
+(\code{X}, \code{y}, \code{rows}) and the call. Methods: \code{print}, \code{summary} (the
+ATTs), \code{coef}, \code{vcov}, \code{nobs}, \code{plot}.
 }
 \description{
 The extended two-way fixed-effects (ETWFE) estimator of Wooldridge
 (2021, 2023) for staggered adoption, with linear, Poisson or logit
 outcome models. The model interacts the treatment with every cohort by
 period cell, so that each cohort can have its own effect in each period:
-with `g` the first treated period of the cohort and `t` the period,
+with \code{g} the first treated period of the cohort and \code{t} the period,
 \deqn{E[y_{it}] = F(\alpha + \gamma_g + \lambda_t + \sum_{(g, t)}
 \tau_{gt} D_{gt,it} + x_{it}'\beta + \ldots)}{E[y] = F(alpha + gamma_g
 + lambda_t + sum tau_gt D_gt + x'beta + ...)}
-where `D_gt` indicates cohort `g` in period `t`, `gamma_g` and
-`lambda_t` are cohort and period effects and `F` is the identity, the
+where \code{D_gt} indicates cohort \code{g} in period \code{t}, \code{gamma_g} and
+\code{lambda_t} are cohort and period effects and \code{F} is the identity, the
 exponential or the logistic function. Because the cell effects are
 unrestricted, the estimator does not suffer from the negative weights
-of the single-coefficient TWFE regression of [did()]; in the linear case
-with `control = "notyet"` it is numerically equivalent to an imputation
+of the single-coefficient TWFE regression of \code{\link[=did]{did()}}; in the linear case
+with \code{control = "notyet"} it is numerically equivalent to an imputation
 estimator. For nonlinear models, parallel trends is imposed on the index
 (for example on the log of the mean for Poisson), which suits counts and
 binary outcomes.
@@ -98,7 +98,7 @@ The average treatment effects on the treated are then computed on the
 response scale as marginal effects: for each treated observation, the
 difference between the predicted mean with its cell effect and without
 it, averaged over the treated observations (all of them, by cohort, by
-calendar period or by time since treatment; see [summary.panglm_etwfe()]).
+calendar period or by time since treatment; see \code{\link[=summary.panglm_etwfe]{summary.panglm_etwfe()}}).
 Standard errors use the delta method with analytic gradients.
 }
 \section{Specification}{
@@ -108,26 +108,26 @@ individual effects: for linear models on balanced panels without
 time-varying controls the two give the same cell effects, and for
 nonlinear models the pooled
 quasi-likelihood with cohort dummies is the estimator of Wooldridge
-2023). With `control = "notyet"` (the default) the cell dummies cover
+2023). With \code{control = "notyet"} (the default) the cell dummies cover
 the post-treatment cells only, so all untreated observations, of
 never-treated and not-yet-treated cohorts, identify the counterfactual.
-With `control = "never"` every cell of each treated cohort gets a
+With \code{control = "never"} every cell of each treated cohort gets a
 dummy except the period just before treatment, so only never-treated
 individuals identify the period effects and the pre-treatment cells
 give placebo estimates. The reference cohort is the never-treated
-group; without never-treated individuals and with `control = "notyet"`
+group; without never-treated individuals and with \code{control = "notyet"}
 the last cohort to be treated is the reference and the periods from its
 treatment date onwards are dropped. Individuals treated in the first
 period are dropped.
 
-Control variables in `formula` enter with their main effect, their
+Control variables in \code{formula} enter with their main effect, their
 interactions with the cohort and period dummies, and interactions of the
 cell dummies with the control variables centred at their cohort means,
-as in Wooldridge (2021) and the `etwfe` package, so that the cell
+as in Wooldridge (2021) and the \code{etwfe} package, so that the cell
 effects can vary with the controls.
 
-With `ivar = TRUE` (linear model only) individual fixed effects replace
-the cohort effects, as `ivar` in `etwfe::etwfe()`: they are swept out by
+With \code{ivar = TRUE} (linear model only) individual fixed effects replace
+the cohort effects, as \code{ivar} in \code{etwfe::etwfe()}: they are swept out by
 within-individual demeaning (weighted when there are weights). On a
 balanced panel without time-varying controls the cell effects and ATTs
 are the same as with cohort effects. They differ with time-varying
@@ -138,25 +138,25 @@ individual effects also absorb time-invariant controls.
 Nonlinear models keep the cohort effects (with few periods, individual
 effects in a logit model suffer from the incidental parameters problem;
 the pooled Poisson and logit quasi-likelihoods with cohort effects are
-the estimators of Wooldridge 2023), and `ivar = TRUE` is an error there,
-whereas `etwfe::etwfe()` ignores `ivar` for nonlinear families.
+the estimators of Wooldridge 2023), and \code{ivar = TRUE} is an error there,
+whereas \code{etwfe::etwfe()} ignores \code{ivar} for nonlinear families.
 }
 
 \section{Heterogeneity by a covariate}{
 
-`xvar` names a covariate by which the treatment effects may vary, as
-`xvar` in `etwfe::etwfe()` (typically a time-invariant indicator, such
+\code{xvar} names a covariate by which the treatment effects may vary, as
+\code{xvar} in \code{etwfe::etwfe()} (typically a time-invariant indicator, such
 as sex, rural residence or a baseline risk group). The covariate is
 centred at its cohort by period cell means and enters through its
 interactions with the period dummies (except the first period) and with
 every cell dummy, so each cohort by period effect becomes a linear
 function of the covariate, with the cell coefficient as the effect at
-the cell mean. This is the specification of the `etwfe` package; the
+the cell mean. This is the specification of the \code{etwfe} package; the
 level of the covariate itself is not a regressor, so add it to
-`formula` as a control to adjust for it as well. [summary.panglm_etwfe()]
+\code{formula} as a control to adjust for it as well. \code{\link[=summary.panglm_etwfe]{summary.panglm_etwfe()}}
 then reports the ATTs separately for each value of the covariate
-(`byxvar = TRUE`, the default for such a fit), as
-`etwfe::emfx(by_xvar = TRUE)`; with a continuous covariate there is one
+(\code{byxvar = TRUE}, the default for such a fit), as
+\code{etwfe::emfx(by_xvar = TRUE)}; with a continuous covariate there is one
 row per distinct value, so summarise a binary or discrete version of it.
 }
 
@@ -196,14 +196,14 @@ summary(fx, type = "event", byxvar = FALSE)
 }
 \references{
 Wooldridge, J. M. (2021). Two-way fixed effects, the
-  two-way Mundlak regression, and difference-in-differences estimators.
-  Working paper. \doi{10.2139/ssrn.3906345}
+two-way Mundlak regression, and difference-in-differences estimators.
+Working paper. \doi{10.2139/ssrn.3906345}
 
-  Wooldridge, J. M. (2023). Simple approaches to nonlinear
-  difference-in-differences with panel data. *The Econometrics Journal*,
-  26, C31-C66. \doi{10.1093/ectj/utad016}
+Wooldridge, J. M. (2023). Simple approaches to nonlinear
+difference-in-differences with panel data. \emph{The Econometrics Journal},
+26, C31-C66. \doi{10.1093/ectj/utad016}
 }
 \seealso{
-[attgt()] for the Callaway and Sant'Anna estimator, [did()] and
-  [eventstudy()] for the TWFE versions.
+\code{\link[=attgt]{attgt()}} for the Callaway and Sant'Anna estimator, \code{\link[=did]{did()}} and
+\code{\link[=eventstudy]{eventstudy()}} for the TWFE versions.
 }

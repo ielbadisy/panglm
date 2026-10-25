@@ -17,8 +17,8 @@ pangmm(
 )
 }
 \arguments{
-\item{formula}{a formula `y ~ regressors | gmm instruments` or
-`y ~ regressors | gmm instruments | standard instruments`; see the
+\item{formula}{a formula \verb{y ~ regressors | gmm instruments} or
+\verb{y ~ regressors | gmm instruments | standard instruments}; see the
 Formula section}
 
 \item{data}{a data.frame in long format}
@@ -26,49 +26,48 @@ Formula section}
 \item{index}{length-2 character vector giving the individual and time
 columns}
 
-\item{transformation}{`"d"` (difference GMM, Arellano-Bond) or `"ld"`
+\item{transformation}{\code{"d"} (difference GMM, Arellano-Bond) or \code{"ld"}
 (system GMM, Blundell-Bond)}
 
-\item{model}{`"onestep"` or `"twostep"`}
+\item{model}{\code{"onestep"} or \code{"twostep"}}
 
-\item{effect}{`"twoways"` (time dummies, the default) or `"individual"`}
+\item{effect}{\code{"twoways"} (time dummies, the default) or \code{"individual"}}
 
 \item{collapse}{logical: collapse the GMM-style instruments to one
 column per lag (and, for system GMM, one column for the level
 equation). A named logical vector applies it to selected GMM
-variables, named as in the formula, e.g. `c("log(bmi)" = TRUE)`.}
+variables, named as in the formula, e.g. \code{c("log(bmi)" = TRUE)}.}
 
 \item{maxlag}{optional positive integer: the largest lag of the
 GMM-style instruments, overriding larger upper lags in the formula
-(`lag(y, 2:99)` with `maxlag = 4` uses lags 2 to 4)}
+(\code{lag(y, 2:99)} with \code{maxlag = 4} uses lags 2 to 4)}
 
-\item{vcov}{`"robust"` (one-step sandwich or Windmeijer-corrected
-two-step, both clustered by individual) or `"classical"`; `"cluster"`
-is accepted as a synonym of `"robust"`, the name used by the other
-estimators of the package. See [vcov.pangmm()] to switch after
+\item{vcov}{\code{"robust"} (one-step sandwich or Windmeijer-corrected
+two-step, both clustered by individual) or \code{"classical"}; \code{"cluster"}
+is accepted as a synonym of \code{"robust"}, the name used by the other
+estimators of the package. See \code{\link[=vcov.pangmm]{vcov.pangmm()}} to switch after
 fitting}
 }
 \value{
-an object of class `"pangmm"`, a list with components
-  `coefficients` (the final estimates; time dummies are named by their
-  period), `coefficients_onestep`, `vcov`, `vcov_type`, `vcov_list` (the
-  classical and robust covariances), `residuals` (one numeric vector per
-  individual, differenced rows first and, for system GMM, level rows
-  after; rows not used are zero), `artest` (data frame of the
-  Arellano-Bond tests), `sargan`, `hansen` and `wald` (lists with
-  `statistic`, `df` and `p.value`; `wald` tests the joint significance
-  of the coefficients other than time dummies and the constant),
-  `sigma2` (`s2`), `n_instruments`, `nobs` (number of equations used),
-  `nobs_diff`, `nobs_level`, `n_groups`, `n_periods`, `timedummies`
-  (names of the time-effect coefficients), `transformation`, `model`,
-  `effect`, `collapse`, `call` and `formula`. It has `print`,
-  `summary`, `coef`, `vcov`, `nobs`, `residuals` and `confint` methods.
+an object of class \code{"pangmm"}, a list with components
+\code{coefficients} (the final estimates; time dummies are named by their
+period), \code{coefficients_onestep}, \code{vcov}, \code{vcov_type}, \code{vcov_list} (the
+classical and robust covariances), \code{residuals} (one numeric vector per
+individual, differenced rows first and, for system GMM, level rows
+after; rows not used are zero), \code{artest} (data frame of the
+Arellano-Bond tests), \code{sargan}, \code{hansen} and \code{wald} (lists with
+\code{statistic}, \code{df} and \code{p.value}; \code{wald} tests the joint significance
+of the coefficients other than time dummies and the constant),
+\code{sigma2} (\code{s2}), \code{n_instruments}, \code{nobs} (number of equations used),
+\code{nobs_diff}, \code{nobs_level}, \code{n_groups}, \code{n_periods}, \code{timedummies}
+(names of the time-effect coefficients), \code{transformation}, \code{model},
+\code{effect}, \code{collapse}, \code{call} and \code{formula}. It has \code{print},
+\code{summary}, \code{coef}, \code{vcov}, \code{nobs}, \code{residuals} and \code{confint} methods.
 }
 \description{
 Arellano and Bond (1991) difference GMM and Blundell and Bond (1998)
 system GMM for linear panel models with a lagged dependent variable and
-an unobserved individual effect, `y_it = sum_j rho_j y_i,t-j + x_it'b +
-mu_i + e_it`. Both one-step and two-step estimators are available, with
+an unobserved individual effect, \verb{y_it = sum_j rho_j y_i,t-j + x_it'b + mu_i + e_it}. Both one-step and two-step estimators are available, with
 robust one-step and Windmeijer (2005) corrected two-step standard
 errors, the Arellano-Bond tests for first- and second-order serial
 correlation of the differenced residuals and the Sargan and Hansen tests
@@ -76,88 +75,89 @@ of the overidentifying restrictions.
 }
 \section{Formula}{
 
-The formula follows [plm::pgmm()] and has two or three parts separated
-by `|`:
+The formula follows \code{\link[plm:pgmm]{plm::pgmm()}} and has two or three parts separated
+by \code{|}:
 
-`y ~ lag(y, 1) + x + lag(x, 1) | lag(y, 2:99) | z`
-
-* The first part lists the regressors. `lag(v, k)` is the lag of order
-  `k` of `v` within the individual, `k` may be a vector (`lag(v, 0:2)`
-  gives `v` and its first two lags) and `lag(v)` means `lag(v, 1)`. Any
-  expression of the data can be lagged, e.g. `lag(log(bmi), 1)`. The
-  intercept is not estimated: the individual effects are differenced
-  out, and time effects or the system-GMM constant are added through
-  `effect`.
-* The second part lists the GMM-style instruments: `lag(v, a:b)` uses,
-  for the differenced equation of period `t`, the levels `v_(t-a)`, ...,
-  `v_(t-b)` that exist in the panel (`b = 99` means all available
-  lags). For an endogenous variable `a = 2`, for a predetermined one
-  `a = 1`.
-* The optional third part lists standard (IV-style) instruments, with
-  the same `lag()` syntax; each enters in first differences in the
-  differenced equation (and in levels in the level equation of system
-  GMM). Without a third part, every regressor whose variable does not
-  appear among the GMM-style instruments is used as its own standard
-  instrument, as in [plm::pgmm()].
+\code{y ~ lag(y, 1) + x + lag(x, 1) | lag(y, 2:99) | z}
+\itemize{
+\item The first part lists the regressors. \code{lag(v, k)} is the lag of order
+\code{k} of \code{v} within the individual, \code{k} may be a vector (\code{lag(v, 0:2)}
+gives \code{v} and its first two lags) and \code{lag(v)} means \code{lag(v, 1)}. Any
+expression of the data can be lagged, e.g. \code{lag(log(bmi), 1)}. The
+intercept is not estimated: the individual effects are differenced
+out, and time effects or the system-GMM constant are added through
+\code{effect}.
+\item The second part lists the GMM-style instruments: \code{lag(v, a:b)} uses,
+for the differenced equation of period \code{t}, the levels \code{v_(t-a)}, ...,
+\code{v_(t-b)} that exist in the panel (\code{b = 99} means all available
+lags). For an endogenous variable \code{a = 2}, for a predetermined one
+\code{a = 1}.
+\item The optional third part lists standard (IV-style) instruments, with
+the same \code{lag()} syntax; each enters in first differences in the
+differenced equation (and in levels in the level equation of system
+GMM). Without a third part, every regressor whose variable does not
+appear among the GMM-style instruments is used as its own standard
+instrument, as in \code{\link[plm:pgmm]{plm::pgmm()}}.
+}
 
 Lags are taken on the time grid formed by the sorted distinct values of
 the time index, so missing waves are respected and waves need not be
-equally spaced in calendar time (`plm` instead lags by the numeric value
+equally spaced in calendar time (\code{plm} instead lags by the numeric value
 of the time index, so biennial waves coded as years have no lag one
 period back there); rows with a missing
 value in the response or a regressor are dropped from the moment
-conditions and missing instruments are set to zero, as in `plm` and
-Stata's `xtabond2`.
+conditions and missing instruments are set to zero, as in \code{plm} and
+Stata's \code{xtabond2}.
 }
 
 \section{Estimators}{
 
-With `transformation = "d"` (difference GMM) the model is estimated in
+With \code{transformation = "d"} (difference GMM) the model is estimated in
 first differences, with the GMM-style instruments of each period in
 their own columns (block-diagonal instrument matrix) or, with
-`collapse = TRUE`, one column per lag (Roodman 2009). The one-step
-weight matrix is `(sum_i Z_i' H Z_i)^-1` with `H` the tridiagonal
+\code{collapse = TRUE}, one column per lag (Roodman 2009). The one-step
+weight matrix is \verb{(sum_i Z_i' H Z_i)^-1} with \code{H} the tridiagonal
 matrix with 2 on the diagonal and -1 off it, the covariance of the
-differenced errors under homoskedasticity. With `transformation = "ld"`
+differenced errors under homoskedasticity. With \code{transformation = "ld"}
 (system GMM) the level equations of the same periods are stacked under
 the differenced ones and instrumented by the first difference of each
-GMM-style variable lagged `a - 1` periods (`a` its smallest lag); the
-one-step weight uses the block matrix `H = [G, D; D', I]` of
-[plm::pgmm()] (`fsm = "full"`). The two-step estimator uses the weight
-`(sum_i Z_i' e_i e_i' Z_i)^-1` built from the one-step residuals.
+GMM-style variable lagged \code{a - 1} periods (\code{a} its smallest lag); the
+one-step weight uses the block matrix \verb{H = [G, D; D', I]} of
+\code{\link[plm:pgmm]{plm::pgmm()}} (\code{fsm = "full"}). The two-step estimator uses the weight
+\verb{(sum_i Z_i' e_i e_i' Z_i)^-1} built from the one-step residuals.
 
-With `effect = "twoways"` (the default) time dummies are included: in
+With \code{effect = "twoways"} (the default) time dummies are included: in
 differences for difference GMM, and for system GMM a constant and time
 dummies in the level equation (which instrument themselves there). With
-`effect = "individual"` there are no time effects; system GMM then keeps
-a constant in the level equation (`plm::pgmm()` omits it).
+\code{effect = "individual"} there are no time effects; system GMM then keeps
+a constant in the level equation (\code{plm::pgmm()} omits it).
 }
 
 \section{Inference}{
 
-`vcov = "robust"` gives the one-step sandwich covariance or, for the
+\code{vcov = "robust"} gives the one-step sandwich covariance or, for the
 two-step estimator, the Windmeijer (2005) finite-sample corrected
-covariance. `vcov = "classical"` gives, for the one-step estimator,
-`s2 (X'Z S1^-1 Z'X)^-1` with `S1 = sum_i Z_i' H Z_i` and
-`s2 = sum(de^2) / (2 (n_d - k))` estimated from the `n_d` differenced
-one-step residuals `de`; for the two-step estimator it gives the
-conventional (downward biased) `(X'Z S2^-1 Z'X)^-1` with
-`S2 = sum_i Z_i' e1_i e1_i' Z_i`. (The one-step `vcov()` of
-[plm::pgmm()] is `(X'Z S1^-1 Z'X)^-1 / N`, without the error variance.)
+covariance. \code{vcov = "classical"} gives, for the one-step estimator,
+\verb{s2 (X'Z S1^-1 Z'X)^-1} with \verb{S1 = sum_i Z_i' H Z_i} and
+\code{s2 = sum(de^2) / (2 (n_d - k))} estimated from the \code{n_d} differenced
+one-step residuals \code{de}; for the two-step estimator it gives the
+conventional (downward biased) \verb{(X'Z S2^-1 Z'X)^-1} with
+\verb{S2 = sum_i Z_i' e1_i e1_i' Z_i}. (The one-step \code{vcov()} of
+\code{\link[plm:pgmm]{plm::pgmm()}} is \verb{(X'Z S1^-1 Z'X)^-1 / N}, without the error variance.)
 
-The Arellano-Bond statistic of order `m` tests for autocorrelation of
-order `m` in the differenced residuals; it is standard normal under the
+The Arellano-Bond statistic of order \code{m} tests for autocorrelation of
+order \code{m} in the differenced residuals; it is standard normal under the
 null of no autocorrelation. First-order autocorrelation is expected by
-construction; second-order autocorrelation indicates that `y_(t-2)` is
+construction; second-order autocorrelation indicates that \code{y_(t-2)} is
 not a valid instrument. It is computed with the robust covariance of the
-fit, as in `summary(plm::pgmm())`. The Sargan statistic
-`(Z'e1)' (sum Z_i' H Z_i)^-1 (Z'e1) / s2` uses the one-step residuals
+fit, as in \code{summary(plm::pgmm())}. The Sargan statistic
+\verb{(Z'e1)' (sum Z_i' H Z_i)^-1 (Z'e1) / s2} uses the one-step residuals
 and is valid only under homoskedasticity; the Hansen J statistic
-`(Z'e2)' (sum Z_i' e1_i e1_i' Z_i)^-1 (Z'e2)` uses the two-step
-residuals and is robust. Both are chi-squared with `L - k` degrees of
-freedom (`L` instruments, `k` coefficients); `plm::sargan()` returns
-the Hansen statistic by default and `N s2` times the Sargan statistic
-with `weights = "onestep"`. Many instruments weaken the
+\verb{(Z'e2)' (sum Z_i' e1_i e1_i' Z_i)^-1 (Z'e2)} uses the two-step
+residuals and is robust. Both are chi-squared with \code{L - k} degrees of
+freedom (\code{L} instruments, \code{k} coefficients); \code{plm::sargan()} returns
+the Hansen statistic by default and \verb{N s2} times the Sargan statistic
+with \code{weights = "onestep"}. Many instruments weaken the
 Hansen test (Roodman 2009); collapsing or limiting the lag depth keeps
 the instrument count well below the number of individuals.
 }
@@ -176,9 +176,9 @@ In a simulated BMI panel (true persistence 0.6, effect SD 1.5, error
 SD 1, 8 waves, 63 instruments) uncollapsed system GMM averaged 0.78
 one-step and 0.72 two-step with 400 individuals, 0.65 and 0.61 with 2000
 individuals; collapsing the instruments gave 0.62 already with 400.
-Practical rules: prefer the two-step estimator, use `collapse = TRUE`
-and a small `maxlag`, keep the instrument count well below the number
-of individuals (`pangmm()` warns when it is not), treat a Hansen
+Practical rules: prefer the two-step estimator, use \code{collapse = TRUE}
+and a small \code{maxlag}, keep the instrument count well below the number
+of individuals (\code{pangmm()} warns when it is not), treat a Hansen
 p-value close to 1 as a warning sign rather than as support, and check
 that the coefficient of the lagged outcome lies between the
 fixed-effects (downward biased) and pooled OLS (upward biased)
@@ -230,24 +230,24 @@ if (requireNamespace("plm", quietly = TRUE)) {
 }
 \references{
 Bond, S. (2002). Dynamic panel data models: a guide to micro data
-methods and practice. *Portuguese Economic Journal*, 1, 141-162.
+methods and practice. \emph{Portuguese Economic Journal}, 1, 141-162.
 
 Bun, M. J. G. and Windmeijer, F. (2010). The weak instrument problem of
-the system GMM estimator in dynamic panel data models. *The
-Econometrics Journal*, 13, 95-126.
+the system GMM estimator in dynamic panel data models. \emph{The
+Econometrics Journal}, 13, 95-126.
 
 Arellano, M. and Bond, S. (1991). Some tests of specification for panel
 data: Monte Carlo evidence and an application to employment equations.
-*Review of Economic Studies*, 58, 277-297.
+\emph{Review of Economic Studies}, 58, 277-297.
 
 Blundell, R. and Bond, S. (1998). Initial conditions and moment
-restrictions in dynamic panel data models. *Journal of Econometrics*,
+restrictions in dynamic panel data models. \emph{Journal of Econometrics},
 87, 115-143.
 
 Windmeijer, F. (2005). A finite sample correction for the variance of
-linear efficient two-step GMM estimators. *Journal of Econometrics*,
+linear efficient two-step GMM estimators. \emph{Journal of Econometrics},
 126, 25-51.
 
 Roodman, D. (2009). How to do xtabond2: An introduction to difference
-and system GMM in Stata. *Stata Journal*, 9, 86-136.
+and system GMM in Stata. \emph{Stata Journal}, 9, 86-136.
 }

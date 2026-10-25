@@ -13,24 +13,24 @@ panhausman(
 )
 }
 \arguments{
-\item{fe}{a `"panglm"` fit with `model = "within"`}
+\item{fe}{a \code{"panglm"} fit with \code{model = "within"}}
 
-\item{re}{a `"panglm"` fit with `model = "random"`, same formula/data/family;
-required for `method = "classical"`, ignored for `"mundlak"`}
+\item{re}{a \code{"panglm"} fit with \code{model = "random"}, same formula/data/family;
+required for \code{method = "classical"}, ignored for \code{"mundlak"}}
 
-\item{method}{`"classical"` (default) or `"mundlak"`}
+\item{method}{\code{"classical"} (default) or \code{"mundlak"}}
 
-\item{data}{for `method = "mundlak"`: the data `fe` was fit on}
+\item{data}{for \code{method = "mundlak"}: the data \code{fe} was fit on}
 
-\item{vcov}{for `method = "mundlak"`: covariance of the pooled fit, one of
-`"cluster"` (default), `"HC1"`, `"classical"`}
+\item{vcov}{for \code{method = "mundlak"}: covariance of the pooled fit, one of
+\code{"cluster"} (default), \code{"HC1"}, \code{"classical"}}
 }
 \value{
-a list with class `"panglm_hausman"`: `statistic`, `parameter`
-  (df; two values for an F reference), `p.value`, `method`,
-  `distribution` (`"chisq"` or `"F"`), and the compared coefficient
-  vectors (`coef_fe`, `coef_re` for `"classical"`; `coef_mean` for
-  `"mundlak"`)
+a list with class \code{"panglm_hausman"}: \code{statistic}, \code{parameter}
+(df; two values for an F reference), \code{p.value}, \code{method},
+\code{distribution} (\code{"chisq"} or \code{"F"}), and the compared coefficient
+vectors (\code{coef_fe}, \code{coef_re} for \code{"classical"}; \code{coef_mean} for
+\code{"mundlak"})
 }
 \description{
 Tests the null that the random-effects estimator is consistent (i.e.
@@ -38,22 +38,22 @@ individual effects are uncorrelated with the regressors) against the
 alternative that only the fixed-effects estimator is consistent.
 }
 \details{
-`method = "classical"` computes the Hausman (1978) statistic
-`t(b_fe - b_re) %*% solve(V_fe - V_re) %*% (b_fe - b_re)` over the
+\code{method = "classical"} computes the Hausman (1978) statistic
+\code{t(b_fe - b_re) \%*\% solve(V_fe - V_re) \%*\% (b_fe - b_re)} over the
 coefficients common to both models (the random-effects intercept is
 dropped), with a chi-square reference. It always uses the model-based
-(classical) covariances, also when `fe` was fit with a robust `vcov`: the
-contrast variance `V_fe - V_re` relies on the random-effects estimator
+(classical) covariances, also when \code{fe} was fit with a robust \code{vcov}: the
+contrast variance \code{V_fe - V_re} relies on the random-effects estimator
 being efficient under the null, which holds only for model-based
 covariances and independent, homoskedastic idiosyncratic errors.
 
-`method = "mundlak"` is the regression-based (correlated random effects)
+\code{method = "mundlak"} is the regression-based (correlated random effects)
 version of the same test (Mundlak 1978; Wooldridge 2010, section 10.7.3),
 valid under heteroskedasticity and serial correlation. The pooled model
-`y ~ x + xbar` is fit with the individual means `xbar` of the time-varying
-regressors of `fe`, and the null `coef(xbar) = 0` is tested with a Wald
-statistic using the `vcov` covariance. With `vcov = "cluster"` the
-reference is `F(k, G - 1)` (`G` individuals), otherwise chi-square(k).
+\code{y ~ x + xbar} is fit with the individual means \code{xbar} of the time-varying
+regressors of \code{fe}, and the null \code{coef(xbar) = 0} is tested with a Wald
+statistic using the \code{vcov} covariance. With \code{vcov = "cluster"} the
+reference is \code{F(k, G - 1)} (\code{G} individuals), otherwise chi-square(k).
 Gaussian family only.
 }
 \examples{

@@ -16,7 +16,7 @@ paniv(
 )
 }
 \arguments{
-\item{formula}{a two-part formula `y ~ regressors | instruments`; see
+\item{formula}{a two-part formula \code{y ~ regressors | instruments}; see
 the Formula section}
 
 \item{data}{a data.frame in long format}
@@ -24,33 +24,33 @@ the Formula section}
 \item{index}{length-1 or length-2 character vector giving the individual
 (and time) columns}
 
-\item{model}{one of `"within"`, `"random"`, `"pooling"` or
-`"hausmantaylor"`}
+\item{model}{one of \code{"within"}, \code{"random"}, \code{"pooling"} or
+\code{"hausmantaylor"}}
 
-\item{effect}{`"individual"`, or `"twoways"` (only for
-`model = "within"`)}
+\item{effect}{\code{"individual"}, or \code{"twoways"} (only for
+\code{model = "within"})}
 
-\item{inst.method}{instrument set for `model = "random"`: `"bvk"`
-(G2SLS, the default, as in `plm`) or `"baltagi"` (EC2SLS)}
+\item{inst.method}{instrument set for \code{model = "random"}: \code{"bvk"}
+(G2SLS, the default, as in \code{plm}) or \code{"baltagi"} (EC2SLS)}
 
-\item{vcov}{`"classical"` or `"cluster"` (cluster-robust by individual);
-see [vcov.paniv()] to recompute after fitting}
+\item{vcov}{\code{"classical"} or \code{"cluster"} (cluster-robust by individual);
+see \code{\link[=vcov.paniv]{vcov.paniv()}} to recompute after fitting}
 
-\item{na.action}{missing-data action passed to [stats::model.frame()]}
+\item{na.action}{missing-data action passed to \code{\link[stats:model.frame]{stats::model.frame()}}}
 }
 \value{
-an object of class `"paniv"`, a list with components
-  `coefficients`, `vcov`, `vcov_type`, `residuals` (structural residuals
-  `y - X b` on the original scale, in the panel order), `model`,
-  `effect`, `inst.method`, `endogenous` (names of the endogenous
-  regressors), `instruments` (names of the excluded instruments, or for
-  Hausman-Taylor the four variable groups in `varlist`), `first_stage`
-  (a data frame with one row per endogenous regressor, or `NULL`),
-  `overid` (the Sargan or Hansen test, or `NULL` when exactly
-  identified), `ercomp` (variance components and `theta` for the random
-  and Hausman-Taylor estimators), `nobs`, `n_groups`, `df.residual`,
-  `call` and `formula`. It has `print`, `summary`, `coef`, `vcov`,
-  `nobs` and `confint` methods.
+an object of class \code{"paniv"}, a list with components
+\code{coefficients}, \code{vcov}, \code{vcov_type}, \code{residuals} (structural residuals
+\verb{y - X b} on the original scale, in the panel order), \code{model},
+\code{effect}, \code{inst.method}, \code{endogenous} (names of the endogenous
+regressors), \code{instruments} (names of the excluded instruments, or for
+Hausman-Taylor the four variable groups in \code{varlist}), \code{first_stage}
+(a data frame with one row per endogenous regressor, or \code{NULL}),
+\code{overid} (the Sargan or Hansen test, or \code{NULL} when exactly
+identified), \code{ercomp} (variance components and \code{theta} for the random
+and Hausman-Taylor estimators), \code{nobs}, \code{n_groups}, \code{df.residual},
+\code{call} and \code{formula}. It has \code{print}, \code{summary}, \code{coef}, \code{vcov},
+\code{nobs} and \code{confint} methods.
 }
 \description{
 Two-stage least squares for linear panel models with endogenous
@@ -61,17 +61,17 @@ which also identifies the effects of time-invariant regressors.
 }
 \section{Formula}{
 
-The formula has two parts separated by `|`. For `model = "pooling"`,
-`"within"` and `"random"` the second part lists the complete instrument
-set, as in [plm::plm()]: exogenous regressors are repeated on both sides
+The formula has two parts separated by \code{|}. For \code{model = "pooling"},
+\code{"within"} and \code{"random"} the second part lists the complete instrument
+set, as in \code{\link[plm:plm]{plm::plm()}}: exogenous regressors are repeated on both sides
 and excluded instruments appear only on the right, so that
-`y ~ x1 + x2 | z1 + x2` treats `x1` as endogenous, instrumented by `z1`.
+\code{y ~ x1 + x2 | z1 + x2} treats \code{x1} as endogenous, instrumented by \code{z1}.
 Regressors absent from the second part are the endogenous ones.
 
-For `model = "hausmantaylor"` the conventions of [plm::pht()] are used:
+For \code{model = "hausmantaylor"} the conventions of \code{\link[plm:pht]{plm::pht()}} are used:
 the first part lists all regressors and the second part lists those that
 are exogenous (uncorrelated with the individual effect), e.g.
-`y ~ x1 + x2 + z1 + z2 | x1 + z1` makes `x2` and `z2` endogenous.
+\code{y ~ x1 + x2 + z1 + z2 | x1 + z1} makes \code{x2} and \code{z2} endogenous.
 Whether a regressor is time varying or time invariant is detected from
 the data. Identification requires at least as many exogenous time-varying
 regressors as endogenous time-invariant ones.
@@ -79,40 +79,42 @@ regressors as endogenous time-invariant ones.
 
 \section{Estimators}{
 
-* `"within"`: 2SLS on within-demeaned regressors and instruments
-  (one-way or, with `effect = "twoways"`, two-way demeaning). Time
-  invariant columns are dropped. The classical covariance uses the
-  degrees of freedom `n - k - N` (`N` individual effects), as in `plm`.
-* `"random"`: the variance components are estimated in the Swamy-Arora
-  way from within and between 2SLS residuals (the unbalanced-panel
-  degrees of freedom of `plm` are used, which reduce to the usual ones
-  for balanced panels). The data are then quasi-demeaned with
-  `theta_i = 1 - sqrt(s2_nu / (s2_nu + T_i s2_mu))`. With
-  `inst.method = "bvk"` (the default, G2SLS) the instruments are
-  quasi-demeaned as well; with `inst.method = "baltagi"` (EC2SLS) the
-  instrument matrix is the within and between transforms of the
-  instruments.
-* `"pooling"`: ordinary 2SLS on the stacked data.
-* `"hausmantaylor"`: the variance components follow [plm::pht()]:
-  `s2_nu` is the within residual variance, and `s2_1` comes from a 2SLS
-  regression of the estimated individual effects on the time-invariant
-  regressors, instrumented by the exogenous time-invariant and
-  time-varying regressors. The GLS-transformed regression is then
-  estimated by 2SLS with instruments: within transforms of all
-  time-varying regressors, individual means of the exogenous time-varying
-  regressors, the exogenous time-invariant regressors and a constant.
-  For unbalanced panels `s2_mu = (s2_1 - s2_nu) / T_h` with `T_h` the
-  harmonic mean of the `T_i`, as in [plm::pht()]. A negative `s2_mu` is
-  set to zero (with a warning), which reduces the estimator to pooled
-  2SLS on the same instruments.
+\itemize{
+\item \code{"within"}: 2SLS on within-demeaned regressors and instruments
+(one-way or, with \code{effect = "twoways"}, two-way demeaning). Time
+invariant columns are dropped. The classical covariance uses the
+degrees of freedom \code{n - k - N} (\code{N} individual effects), as in \code{plm}.
+\item \code{"random"}: the variance components are estimated in the Swamy-Arora
+way from within and between 2SLS residuals (the unbalanced-panel
+degrees of freedom of \code{plm} are used, which reduce to the usual ones
+for balanced panels). The data are then quasi-demeaned with
+\verb{theta_i = 1 - sqrt(s2_nu / (s2_nu + T_i s2_mu))}. With
+\code{inst.method = "bvk"} (the default, G2SLS) the instruments are
+quasi-demeaned as well; with \code{inst.method = "baltagi"} (EC2SLS) the
+instrument matrix is the within and between transforms of the
+instruments.
+\item \code{"pooling"}: ordinary 2SLS on the stacked data.
+\item \code{"hausmantaylor"}: the variance components follow \code{\link[plm:pht]{plm::pht()}}:
+\code{s2_nu} is the within residual variance, and \code{s2_1} comes from a 2SLS
+regression of the estimated individual effects on the time-invariant
+regressors, instrumented by the exogenous time-invariant and
+time-varying regressors. The GLS-transformed regression is then
+estimated by 2SLS with instruments: within transforms of all
+time-varying regressors, individual means of the exogenous time-varying
+regressors, the exogenous time-invariant regressors and a constant.
+For unbalanced panels \code{s2_mu = (s2_1 - s2_nu) / T_h} with \code{T_h} the
+harmonic mean of the \code{T_i}, as in \code{\link[plm:pht]{plm::pht()}}. A negative \code{s2_mu} is
+set to zero (with a warning), which reduces the estimator to pooled
+2SLS on the same instruments.
+}
 
-In every case the classical covariance is `s2 inverse(Xhat'Xhat)` with `s2`
+In every case the classical covariance is \verb{s2 inverse(Xhat'Xhat)} with \code{s2}
 the mean square of the structural residuals of the transformed
 regression. The cluster covariance is the sandwich
-`B (sum_g u_g u_g') B` with `u_g = Xhat_g' e_g` summed within the panel
+\verb{B (sum_g u_g u_g') B} with \verb{u_g = Xhat_g' e_g} summed within the panel
 individual (or the supplied cluster) and the factor
-`G / (G - 1) * (n - 1) / (n - k)`, the convention of the rest of the
-package and of `plm::vcovHC(type = "sss")`.
+\code{G / (G - 1) * (n - 1) / (n - k)}, the convention of the rest of the
+package and of \code{plm::vcovHC(type = "sss")}.
 }
 
 \section{Diagnostics}{
@@ -123,13 +125,13 @@ regression on the transformed included exogenous regressors only. The
 result reports the partial R-squared of the excluded instruments and the
 F statistic for their joint significance (with the absorbed fixed
 effects counted in the residual degrees of freedom); for
-`vcov = "cluster"` a cluster-robust Wald F is reported as well. These
-first-stage statistics are not computed for `"hausmantaylor"`, whose
+\code{vcov = "cluster"} a cluster-robust Wald F is reported as well. These
+first-stage statistics are not computed for \code{"hausmantaylor"}, whose
 instruments are built from the regressors themselves. When the model is
-overidentified, the Sargan statistic `n e'P_W e / e'e` (classical) or
+overidentified, the Sargan statistic \verb{n e'P_W e / e'e} (classical) or
 the cluster-robust Hansen J statistic of the two-step efficient GMM
 estimator (cluster) tests the validity of the overidentifying
-restrictions; it is chi-squared with `L - k` degrees of freedom under the
+restrictions; it is chi-squared with \code{L - k} degrees of freedom under the
 null.
 }
 
@@ -169,12 +171,12 @@ summary(ht)
 }
 \references{
 Baltagi, B. H. (1981). Simultaneous equations with error components.
-*Journal of Econometrics*, 17, 189-200.
+\emph{Journal of Econometrics}, 17, 189-200.
 
 Balestra, P. and Varadharajan-Krishnakumar, J. (1987). Full information
 estimations of a system of simultaneous equations with error component
-structure. *Econometric Theory*, 3, 223-246.
+structure. \emph{Econometric Theory}, 3, 223-246.
 
 Hausman, J. A. and Taylor, W. E. (1981). Panel data and unobservable
-individual effects. *Econometrica*, 49, 1377-1398.
+individual effects. \emph{Econometrica}, 49, 1377-1398.
 }

@@ -7,20 +7,20 @@
 \method{predict}{panordered}(object, newdata = NULL, type = c("prob", "class", "link"), ...)
 }
 \arguments{
-\item{object}{a `"panordered"` fit (from [panglm()] with an ordered
+\item{object}{a \code{"panordered"} fit (from \code{\link[=panglm]{panglm()}} with an ordered
 family)}
 
 \item{newdata}{optional data frame; defaults to the fitted data}
 
-\item{type}{`"prob"` for the matrix of category probabilities
-(population-averaged over the random intercept for `model = "random"`),
-`"class"` for the most likely category, or `"link"` for `x'beta`}
+\item{type}{\code{"prob"} for the matrix of category probabilities
+(population-averaged over the random intercept for \code{model = "random"}),
+\code{"class"} for the most likely category, or \code{"link"} for \verb{x'beta}}
 
 \item{...}{unused}
 }
 \value{
-a matrix with one column per category (`"prob"`), a factor
-  (`"class"`) or a numeric vector (`"link"`)
+a matrix with one column per category (\code{"prob"}), a factor
+(\code{"class"}) or a numeric vector (\code{"link"})
 }
 \description{
 Predict from an ordered panel model

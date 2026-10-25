@@ -7,38 +7,38 @@
 \method{predict}{paniv}(object, newdata = NULL, allow.new.levels = FALSE, ...)
 }
 \arguments{
-\item{object}{a `"paniv"` fit}
+\item{object}{a \code{"paniv"} fit}
 
 \item{newdata}{optional data frame}
 
-\item{allow.new.levels}{for within fits, if `TRUE` an individual (or
-time period) of `newdata` that is not in the fit gets an effect of zero,
-so that its prediction is the linear index `x'b`; if `FALSE` (default)
+\item{allow.new.levels}{for within fits, if \code{TRUE} an individual (or
+time period) of \code{newdata} that is not in the fit gets an effect of zero,
+so that its prediction is the linear index \verb{x'b}; if \code{FALSE} (default)
 it is an error}
 
 \item{...}{unused}
 }
 \value{
-a numeric vector of predictions, one per row of `newdata`
-  (`NA` where a regressor is missing)
+a numeric vector of predictions, one per row of \code{newdata}
+(\code{NA} where a regressor is missing)
 }
 \description{
-Linear predictions from a [paniv()] fit. For `model = "pooling"`,
-`"random"` and `"hausmantaylor"` the prediction is the linear index
-`x'b` (with the intercept), the conditional mean given the regressors
-that does not involve the individual effect; this is what `predict()`
-returns for `AER::ivreg()` and `plm::plm()` fits of these models. For
-`model = "within"` the estimated individual effects
-`a_i = mean_t(y_it - x_it'b)` are added (and, for `effect = "twoways"`,
-the time effects, from the two-way decomposition of `y - x'b`), as in
-[predict.panglm()].
+Linear predictions from a \code{\link[=paniv]{paniv()}} fit. For \code{model = "pooling"},
+\code{"random"} and \code{"hausmantaylor"} the prediction is the linear index
+\verb{x'b} (with the intercept), the conditional mean given the regressors
+that does not involve the individual effect; this is what \code{predict()}
+returns for \code{AER::ivreg()} and \code{plm::plm()} fits of these models. For
+\code{model = "within"} the estimated individual effects
+\verb{a_i = mean_t(y_it - x_it'b)} are added (and, for \code{effect = "twoways"},
+the time effects, from the two-way decomposition of \verb{y - x'b}), as in
+\code{\link[=predict.panglm]{predict.panglm()}}.
 }
 \details{
-Without `newdata` the in-sample fitted values are returned in the row
-order of the fitting data (with `NA` for the rows dropped by
-`na.action`). With `newdata`, the regressors of the first part of the
-formula are evaluated on `newdata`; factor regressors must carry the
-levels used in the fit. For within fits `newdata` must contain the
+Without \code{newdata} the in-sample fitted values are returned in the row
+order of the fitting data (with \code{NA} for the rows dropped by
+\code{na.action}). With \code{newdata}, the regressors of the first part of the
+formula are evaluated on \code{newdata}; factor regressors must carry the
+levels used in the fit. For within fits \code{newdata} must contain the
 panel index columns.
 }
 \examples{

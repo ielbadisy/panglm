@@ -7,43 +7,43 @@
 \method{vcov}{panglm}(object, type = NULL, cluster = NULL, ...)
 }
 \arguments{
-\item{object}{a `"panglm"` fit}
+\item{object}{a \code{"panglm"} fit}
 
-\item{type}{`NULL` (the covariance stored on the fit) or one of
-`"classical"`, `"HC1"`, `"cluster"`}
+\item{type}{\code{NULL} (the covariance stored on the fit) or one of
+\code{"classical"}, \code{"HC1"}, \code{"cluster"}}
 
 \item{cluster}{optional vector giving the clustering variable (one value
-per original observation, i.e. `nrow(data)` long); defaults to the
+per original observation, i.e. \code{nrow(data)} long); defaults to the
 panel individual identifier used to fit the model}
 
 \item{...}{unused}
 }
 \value{
 a numeric covariance matrix for the estimated coefficients, with
-  row and column names matching `names(coef(object))`. For
-  `type = "classical"` this is the model-based covariance; for `"HC1"` and `"cluster"` it is a sandwich (robust or
-  cluster-robust) covariance estimate of the same dimension.
+row and column names matching \code{names(coef(object))}. For
+\code{type = "classical"} this is the model-based covariance; for \code{"HC1"} and \code{"cluster"} it is a sandwich (robust or
+cluster-robust) covariance estimate of the same dimension.
 }
 \description{
-With `type = NULL` (the default) the covariance the object was fit with
-is returned (set by the `vcov` argument of [panglm()]).
-`type = "classical"` returns the model-based covariance, also for a fit
-made with a robust `vcov`. `type = "HC1"` (heteroskedasticity-robust / White) and
-`type = "cluster"` (cluster-robust sandwich, clustered by the panel
-individual unless `cluster` is given) are available for pooled and
-fixed-effects models. For random-effects models only `"cluster"` is
+With \code{type = NULL} (the default) the covariance the object was fit with
+is returned (set by the \code{vcov} argument of \code{\link[=panglm]{panglm()}}).
+\code{type = "classical"} returns the model-based covariance, also for a fit
+made with a robust \code{vcov}. \code{type = "HC1"} (heteroskedasticity-robust / White) and
+\code{type = "cluster"} (cluster-robust sandwich, clustered by the panel
+individual unless \code{cluster} is given) are available for pooled and
+fixed-effects models. For random-effects models only \code{"cluster"} is
 available: the units of the integrated likelihood are individuals, so
 the sandwich is built from individual scores (clusters must contain
 whole individuals) with the factor G / (G - 1). It guards against a
 misspecified random-effects distribution and is the right choice with
 sampling weights. For the unweighted Gaussian (Swamy-Arora) fit it is
 the cluster sandwich of the quasi-demeaned regression, as in Stata's
-`xtreg, re vce(cluster id)`.
+\verb{xtreg, re vce(cluster id)}.
 For exact conditional binomial models, the independent likelihood units
 are panel strata rather than observations. Their HC1 covariance therefore
 uses stratum-level scores. A custom cluster may combine complete strata,
 but it may not split observations from one conditioned stratum.
-For the two-way conditional logit (`effect = "twoways"`) the time
+For the two-way conditional logit (\code{effect = "twoways"}) the time
 dummies are parameters of the conditional likelihood: the sandwich is
 built from the full (slopes + time dummies) stratum scores and bread,
 its small-sample factors count all of them, and the slope block is

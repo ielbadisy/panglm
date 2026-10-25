@@ -24,121 +24,123 @@ attgt(
 )
 }
 \arguments{
-\item{formula}{`outcome ~ 1`, or `outcome ~ covariates` for conditional
+\item{formula}{\code{outcome ~ 1}, or \code{outcome ~ covariates} for conditional
 parallel trends (covariates are taken in the base period)}
 
 \item{data}{a data.frame in long format}
 
-\item{index}{`c(individual, time)`; the time index must be numeric}
+\item{index}{\code{c(individual, time)}; the time index must be numeric}
 
 \item{treat}{name of the column holding each individual's first treated
-period (in the units of the time index); `NA`, `0` or `Inf` for units
+period (in the units of the time index); \code{NA}, \code{0} or \code{Inf} for units
 that are never treated}
 
-\item{control}{comparison group: `"never"` (never-treated individuals)
-or `"notyet"` (never treated or not yet treated, nor anticipating
+\item{control}{comparison group: \code{"never"} (never-treated individuals)
+or \code{"notyet"} (never treated or not yet treated, nor anticipating
 treatment, at both periods compared)}
 
-\item{method}{`"dr"` (doubly robust), `"ipw"` or `"reg"`; only matters
+\item{method}{\code{"dr"} (doubly robust), \code{"ipw"} or \code{"reg"}; only matters
 with covariates}
 
-\item{base}{base period for pre-treatment `ATT(g, t)`: `"varying"` or
-`"universal"`}
+\item{base}{base period for pre-treatment \code{ATT(g, t)}: \code{"varying"} or
+\code{"universal"}}
 
-\item{anticipation}{number of periods before `g` in which treatment can
+\item{anticipation}{number of periods before \code{g} in which treatment can
 already affect the outcome (the base period moves back accordingly)}
 
 \item{level}{confidence level of the reported intervals}
 
-\item{weights}{optional sampling weights: the name of a column of `data`
-or a numeric vector with one value per row of `data`. They must be
+\item{weights}{optional sampling weights: the name of a column of \code{data}
+or a numeric vector with one value per row of \code{data}. They must be
 non-negative and constant within each individual (rows with a missing
 weight are dropped). The weights enter the propensity score, the
-outcome regression and the means of every `ATT(g, t)`, and the cohort
-shares used by the aggregations, as `weightsname` in
-`did::att_gt()`.}
+outcome regression and the means of every \code{ATT(g, t)}, and the cohort
+shares used by the aggregations, as \code{weightsname} in
+\code{did::att_gt()}.}
 
-\item{cluster}{optional name of a column of `data` (or a vector with one
+\item{cluster}{optional name of a column of \code{data} (or a vector with one
 value per row) defining clusters of individuals, constant within each
 individual (for example the region of a province). Standard errors,
 the pre-trend test and the bootstrap are then clustered at that level
 instead of the individual level.}
 
-\item{bstrap}{logical: multiplier bootstrap standard errors (`FALSE` by
+\item{bstrap}{logical: multiplier bootstrap standard errors (\code{FALSE} by
 default: analytic standard errors)}
 
 \item{cband}{logical: uniform confidence bands from the bootstrap
-simultaneous critical value (implies `bstrap = TRUE`)}
+simultaneous critical value (implies \code{bstrap = TRUE})}
 
 \item{biters}{number of bootstrap draws}
 
-\item{multiplier}{bootstrap multipliers: `"rademacher"` (`-1` or `1` with
-equal probabilities, as in current versions of `did`) or `"mammen"`
+\item{multiplier}{bootstrap multipliers: \code{"rademacher"} (\code{-1} or \code{1} with
+equal probabilities, as in current versions of \code{did}) or \code{"mammen"}
 (the two-point distribution of Mammen 1993)}
 
 \item{seed}{optional integer seed for the bootstrap draws. When given,
 the draws are reproducible and the global random number generator is
 left as it was; otherwise a seed is drawn from it. Either way the seed
-is stored in the fit and reused by [summary.panglm_attgt()].}
+is stored in the fit and reused by \code{\link[=summary.panglm_attgt]{summary.panglm_attgt()}}.}
 }
 \value{
-an object of class `"panglm_attgt"`: a list with `estimates` (a
-  data frame with `group`, `time`, `event` (`time - group`), `estimate`,
-  `se`, `lower`, `upper` and `post`), `inf` (the matrix of influence
-  functions, one row per individual and one column per `ATT(g, t)`),
-  `units` (individual identifiers, cohorts, normalized weights and
-  clusters), `pretrend` (the Wald test of the pre-treatment `ATT(g, t)`,
-  or `NULL`), `n` (individuals), `groups`, `periods`, `boot` (with the
-  bootstrap: the settings, the analytic standard errors `se_analytic`
-  and the simultaneous critical value `crit`; `NULL` otherwise) and the
-  settings. With `cband = TRUE`, `estimates` also has the uniform band
-  `band_lower`, `band_upper`. Methods: `print`, `summary`,
-  `coef`, `vcov`, `nobs`, `plot`.
+an object of class \code{"panglm_attgt"}: a list with \code{estimates} (a
+data frame with \code{group}, \code{time}, \code{event} (\code{time - group}), \code{estimate},
+\code{se}, \code{lower}, \code{upper} and \code{post}), \code{inf} (the matrix of influence
+functions, one row per individual and one column per \code{ATT(g, t)}),
+\code{units} (individual identifiers, cohorts, normalized weights and
+clusters), \code{pretrend} (the Wald test of the pre-treatment \code{ATT(g, t)},
+or \code{NULL}), \code{n} (individuals), \code{groups}, \code{periods}, \code{boot} (with the
+bootstrap: the settings, the analytic standard errors \code{se_analytic}
+and the simultaneous critical value \code{crit}; \code{NULL} otherwise) and the
+settings. With \code{cband = TRUE}, \code{estimates} also has the uniform band
+\code{band_lower}, \code{band_upper}. Methods: \code{print}, \code{summary},
+\code{coef}, \code{vcov}, \code{nobs}, \code{plot}.
 }
 \description{
 The Callaway and Sant'Anna (2021) estimator of the group-time average
-treatment effects on the treated `ATT(g, t)`: the effect at period `t`
-for the cohort of individuals first treated at period `g`. Each
-`ATT(g, t)` is a two-group, two-period comparison of the change in the
-outcome between a base period and period `t` for cohort `g` against a
+treatment effects on the treated \code{ATT(g, t)}: the effect at period \code{t}
+for the cohort of individuals first treated at period \code{g}. Each
+\code{ATT(g, t)} is a two-group, two-period comparison of the change in the
+outcome between a base period and period \code{t} for cohort \code{g} against a
 clean control group (never-treated individuals, or individuals not yet
-treated by period `t`), so that already-treated individuals are never
+treated by period \code{t}), so that already-treated individuals are never
 used as controls. This avoids the negative weights of the two-way
-fixed-effects regression of [did()] under staggered adoption with
-heterogeneous effects. The `ATT(g, t)` are then aggregated into an
+fixed-effects regression of \code{\link[=did]{did()}} under staggered adoption with
+heterogeneous effects. The \code{ATT(g, t)} are then aggregated into an
 overall effect, an event study (effect by time since treatment), effects
-by cohort or by calendar period with [summary.panglm_attgt()].
+by cohort or by calendar period with \code{\link[=summary.panglm_attgt]{summary.panglm_attgt()}}.
 }
 \section{Estimators}{
 
-With `y ~ 1` (no covariates) every `ATT(g, t)` is the difference between
-the mean outcome change of cohort `g` and that of the control group,
-whatever `method`. With covariates, parallel trends is assumed to hold
+With \code{y ~ 1} (no covariates) every \code{ATT(g, t)} is the difference between
+the mean outcome change of cohort \code{g} and that of the control group,
+whatever \code{method}. With covariates, parallel trends is assumed to hold
 conditionally on them; their values in the base period (the earlier of
 the two periods compared) are used, and the comparison is made by
-* `method = "dr"`: the doubly robust estimator of Sant'Anna and Zhao
-  (2020): a logit propensity score for belonging to cohort `g` and a
-  linear regression of the outcome change among controls; consistent if
-  either model is correct;
-* `method = "ipw"`: normalized inverse probability weighting with the
-  logit propensity score;
-* `method = "reg"`: outcome regression (the linear regression of the
-  outcome change fitted on the controls, averaged over the treated).
+\itemize{
+\item \code{method = "dr"}: the doubly robust estimator of Sant'Anna and Zhao
+(2020): a logit propensity score for belonging to cohort \code{g} and a
+linear regression of the outcome change among controls; consistent if
+either model is correct;
+\item \code{method = "ipw"}: normalized inverse probability weighting with the
+logit propensity score;
+\item \code{method = "reg"}: outcome regression (the linear regression of the
+outcome change fitted on the controls, averaged over the treated).
+}
 
 Controls with a propensity score of 0.995 or more are trimmed, as in the
-`DRDID` package. The panel is balanced first (individuals not observed in
+\code{DRDID} package. The panel is balanced first (individuals not observed in
 every period are dropped), individuals already treated in the first
 period are dropped, and cohorts first treated after the last period are
 treated as never treated. When no individual is never treated, the last
 cohort to be treated serves as the never-treated group and the periods
 from its treatment date onwards are dropped (the convention of
-`did::att_gt()`).
+\code{did::att_gt()}).
 
-With `base = "varying"` (the default) pre-treatment `ATT(g, t)` compare
-period `t` with period `t - 1`, which gives placebo estimates of the
-change in trends; with `base = "universal"` every `ATT(g, t)` is
-measured against the last period before treatment, `g - 1 - anticipation`,
-whose own `ATT` is zero. Post-treatment effects are the same either way.
+With \code{base = "varying"} (the default) pre-treatment \code{ATT(g, t)} compare
+period \code{t} with period \code{t - 1}, which gives placebo estimates of the
+change in trends; with \code{base = "universal"} every \code{ATT(g, t)} is
+measured against the last period before treatment, \code{g - 1 - anticipation},
+whose own \code{ATT} is zero. Post-treatment effects are the same either way.
 }
 
 \section{Inference}{
@@ -147,25 +149,25 @@ Standard errors are analytic and come from the influence function of
 each estimator, including the estimation of the propensity score and
 outcome regression and, for the aggregations, of the cohort shares used
 as weights; they are robust to serial correlation within individuals.
-They match `did::att_gt(bstrap = FALSE)` and `did::aggte()`. With
-`cluster`, the influence functions are summed within clusters (which must
+They match \code{did::att_gt(bstrap = FALSE)} and \code{did::aggte()}. With
+\code{cluster}, the influence functions are summed within clusters (which must
 nest individuals) before computing the standard errors, as
-`clustervars` in `did`. The joint Wald test of all pre-treatment
-`ATT(g, t)` is reported as a test of parallel pre-trends.
+\code{clustervars} in \code{did}. The joint Wald test of all pre-treatment
+\code{ATT(g, t)} is reported as a test of parallel pre-trends.
 
-With `bstrap = TRUE`, the standard errors come instead from the
-multiplier bootstrap of `did`: each bootstrap draw multiplies the
+With \code{bstrap = TRUE}, the standard errors come instead from the
+multiplier bootstrap of \code{did}: each bootstrap draw multiplies the
 (cluster sums of the) influence functions by independent Rademacher or
 Mammen weights, and the standard error is the interquartile range of the
 draws divided by that of the standard normal, which is robust to a few
-extreme draws. With `cband = TRUE` the bootstrap also gives the
-simultaneous critical value, the `level` quantile of the largest
-studentized deviation across all `ATT(g, t)` (or all levels of an
-aggregation), and the uniform confidence bands `band_lower`,
-`band_upper` cover all effects jointly with probability `level`. The
-aggregations of [summary.panglm_attgt()] reuse the same multiplier draws
-(they are generated from `seed`), so that they are coherent with the
-`ATT(g, t)`. Pointwise intervals (`lower`, `upper`) use the normal
+extreme draws. With \code{cband = TRUE} the bootstrap also gives the
+simultaneous critical value, the \code{level} quantile of the largest
+studentized deviation across all \code{ATT(g, t)} (or all levels of an
+aggregation), and the uniform confidence bands \code{band_lower},
+\code{band_upper} cover all effects jointly with probability \code{level}. The
+aggregations of \code{\link[=summary.panglm_attgt]{summary.panglm_attgt()}} reuse the same multiplier draws
+(they are generated from \code{seed}), so that they are coherent with the
+\code{ATT(g, t)}. Pointwise intervals (\code{lower}, \code{upper}) use the normal
 critical value with the bootstrap standard errors.
 }
 
@@ -203,19 +205,19 @@ plot(fitb)
 }
 \references{
 Callaway, B. and Sant'Anna, P. H. C. (2021).
-  Difference-in-differences with multiple time periods. *Journal of
-  Econometrics*, 225, 200-230. \doi{10.1016/j.jeconom.2020.12.001}
+Difference-in-differences with multiple time periods. \emph{Journal of
+Econometrics}, 225, 200-230. \doi{10.1016/j.jeconom.2020.12.001}
 
-  Sant'Anna, P. H. C. and Zhao, J. (2020). Doubly robust
-  difference-in-differences estimators. *Journal of Econometrics*, 219,
-  101-122. \doi{10.1016/j.jeconom.2020.06.003}
+Sant'Anna, P. H. C. and Zhao, J. (2020). Doubly robust
+difference-in-differences estimators. \emph{Journal of Econometrics}, 219,
+101-122. \doi{10.1016/j.jeconom.2020.06.003}
 
-  Mammen, E. (1993). Bootstrap and wild bootstrap for high dimensional
-  linear models. *The Annals of Statistics*, 21, 255-285.
-  \doi{10.1214/aos/1176349025}
+Mammen, E. (1993). Bootstrap and wild bootstrap for high dimensional
+linear models. \emph{The Annals of Statistics}, 21, 255-285.
+\doi{10.1214/aos/1176349025}
 }
 \seealso{
-[summary.panglm_attgt()] for the aggregations, [etwfe()] for
-  the extended two-way fixed-effects alternative (also for count and
-  binary outcomes), [did()] and [eventstudy()] for the TWFE versions.
+\code{\link[=summary.panglm_attgt]{summary.panglm_attgt()}} for the aggregations, \code{\link[=etwfe]{etwfe()}} for
+the extended two-way fixed-effects alternative (also for count and
+binary outcomes), \code{\link[=did]{did()}} and \code{\link[=eventstudy]{eventstudy()}} for the TWFE versions.
 }

@@ -7,16 +7,16 @@
 \method{vcov}{panqr}(object, tau = NULL, ...)
 }
 \arguments{
-\item{object}{a `"panqr"` fit}
+\item{object}{a \code{"panqr"} fit}
 
-\item{tau}{`NULL` or one of the fitted quantiles}
+\item{tau}{\code{NULL} or one of the fitted quantiles}
 
 \item{...}{unused}
 }
 \value{
-the covariance matrix of the coefficients at quantile `tau`; when
-  several quantiles were fitted and `tau` is `NULL`, a list of matrices,
-  one per quantile
+the covariance matrix of the coefficients at quantile \code{tau}; when
+several quantiles were fitted and \code{tau} is \code{NULL}, a list of matrices,
+one per quantile
 }
 \description{
 Covariance of a panqr fit

@@ -24,80 +24,80 @@ twopart(
 }
 \arguments{
 \item{formula}{model formula for the positive part, e.g.
-`cost ~ age + treatment`; also used for the binary part unless
-`binary_formula` is given}
+\code{cost ~ age + treatment}; also used for the binary part unless
+\code{binary_formula} is given}
 
 \item{data}{a data.frame}
 
 \item{index}{length-1 or length-2 character vector of panel index columns}
 
 \item{binary_formula}{optional right-hand-side formula for the binary
-part, e.g. `~ age + treatment + smoker`}
+part, e.g. \code{~ age + treatment + smoker}}
 
-\item{model}{`"pooling"` or `"random"`, used for both parts}
+\item{model}{\code{"pooling"} or \code{"random"}, used for both parts}
 
-\item{link}{link of the binary part, `"probit"` or `"logit"`}
+\item{link}{link of the binary part, \code{"probit"} or \code{"logit"}}
 
-\item{positive}{`"gamma"` (gamma GLM, log link) or `"lognormal"`
-(linear model for `log(y)`)}
+\item{positive}{\code{"gamma"} (gamma GLM, log link) or \code{"lognormal"}
+(linear model for \code{log(y)})}
 
-\item{retransform}{for `positive = "lognormal"`: `"smearing"` or
-`"normal"`}
+\item{retransform}{for \code{positive = "lognormal"}: \code{"smearing"} or
+\code{"normal"}}
 
-\item{correlated}{logical; with `model = "random"` and
-`positive = "lognormal"`, let the random intercepts of the two parts be
+\item{correlated}{logical; with \code{model = "random"} and
+\code{positive = "lognormal"}, let the random intercepts of the two parts be
 correlated and fit them jointly}
 
 \item{cre}{logical; add individual means of the time-varying regressors
 to both parts}
 
-\item{weights}{optional observation weights (`model = "pooling"` only):
-the name of a column of `data` or a numeric vector with one value per
-row of `data`}
+\item{weights}{optional observation weights (\code{model = "pooling"} only):
+the name of a column of \code{data} or a numeric vector with one value per
+row of \code{data}}
 
-\item{vcov}{covariance type passed to [panglm()] for both parts}
+\item{vcov}{covariance type passed to \code{\link[=panglm]{panglm()}} for both parts}
 
-\item{R, maxit, tol}{passed to [panglm()]}
+\item{R, maxit, tol}{passed to \code{\link[=panglm]{panglm()}}}
 }
 \value{
-an object of class `"twopart"` with components `binary` and
-  `positive` (the two [panglm()] fits), `retransformation` (the factor
-  `phi`, 1 for the gamma part) and the settings used. Methods: `print`,
-  `summary`, `coef`, `vcov`, `predict`, `fitted`, `logLik`, `nobs` and
-  [partialeffects()].
+an object of class \code{"twopart"} with components \code{binary} and
+\code{positive} (the two \code{\link[=panglm]{panglm()}} fits), \code{retransformation} (the factor
+\code{phi}, 1 for the gamma part) and the settings used. Methods: \code{print},
+\code{summary}, \code{coef}, \code{vcov}, \code{predict}, \code{fitted}, \code{logLik}, \code{nobs} and
+\code{\link[=partialeffects]{partialeffects()}}.
 }
 \description{
 Fits the two-part model of Duan et al. (1983), the standard model for
 health care expenditures with a mass of zeros: a binary model for
-`P(y > 0)` on all observations, and a model for `E[y | y > 0]` on the
+\code{P(y > 0)} on all observations, and a model for \code{E[y | y > 0]} on the
 positive observations. The unconditional mean is
-`E[y] = P(y > 0) * E[y | y > 0]`.
+\code{E[y] = P(y > 0) * E[y | y > 0]}.
 }
 \details{
 The positive part is either a gamma GLM with a log link
-(`positive = "gamma"`, no retransformation needed) or a linear model for
-`log(y)` (`positive = "lognormal"`). For the log model,
-`E[y | y > 0] = exp(x'beta) * phi` needs a retransformation factor
-`phi`: Duan's smearing estimate, the (weighted) mean of the exponentiated
-log-scale residuals (`retransform = "smearing"`), or the normal-theory
-factor `exp(sigma^2 / 2)` (`retransform = "normal"`; with
-`model = "random"`, `sigma^2` is the sum of the individual and
+(\code{positive = "gamma"}, no retransformation needed) or a linear model for
+\code{log(y)} (\code{positive = "lognormal"}). For the log model,
+\verb{E[y | y > 0] = exp(x'beta) * phi} needs a retransformation factor
+\code{phi}: Duan's smearing estimate, the (weighted) mean of the exponentiated
+log-scale residuals (\code{retransform = "smearing"}), or the normal-theory
+factor \code{exp(sigma^2 / 2)} (\code{retransform = "normal"}; with
+\code{model = "random"}, \code{sigma^2} is the sum of the individual and
 idiosyncratic variance components). Both assume homoskedastic log-scale
 errors.
 
-With `model = "random"` each part has its own random intercept and the
+With \code{model = "random"} each part has its own random intercept and the
 parts are estimated separately; the combined mean multiplies the two
 population-averaged means, which assumes the two random intercepts are
-independent. With `correlated = TRUE` (random effects, lognormal positive
+independent. With \code{correlated = TRUE} (random effects, lognormal positive
 part) the two random intercepts are instead bivariate normal with
-correlation `rho` and both parts are estimated jointly by maximum
+correlation \code{rho} and both parts are estimated jointly by maximum
 likelihood (Van Ourti 2004): individuals with a high propensity to use
 care may also have high spending when they do. The positive-part random
 intercept is integrated out in closed form and the binary-part one by
 adaptive Gauss-Hermite quadrature. Predictions then integrate over the
 joint distribution (normal-theory retransformation). A likelihood-ratio
-test of `rho = 0` compares `logLik()` with the separate fit.
-`cre = TRUE` adds the individual means of the time-varying
+test of \code{rho = 0} compares \code{logLik()} with the separate fit.
+\code{cre = TRUE} adds the individual means of the time-varying
 regressors (computed over all observations of the individual, including
 zeros) to both parts, the Mundlak correlated random effects device.
 }
@@ -114,15 +114,15 @@ partialeffects(tp)
 }
 \references{
 Duan, N., Manning, W. G., Morris, C. N. and Newhouse, J. P.
-  (1983). A comparison of alternative models for the demand for medical
-  care. *Journal of Business and Economic Statistics*, 1, 115-126.
-  \doi{10.1080/07350015.1983.10509330}
+(1983). A comparison of alternative models for the demand for medical
+care. \emph{Journal of Business and Economic Statistics}, 1, 115-126.
+\doi{10.1080/07350015.1983.10509330}
 
-  Duan, N. (1983). Smearing estimate: a nonparametric retransformation
-  method. *Journal of the American Statistical Association*, 78,
-  605-610. \doi{10.1080/01621459.1983.10478017}
+Duan, N. (1983). Smearing estimate: a nonparametric retransformation
+method. \emph{Journal of the American Statistical Association}, 78,
+605-610. \doi{10.1080/01621459.1983.10478017}
 
-  Van Ourti, T. (2004). Measuring horizontal inequity in Belgian health
-  care using a Gaussian random effects two part count data model.
-  *Health Economics*, 13, 705-724. \doi{10.1002/hec.869}
+Van Ourti, T. (2004). Measuring horizontal inequity in Belgian health
+care using a Gaussian random effects two part count data model.
+\emph{Health Economics}, 13, 705-724. \doi{10.1002/hec.869}
 }

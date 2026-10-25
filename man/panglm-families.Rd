@@ -31,60 +31,60 @@ tobitfamily(left = 0, right = Inf)
 \arguments{
 \item{link}{canonical link name}
 
-\item{left, right}{censoring limits of `tobitfamily()`}
+\item{left, right}{censoring limits of \code{tobitfamily()}}
 }
 \value{
-a list with `family`, `link`, `family_id`, `link_id`
+a list with \code{family}, \code{link}, \code{family_id}, \code{link_id}
 }
 \description{
-Lightweight family objects used by [panglm()], analogous in spirit to
-[stats::family] objects but keyed to the integer codes the C++ backend
-expects (see `src/families.h`).
+Lightweight family objects used by \code{\link[=panglm]{panglm()}}, analogous in spirit to
+\link[stats:family]{stats::family} objects but keyed to the integer codes the C++ backend
+expects (see \code{src/families.h}).
 }
 \details{
-`gammafamily()` is the gamma GLM with a log link, the usual
-  choice for skewed positive outcomes such as health care costs: the
-  variance is proportional to the squared mean and the coefficients act
-  multiplicatively on the mean, with no retransformation needed.
+\code{gammafamily()} is the gamma GLM with a log link, the usual
+choice for skewed positive outcomes such as health care costs: the
+variance is proportional to the squared mean and the coefficients act
+multiplicatively on the mean, with no retransformation needed.
 
-`orderedfamily()` is the ordered logit or ordered probit model
-  for ordinal outcomes such as self-assessed health:
-  `P(y <= j) = F(c_j - x'beta - u_i)`. The response may be a factor, an
-  ordered factor or integer-valued; categories follow the factor levels
-  or the sorted values. The intercept is absorbed in the cutpoints `c_j`,
-  which are reported after the slopes. `model = "pooling"` and
-  `model = "random"` (Gaussian random intercept by Gauss-Hermite
-  quadrature) are available for both links, `model = "within"` for the
-  logit link only (the "blow-up and cluster" fixed-effects ordered logit
-  of Baetschmann, Staub and Winkelmann 2015). The fit has class
-  `c("panordered", "panglm")`; see [predict.panordered()].
+\code{orderedfamily()} is the ordered logit or ordered probit model
+for ordinal outcomes such as self-assessed health:
+\verb{P(y <= j) = F(c_j - x'beta - u_i)}. The response may be a factor, an
+ordered factor or integer-valued; categories follow the factor levels
+or the sorted values. The intercept is absorbed in the cutpoints \code{c_j},
+which are reported after the slopes. \code{model = "pooling"} and
+\code{model = "random"} (Gaussian random intercept by Gauss-Hermite
+quadrature) are available for both links, \code{model = "within"} for the
+logit link only (the "blow-up and cluster" fixed-effects ordered logit
+of Baetschmann, Staub and Winkelmann 2015). The fit has class
+\code{c("panordered", "panglm")}; see \code{\link[=predict.panordered]{predict.panordered()}}.
 
-`betafamily()` is beta regression for continuous outcomes in
-  the open interval (0, 1), such as utility index scores rescaled to
-  (0, 1), proportions of days in hospital or adherence fractions:
-  `y ~ Beta(mu phi, (1 - mu) phi)` with `g(mu) = x'beta`, so `E(y) = mu`
-  and `Var(y) = mu (1 - mu) / (1 + phi)`. The precision `phi` is
-  reported as `fit$precision`. `model = "pooling"` and `model = "random"`
-  (Gaussian random intercept on the link scale, adaptive Gauss-Hermite
-  quadrature) are available; there is no fixed-effects estimator.
-  Outcomes equal to 0 or 1 must be transformed first, e.g. with
-  `(y * (n - 1) + 0.5) / n` (Smithson and Verkuilen 2006).
+\code{betafamily()} is beta regression for continuous outcomes in
+the open interval (0, 1), such as utility index scores rescaled to
+(0, 1), proportions of days in hospital or adherence fractions:
+\code{y ~ Beta(mu * phi, (1 - mu) * phi)} with \verb{g(mu) = x'beta}, so \code{E(y) = mu}
+and \code{Var(y) = mu (1 - mu) / (1 + phi)}. The precision \code{phi} is
+reported as \code{fit$precision}. \code{model = "pooling"} and \code{model = "random"}
+(Gaussian random intercept on the link scale, adaptive Gauss-Hermite
+quadrature) are available; there is no fixed-effects estimator.
+Outcomes equal to 0 or 1 must be transformed first, e.g. with
+\code{(y * (n - 1) + 0.5) / n} (Smithson and Verkuilen 2006).
 
-`tobitfamily()` is the censored normal (Tobit) model for
-  outcomes piled up at a floor or a ceiling, such as health scores at
-  the ceiling of a scale (motor function scores, EQ-5D utility at 1) or
-  spending at zero: the latent outcome is `y* = x'beta + u_i + e_it`
-  with `e_it ~ N(0, sigma_e^2)`, and `y = left` when `y* <= left`,
-  `y = right` when `y* >= right`, `y = y*` otherwise. Use `left = -Inf`
-  or `right = Inf` for one-sided censoring. `model = "pooling"` and
-  `model = "random"` (Gaussian random intercept `u_i ~ N(0, sigma_u^2)`,
-  adaptive Gauss-Hermite quadrature) are available. There is no
-  fixed-effects Tobit (incidental parameters); use `model = "random"`
-  with `cre = TRUE`. `predict(type = "link")` returns the latent mean
-  `x'beta` and `predict(type = "response")` the mean of the observed,
-  censored outcome (averaged over the random intercept), which is the
-  scale of [partialeffects()]. `fit$sigma_e` and `fit$sigma` (random
-  intercept SD) are stored on the fit.
+\code{tobitfamily()} is the censored normal (Tobit) model for
+outcomes piled up at a floor or a ceiling, such as health scores at
+the ceiling of a scale (motor function scores, EQ-5D utility at 1) or
+spending at zero: the latent outcome is \verb{y* = x'beta + u_i + e_it}
+with \code{e_it ~ N(0, sigma_e^2)}, and \code{y = left} when \verb{y* <= left},
+\code{y = right} when \verb{y* >= right}, \verb{y = y*} otherwise. Use \code{left = -Inf}
+or \code{right = Inf} for one-sided censoring. \code{model = "pooling"} and
+\code{model = "random"} (Gaussian random intercept \code{u_i ~ N(0, sigma_u^2)},
+adaptive Gauss-Hermite quadrature) are available. There is no
+fixed-effects Tobit (incidental parameters); use \code{model = "random"}
+with \code{cre = TRUE}. \code{predict(type = "link")} returns the latent mean
+\verb{x'beta} and \code{predict(type = "response")} the mean of the observed,
+censored outcome (averaged over the random intercept), which is the
+scale of \code{\link[=partialeffects]{partialeffects()}}. \code{fit$sigma_e} and \code{fit$sigma} (random
+intercept SD) are stored on the fit.
 }
 \examples{
 gaussianfamily()
@@ -103,19 +103,19 @@ coef(fit)
 }
 \references{
 Baetschmann, G., Staub, K. E. and Winkelmann, R. (2015).
-  Consistent estimation of the fixed effects ordered logit model.
-  *Journal of the Royal Statistical Society A*, 178, 685-703.
-  \doi{10.1111/rssa.12090}
+Consistent estimation of the fixed effects ordered logit model.
+\emph{Journal of the Royal Statistical Society A}, 178, 685-703.
+\doi{10.1111/rssa.12090}
 
 Ferrari, S. and Cribari-Neto, F. (2004). Beta regression for
-  modelling rates and proportions. *Journal of Applied Statistics*, 31,
-  799-815. \doi{10.1080/0266476042000214501}
+modelling rates and proportions. \emph{Journal of Applied Statistics}, 31,
+799-815. \doi{10.1080/0266476042000214501}
 
-  Smithson, M. and Verkuilen, J. (2006). A better lemon squeezer?
-  Maximum-likelihood regression with beta-distributed dependent
-  variables. *Psychological Methods*, 11, 54-71.
-  \doi{10.1037/1082-989X.11.1.54}
+Smithson, M. and Verkuilen, J. (2006). A better lemon squeezer?
+Maximum-likelihood regression with beta-distributed dependent
+variables. \emph{Psychological Methods}, 11, 54-71.
+\doi{10.1037/1082-989X.11.1.54}
 
 Tobin, J. (1958). Estimation of relationships for limited
-  dependent variables. *Econometrica*, 26, 24-36. \doi{10.2307/1907382}
+dependent variables. \emph{Econometrica}, 26, 24-36. \doi{10.2307/1907382}
 }

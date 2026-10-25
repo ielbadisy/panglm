@@ -7,19 +7,19 @@
 \method{logLik}{panglm}(object, ...)
 }
 \arguments{
-\item{object}{a fitted `"panglm"` object}
+\item{object}{a fitted \code{"panglm"} object}
 
 \item{...}{unused}
 }
 \value{
-an object of class `"logLik"`
+an object of class \code{"logLik"}
 }
 \description{
-The `df` attribute counts every parameter associated with the reported
+The \code{df} attribute counts every parameter associated with the reported
 likelihood, including fitted shape, dispersion, variance, and explicit
 fixed-effect parameters. For conditional Poisson and conditional logistic
 likelihoods, only parameters remaining in the conditional likelihood are
-counted. Models estimated without a likelihood return `NA`.
+counted. Models estimated without a likelihood return \code{NA}.
 }
 \examples{
 data(copd)

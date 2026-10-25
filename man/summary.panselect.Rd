@@ -7,16 +7,16 @@
 \method{summary}{panselect}(object, ...)
 }
 \arguments{
-\item{object}{a `"panselect"` fit}
+\item{object}{a \code{"panselect"} fit}
 
 \item{...}{unused}
 }
 \value{
-an object of class `"summary.panselect"`: a list with the
-  coefficient table (`coefficients`: estimate, standard error, z value
-  and p-value, using the default covariance of the fit), the selection
-  test (`selection_test`), the probit coefficients (`probit`) and the
-  fit information.
+an object of class \code{"summary.panselect"}: a list with the
+coefficient table (\code{coefficients}: estimate, standard error, z value
+and p-value, using the default covariance of the fit), the selection
+test (\code{selection_test}), the probit coefficients (\code{probit}) and the
+fit information.
 }
 \description{
 Summarize a panselect fit

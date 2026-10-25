@@ -18,7 +18,7 @@ panqr(
 )
 }
 \arguments{
-\item{formula}{a formula `y ~ regressors`}
+\item{formula}{a formula \code{y ~ regressors}}
 
 \item{data}{a data.frame in long format}
 
@@ -27,109 +27,113 @@ panqr(
 
 \item{tau}{numeric vector of quantiles, each strictly between 0 and 1}
 
-\item{model}{`"canay"`, `"mmqr"` or `"pooling"`}
+\item{model}{\code{"canay"}, \code{"mmqr"} or \code{"pooling"}}
 
-\item{vcov}{`"analytic"`, `"bootstrap"` or `"none"`; the default is
-`"bootstrap"` for `"canay"` and `"analytic"` otherwise}
+\item{vcov}{\code{"analytic"}, \code{"bootstrap"} or \code{"none"}; the default is
+\code{"bootstrap"} for \code{"canay"} and \code{"analytic"} otherwise}
 
-\item{boot}{number of bootstrap replications for `vcov = "bootstrap"`}
+\item{boot}{number of bootstrap replications for \code{vcov = "bootstrap"}}
 
-\item{na.action}{missing-data action passed to [stats::model.frame()]}
+\item{na.action}{missing-data action passed to \code{\link[stats:model.frame]{stats::model.frame()}}}
 
 \item{seed}{optional random seed for the bootstrap; the global random
-number state is restored afterwards. With `seed = NULL` (the default)
+number state is restored afterwards. With \code{seed = NULL} (the default)
 the draws come from the global random number stream.}
 
-\item{R}{deprecated; use `boot`}
+\item{R}{deprecated; use \code{boot}}
 }
 \value{
-an object of class `"panqr"`, a list with components
-  `coefficients` (a matrix with one column per quantile), `vcov` (a list
-  of covariance matrices, one per quantile, or `NULL` for
-  `vcov = "none"`), `vcov_type`, `tau`, `model`, `boot` (the bootstrap
-  replicates, an array `boot x k x length(tau)`, for `vcov = "bootstrap"`),
-  `alpha` (one per individual: for `"canay"` the normalized effects
-  subtracted from the outcome, for `"mmqr"` the location effects including
-  the constant), for `"mmqr"` also `location`, `scale` (lists with
-  `coefficients` and `vcov`), `q` (the quantiles of the standardized
-  errors) and `delta` (the individual scale effects including the
-  constant, so that `alpha_i(tau) = alpha_i + delta_i q(tau)`),
-  `dropped` (time-invariant regressors dropped), `n_singletons`
-  (individuals observed once, dropped for `"canay"` and `"mmqr"`), `nobs`,
-  `n_groups`,
-  `call` and `formula`. It has `print`, `summary`, `coef`, `vcov`, `nobs`
-  and `confint` methods.
+an object of class \code{"panqr"}, a list with components
+\code{coefficients} (a matrix with one column per quantile), \code{vcov} (a list
+of covariance matrices, one per quantile, or \code{NULL} for
+\code{vcov = "none"}), \code{vcov_type}, \code{tau}, \code{model}, \code{boot} (the bootstrap
+replicates, an array \verb{boot x k x length(tau)}, for \code{vcov = "bootstrap"}),
+\code{alpha} (one per individual: for \code{"canay"} the normalized effects
+subtracted from the outcome, for \code{"mmqr"} the location effects including
+the constant), for \code{"mmqr"} also \code{location}, \code{scale} (lists with
+\code{coefficients} and \code{vcov}), \code{q} (the quantiles of the standardized
+errors) and \code{delta} (the individual scale effects including the
+constant, so that \verb{alpha_i(tau) = alpha_i + delta_i q(tau)}),
+\code{dropped} (time-invariant regressors dropped), \code{n_singletons}
+(individuals observed once, dropped for \code{"canay"} and \code{"mmqr"}), \code{nobs},
+\code{n_groups},
+\code{call} and \code{formula}. It has \code{print}, \code{summary}, \code{coef}, \code{vcov}, \code{nobs}
+and \code{confint} methods.
 }
 \description{
 Fixed-effects quantile regression for linear panel models: the two-step
 estimator of Canay (2011) and the method of moments quantile regression
 (MM-QR) of Machado and Santos Silva (2019), the estimator of the Stata
-command `xtqreg`. A pooled quantile regression that ignores the
+command \code{xtqreg}. A pooled quantile regression that ignores the
 individual effects is available as a baseline. Several quantiles can be
 estimated in one call.
 }
 \section{Estimators}{
 
-* `"canay"`: the individual effects are estimated from the within (mean)
-  regression, `alpha_i = ybar_i - xbar_i'b - c` with `c = ybar - xbar'b`
-  the overall constant (the normalization of Stata's `xtreg, fe`), and
-  the quantile regression of the adjusted outcome `y - alpha_i` on the
-  regressors (with an intercept) is fitted by [quantreg::rq.fit()] with
-  `method = "br"`. The intercept is the `tau`-quantile of `c + error`.
-  The model assumes that the individual effects are pure location shifts,
-  and the estimator is consistent when both `N` and `T` grow.
-* `"mmqr"`: the location-scale model
-  `y_it = alpha_i + x_it'b + (delta_i + x_it'g) U_it`. The location
-  parameters `b` come from the within regression of `y` on `x`; with `R`
-  its residuals, the scale parameters `g` come from the within regression
-  of `2 R (I(R >= 0) - mean(I(R >= 0)))`, an estimate of `|R|` that is
-  robust to the first step; `q(tau)` is the sample `tau`-quantile of the
-  standardized residuals `R / sigma_it`, with `sigma_it` the fitted scale
-  including the individual effects. The quantile coefficients are
-  `b(tau) = b + g q(tau)`. The scale variables are the regressors, as in
-  `xtqreg`. Only slopes are reported: the intercept is absorbed in the
-  individual effects `alpha_i(tau) = alpha_i + delta_i q(tau)`.
-* `"pooling"`: [quantreg::rq.fit()] of `y` on the regressors, ignoring
-  the panel structure (except for the clustered covariance).
+\itemize{
+\item \code{"canay"}: the individual effects are estimated from the within (mean)
+regression, \verb{alpha_i = ybar_i - xbar_i'b - c} with \verb{c = ybar - xbar'b}
+the overall constant (the normalization of Stata's \verb{xtreg, fe}), and
+the quantile regression of the adjusted outcome \code{y - alpha_i} on the
+regressors (with an intercept) is fitted by \code{\link[quantreg:rq.fit]{quantreg::rq.fit()}} with
+\code{method = "br"}. The intercept is the \code{tau}-quantile of \code{c + error}.
+The model assumes that the individual effects are pure location shifts,
+and the estimator is consistent when both \code{N} and \code{T} grow.
+\item \code{"mmqr"}: the location-scale model
+\verb{y_it = alpha_i + x_it'b + (delta_i + x_it'g) U_it}. The location
+parameters \code{b} come from the within regression of \code{y} on \code{x}; with \code{R}
+its residuals, the scale parameters \code{g} come from the within regression
+of \verb{2 R (I(R >= 0) - mean(I(R >= 0)))}, an estimate of \verb{|R|} that is
+robust to the first step; \code{q(tau)} is the sample \code{tau}-quantile of the
+standardized residuals \code{R / sigma_it}, with \code{sigma_it} the fitted scale
+including the individual effects. The quantile coefficients are
+\verb{b(tau) = b + g q(tau)}. The scale variables are the regressors, as in
+\code{xtqreg}. Only slopes are reported: the intercept is absorbed in the
+individual effects \verb{alpha_i(tau) = alpha_i + delta_i q(tau)}.
+\item \code{"pooling"}: \code{\link[quantreg:rq.fit]{quantreg::rq.fit()}} of \code{y} on the regressors, ignoring
+the panel structure (except for the clustered covariance).
+}
 
 Time-invariant regressors are not identified with individual effects and
-are dropped (with a warning) for `"canay"` and `"mmqr"`, as are
+are dropped (with a warning) for \code{"canay"} and \code{"mmqr"}, as are
 individuals observed only once (with a message).
 }
 
 \section{Covariance}{
 
-`vcov = "bootstrap"` resamples whole individuals with replacement (a
-cluster bootstrap) `boot` times, repeats every step of the estimator and
-returns the covariance of the replicates. `vcov = "analytic"` gives:
-* `"mmqr"`: the asymptotic covariance of Machado and Santos Silva (2019),
-  with the matrix layout of `xtqreg` (version 1.5): it combines the
-  influence of the location, scale and `q(tau)` estimates, with the
-  density of the standardized error at `q(tau)` estimated by the
-  difference quotient `2h / (q(tau + h) - q(tau - h))` (as Stata's
-  `qreg, vce(iid)`) and the Hall and Sheather bandwidth `h`. The scale
-  influence uses the centered `V = 2 U (I(U >= 0) - mean(I(U >= 0))) - 1`
-  of the paper (also used by the Stata command `mmqreg`); `xtqreg` 1.5
-  omits the `- 1`, which inflates its standard errors away from the
-  median (by about 30% at `tau = 0.9` in simulations, where the centered
-  version matches the Monte Carlo standard deviation).
-* `"canay"`: a cluster-robust (by individual) sandwich built from the
-  influence function of the two-step estimator, which corrects the
-  quantile regression score `(tau - I(e < 0)) x` for the estimation of
-  the individual effects and of the within slopes. The conditional
-  density is estimated with the Gaussian kernel and bandwidth of
-  `quantreg::summary.rq(se = "ker")`. This is a large-`N`, large-`T`
-  approximation; Canay (2011) recommends the bootstrap. It treats the
-  individual effects as fixed, so its intercept SE omits the sampling
-  variation of the mean individual effect that the cluster bootstrap
-  includes; the slope SEs of the two agree.
-* `"pooling"`: the same kernel sandwich without the first-step terms,
-  clustered by individual.
+\code{vcov = "bootstrap"} resamples whole individuals with replacement (a
+cluster bootstrap) \code{boot} times, repeats every step of the estimator and
+returns the covariance of the replicates. \code{vcov = "analytic"} gives:
+\itemize{
+\item \code{"mmqr"}: the asymptotic covariance of Machado and Santos Silva (2019),
+with the matrix layout of \code{xtqreg} (version 1.5): it combines the
+influence of the location, scale and \code{q(tau)} estimates, with the
+density of the standardized error at \code{q(tau)} estimated by the
+difference quotient \verb{2h / (q(tau + h) - q(tau - h))} (as Stata's
+\verb{qreg, vce(iid)}) and the Hall and Sheather bandwidth \code{h}. The scale
+influence uses the centered \verb{V = 2 U (I(U >= 0) - mean(I(U >= 0))) - 1}
+of the paper (also used by the Stata command \code{mmqreg}); \code{xtqreg} 1.5
+omits the \code{- 1}, which inflates its standard errors away from the
+median (by about 30\% at \code{tau = 0.9} in simulations, where the centered
+version matches the Monte Carlo standard deviation).
+\item \code{"canay"}: a cluster-robust (by individual) sandwich built from the
+influence function of the two-step estimator, which corrects the
+quantile regression score \verb{(tau - I(e < 0)) x} for the estimation of
+the individual effects and of the within slopes. The conditional
+density is estimated with the Gaussian kernel and bandwidth of
+\code{quantreg::summary.rq(se = "ker")}. This is a large-\code{N}, large-\code{T}
+approximation; Canay (2011) recommends the bootstrap. It treats the
+individual effects as fixed, so its intercept SE omits the sampling
+variation of the mean individual effect that the cluster bootstrap
+includes; the slope SEs of the two agree.
+\item \code{"pooling"}: the same kernel sandwich without the first-step terms,
+clustered by individual.
+}
 
-The cluster sandwiches carry no finite-sample factor. For `"mmqr"` the
+The cluster sandwiches carry no finite-sample factor. For \code{"mmqr"} the
 location and scale coefficients are returned with the cluster-robust
 within covariance of the rest of the package
-(`G / (G - 1) * (n - 1) / (n - k)`, as `plm::vcovHC(type = "sss")`).
+(\code{G / (G - 1) * (n - 1) / (n - k)}, as \code{plm::vcovHC(type = "sss")}).
 }
 
 \examples{
@@ -160,10 +164,10 @@ if (requireNamespace("quantreg", quietly = TRUE)) {
 }
 \references{
 Canay, I. A. (2011). A simple approach to quantile regression for panel
-data. *The Econometrics Journal*, 14(3), 368-386.
+data. \emph{The Econometrics Journal}, 14(3), 368-386.
 \doi{10.1111/j.1368-423X.2011.00349.x}
 
 Machado, J. A. F. and Santos Silva, J. M. C. (2019). Quantiles via
-moments. *Journal of Econometrics*, 213(1), 145-173.
+moments. \emph{Journal of Econometrics}, 213(1), 145-173.
 \doi{10.1016/j.jeconom.2019.04.009}
 }

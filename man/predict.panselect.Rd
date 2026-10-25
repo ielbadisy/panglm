@@ -12,42 +12,44 @@
 )
 }
 \arguments{
-\item{object}{a `"panselect"` fit}
+\item{object}{a \code{"panselect"} fit}
 
 \item{newdata}{a data frame in long format (see Details); the fit does
-not store its data, so `newdata` is required (pass the fitting data
+not store its data, so \code{newdata} is required (pass the fitting data
 for in-sample predictions)}
 
-\item{type}{`"unconditional"`, `"conditional"` or `"selection"`}
+\item{type}{\code{"unconditional"}, \code{"conditional"} or \code{"selection"}}
 
 \item{...}{unused}
 }
 \value{
-a numeric vector with one prediction per row of `newdata`
+a numeric vector with one prediction per row of \code{newdata}
 }
 \description{
-Predictions from a [panselect()] fit on `newdata`, a long data frame with
+Predictions from a \code{\link[=panselect]{panselect()}} fit on \code{newdata}, a long data frame with
 the panel index columns and the variables of both equations (the
 outcome and the selection indicator themselves are not needed).
 }
 \details{
-* `type = "unconditional"`: the linear index of the outcome equation,
-  `x'b`, the mean of the outcome in the whole population (selected or
-  not) given the regressors. With `model = "pooling"` it includes the
-  intercept and, with `mundlak = TRUE`, the Mundlak means; with
-  `model = "within"` it excludes the individual effect (and the
-  intercept, which the within transformation removes).
-* `type = "conditional"`: the mean in the selected population,
-  `x'b + sum_t g_t lambda_it`, adding the inverse Mills ratio terms with
-  their estimated coefficients (one per period with
-  `lambda = "period"`, a single one with `lambda = "common"`).
-* `type = "selection"`: the selection probability `pnorm(z'd_t)` of the
-  first-step probit of each row's period.
+\itemize{
+\item \code{type = "unconditional"}: the linear index of the outcome equation,
+\verb{x'b}, the mean of the outcome in the whole population (selected or
+not) given the regressors. With \code{model = "pooling"} it includes the
+intercept and, with \code{mundlak = TRUE}, the Mundlak means; with
+\code{model = "within"} it excludes the individual effect (and the
+intercept, which the within transformation removes).
+\item \code{type = "conditional"}: the mean in the selected population,
+\verb{x'b + sum_t g_t lambda_it}, adding the inverse Mills ratio terms with
+their estimated coefficients (one per period with
+\code{lambda = "period"}, a single one with \code{lambda = "common"}).
+\item \code{type = "selection"}: the selection probability \verb{pnorm(z'd_t)} of the
+first-step probit of each row's period.
+}
 
 The inverse Mills ratios and probabilities use the first-step probit of
 the row's period; the Mundlak means are the means of the time-varying
-selection regressors over the rows of each individual in `newdata`, so
-`newdata` should hold every period of an individual (as in the fit).
+selection regressors over the rows of each individual in \code{newdata}, so
+\code{newdata} should hold every period of an individual (as in the fit).
 A period without a probit in the fit (every observation selected) has an
 inverse Mills ratio of zero and a missing selection probability; a
 period that is not in the fit gives a missing prediction for the

@@ -7,11 +7,11 @@
 \method{vcov}{panselect}(object, type = NULL, ...)
 }
 \arguments{
-\item{object}{a `"panselect"` fit}
+\item{object}{a \code{"panselect"} fit}
 
-\item{type}{`NULL` (the default covariance of the fit), `"boot"` (panel
-bootstrap), `"cluster"` (cluster-robust by individual, ignoring the
-estimation of the first step) or `"classical"` (homoskedastic, also
+\item{type}{\code{NULL} (the default covariance of the fit), \code{"boot"} (panel
+bootstrap), \code{"cluster"} (cluster-robust by individual, ignoring the
+estimation of the first step) or \code{"classical"} (homoskedastic, also
 ignoring the first step)}
 
 \item{...}{unused}

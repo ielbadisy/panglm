@@ -7,31 +7,31 @@
 jointtest(object, terms = NULL, pattern = NULL, R = NULL, r = 0, vcov = NULL)
 }
 \arguments{
-\item{object}{a `"panglm"` fit}
+\item{object}{a \code{"panglm"} fit}
 
 \item{terms}{character vector of coefficient names}
 
 \item{pattern}{regular expression selecting coefficient names (used when
-`terms` and `R` are `NULL`)}
+\code{terms} and \code{R} are \code{NULL})}
 
 \item{R}{optional restriction matrix with one column per coefficient}
 
 \item{r}{right-hand side of the restrictions (recycled), default 0}
 
-\item{vcov}{`NULL` (the covariance stored on the fit) or a type passed to
-[vcov.panglm()], e.g. `"cluster"`}
+\item{vcov}{\code{NULL} (the covariance stored on the fit) or a type passed to
+\code{\link[=vcov.panglm]{vcov.panglm()}}, e.g. \code{"cluster"}}
 }
 \value{
-an object of class `"panglm_jointtest"`: a list with
-  `statistic`, `df`, `p.value`, `terms` and `vcov_type`
+an object of class \code{"panglm_jointtest"}: a list with
+\code{statistic}, \code{df}, \code{p.value}, \code{terms} and \code{vcov_type}
 }
 \description{
-Tests `H0: R beta = r` with the statistic
-`(R b - r)' (R V R')^(-1) (R b - r)`, referred to a chi-squared
-distribution with `nrow(R)` degrees of freedom. The coefficients are
-chosen by name (`terms`), by a regular expression (`pattern`) or through
-an explicit restriction matrix `R`. Typical uses are the joint test of
-the spline columns of a regressor (does `x` matter at all), of the
+Tests \verb{H0: R beta = r} with the statistic
+\verb{(R b - r)' (R V R')^(-1) (R b - r)}, referred to a chi-squared
+distribution with \code{nrow(R)} degrees of freedom. The coefficients are
+chosen by name (\code{terms}), by a regular expression (\code{pattern}) or through
+an explicit restriction matrix \code{R}. Typical uses are the joint test of
+the spline columns of a regressor (does \code{x} matter at all), of the
 Mundlak means of a correlated random effects fit, or of the leads of an
 event study.
 }

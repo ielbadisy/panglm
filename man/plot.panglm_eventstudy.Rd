@@ -7,14 +7,14 @@
 \method{plot}{panglm_eventstudy}(x, xlab = "Event time", ylab = "Estimate", ...)
 }
 \arguments{
-\item{x}{a `"panglm_eventstudy"` object from [eventstudy()]}
+\item{x}{a \code{"panglm_eventstudy"} object from \code{\link[=eventstudy]{eventstudy()}}}
 
 \item{xlab, ylab}{axis labels}
 
-\item{...}{passed to [graphics::plot()]}
+\item{...}{passed to \code{\link[graphics:plot.default]{graphics::plot()}}}
 }
 \value{
-`x`, invisibly
+\code{x}, invisibly
 }
 \description{
 Plot event-study coefficients

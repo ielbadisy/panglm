@@ -14,7 +14,7 @@ effectcurve(
 )
 }
 \arguments{
-\item{object}{a `"panglm"` fit}
+\item{object}{a \code{"panglm"} fit}
 
 \item{variable}{name of the regressor}
 
@@ -23,25 +23,25 @@ between the 1st and 99th percentile of the regressor in the fit}
 
 \item{ref}{reference value; default: the median of the regressor}
 
-\item{vcov}{`NULL` (the covariance stored on the fit) or a type passed to
-[vcov.panglm()]}
+\item{vcov}{\code{NULL} (the covariance stored on the fit) or a type passed to
+\code{\link[=vcov.panglm]{vcov.panglm()}}}
 
 \item{level}{confidence level of the pointwise band}
 }
 \value{
-a data frame of class `"panglm_effectcurve"` with columns
-  `value`, `estimate`, `se`, `lower` and `upper`
+a data frame of class \code{"panglm_effectcurve"} with columns
+\code{value}, \code{estimate}, \code{se}, \code{lower} and \code{upper}
 }
 \description{
-For a regressor entered through a regression spline (`splines::ns()`,
-`splines::bs()`), a polynomial or linearly, returns the change in the
+For a regressor entered through a regression spline (\code{splines::ns()},
+\code{splines::bs()}), a polynomial or linearly, returns the change in the
 linear predictor when the regressor moves from the reference value
-`ref` to each of `values`, with delta-method pointwise confidence limits.
+\code{ref} to each of \code{values}, with delta-method pointwise confidence limits.
 Centering at a reference is what makes the curve comparable across
 models: in fixed-effects fits the level is absorbed by the individual
 effects. The scale is the link scale: a difference in mean for the
 identity link, a log rate ratio for Poisson and negative binomial models,
-a log odds ratio for the logit link. Use `plot()` to draw it.
+a log odds ratio for the logit link. Use \code{plot()} to draw it.
 }
 \examples{
 data(copd)
