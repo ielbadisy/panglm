@@ -225,7 +225,7 @@ res <- testthat::test_local(reporter = testthat::SilentReporter$new())
 df  <- as.data.frame(res)
 c(pass = sum(df$passed), fail = sum(df$failed), warn = sum(df$warning), skip = sum(df$skipped))
 #> pass fail warn skip 
-#> 1134    0    0    0
+#> 1151    0    0    0
 ```
 
 See `vignette("panglm-methods")` for the full walkthrough (33+
