@@ -38,7 +38,19 @@ did_timing <- function(data, index, treat) {
 #'
 #' The family can be Gaussian (effect on the mean), Poisson or negative
 #' binomial (effect on the log rate: `exp(coef)` is a ratio, and Poisson FE
-#' DiD needs only the conditional mean to be correct, Wooldridge 2023).
+#' DiD needs only the conditional mean to be correct, Wooldridge 2023), or
+#' binomial for a binary outcome. The binomial model is the two-way
+#' conditional (Chamberlain) logit of [panglm()]: the individual effects
+#' are conditioned out exactly and the time effects enter as dummies inside
+#' the conditional likelihood, as in `survival::clogit(y ~ treated +
+#' factor(time) + strata(id))`. Its coefficient `treated` is then a log
+#' odds ratio, conditional on the individual effect (`exp(coef)` is the
+#' odds ratio), parallel trends is assumed on the log-odds scale, and
+#' individuals whose outcome never changes carry no information and are
+#' dropped. It is not an effect on the probability scale: for average
+#' effects on the treated in probability points use [etwfe()] with
+#' `family = "binomial"`. Controls that do not vary within individuals are
+#' absorbed by the individual effects and dropped.
 #'
 #' @param formula outcome and control variables, e.g. `y ~ age` or `y ~ 1`;
 #'   the treatment indicator is added
@@ -47,11 +59,12 @@ did_timing <- function(data, index, treat) {
 #' @param treat name of the column holding each individual's first treated
 #'   period (in the units of the time index); `NA`, `0` or `Inf` for units
 #'   that are never treated
-#' @param family `"gaussian"`, `"poisson"` or `"negbin"`
+#' @param family `"gaussian"`, `"poisson"`, `"negbin"` or `"binomial"`
+#'   (conditional logit, logit link only; see Details)
 #' @param vcov covariance type, cluster-robust by individual by default
 #' @param ... further arguments passed to [panglm()]
-#' @return a [panglm()] fit whose coefficient `treated` is the DiD estimate,
-#'   with a component `did` (number of treated and never-treated
+#' @return a [panglm()] fit whose coefficient `treated` is the DiD estimate
+#'   (a log odds ratio for `family = "binomial"`), with a component `did` (number of treated and never-treated
 #'   individuals, treatment cohorts)
 #' @references Goodman-Bacon, A. (2021). Difference-in-differences with
 #'   variation in treatment timing. *Journal of Econometrics*, 225, 254-277.
@@ -73,6 +86,12 @@ did_timing <- function(data, index, treat) {
 #'   1.5 * (!is.na(d$first) & d$year >= d$first) + rnorm(nrow(d))
 #' fit <- did(visits ~ 1, data = d, index = c("id", "year"), treat = "first")
 #' summary(fit)
+#' # binary outcome: conditional logit, the coefficient is a log odds ratio
+#' d$admitted <- rbinom(nrow(d), 1, plogis(-1 + a[d$id] + 0.05 * (d$year - 2015) +
+#'   0.8 * (!is.na(d$first) & d$year >= d$first)))
+#' fitb <- did(admitted ~ 1, data = d, index = c("id", "year"), treat = "first",
+#'             family = "binomial")
+#' exp(coef(fitb))                                  # odds ratio
 #' @export
 did <- function(formula, data, index, treat, family = "gaussian",
                 vcov = "cluster", ...) {
@@ -109,6 +128,10 @@ did <- function(formula, data, index, treat, family = "gaussian",
 #' and heterogeneous effects the TWFE event-study coefficients are
 #' contaminated by effects from other periods (Sun and Abraham 2021); use a
 #' heterogeneity-robust estimator such as [attgt()] or [etwfe()] there.
+#'
+#' With `family = "binomial"` the model is the two-way conditional logit
+#' (see [did()]) and the event-time coefficients are log odds ratios
+#' relative to the reference event time.
 #'
 #' @inheritParams did
 #' @param leads,lags number of pre- and post-treatment event times in the

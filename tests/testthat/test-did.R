@@ -91,6 +91,49 @@ test_that("two-way Poisson and negbin robust vcov profile out the time effects",
   expect_true(all(is.finite(vcov(fn, type = "HC1"))))
 })
 
+test_that("did() and eventstudy() with a binary outcome are the conditional logit", {
+  set.seed(6)
+  N <- 300
+  d <- expand.grid(id = seq_len(N), year = 2011:2018)
+  d$first <- sample(c(2014, 2016, NA), N, replace = TRUE)[d$id]
+  a <- rnorm(N)
+  d$x <- rnorm(nrow(d))
+  d$z <- rnorm(N)[d$id]
+  d$post <- as.numeric(!is.na(d$first) & d$year >= d$first)
+  d$yb <- rbinom(nrow(d), 1, plogis(a[d$id] - 0.2 + 0.1 * (d$year - 2011) + 0.4 * d$x +
+                                     0.7 * d$post))
+  fit <- suppressMessages(did(yb ~ x, d, c("id", "year"), "first", family = "binomial"))
+  ref <- suppressMessages(panglm(yb ~ post + x, d, c("id", "year"), model = "within",
+                                 family = "binomial", effect = "twoways", vcov = "cluster"))
+  expect_equal(unname(coef(fit)), unname(coef(ref)), tolerance = 1e-10)
+  expect_equal(unname(vcov(fit)), unname(vcov(ref)), tolerance = 1e-10)
+  expect_identical(fit$family$family, "binomial")
+  expect_lt(abs(coef(fit)[["treated"]] - 0.7), 0.35)
+  # a time-invariant control is absorbed by the individual effects
+  expect_warning(f2 <- suppressMessages(did(yb ~ x + z, d, c("id", "year"), "first",
+                                            family = "binomial")), "z")
+  expect_equal(coef(f2), coef(fit), tolerance = 1e-10)
+  skip_if_not_installed("survival")
+  suppressMessages(library(survival))
+  cl <- clogit(yb ~ post + x + factor(year) + strata(id), d, method = "exact")
+  fc <- suppressMessages(did(yb ~ x, d, c("id", "year"), "first", family = "binomial",
+                             vcov = "classical"))
+  expect_equal(unname(coef(fc)), unname(coef(cl)[1:2]), tolerance = 1e-6)
+  expect_equal(unname(sqrt(diag(vcov(fc)))), unname(sqrt(diag(vcov(cl)))[1:2]),
+               tolerance = 1e-6)
+  es <- suppressMessages(eventstudy(yb ~ x, d, c("id", "year"), "first", leads = 2, lags = 2,
+                                    family = "binomial", vcov = "classical"))
+  d$rel <- pmin(pmax(d$year - d$first, -2), 2)
+  d$rel[is.na(d$rel)] <- -1
+  cle <- clogit(yb ~ relevel(factor(rel), "-1") + x + factor(year) + strata(id), d,
+                method = "exact")
+  tab <- es$estimates[es$estimates$event != -1, ]
+  expect_equal(tab$estimate, unname(coef(cle)[1:4]), tolerance = 1e-6)
+  expect_equal(tab$se, unname(sqrt(diag(vcov(cle)))[1:4]), tolerance = 1e-6)
+  expect_equal(es$pretrend$df, 1)
+  expect_output(print(es), "binomial")
+})
+
 test_that("did() and eventstudy() reject bad input", {
   d <- did_panel(5)
   expect_error(did(y ~ x, d, "id", "first"), "c\\(individual, time\\)")

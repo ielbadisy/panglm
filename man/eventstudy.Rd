@@ -39,7 +39,8 @@ window (event times `-leads, ..., lags`)}
 \item{bin}{logical; bin event times outside the window into the end
 points (`TRUE`) or drop those observations (`FALSE`)}
 
-\item{family}{`"gaussian"`, `"poisson"` or `"negbin"`}
+\item{family}{`"gaussian"`, `"poisson"`, `"negbin"` or `"binomial"`
+(conditional logit, logit link only; see Details)}
 
 \item{vcov}{covariance type, cluster-robust by individual by default}
 
@@ -72,6 +73,10 @@ second coefficient is dropped (with a warning). With staggered adoption
 and heterogeneous effects the TWFE event-study coefficients are
 contaminated by effects from other periods (Sun and Abraham 2021); use a
 heterogeneity-robust estimator such as [attgt()] or [etwfe()] there.
+
+With `family = "binomial"` the model is the two-way conditional logit
+(see [did()]) and the event-time coefficients are log odds ratios
+relative to the reference event time.
 }
 \examples{
 set.seed(1)
