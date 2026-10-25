@@ -79,7 +79,7 @@ ml_design_scaling <- function(X, p) {
 
 #' Maximize sum(w * ll) by BFGS followed by Newton polishing
 #'
-#' With `scaling` (a matrix `A`, see [ml_design_scaling()]) the
+#' With `scaling` (a matrix `A`, see `ml_design_scaling()`) the
 #' optimization runs on `theta_s` with `theta = A theta_s`; the returned
 #' parameters, Hessian, covariance and scores are on the original scale.
 #' With `warn = TRUE` a warning is given when the optimum is not a proper
