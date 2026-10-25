@@ -176,3 +176,30 @@ test_that("input errors are reported", {
   dd <- rbind(d, d[1, ])
   expect_error(pangmm(y ~ lag(y, 1) | lag(y, 2:99), dd, index = c("id", "t")), "unique")
 })
+
+test_that("pangmm warns about too many instruments and notes it in the summary", {
+  set.seed(5)
+  N <- 30; TT <- 10
+  d <- data.frame(id = rep(seq_len(N), each = TT), t = rep(seq_len(TT), N))
+  mu <- rep(rnorm(N), each = TT)
+  d$y <- ave(mu + rnorm(N * TT), d$id, FUN = function(e) stats::filter(e, 0.5,
+    method = "recursive"))
+  w <- character()
+  fit <- withCallingHandlers(
+    pangmm(y ~ lag(y, 1) | lag(y, 2:99), data = d, index = c("id", "t"), model = "twostep"),
+    warning = function(cond) {
+      w <<- c(w, conditionMessage(cond))
+      invokeRestart("muffleWarning")
+    })
+  expect_true(any(grepl("too many instruments", w)))
+  expect_true(any(grepl("generalized inverse", w)))
+  expect_gte(fit$n_instruments, N)
+  expect_output(print(summary(fit)), "biased toward OLS")
+  expect_no_warning(fc <- pangmm(y ~ lag(y, 1) | lag(y, 2:99), data = d, index = c("id", "t"),
+                                 collapse = TRUE))
+  expect_false(any(is.nan(fc$artest$statistic)))
+  skip_if_not_installed("plm")
+  p <- suppressWarnings(gmm_pgmm(y ~ lag(y, 1) | lag(y, 2:99), data = d, index = c("id", "t"),
+                                 effect = "twoways", model = "twosteps"))
+  expect_equal(unname(coef(fit)[1]), unname(coef(p)[1]), tolerance = 1e-6)
+})

@@ -40,6 +40,13 @@
   fixed-effects or pooled Mundlak outcome equation, panel bootstrap SEs by
   default and a Wald test of selection bias. Validated against `glm`, `plm`
   and, for one period, `sampleSelection::heckit()`.
+* `pangmm()` warns when there are at least as many instruments as individuals
+  (too many instruments bias GMM toward OLS and weaken the Hansen test) and
+  says so in `summary()`; a singular weighting matrix now uses a generalized
+  inverse, as `plm::pgmm()` does, instead of failing; the AR test returns `NA`
+  instead of `NaN` when undefined. The help page documents the finite-sample
+  bias of system GMM (Roodman 2009, Bun and Windmeijer 2010) and how to limit
+  it (`collapse = TRUE`, smaller `maxlag`, FE/OLS bounds).
 * `validation/`: per-model scripts comparing panglm with established
   packages, summarized in `validation/REPORT.md`.
 

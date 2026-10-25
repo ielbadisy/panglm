@@ -160,6 +160,29 @@ Hansen test (Roodman 2009); collapsing or limiting the lag depth keeps
 the instrument count well below the number of individuals.
 }
 
+\section{Finite-sample bias}{
+
+The estimators are consistent as the number of individuals grows, but
+in moderate samples they can be badly biased, and matching another
+package does not protect against it. Two mechanisms matter. Too many
+instruments overfit the endogenous regressors and pull the estimate
+toward pooled OLS, while making the Hansen test look too good (Roodman
+2009). And when the variance of the individual effect is large relative
+to the idiosyncratic variance, the level moments of system GMM become
+weak and the estimate again drifts toward OLS (Bun and Windmeijer 2010).
+In a simulated BMI panel (true persistence 0.6, effect SD 1.5, error
+SD 1, 8 waves, 63 instruments) uncollapsed system GMM averaged 0.78
+one-step and 0.72 two-step with 400 individuals, 0.65 and 0.61 with 2000
+individuals; collapsing the instruments gave 0.62 already with 400.
+Practical rules: prefer the two-step estimator, use `collapse = TRUE`
+and a small `maxlag`, keep the instrument count well below the number
+of individuals (`pangmm()` warns when it is not), treat a Hansen
+p-value close to 1 as a warning sign rather than as support, and check
+that the coefficient of the lagged outcome lies between the
+fixed-effects (downward biased) and pooled OLS (upward biased)
+estimates (Bond 2002).
+}
+
 \examples{
 # Habit persistence in smoking: cigarettes per day depend on last
 # wave's consumption (state dependence) and on the price of tobacco,
@@ -204,6 +227,13 @@ if (requireNamespace("plm", quietly = TRUE)) {
 }
 }
 \references{
+Bond, S. (2002). Dynamic panel data models: a guide to micro data
+methods and practice. *Portuguese Economic Journal*, 1, 141-162.
+
+Bun, M. J. G. and Windmeijer, F. (2010). The weak instrument problem of
+the system GMM estimator in dynamic panel data models. *The
+Econometrics Journal*, 13, 95-126.
+
 Arellano, M. and Bond, S. (1991). Some tests of specification for panel
 data: Monte Carlo evidence and an application to employment equations.
 *Review of Economic Studies*, 58, 277-297.

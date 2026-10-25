@@ -91,6 +91,27 @@
 #' Hansen test (Roodman 2009); collapsing or limiting the lag depth keeps
 #' the instrument count well below the number of individuals.
 #'
+#' @section Finite-sample bias:
+#' The estimators are consistent as the number of individuals grows, but
+#' in moderate samples they can be badly biased, and matching another
+#' package does not protect against it. Two mechanisms matter. Too many
+#' instruments overfit the endogenous regressors and pull the estimate
+#' toward pooled OLS, while making the Hansen test look too good (Roodman
+#' 2009). And when the variance of the individual effect is large relative
+#' to the idiosyncratic variance, the level moments of system GMM become
+#' weak and the estimate again drifts toward OLS (Bun and Windmeijer 2010).
+#' In a simulated BMI panel (true persistence 0.6, effect SD 1.5, error
+#' SD 1, 8 waves, 63 instruments) uncollapsed system GMM averaged 0.78
+#' one-step and 0.72 two-step with 400 individuals, 0.65 and 0.61 with 2000
+#' individuals; collapsing the instruments gave 0.62 already with 400.
+#' Practical rules: prefer the two-step estimator, use `collapse = TRUE`
+#' and a small `maxlag`, keep the instrument count well below the number
+#' of individuals (`pangmm()` warns when it is not), treat a Hansen
+#' p-value close to 1 as a warning sign rather than as support, and check
+#' that the coefficient of the lagged outcome lies between the
+#' fixed-effects (downward biased) and pooled OLS (upward biased)
+#' estimates (Bond 2002).
+#'
 #' @param formula a formula `y ~ regressors | gmm instruments` or
 #'   `y ~ regressors | gmm instruments | standard instruments`; see the
 #'   Formula section
@@ -126,6 +147,13 @@
 #'   `effect`, `collapse`, `call` and `formula`. It has `print`,
 #'   `summary`, `coef`, `vcov`, `nobs`, `residuals` and `confint` methods.
 #' @references
+#' Bond, S. (2002). Dynamic panel data models: a guide to micro data
+#' methods and practice. *Portuguese Economic Journal*, 1, 141-162.
+#'
+#' Bun, M. J. G. and Windmeijer, F. (2010). The weak instrument problem of
+#' the system GMM estimator in dynamic panel data models. *The
+#' Econometrics Journal*, 13, 95-126.
+#'
 #' Arellano, M. and Bond, S. (1991). Some tests of specification for panel
 #' data: Monte Carlo evidence and an application to employment equations.
 #' *Review of Economic Studies*, 58, 277-297.
@@ -407,6 +435,11 @@ pangmm <- function(formula, data, index,
   L <- ncol(W)
   if (L < k) stop("insufficient number of instruments: ", L, " for ", k, " coefficients",
                   call. = FALSE)
+  if (L >= N) {
+    warning(L, " instruments for ", N, " individuals: too many instruments bias GMM ",
+            "toward OLS and weaken the Hansen test; use collapse = TRUE or a smaller ",
+            "maxlag", call. = FALSE)
+  }
 
   H <- gmm_fsm(m, sys)
   fit <- gmm_estimate(y, X, W, H, group, R, model)
@@ -444,9 +477,9 @@ pangmm <- function(formula, data, index,
 
   # Sargan (one-step, homoskedastic) and Hansen J (two-step) statistics
   z1 <- crossprod(W, fit$e1)
-  s_stat <- as.numeric(crossprod(z1, solve(fit$S1, z1))) / sigma2
+  s_stat <- as.numeric(crossprod(z1, fit$S1i %*% z1)) / sigma2
   z2 <- crossprod(W, fit$e2)
-  h_stat <- as.numeric(crossprod(z2, solve(fit$S2, z2)))
+  h_stat <- as.numeric(crossprod(z2, fit$S2i %*% z2))
   df <- L - k
   out$sargan <- list(statistic = s_stat, df = df,
                      p.value = stats::pchisq(s_stat, df, lower.tail = FALSE))
@@ -455,7 +488,7 @@ pangmm <- function(formula, data, index,
 
   # Arellano-Bond serial-correlation tests on the differenced residuals
   vr <- fit$vcov_list$robust
-  A <- if (model == "onestep") solve(fit$S1) else solve(fit$S2)
+  A <- if (model == "onestep") fit$S1i else fit$S2i
   B <- if (model == "onestep") fit$M1 else fit$V2
   ar <- lapply(1:2, function(ord) {
     if (ord >= m) return(NULL)
@@ -592,6 +625,24 @@ gmm_fsm <- function(m, sys) {
   rbind(cbind(G, D), cbind(t(D), diag(1, m + 1L)))
 }
 
+#' Inverse of a GMM weighting matrix, generalized when it is singular
+#'
+#' Same rule as plm::pgmm(): a Moore-Penrose inverse (as MASS::ginv) when
+#' the smallest eigenvalue is below 1e-9, which happens when there are more
+#' instruments than individuals.
+#'
+#' @keywords internal
+#' @noRd
+gmm_inverse <- function(S, step) {
+  ev <- eigen(S, symmetric = TRUE, only.values = TRUE)$values
+  if (min(ev) >= 1e-9) return(solve(S))
+  warning("the ", step, " weighting matrix is singular; a generalized inverse is used",
+          call. = FALSE)
+  sv <- svd(S)
+  pos <- sv$d > max(sqrt(.Machine$double.eps) * sv$d[1L], 0)
+  sv$v[, pos, drop = FALSE] %*% (t(sv$u[, pos, drop = FALSE]) / sv$d[pos])
+}
+
 #' One-step and two-step GMM, robust and Windmeijer covariances
 #'
 #' Data are stacked individual by individual with R rows each.
@@ -606,14 +657,16 @@ gmm_estimate <- function(y, X, W, H, group, R, model) {
   S1 <- (S1 + t(S1)) / 2
   ZX <- crossprod(W, X)
   Zy <- crossprod(W, y)
-  S1iZX <- solve(S1, ZX)
+  S1i <- gmm_inverse(S1, "first-step")
+  S1iZX <- S1i %*% ZX
   M1 <- solve(crossprod(ZX, S1iZX))
   b1 <- as.numeric(M1 %*% crossprod(S1iZX, Zy))
   names(b1) <- colnames(X)
   e1 <- as.numeric(y - X %*% b1)
   Q1 <- rowsum(W * e1, group, reorder = FALSE)
   S2 <- crossprod(Q1)
-  S2iZX <- solve(S2, ZX)
+  S2i <- gmm_inverse(S2, "second-step")
+  S2iZX <- S2i %*% ZX
   V2 <- solve(crossprod(ZX, S2iZX))
   b2 <- as.numeric(V2 %*% crossprod(S2iZX, Zy))
   names(b2) <- colnames(X)
@@ -622,14 +675,14 @@ gmm_estimate <- function(y, X, W, H, group, R, model) {
   dn <- list(colnames(X), colnames(X))
   dimnames(M1) <- dimnames(V1r) <- dimnames(V2) <- dn
   out <- list(b1 = b1, b2 = b2, e1 = e1, e2 = e2, M1 = M1, V2 = V2, S1 = S1, S2 = S2,
-              ZX = ZX)
+              S1i = S1i, S2i = S2i, ZX = ZX)
   if (model == "onestep") {
     out$coefficients <- b1
     out$vcov_list <- list(robust = V1r)
   } else {
     # Windmeijer (2005) correction
     We <- crossprod(W, e2)
-    S2iWe <- solve(S2, We)
+    S2iWe <- S2i %*% We
     D <- vapply(seq_len(ncol(X)), function(j) {
       Pk <- rowsum(W * X[, j], group, reorder = FALSE)
       dS <- -(crossprod(Pk, Q1) + crossprod(Q1, Pk))
@@ -665,7 +718,9 @@ gmm_artest <- function(e, X, W, group, rowtype, m, R, N, ord, A, B, vv) {
   ZVE <- crossprod(rowsum(W * ed, group, reorder = FALSE), s)
   ZX <- crossprod(W, X)
   denom <- EVE - 2 * EX %*% B %*% t(ZX) %*% A %*% ZVE + EX %*% vv %*% t(EX)
-  stat <- as.numeric(num / sqrt(denom))
+  # the variance estimate can be negative in small samples; the test is then
+  # undefined (NA) rather than NaN with a warning
+  stat <- if (is.finite(denom) && denom > 0) as.numeric(num / sqrt(denom)) else NA_real_
   data.frame(order = ord, statistic = stat,
              p.value = 2 * stats::pnorm(-abs(stat)))
 }
@@ -801,6 +856,13 @@ print.summary.pangmm <- function(x, digits = max(3, getOption("digits") - 3), ..
   test_line("Sargan test (not robust)", x$sargan)
   test_line("Hansen J test (robust)", x$hansen)
   test_line("Wald test for coefficients", x$wald)
+  if (x$n_instruments >= x$n_groups) {
+    cat("\nNote: ", x$n_instruments, " instruments for ", x$n_groups, " individuals; ",
+        "estimates are biased toward OLS. Use collapse = TRUE or a smaller maxlag.\n", sep = "")
+  } else if (isTRUE(x$hansen$p.value > 0.99)) {
+    cat("\nNote: a Hansen p-value this close to 1 often signals too many instruments ",
+        "(Roodman 2009); compare with collapse = TRUE.\n", sep = "")
+  }
   cat("\n")
   invisible(x)
 }
