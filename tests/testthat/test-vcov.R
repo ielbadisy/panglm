@@ -196,3 +196,29 @@ test_that("Mundlak test matches a manual pooled regression with cluster-robust W
   expect_identical(h0$distribution, "chisq")
   expect_error(panglm_hausman(fe, method = "mundlak"), "needs the 'data'")
 })
+
+test_that("within poisson HC1 and cluster vcov match fixest::fepois", {
+  skip_if_missing("fixest")
+  set.seed(11)
+  d <- expand.grid(time = 1:5, id = 1:80)
+  a <- rnorm(80, 0, 0.5)
+  d$x1 <- rnorm(nrow(d)) + 0.5 * a[d$id]
+  d$x2 <- rbinom(nrow(d), 1, 0.4)
+  d$count <- rpois(nrow(d), exp(1 + a[d$id] + 0.4 * d$x1 - 0.3 * d$x2))
+  stopifnot(all(tapply(d$count, d$id, sum) > 0))
+  f <- panglm(count ~ x1 + x2, data = d, index = c("id", "time"),
+              model = "within", family = "poisson")
+  fx <- fixest::fepois(count ~ x1 + x2 | id, data = d)
+  # fixest's hetero and cluster factors with no fixed effect counted in K
+  # are n / (n - k) and G / (G - 1) * (n - 1) / (n - k), as in panglm (the
+  # fixest default counts one parameter for the nested intercepts)
+  no_fe <- fixest::ssc(K.fixef = "none")
+  expect_equal(vcov(f, type = "HC1"), vcov(fx, vcov = "hetero", ssc = no_fe),
+               tolerance = 1e-6, ignore_attr = TRUE)
+  expect_equal(vcov(f, type = "cluster"), vcov(fx, vcov = ~id, ssc = no_fe),
+               tolerance = 1e-6, ignore_attr = TRUE)
+  # a cluster that cuts across individuals uses the observation scores
+  expect_equal(vcov(f, type = "cluster", cluster = d$time),
+               vcov(fx, vcov = ~time, ssc = no_fe),
+               tolerance = 1e-6, ignore_attr = TRUE)
+})

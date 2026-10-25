@@ -229,8 +229,18 @@ panglm_score <- function(object) {
     Li <- as.numeric(rowsum(lit, group))
     Yi <- as.numeric(rowsum(y, group))
     w_obs <- (Yi / Li)[group]
-    gradi <- y - w_obs * lit
-    return(gradi * X)
+    mu <- w_obs * lit
+    gradi <- y - mu
+    # The slope score of the model with one intercept per individual, with
+    # the intercepts profiled out, is (y - mu) times the regressors centred
+    # at their mu-weighted individual means (the partialled-out design of
+    # the dummy-variable fit, as in fixest::fepois). Using the raw X gives
+    # the same individual sums (they sum gradi to zero) but wrong
+    # observation-level scores, hence a wrong HC1 covariance. Individuals
+    # with an all-zero outcome have mu = 0 and contribute a zero score.
+    mu_sum <- as.numeric(rowsum(mu, group))
+    Xbar <- rowsum(mu * X, group) / ifelse(mu_sum > 0, mu_sum, 1)
+    return(gradi * (X - Xbar[group, , drop = FALSE]))
   }
 
   if (object$model == "within" && object$family$family == "binomial") {
