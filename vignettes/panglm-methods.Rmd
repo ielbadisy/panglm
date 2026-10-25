@@ -404,6 +404,48 @@ vcov(fit_fe, type = "cluster")
 confint(fit_fe)
 ```
 
+## Difference-in-differences and event studies
+
+Policy evaluations in health economics (a reimbursement reform, a new
+copayment, a hospital payment change) compare treated and untreated units
+before and after the policy. `did()` fits the two-way fixed-effects (TWFE)
+regression $y_{it} = \alpha_i + \lambda_t + \delta D_{it} + x_{it}^{\mathsf T}\beta
++ \varepsilon_{it}$, where $D_{it} = 1(t \ge g_i)$ and $g_i$ is the first
+treated period of unit $i$ (`NA` for never-treated units). The family can
+be Gaussian, Poisson or negative binomial; for counts $\exp(\delta)$ is a
+rate ratio and Poisson TWFE needs only the conditional mean to be correct
+(Wooldridge 2023). Standard errors are clustered by individual by default.
+
+`eventstudy()` replaces $D_{it}$ with indicators of event time
+$e = t - g_i$, from `-leads` to `lags`, with $e = -1$ as reference. The
+leads estimate differences in trends before the policy; their joint Wald
+test is the usual check of parallel pre-trends. With a single adoption date
+both estimators are unbiased under parallel trends. With staggered adoption
+and effects that change over time, TWFE coefficients mix effects from
+different periods with possibly negative weights (Goodman-Bacon 2021; Sun
+and Abraham 2021), so heterogeneity-robust estimators such as
+`did::att_gt()` or `fixest::sunab()` should then be used instead.
+
+```{r did}
+set.seed(11)
+pol <- expand.grid(id = 1:300, year = 2014:2022)
+pol$first <- ifelse(pol$id <= 150, 2018, NA)   # copayment removed in 2018
+a <- rnorm(300)
+e <- pol$year - pol$first
+pol$visits <- rpois(nrow(pol), exp(0.8 + 0.4 * a[pol$id] + 0.03 * (pol$year - 2014) +
+                                   ifelse(!is.na(e) & e >= 0, 0.15 + 0.03 * e, 0)))
+fit_did <- did(visits ~ 1, data = pol, index = c("id", "year"),
+               treat = "first", family = "poisson")
+exp(coef(fit_did))                  # rate ratio of GP visits
+es <- eventstudy(visits ~ 1, data = pol, index = c("id", "year"),
+                 treat = "first", leads = 4, lags = 4, family = "poisson")
+es
+```
+
+```{r did-plot, fig.cap = "Event-study coefficients (log rate ratios) with 95% cluster-robust intervals; event time -1 is the reference."}
+plot(es, ylab = "Log rate ratio of visits")
+```
+
 ## Model assessment
 
 For models that store fitted values, `plot()` provides coefficient,
@@ -501,6 +543,9 @@ Duan, N., Manning, W. G., Morris, C. N., and Newhouse, J. P. (1983). A
 comparison of alternative models for the demand for medical care.
 *Journal of Business and Economic Statistics*, 1, 115-126.
 
+Goodman-Bacon, A. (2021). Difference-in-differences with variation in
+treatment timing. *Journal of Econometrics*, 225, 254-277.
+
 Guimaraes, P., and Portugal, P. (2010). A simple feasible procedure to fit
 models with high-dimensional fixed effects. *Stata Journal*, 10, 628-649.
 
@@ -511,7 +556,15 @@ count data with an application to the patents-R&D relationship.
 Mundlak, Y. (1978). On the pooling of time series and cross section data.
 *Econometrica*, 46, 69-85.
 
+Sun, L., and Abraham, S. (2021). Estimating dynamic treatment effects in
+event studies with heterogeneous treatment effects. *Journal of
+Econometrics*, 225, 175-199.
+
 Wooldridge, J. M. (2005). Unobserved heterogeneity and estimation of
 average partial effects. In D. W. K. Andrews and J. H. Stock (Eds.),
 *Identification and Inference for Econometric Models*, 27-55. Cambridge
 University Press.
+
+Wooldridge, J. M. (2023). Simple approaches to nonlinear
+difference-in-differences with panel data. *The Econometrics Journal*, 26,
+C31-C66.
