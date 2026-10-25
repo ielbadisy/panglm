@@ -61,6 +61,14 @@
   `varcomp` and `ranef`; cluster-robust `vcov()`, `summary()`, `predict()`,
   `partialeffects()` and `cre = TRUE` are supported. Validated against lme4,
   nlme with clubSandwich, glmmTMB and GLMMadaptive.
+* New `panfmm()`: latent class (finite mixture) GLMs for panel data with
+  class membership constant within individual (Deb and Trivedi 1997, 2002;
+  Bago d'Uva 2006): Poisson, NB2, Gaussian and logit components, an optional
+  concomitant multinomial logit for the class probabilities, EM with multiple
+  starts and a Newton polish (Hessian and cluster-robust `vcov()`), posterior
+  class membership, `predict()` (marginal and class-specific means) and
+  `panfmmselect()` to compare numbers of classes by AIC and BIC. Validated
+  against flexmix.
 * `validation/`: per-model scripts comparing panglm with established
   packages, summarized in `validation/REPORT.md`.
 
