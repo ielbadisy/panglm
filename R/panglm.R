@@ -17,9 +17,9 @@
 #'   same, since each individual is one observation of the means regression.
 #' @param family one of `"gaussian"`, `"poisson"`, `"binomial"`, `"probit"`,
 #'   `"negbin"`, `"gamma"`, `"ologit"`, `"oprobit"`, `"beta"`, or a family
-#'   spec from [gaussian_family()] / [poisson_family()] / [binomial_family()] /
-#'   [negbin_family()] / [gamma_family()] / [ordered_family()] /
-#'   [beta_family()]
+#'   spec from [gaussianfamily()] / [poissonfamily()] / [binomialfamily()] /
+#'   [negbinfamily()] / [gammafamily()] / [orderedfamily()] /
+#'   [betafamily()]
 #' @param weights optional nonnegative observation (prior) weights, one per
 #'   row of `data`, e.g. inverse probability weights for attrition.
 #'   Nontrivial weights are supported for `model = "pooling"` (all

@@ -170,7 +170,7 @@ test_that("probit components", {
   expect_equal(unname(coef(a)), unname(coef(g)), tolerance = 1e-8)
   expect_equal(a$loglik, as.numeric(logLik(g)), tolerance = 1e-10)
   expect_equal(predict(a), unname(fitted(g)), tolerance = 1e-8)
-  b <- panfmm(yb ~ x, d, c("id", "t"), k = 1, family = binomial_family("probit"))
+  b <- panfmm(yb ~ x, d, c("id", "t"), k = 1, family = binomialfamily("probit"))
   expect_equal(coef(a), coef(b), tolerance = 1e-12)
   a <- panfmm(yb ~ x, d, c("id", "t"), k = 2, family = "probit", nstart = 2, seed = 2)
   expect_lt(max(abs(colSums(a$score))), 1e-4)

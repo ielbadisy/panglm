@@ -1,4 +1,4 @@
-# Tobit: panglm(family = tobit_family()) vs AER::tobit and censReg (pooled),
+# Tobit: panglm(family = tobitfamily()) vs AER::tobit and censReg (pooled),
 # and censReg on a pdata.frame (random intercept, Gauss-Hermite quadrature).
 # One-limit (left = 0) and two-limit (0, 2) censoring.
 source("validation/common.R")
@@ -16,7 +16,7 @@ idx <- c("id", "t")
 
 pooled <- function(y, right, label) {
   fm <- stats::as.formula(paste(y, "~ x1 + x2"))
-  f <- panglm(fm, data = d, index = idx, model = "pooling", family = tobit_family(0, right))
+  f <- panglm(fm, data = d, index = idx, model = "pooling", family = tobitfamily(0, right))
   a <- tobit(fm, left = 0, right = right, data = d)
   cr <- censReg(fm, left = 0, right = right, data = d)
   k <- 1:3
@@ -41,7 +41,7 @@ pooled <- function(y, right, label) {
 
 random <- function(y, right, label) {
   fm <- stats::as.formula(paste(y, "~ x1 + x2"))
-  f <- panglm(fm, data = d, index = idx, model = "random", family = tobit_family(0, right))
+  f <- panglm(fm, data = d, index = idx, model = "random", family = tobitfamily(0, right))
   cr <- censReg(fm, left = 0, right = right, data = pd, nGHQ = 30)
   k <- 1:3
   rbind(

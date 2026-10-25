@@ -9,7 +9,7 @@ test_that("pooled ordered logit and probit match MASS::polr", {
   expect_s3_class(p, "panordered")
 
   pw <- panglm(y ~ x1 + z, d, c("id", "t"), model = "pooling",
-               family = ordered_family("probit"), weights = d$w)
+               family = orderedfamily("probit"), weights = d$w)
   mw <- suppressWarnings(MASS::polr(y ~ x1 + z, d, weights = w, method = "probit"))
   expect_equal(unname(coef(pw)), unname(c(coef(mw), mw$zeta)), tolerance = 1e-5)
 })

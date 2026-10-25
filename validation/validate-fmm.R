@@ -404,8 +404,8 @@ b <- flexmix(anyvisit ~ chronic + age + income | id, data = d, k = 2,
              cluster = post_obs(a, d$id), model = FLXMRprobit(), control = ctrl)
 compare_flexmix(paste(lab, "k = 2"), dname, a, b)
 a2 <- panfmm(anyvisit ~ chronic + age + income, d, idx, k = 2,
-             family = binomial_family("probit"), nstart = 10, seed = 1)
-add(paste(lab, "k = 2"), dname, "coefficients (binomial_family(\"probit\") vs \"probit\")",
+             family = binomialfamily("probit"), nstart = 10, seed = 1)
+add(paste(lab, "k = 2"), dname, "coefficients (binomialfamily(\"probit\") vs \"probit\")",
     coef(a2), list(panfmm_probit = coef(a)), 1e-12)
 
 a <- panfmm(anyvisit ~ chronic + age + income, d, idx, k = 2, family = "probit",

@@ -12,13 +12,13 @@ make_tobit_data <- function(G = 120, Tt = 4, seed = 11) {
 test_that("pooled Tobit matches AER::tobit with one and two limits", {
   skip_if_not_installed("AER")
   d <- make_tobit_data()
-  m <- panglm(y ~ x + z, d, index = c("id", "t"), model = "pooling", family = tobit_family(0))
+  m <- panglm(y ~ x + z, d, index = c("id", "t"), model = "pooling", family = tobitfamily(0))
   a <- AER::tobit(y ~ x + z, left = 0, data = d)
   expect_equal(unname(coef(m)), unname(coef(a)), tolerance = 1e-6)
   expect_equal(m$sigma_e, a$scale, tolerance = 1e-6)
   expect_equal(m$loglik, as.numeric(stats::logLik(a)), tolerance = 1e-8)
   expect_equal(unname(sqrt(diag(vcov(m)))), unname(sqrt(diag(vcov(a)))[1:3]), tolerance = 1e-5)
-  m2 <- panglm(y2 ~ x + z, d, index = c("id", "t"), family = tobit_family(0, 2))
+  m2 <- panglm(y2 ~ x + z, d, index = c("id", "t"), family = tobitfamily(0, 2))
   a2 <- AER::tobit(y2 ~ x + z, left = 0, right = 2, data = d)
   expect_equal(unname(coef(m2)), unname(coef(a2)), tolerance = 1e-6)
   expect_equal(m2$loglik, as.numeric(stats::logLik(a2)), tolerance = 1e-8)
@@ -28,7 +28,7 @@ test_that("pooled Tobit matches AER::tobit with one and two limits", {
 test_that("weighted pooled Tobit matches survreg with case weights", {
   skip_if_not_installed("AER")
   d <- make_tobit_data()
-  m <- panglm(y ~ x + z, d, index = c("id", "t"), family = tobit_family(0), weights = d$w)
+  m <- panglm(y ~ x + z, d, index = c("id", "t"), family = tobitfamily(0), weights = d$w)
   a <- AER::tobit(y ~ x + z, left = 0, data = d, weights = w)
   expect_equal(unname(coef(m)), unname(coef(a)), tolerance = 1e-6)
 })
@@ -37,7 +37,7 @@ test_that("random-intercept Tobit matches censReg", {
   skip_if_not_installed("censReg")
   skip_if_not_installed("plm")
   d <- make_tobit_data()
-  m <- panglm(y ~ x + z, d, index = c("id", "t"), model = "random", family = tobit_family(0))
+  m <- panglm(y ~ x + z, d, index = c("id", "t"), model = "random", family = tobitfamily(0))
   pd <- plm::pdata.frame(d, index = c("id", "t"))
   r <- censReg::censReg(y ~ x + z, left = 0, data = pd, nGHQ = 30)
   expect_equal(unname(coef(m)), unname(coef(r)[1:3]), tolerance = 1e-4)
@@ -49,7 +49,7 @@ test_that("random-intercept Tobit matches censReg", {
 
 test_that("Tobit predictions and partial effects are on the censored-mean scale", {
   d <- make_tobit_data()
-  m <- panglm(y ~ x + z, d, index = c("id", "t"), family = tobit_family(0))
+  m <- panglm(y ~ x + z, d, index = c("id", "t"), family = tobitfamily(0))
   eta <- predict(m, type = "link")
   s <- m$sigma_e
   expect_equal(predict(m, type = "response"),
@@ -61,10 +61,10 @@ test_that("Tobit predictions and partial effects are on the censored-mean scale"
 
 test_that("Tobit input checks", {
   d <- make_tobit_data()
-  expect_error(tobit_family(2, 1), "left < right")
-  expect_error(tobit_family(-Inf, Inf), "finite")
-  expect_error(panglm(y ~ x, d, index = c("id", "t"), model = "within", family = tobit_family(0)),
+  expect_error(tobitfamily(2, 1), "left < right")
+  expect_error(tobitfamily(-Inf, Inf), "finite")
+  expect_error(panglm(y ~ x, d, index = c("id", "t"), model = "within", family = tobitfamily(0)),
                "fixed-effects Tobit")
-  expect_error(panglm(y ~ x, d, index = c("id", "t"), family = tobit_family(1)), "within")
+  expect_error(panglm(y ~ x, d, index = c("id", "t"), family = tobitfamily(1)), "within")
   expect_s3_class(panglm(y ~ x, d, index = c("id", "t"), family = "tobit"), "panglm")
 })

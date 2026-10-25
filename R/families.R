@@ -7,39 +7,39 @@
 #' @param link canonical link name
 #' @return a list with `family`, `link`, `family_id`, `link_id`
 #' @examples
-#' gaussian_family()
-#' poisson_family()
-#' binomial_family("probit")
-#' negbin_family()
-#' gamma_family()
-#' ordered_family("probit")
-#' beta_family()
-#' tobit_family(left = 0)
+#' gaussianfamily()
+#' poissonfamily()
+#' binomialfamily("probit")
+#' negbinfamily()
+#' gammafamily()
+#' orderedfamily("probit")
+#' betafamily()
+#' tobitfamily(left = 0)
 #'
 #' data(copd)
 #' fit <- panglm(hospitalized ~ crp, data = copd, index = c("id", "visit"),
-#'               model = "within", family = binomial_family("logit"))
+#'               model = "within", family = binomialfamily("logit"))
 #' coef(fit)
 #' @name panglm-families
 NULL
 
 #' @rdname panglm-families
 #' @export
-gaussian_family <- function(link = "identity") {
+gaussianfamily <- function(link = "identity") {
   link <- match.arg(link, "identity")
   list(family = "gaussian", link = link, family_id = 0L, link_id = 0L)
 }
 
 #' @rdname panglm-families
 #' @export
-poisson_family <- function(link = "log") {
+poissonfamily <- function(link = "log") {
   link <- match.arg(link, "log")
   list(family = "poisson", link = link, family_id = 1L, link_id = 1L)
 }
 
 #' @rdname panglm-families
 #' @export
-binomial_family <- function(link = c("logit", "probit")) {
+binomialfamily <- function(link = c("logit", "probit")) {
   link <- match.arg(link)
   link_id <- if (link == "logit") 2L else 3L
   list(family = "binomial", link = link, family_id = 2L, link_id = link_id)
@@ -47,23 +47,23 @@ binomial_family <- function(link = c("logit", "probit")) {
 
 #' @rdname panglm-families
 #' @export
-negbin_family <- function(link = "log") {
+negbinfamily <- function(link = "log") {
   link <- match.arg(link, "log")
   list(family = "negbin", link = link, family_id = 1L, link_id = 1L)
 }
 
-#' @details `gamma_family()` is the gamma GLM with a log link, the usual
+#' @details `gammafamily()` is the gamma GLM with a log link, the usual
 #'   choice for skewed positive outcomes such as health care costs: the
 #'   variance is proportional to the squared mean and the coefficients act
 #'   multiplicatively on the mean, with no retransformation needed.
 #' @rdname panglm-families
 #' @export
-gamma_family <- function(link = "log") {
+gammafamily <- function(link = "log") {
   link <- match.arg(link, "log")
   list(family = "gamma", link = link, family_id = 3L, link_id = 1L)
 }
 
-#' @details `ordered_family()` is the ordered logit or ordered probit model
+#' @details `orderedfamily()` is the ordered logit or ordered probit model
 #'   for ordinal outcomes such as self-assessed health:
 #'   `P(y <= j) = F(c_j - x'beta - u_i)`. The response may be a factor, an
 #'   ordered factor or integer-valued; categories follow the factor levels
@@ -80,13 +80,13 @@ gamma_family <- function(link = "log") {
 #'   \doi{10.1111/rssa.12090}
 #' @rdname panglm-families
 #' @export
-ordered_family <- function(link = c("logit", "probit")) {
+orderedfamily <- function(link = c("logit", "probit")) {
   link <- match.arg(link)
   list(family = "ordered", link = link, family_id = NA_integer_,
        link_id = if (link == "logit") 2L else 3L)
 }
 
-#' @details `beta_family()` is beta regression for continuous outcomes in
+#' @details `betafamily()` is beta regression for continuous outcomes in
 #'   the open interval (0, 1), such as utility index scores rescaled to
 #'   (0, 1), proportions of days in hospital or adherence fractions:
 #'   `y ~ Beta(mu phi, (1 - mu) phi)` with `g(mu) = x'beta`, so `E(y) = mu`
@@ -106,7 +106,7 @@ ordered_family <- function(link = c("logit", "probit")) {
 #'   \doi{10.1037/1082-989X.11.1.54}
 #' @rdname panglm-families
 #' @export
-beta_family <- function(link = c("logit", "probit")) {
+betafamily <- function(link = c("logit", "probit")) {
   link <- match.arg(link)
   list(family = "beta", link = link, family_id = NA_integer_,
        link_id = if (link == "logit") 2L else 3L)
@@ -127,17 +127,17 @@ binomial_response_to_numeric <- function(y) {
 resolve_family <- function(family) {
   if (is.character(family)) {
     family <- switch(family,
-      gaussian = gaussian_family(),
-      poisson  = poisson_family(),
-      binomial = binomial_family("logit"),
-      probit   = binomial_family("probit"),
-      negbin   = negbin_family(),
-      gamma    = gamma_family(),
-      Gamma    = gamma_family(),
-      ologit   = ordered_family("logit"),
-      oprobit  = ordered_family("probit"),
-      beta     = beta_family(),
-      tobit    = tobit_family(),
+      gaussian = gaussianfamily(),
+      poisson  = poissonfamily(),
+      binomial = binomialfamily("logit"),
+      probit   = binomialfamily("probit"),
+      negbin   = negbinfamily(),
+      gamma    = gammafamily(),
+      Gamma    = gammafamily(),
+      ologit   = orderedfamily("logit"),
+      oprobit  = orderedfamily("probit"),
+      beta     = betafamily(),
+      tobit    = tobitfamily(),
       stop("unknown family '", family, "'", call. = FALSE)
     )
   }

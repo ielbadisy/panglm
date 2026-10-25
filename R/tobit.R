@@ -1,4 +1,4 @@
-#' @details `tobit_family()` is the censored normal (Tobit) model for
+#' @details `tobitfamily()` is the censored normal (Tobit) model for
 #'   outcomes piled up at a floor or a ceiling, such as health scores at
 #'   the ceiling of a scale (motor function scores, EQ-5D utility at 1) or
 #'   spending at zero: the latent outcome is `y* = x'beta + u_i + e_it`
@@ -13,12 +13,12 @@
 #'   censored outcome (averaged over the random intercept), which is the
 #'   scale of [partialeffects()]. `fit$sigma_e` and `fit$sigma` (random
 #'   intercept SD) are stored on the fit.
-#' @param left,right censoring limits of `tobit_family()`
+#' @param left,right censoring limits of `tobitfamily()`
 #' @references Tobin, J. (1958). Estimation of relationships for limited
 #'   dependent variables. *Econometrica*, 26, 24-36. \doi{10.2307/1907382}
 #' @rdname panglm-families
 #' @export
-tobit_family <- function(left = 0, right = Inf) {
+tobitfamily <- function(left = 0, right = Inf) {
   if (!is.numeric(left) || !is.numeric(right) || length(left) != 1L ||
       length(right) != 1L || is.na(left) || is.na(right) || left >= right) {
     stop("'left' and 'right' must be single numbers with left < right", call. = FALSE)

@@ -150,7 +150,7 @@ twopart <- function(formula, data, index, binary_formula = NULL,
   d$.twopart_any <- as.numeric(y > 0)
   fit_binary <- panglm(
     stats::update(binary_formula, .twopart_any ~ .), data = d, index = index,
-    model = model, family = binomial_family(link), weights = w, vcov = vcov,
+    model = model, family = binomialfamily(link), weights = w, vcov = vcov,
     R = R, maxit = maxit, tol = tol
   )
 
@@ -160,7 +160,7 @@ twopart <- function(formula, data, index, binary_formula = NULL,
   dp$.twopart_y <- if (positive == "gamma") y[is_pos] else log(y[is_pos])
   fit_positive <- panglm(
     stats::update(rhs_positive, .twopart_y ~ .), data = dp, index = index,
-    model = model, family = if (positive == "gamma") gamma_family() else gaussian_family(),
+    model = model, family = if (positive == "gamma") gammafamily() else gaussianfamily(),
     weights = wp, vcov = vcov, R = R, maxit = maxit, tol = tol
   )
 

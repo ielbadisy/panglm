@@ -2,36 +2,36 @@
 % Please edit documentation in R/families.R, R/tobit.R
 \name{panglm-families}
 \alias{panglm-families}
-\alias{gaussian_family}
-\alias{poisson_family}
-\alias{binomial_family}
-\alias{negbin_family}
-\alias{gamma_family}
-\alias{ordered_family}
-\alias{beta_family}
-\alias{tobit_family}
+\alias{gaussianfamily}
+\alias{poissonfamily}
+\alias{binomialfamily}
+\alias{negbinfamily}
+\alias{gammafamily}
+\alias{orderedfamily}
+\alias{betafamily}
+\alias{tobitfamily}
 \title{Family specifications for panglm}
 \usage{
-gaussian_family(link = "identity")
+gaussianfamily(link = "identity")
 
-poisson_family(link = "log")
+poissonfamily(link = "log")
 
-binomial_family(link = c("logit", "probit"))
+binomialfamily(link = c("logit", "probit"))
 
-negbin_family(link = "log")
+negbinfamily(link = "log")
 
-gamma_family(link = "log")
+gammafamily(link = "log")
 
-ordered_family(link = c("logit", "probit"))
+orderedfamily(link = c("logit", "probit"))
 
-beta_family(link = c("logit", "probit"))
+betafamily(link = c("logit", "probit"))
 
-tobit_family(left = 0, right = Inf)
+tobitfamily(left = 0, right = Inf)
 }
 \arguments{
 \item{link}{canonical link name}
 
-\item{left, right}{censoring limits of `tobit_family()`}
+\item{left, right}{censoring limits of `tobitfamily()`}
 }
 \value{
 a list with `family`, `link`, `family_id`, `link_id`
@@ -42,12 +42,12 @@ Lightweight family objects used by [panglm()], analogous in spirit to
 expects (see `src/families.h`).
 }
 \details{
-`gamma_family()` is the gamma GLM with a log link, the usual
+`gammafamily()` is the gamma GLM with a log link, the usual
   choice for skewed positive outcomes such as health care costs: the
   variance is proportional to the squared mean and the coefficients act
   multiplicatively on the mean, with no retransformation needed.
 
-`ordered_family()` is the ordered logit or ordered probit model
+`orderedfamily()` is the ordered logit or ordered probit model
   for ordinal outcomes such as self-assessed health:
   `P(y <= j) = F(c_j - x'beta - u_i)`. The response may be a factor, an
   ordered factor or integer-valued; categories follow the factor levels
@@ -59,7 +59,7 @@ expects (see `src/families.h`).
   of Baetschmann, Staub and Winkelmann 2015). The fit has class
   `c("panordered", "panglm")`; see [predict.panordered()].
 
-`beta_family()` is beta regression for continuous outcomes in
+`betafamily()` is beta regression for continuous outcomes in
   the open interval (0, 1), such as utility index scores rescaled to
   (0, 1), proportions of days in hospital or adherence fractions:
   `y ~ Beta(mu phi, (1 - mu) phi)` with `g(mu) = x'beta`, so `E(y) = mu`
@@ -70,7 +70,7 @@ expects (see `src/families.h`).
   Outcomes equal to 0 or 1 must be transformed first, e.g. with
   `(y * (n - 1) + 0.5) / n` (Smithson and Verkuilen 2006).
 
-`tobit_family()` is the censored normal (Tobit) model for
+`tobitfamily()` is the censored normal (Tobit) model for
   outcomes piled up at a floor or a ceiling, such as health scores at
   the ceiling of a scale (motor function scores, EQ-5D utility at 1) or
   spending at zero: the latent outcome is `y* = x'beta + u_i + e_it`
@@ -87,18 +87,18 @@ expects (see `src/families.h`).
   intercept SD) are stored on the fit.
 }
 \examples{
-gaussian_family()
-poisson_family()
-binomial_family("probit")
-negbin_family()
-gamma_family()
-ordered_family("probit")
-beta_family()
-tobit_family(left = 0)
+gaussianfamily()
+poissonfamily()
+binomialfamily("probit")
+negbinfamily()
+gammafamily()
+orderedfamily("probit")
+betafamily()
+tobitfamily(left = 0)
 
 data(copd)
 fit <- panglm(hospitalized ~ crp, data = copd, index = c("id", "visit"),
-              model = "within", family = binomial_family("logit"))
+              model = "within", family = binomialfamily("logit"))
 coef(fit)
 }
 \references{

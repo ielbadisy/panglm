@@ -21,7 +21,7 @@ test_that("pooled beta regression matches betareg", {
   bw <- betareg::betareg(y ~ x + z, d, weights = w)
   expect_equal(unname(coef(mw)), unname(coef(bw)[1:3]), tolerance = 1e-6)
   pr <- betareg::betareg(y ~ x + z, d, link = "probit")
-  mp <- panglm(y ~ x + z, d, index = c("id", "t"), family = beta_family("probit"))
+  mp <- panglm(y ~ x + z, d, index = c("id", "t"), family = betafamily("probit"))
   expect_equal(unname(coef(mp)), unname(coef(pr)[1:3]), tolerance = 1e-6)
 })
 

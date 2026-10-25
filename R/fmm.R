@@ -74,7 +74,7 @@
 #' @param k number of latent classes
 #' @param family `"poisson"`, `"negbin"` (NB2), `"gaussian"`, `"binomial"`
 #'   (logit) or `"probit"` (binomial with probit link), or the corresponding
-#'   panglm family spec, e.g. `binomial_family("probit")`
+#'   panglm family spec, e.g. `binomialfamily("probit")`
 #' @param concomitant optional one-sided formula `~ z1 + z2` of
 #'   individual-level (time-invariant) variables for the class
 #'   probabilities

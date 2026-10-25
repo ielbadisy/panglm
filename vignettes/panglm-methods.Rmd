@@ -332,7 +332,7 @@ partialeffects(fit_dyn, variables = "lag_hospitalized")
 ## Ordered outcomes
 
 Self-assessed health, symptom severity and satisfaction scales are
-ordinal. `family = ordered_family("logit")` or `ordered_family("probit")`
+ordinal. `family = orderedfamily("logit")` or `orderedfamily("probit")`
 fits $P(y_{it} \le j) = F(c_j - x_{it}^{\mathsf T}\beta - u_i)$. The
 intercept is absorbed in the cutpoints $c_j$, which are reported after
 the slopes. Pooled and random-intercept fits are available for both links.
@@ -349,18 +349,18 @@ copd$severity <- cut(copd$exacerbations, c(-Inf, 0, 2, Inf),
                      labels = c("none", "1-2", "3+"), ordered_result = TRUE)
 fit_ord <- panglm(severity ~ treatment + age + crp, data = copd,
                   index = c("id", "visit"), model = "random",
-                  family = ordered_family("logit"))
+                  family = orderedfamily("logit"))
 summary(fit_ord)
 partialeffects(fit_ord, variables = "crp")
 coef(panglm(severity ~ crp, data = copd, index = c("id", "visit"),
-            model = "within", family = ordered_family("logit")))
+            model = "within", family = orderedfamily("logit")))
 ```
 
 ## Beta regression for bounded outcomes
 
 Utility index scores rescaled to the unit interval, adherence fractions
 and proportions of days in hospital are continuous on $(0, 1)$.
-`family = beta_family()` (logit or probit link) fits
+`family = betafamily()` (logit or probit link) fits
 $y_{it} \sim \mathrm{Beta}(\mu_{it}\phi, (1 - \mu_{it})\phi)$ with
 $g(\mu_{it}) = x_{it}^{\mathsf T}\beta$, so $E(y_{it}) = \mu_{it}$ and
 $\mathrm{Var}(y_{it}) = \mu_{it}(1 - \mu_{it})/(1 + \phi)$ (Ferrari and
@@ -376,7 +376,7 @@ mu <- plogis(-1 + 0.15 * copd$crp + u)
 copd$adherence <- rbeta(nrow(copd), mu * 20, (1 - mu) * 20)
 fit_beta <- panglm(adherence ~ treatment + crp, data = copd,
                    index = c("id", "visit"), model = "random",
-                   family = beta_family(), vcov = "cluster")
+                   family = betafamily(), vcov = "cluster")
 summary(fit_beta)
 fit_beta$precision
 ```
