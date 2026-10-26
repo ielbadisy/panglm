@@ -6,17 +6,17 @@ models for the common cases:
 | Outcome | Example | Model |
 |----|----|----|
 | Count | GP visits, exacerbations | Poisson or negative binomial (NB2), `family = "poisson"` or `"negbin"` |
-| Count with many zeros | exacerbations | hurdle, [`panhurdle()`](https://ielbadisy.github.io/panglm/reference/panhurdle.md) |
-| Cost with zeros, skewed when positive | annual expenditure | two-part model, [`twopart()`](https://ielbadisy.github.io/panglm/reference/twopart.md) |
+| Count with many zeros | exacerbations | hurdle, [`panhurdle()`](https://elbadisyimad.com/panglm/reference/panhurdle.md) |
+| Cost with zeros, skewed when positive | annual expenditure | two-part model, [`twopart()`](https://elbadisyimad.com/panglm/reference/twopart.md) |
 | Proportion in (0, 1) | proportion of days covered | beta, `family = "beta"` |
-| Ordered category | severity grade | ordered logit or probit, [`orderedfamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md) |
-| Censored at a bound | EQ-5D index at 1 | tobit, [`tobitfamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md) |
+| Ordered category | severity grade | ordered logit or probit, [`orderedfamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md) |
+| Censored at a bound | EQ-5D index at 1 | tobit, [`tobitfamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md) |
 
 All of them use the same `index`, `model`, `vcov`,
-[`partialeffects()`](https://ielbadisy.github.io/panglm/reference/partialeffects.md)
+[`partialeffects()`](https://elbadisyimad.com/panglm/reference/partialeffects.md)
 and [`predict()`](https://rdrr.io/r/stats/predict.html) interface as the
 Gaussian model of
-[`vignette("panglm-intro")`](https://ielbadisy.github.io/panglm/articles/panglm-intro.md).
+[`vignette("panglm-intro")`](https://elbadisyimad.com/panglm/articles/panglm-intro.md).
 The examples use small samples so that the vignette builds in seconds;
 the companion book uses the full data and more quadrature nodes (`R`).
 
@@ -152,7 +152,7 @@ adds about one visit a year on average.
 
 A hurdle model separates whether any event happens from how many events
 happen once the hurdle is crossed.
-[`panhurdle()`](https://ielbadisy.github.io/panglm/reference/panhurdle.md)
+[`panhurdle()`](https://elbadisyimad.com/panglm/reference/panhurdle.md)
 fits a conditional (fixed-effects) logit for $`P(y > 0)`$ and a
 zero-truncated Poisson or negative binomial fixed-effects model for the
 positive counts. Patients whose outcome never changes between zero and
@@ -253,7 +253,7 @@ partialeffects(tp)
 ```
 
 The two parts are on different scales;
-[`partialeffects()`](https://ielbadisy.github.io/panglm/reference/partialeffects.md)
+[`partialeffects()`](https://elbadisyimad.com/panglm/reference/partialeffects.md)
 combines them into effects on expected cost. A chronic condition adds
 about 900 currency units a year: part of it because more patients have
 any cost, part because their costs are higher. `model = "random"` adds a
@@ -358,7 +358,7 @@ coef(fe_ord)
 #> 0.1083205
 ```
 
-[`partialeffects()`](https://ielbadisy.github.io/panglm/reference/partialeffects.md)
+[`partialeffects()`](https://elbadisyimad.com/panglm/reference/partialeffects.md)
 reports effects on the probability of each category, and
 `predict(type = "prob")` gives the predicted probabilities.
 
@@ -446,7 +446,7 @@ coef(fit_lin)
 The tobit slopes refer to latent health. The linear random-effects
 slopes are attenuated by the ceiling, by about 40% here, since 43% of
 the observations sit at 1. Use
-[`partialeffects()`](https://ielbadisy.github.io/panglm/reference/partialeffects.md)
+[`partialeffects()`](https://elbadisyimad.com/panglm/reference/partialeffects.md)
 for effects on the observed, censored outcome.
 
 ## Validated against

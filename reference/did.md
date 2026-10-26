@@ -9,12 +9,12 @@ trends. With staggered adoption and effects that vary over time or
 across cohorts the TWFE coefficient is a weighted average that can put
 negative weight on some effects (Goodman-Bacon 2021; de Chaisemartin and
 D'Haultfoeuille 2020): use
-[`eventstudy()`](https://ielbadisy.github.io/panglm/reference/eventstudy.md)
+[`eventstudy()`](https://elbadisyimad.com/panglm/reference/eventstudy.md)
 to look at the dynamics and a heterogeneity-robust estimator
-([`attgt()`](https://ielbadisy.github.io/panglm/reference/attgt.md) for
+([`attgt()`](https://elbadisyimad.com/panglm/reference/attgt.md) for
 Callaway and Sant'Anna 2021, or
-[`etwfe()`](https://ielbadisy.github.io/panglm/reference/etwfe.md) for
-the extended TWFE of Wooldridge 2021, 2023) when adoption is staggered.
+[`etwfe()`](https://elbadisyimad.com/panglm/reference/etwfe.md) for the
+extended TWFE of Wooldridge 2021, 2023) when adoption is staggered.
 
 ## Usage
 
@@ -55,16 +55,16 @@ did(formula, data, index, treat, family = "gaussian", vcov = "cluster", ...)
 - ...:
 
   further arguments passed to
-  [`panglm()`](https://ielbadisy.github.io/panglm/reference/panglm.md)
+  [`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md)
 
 ## Value
 
-a [`panglm()`](https://ielbadisy.github.io/panglm/reference/panglm.md)
-fit whose coefficient `treated` is the DiD estimate (a log odds ratio
-for `family = "binomial"`), with a component `did` (number of treated
-and never-treated individuals, treatment cohorts). Its `call` is the
-`did()` call. All
-[`panglm()`](https://ielbadisy.github.io/panglm/reference/panglm.md)
+a [`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md) fit
+whose coefficient `treated` is the DiD estimate (a log odds ratio for
+`family = "binomial"`), with a component `did` (number of treated and
+never-treated individuals, treatment cohorts). Its `call` is the `did()`
+call. All
+[`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md)
 methods apply.
 
 ## Details
@@ -74,8 +74,8 @@ binomial (effect on the log rate: `exp(coef)` is a ratio, and Poisson FE
 DiD needs only the conditional mean to be correct, Wooldridge 2023), or
 binomial for a binary outcome. The binomial model is the two-way
 conditional (Chamberlain) logit of
-[`panglm()`](https://ielbadisy.github.io/panglm/reference/panglm.md):
-the individual effects are conditioned out exactly and the time effects
+[`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md): the
+individual effects are conditioned out exactly and the time effects
 enter as dummies inside the conditional likelihood, as in
 `survival::clogit(y ~ treated + factor(time) + strata(id))`. Its
 coefficient `treated` is then a log odds ratio, conditional on the
@@ -84,16 +84,16 @@ assumed on the log-odds scale, and individuals whose outcome never
 changes carry no information and are dropped. It is not an effect on the
 probability scale: for average effects on the treated in probability
 points use
-[`etwfe()`](https://ielbadisy.github.io/panglm/reference/etwfe.md) with
+[`etwfe()`](https://elbadisyimad.com/panglm/reference/etwfe.md) with
 `family = "binomial"`. Controls that do not vary within individuals are
 absorbed by the individual effects and dropped.
 
 ## Validation
 
 The linear and count versions are two-way fixed-effects
-[`panglm()`](https://ielbadisy.github.io/panglm/reference/panglm.md)
-fits, checked against fixest in the package tests. The binary version,
-the two-way conditional logit, is checked against
+[`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md) fits,
+checked against fixest in the package tests. The binary version, the
+two-way conditional logit, is checked against
 [`survival::clogit()`](https://rdrr.io/pkg/survival/man/clogit.html)
 (coefficients, classical and cluster-robust standard errors) and, with
 two periods, against
@@ -118,15 +118,15 @@ difference-in-differences with panel data. *The Econometrics Journal*,
 
 ## See also
 
-[`summary.panglm()`](https://ielbadisy.github.io/panglm/reference/summary.panglm.md)
+[`summary.panglm()`](https://elbadisyimad.com/panglm/reference/summary.panglm.md)
 and the other
-[`panglm()`](https://ielbadisy.github.io/panglm/reference/panglm.md)
+[`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md)
 methods for the fitted model.
 
 Other policy evaluation:
-[`attgt()`](https://ielbadisy.github.io/panglm/reference/attgt.md),
-[`etwfe()`](https://ielbadisy.github.io/panglm/reference/etwfe.md),
-[`eventstudy()`](https://ielbadisy.github.io/panglm/reference/eventstudy.md)
+[`attgt()`](https://elbadisyimad.com/panglm/reference/attgt.md),
+[`etwfe()`](https://elbadisyimad.com/panglm/reference/etwfe.md),
+[`eventstudy()`](https://elbadisyimad.com/panglm/reference/eventstudy.md)
 
 ## Examples
 

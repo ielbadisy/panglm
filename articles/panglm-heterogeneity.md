@@ -9,8 +9,8 @@ covers three ways to model this heterogeneity:
 | Heterogeneity | Example | Tool |
 |----|----|----|
 | Continuous, in the effect of a variable | each patient has their own rate of lung function decline | random slopes, `panglm(random = ~ time)` |
-| Discrete, in the whole response | low users and high users of care | latent classes, [`panfmm()`](https://ielbadisy.github.io/panglm/reference/panfmm.md) |
-| Across the outcome distribution | effect of chronic disease on high costs | quantile regression, [`panqr()`](https://ielbadisy.github.io/panglm/reference/panqr.md) |
+| Discrete, in the whole response | low users and high users of care | latent classes, [`panfmm()`](https://elbadisyimad.com/panglm/reference/panfmm.md) |
+| Across the outcome distribution | effect of chronic disease on high costs | quantile regression, [`panqr()`](https://elbadisyimad.com/panglm/reference/panqr.md) |
 
 The examples use small simulated panels and few quadrature nodes, EM
 starts and bootstrap replicates so that the vignette builds quickly; the
@@ -78,9 +78,9 @@ summary(rs)
 #> Residual df: 596  Iterations: 20
 head(rs$ranef, 3)
 #>   (Intercept)        year
-#> 1  0.24559341 -0.02712743
-#> 2 -0.32250424  0.10527653
-#> 3  0.05620227  0.01557888
+#> 1  0.24559343 -0.02712744
+#> 2 -0.32250432  0.10527656
+#> 3  0.05620226  0.01557888
 ```
 
 The average decline is 47 mL a year, 17 mL faster in smokers. The SD of
@@ -274,12 +274,12 @@ estimates the effect of a regressor on each quantile $`\tau`$ of the
 outcome distribution (Koenker and Bassett 1978). With panel data the
 individual effects have to be removed, which is harder than for the mean
 because quantiles do not commute with differencing.
-[`panqr()`](https://ielbadisy.github.io/panglm/reference/panqr.md)
-offers the two-step estimator of Canay (2011), which subtracts
-individual effects estimated at the mean, and the method of moments
-quantile regression (MM-QR) of Machado and Santos Silva (2019), which
-assumes a location-scale model and is the estimator of Stata’s `xtqreg`.
-Both assume that the individual effects shift the whole distribution (a
+[`panqr()`](https://elbadisyimad.com/panglm/reference/panqr.md) offers
+the two-step estimator of Canay (2011), which subtracts individual
+effects estimated at the mean, and the method of moments quantile
+regression (MM-QR) of Machado and Santos Silva (2019), which assumes a
+location-scale model and is the estimator of Stata’s `xtqreg`. Both
+assume that the individual effects shift the whole distribution (a
 location shift).
 
 We simulate annual costs whose spread grows with the number of chronic
@@ -405,9 +405,9 @@ Gaussian random slopes reproduce
 negative binomial, gamma and binomial random slopes reproduce
 [`lme4::glmer()`](https://rdrr.io/pkg/lme4/man/glmer.html), `glmmTMB`
 and `GLMMadaptive`;
-[`panfmm()`](https://ielbadisy.github.io/panglm/reference/panfmm.md)
+[`panfmm()`](https://elbadisyimad.com/panglm/reference/panfmm.md)
 reproduces `flexmix` (including concomitant models);
-[`panqr()`](https://ielbadisy.github.io/panglm/reference/panqr.md)
+[`panqr()`](https://elbadisyimad.com/panglm/reference/panqr.md)
 reproduces [`quantreg::rq()`](https://rdrr.io/pkg/quantreg/man/rq.html)
 for the pooled and Canay estimators and a direct implementation of the
 MM-QR moment conditions, as in Stata’s `xtqreg`. The scripts are in

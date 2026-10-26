@@ -44,7 +44,7 @@ linked to, whose threads are controlled outside panglm (for example with
 
 Useful links:
 
-- <https://ielbadisy.github.io/panglm/>
+- <https://elbadisyimad.com/panglm/>
 
 - <https://CRAN.R-project.org/package=panglm>
 

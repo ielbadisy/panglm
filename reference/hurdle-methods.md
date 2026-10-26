@@ -5,7 +5,7 @@
 [`confint()`](https://rdrr.io/r/stats/confint.html),
 [`nobs()`](https://rdrr.io/r/stats/nobs.html) and
 [`summary()`](https://rdrr.io/r/base/summary.html) for hurdle fits
-([`panhurdle()`](https://ielbadisy.github.io/panglm/reference/panhurdle.md)).
+([`panhurdle()`](https://elbadisyimad.com/panglm/reference/panhurdle.md)).
 The coefficients of the zero part (conditional logit of `1(y > 0)`) and
 of the count part (zero-truncated count model on the positive
 observations) are named `"zero:..."` and `"count:..."`. The two parts
@@ -78,7 +78,7 @@ from the inverse Hessian of each part) and the fit information.
 ## See also
 
 Other panhurdle methods:
-[`plot.panglm_hurdle()`](https://ielbadisy.github.io/panglm/reference/plot.panglm_hurdle.md)
+[`plot.panglm_hurdle()`](https://elbadisyimad.com/panglm/reference/plot.panglm_hurdle.md)
 
 ## Examples
 

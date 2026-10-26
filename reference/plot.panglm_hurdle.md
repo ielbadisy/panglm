@@ -36,7 +36,7 @@ plot(x, which = c("both", "zero", "count"), level = 0.95, ...)
 ## See also
 
 Other panhurdle methods:
-[`hurdle-methods`](https://ielbadisy.github.io/panglm/reference/hurdle-methods.md)
+[`hurdle-methods`](https://elbadisyimad.com/panglm/reference/hurdle-methods.md)
 
 ## Examples
 

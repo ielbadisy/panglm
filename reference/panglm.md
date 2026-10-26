@@ -33,9 +33,9 @@ panglm(
 
   a model formula, e.g. `y ~ x1 + x2`. `lag(x, k)`, `lead(x, k)` and
   `diff(x)` are taken within each individual on the grid of sorted
-  distinct time values (needs `index = c(id, time)`); the first waves of
-  each individual get `NA` and leave the sample, and `lag(x, 0:2)` gives
-  several lags
+  distinct time values (see "Lags and differences" in `panglm()`; needs
+  `index = c(id, time)`); the first waves of each individual get `NA`
+  and leave the sample, and `lag(x, 0:2)` gives several lags
 
 - data:
 
@@ -62,21 +62,21 @@ panglm(
   one of `"gaussian"`, `"poisson"`, `"binomial"`, `"probit"`,
   `"negbin"`, `"gamma"`, `"ologit"`, `"oprobit"`, `"beta"`, `"tobit"`,
   or a family spec from
-  [`gaussianfamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md)
+  [`gaussianfamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md)
   /
-  [`poissonfamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md)
+  [`poissonfamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md)
   /
-  [`binomialfamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md)
+  [`binomialfamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md)
   /
-  [`negbinfamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md)
+  [`negbinfamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md)
   /
-  [`gammafamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md)
+  [`gammafamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md)
   /
-  [`orderedfamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md)
+  [`orderedfamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md)
   /
-  [`betafamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md)
+  [`betafamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md)
   /
-  [`tobitfamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md)
+  [`tobitfamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md)
 
 - weights:
 
@@ -131,7 +131,7 @@ panglm(
   are available; the cluster covariance uses the individual scores of
   the integrated likelihood, so clusters must contain whole individuals.
   See
-  [`vcov.panglm()`](https://ielbadisy.github.io/panglm/reference/vcov.panglm.md)
+  [`vcov.panglm()`](https://elbadisyimad.com/panglm/reference/vcov.panglm.md)
   to recompute a different type after fitting.
 
 - cre:
@@ -143,7 +143,7 @@ panglm(
   slopes of the time-varying regressors then have a within
   interpretation, and the joint test of the mean terms is a robust
   Hausman-type test (reported by
-  [`summary.panglm()`](https://ielbadisy.github.io/panglm/reference/summary.panglm.md)).
+  [`summary.panglm()`](https://elbadisyimad.com/panglm/reference/summary.panglm.md)).
   Defaults to `dynamic`.
 
 - dynamic:
@@ -160,7 +160,7 @@ panglm(
   factor or logical lags, so their partial effects are discrete changes.
   With `model = "random"` the coefficient of the lag measures true state
   dependence net of unobserved heterogeneity;
-  [`partialeffects()`](https://ielbadisy.github.io/panglm/reference/partialeffects.md)
+  [`partialeffects()`](https://elbadisyimad.com/panglm/reference/partialeffects.md)
   gives it on the probability or mean scale. Available for
   `model = "pooling"` and `model = "random"`.
 
@@ -207,7 +207,7 @@ panglm(
   residual variance `sigma_v2`. Weights, `dynamic = TRUE` and the other
   families are not supported with random slopes; `cre = TRUE` is.
   Response predictions and
-  [`partialeffects()`](https://ielbadisy.github.io/panglm/reference/partialeffects.md)
+  [`partialeffects()`](https://elbadisyimad.com/panglm/reference/partialeffects.md)
   are population averages over the random effects.
 
 - R:
@@ -236,9 +236,30 @@ variance components of random-effects fits (`sigma_mu2`, `sigma_v2`,
 `theta`), the panel structure, `nobs`, `n_groups`, `call` and `formula`.
 Methods: `print`, `summary`, `coef`, `vcov`, `confint`, `predict`,
 `fitted`, `residuals`, `logLik`, `nobs`, `model.matrix`, `plot`,
-[`partialeffects()`](https://ielbadisy.github.io/panglm/reference/partialeffects.md),
-[`effectcurve()`](https://ielbadisy.github.io/panglm/reference/effectcurve.md),
+[`partialeffects()`](https://elbadisyimad.com/panglm/reference/partialeffects.md),
+[`effectcurve()`](https://elbadisyimad.com/panglm/reference/effectcurve.md),
 `tidy` and `glance`.
+
+## Lags and differences
+
+Inside the formula, `lag(x, k)`, `lead(x, k)` and
+`diff(x, lag, differences)` are taken within each individual, never
+across individuals. Shifts step through the sorted distinct values of
+the time index, so `lag(x, 1)` is the value at the previous observed
+wave. With gaps in the time index this differs from plm: for waves coded
+2010, 2012, 2014, `lag(x, 1)` at 2012 is the 2010 value in panglm, while
+[`plm::lag()`](https://rdrr.io/r/stats/lag.html) (which shifts by the
+numeric time value) gives `NA`. To obtain plm's behaviour, keep a row
+for every period, with `NA` outcomes for the missing waves.
+[`pangmm()`](https://elbadisyimad.com/panglm/reference/pangmm.md) uses
+the same rule. The first `k` waves of each individual get `NA` and leave
+the estimation sample. [`diff()`](https://rdrr.io/r/base/diff.html)
+follows base R's `diff(x, lag, differences)`; plm's third argument of
+[`diff()`](https://rdrr.io/r/base/diff.html) is `shift`, not
+`differences`. The same rule applies in
+[`paniv()`](https://elbadisyimad.com/panglm/reference/paniv.md),
+[`panqr()`](https://elbadisyimad.com/panglm/reference/panqr.md) and
+[`panfmm()`](https://elbadisyimad.com/panglm/reference/panfmm.md).
 
 ## Validation
 
@@ -287,26 +308,26 @@ GitHub and in the package tests:
 
 ## See also
 
-[panglm-families](https://ielbadisy.github.io/panglm/reference/panglm-families.md)
+[panglm-families](https://elbadisyimad.com/panglm/reference/panglm-families.md)
 for the outcome families,
-[`summary.panglm()`](https://ielbadisy.github.io/panglm/reference/summary.panglm.md),
-[`vcov.panglm()`](https://ielbadisy.github.io/panglm/reference/vcov.panglm.md),
-[`predict.panglm()`](https://ielbadisy.github.io/panglm/reference/predict.panglm.md)
+[`summary.panglm()`](https://elbadisyimad.com/panglm/reference/summary.panglm.md),
+[`vcov.panglm()`](https://elbadisyimad.com/panglm/reference/vcov.panglm.md),
+[`predict.panglm()`](https://elbadisyimad.com/panglm/reference/predict.panglm.md)
 and
-[`partialeffects()`](https://ielbadisy.github.io/panglm/reference/partialeffects.md)
+[`partialeffects()`](https://elbadisyimad.com/panglm/reference/partialeffects.md)
 for the fitted model,
-[tidy-methods](https://ielbadisy.github.io/panglm/reference/tidy-methods.md)
+[tidy-methods](https://elbadisyimad.com/panglm/reference/tidy-methods.md)
 for `tidy()` and `glance()`.
 
 Other panel models:
-[`panfmm()`](https://ielbadisy.github.io/panglm/reference/panfmm.md),
-[`panfmmselect()`](https://ielbadisy.github.io/panglm/reference/panfmmselect.md),
-[`pangmm()`](https://ielbadisy.github.io/panglm/reference/pangmm.md),
-[`panhurdle()`](https://ielbadisy.github.io/panglm/reference/panhurdle.md),
-[`paniv()`](https://ielbadisy.github.io/panglm/reference/paniv.md),
-[`panqr()`](https://ielbadisy.github.io/panglm/reference/panqr.md),
-[`panselect()`](https://ielbadisy.github.io/panglm/reference/panselect.md),
-[`twopart()`](https://ielbadisy.github.io/panglm/reference/twopart.md)
+[`panfmm()`](https://elbadisyimad.com/panglm/reference/panfmm.md),
+[`panfmmselect()`](https://elbadisyimad.com/panglm/reference/panfmmselect.md),
+[`pangmm()`](https://elbadisyimad.com/panglm/reference/pangmm.md),
+[`panhurdle()`](https://elbadisyimad.com/panglm/reference/panhurdle.md),
+[`paniv()`](https://elbadisyimad.com/panglm/reference/paniv.md),
+[`panqr()`](https://elbadisyimad.com/panglm/reference/panqr.md),
+[`panselect()`](https://elbadisyimad.com/panglm/reference/panselect.md),
+[`twopart()`](https://elbadisyimad.com/panglm/reference/twopart.md)
 
 ## Examples
 
@@ -411,7 +432,7 @@ summary(fit_rs)
 #> 
 #> Coefficients:
 #>              Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept)  3.872439   0.414554   9.341  < 2e-16 ***
+#> (Intercept)  3.872439   0.414555   9.341  < 2e-16 ***
 #> visit       -0.004717   0.008262  -0.571  0.56808    
 #> treatment    0.251411   0.110762   2.270  0.02322 *  
 #> age         -0.013627   0.006396  -2.131  0.03312 *  
@@ -427,8 +448,8 @@ summary(fit_rs)
 #> 
 fit_rs$varcomp
 #>              (Intercept)         visit
-#> (Intercept)  0.178115843 -1.253264e-03
-#> visit       -0.001253264  8.818254e-06
+#> (Intercept)  0.178115951 -1.253272e-03
+#> visit       -0.001253272  8.818356e-06
 
 # two-way conditional logit: smoking across survey waves, with year
 # shocks (e.g. a tobacco tax) absorbed by the time effects
@@ -459,7 +480,7 @@ summary(fit_2w)
 #> 
 #> Log-likelihood: -282.3 
 #> Dispersion parameter: 1 
-#> Iterations: 34
+#> Iterations: 35
 #> 
 fit_2w$time_effects
 #>          1          2          3          4          5 

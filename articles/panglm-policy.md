@@ -6,9 +6,9 @@ not exposed: difference-in-differences (DiD). This vignette covers:
 
 | Design | Tool |
 |----|----|
-| One adoption date, average effect | [`did()`](https://ielbadisy.github.io/panglm/reference/did.md), two-way fixed effects (TWFE) |
-| One adoption date, effect over time and pre-trends | [`eventstudy()`](https://ielbadisy.github.io/panglm/reference/eventstudy.md) |
-| Staggered adoption, heterogeneous effects | [`attgt()`](https://ielbadisy.github.io/panglm/reference/attgt.md) (Callaway and Sant’Anna 2021) or [`etwfe()`](https://ielbadisy.github.io/panglm/reference/etwfe.md) (Wooldridge 2021, 2023) |
+| One adoption date, average effect | [`did()`](https://elbadisyimad.com/panglm/reference/did.md), two-way fixed effects (TWFE) |
+| One adoption date, effect over time and pre-trends | [`eventstudy()`](https://elbadisyimad.com/panglm/reference/eventstudy.md) |
+| Staggered adoption, heterogeneous effects | [`attgt()`](https://elbadisyimad.com/panglm/reference/attgt.md) (Callaway and Sant’Anna 2021) or [`etwfe()`](https://elbadisyimad.com/panglm/reference/etwfe.md) (Wooldridge 2021, 2023) |
 
 All functions take the data in long format, `index = c(unit, time)` with
 a numeric time, and `treat`, the name of a column holding each unit’s
@@ -41,7 +41,7 @@ d$admitted <- rbinom(nrow(d), 1, plogis(-1 + a[d$id] +
                                           0.05 * (d$year - 2015) + 0.8 * post))
 ```
 
-[`did()`](https://ielbadisy.github.io/panglm/reference/did.md) adds the
+[`did()`](https://elbadisyimad.com/panglm/reference/did.md) adds the
 indicator of being treated, `1(t >= first)`, to a model with unit and
 year fixed effects. With a single adoption date its coefficient is the
 average treatment effect on the treated (ATT) under parallel trends.
@@ -77,7 +77,7 @@ The odds of an admission double after adoption (true odds ratio
 $`e^{0.8} = 2.2`$). Practices that are never or always admitted carry no
 information in the conditional likelihood and are dropped.
 
-[`eventstudy()`](https://ielbadisy.github.io/panglm/reference/eventstudy.md)
+[`eventstudy()`](https://elbadisyimad.com/panglm/reference/eventstudy.md)
 replaces the single indicator by one indicator per year relative to
 adoption, with the year before adoption as reference. The leads
 (negative event times) test parallel pre-trends; the lags trace the
@@ -120,7 +120,7 @@ limited power (Roth 2022).
 
 When units adopt at different dates and the effect changes with time
 since adoption, the TWFE coefficient of
-[`did()`](https://ielbadisy.github.io/panglm/reference/did.md) is a
+[`did()`](https://elbadisyimad.com/panglm/reference/did.md) is a
 weighted average of all two-by-two comparisons, including “forbidden”
 ones in which units treated earlier serve as controls for units treated
 later. Their growing effects are then subtracted, and some weights can
@@ -304,7 +304,7 @@ summary(etwfe(visits ~ urban, data = s, index = c("province", "year"),
 ```
 
 The overall ATT is 3.6 and the event-time profile matches that of
-[`attgt()`](https://ielbadisy.github.io/panglm/reference/attgt.md). Its
+[`attgt()`](https://elbadisyimad.com/panglm/reference/attgt.md). Its
 main advantage is for counts and binary outcomes (Wooldridge 2023): with
 `family = "poisson"` or `"binomial"`, parallel trends is assumed on the
 link scale, which respects the nature of the outcome, and the effects
@@ -336,19 +336,19 @@ effects in rural and urban provinces.
 
 ## Validated against
 
-[`did()`](https://ielbadisy.github.io/panglm/reference/did.md) and
-[`eventstudy()`](https://ielbadisy.github.io/panglm/reference/eventstudy.md)
+[`did()`](https://elbadisyimad.com/panglm/reference/did.md) and
+[`eventstudy()`](https://elbadisyimad.com/panglm/reference/eventstudy.md)
 reproduce
 [`fixest::feols()`](https://lrberge.github.io/fixest/reference/feols.html)
 and, for the conditional logit,
 [`survival::clogit()`](https://rdrr.io/pkg/survival/man/clogit.html);
-[`attgt()`](https://ielbadisy.github.io/panglm/reference/attgt.md),
+[`attgt()`](https://elbadisyimad.com/panglm/reference/attgt.md),
 including the aggregations, weights, clustering and the multiplier
 bootstrap, reproduces
 [`did::att_gt()`](https://bcallaway11.github.io/did/reference/att_gt.html)
 and
 [`did::aggte()`](https://bcallaway11.github.io/did/reference/aggte.html);
-[`etwfe()`](https://ielbadisy.github.io/panglm/reference/etwfe.md)
+[`etwfe()`](https://elbadisyimad.com/panglm/reference/etwfe.md)
 reproduces
 [`etwfe::etwfe()`](http://grantmcdermott.com/etwfe/reference/etwfe.md)
 and

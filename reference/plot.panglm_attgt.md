@@ -1,7 +1,7 @@
 # Plot an event study from group-time effects
 
 Plots the dynamic aggregation of
-[`attgt()`](https://ielbadisy.github.io/panglm/reference/attgt.md)
+[`attgt()`](https://elbadisyimad.com/panglm/reference/attgt.md)
 (`ATT(e)` by event time with pointwise confidence intervals), or the
 cohort or calendar aggregation. When the fit has uniform confidence
 bands (`cband = TRUE`), they are drawn as thin grey whiskers behind the
@@ -28,7 +28,7 @@ plot(x, type = NULL, xlab = NULL, ylab = "ATT", ...)
 - x:
 
   a `"panglm_attgt"` fit from
-  [`attgt()`](https://ielbadisy.github.io/panglm/reference/attgt.md), or
+  [`attgt()`](https://elbadisyimad.com/panglm/reference/attgt.md), or
   its summary
 
 - type:
@@ -43,7 +43,7 @@ plot(x, type = NULL, xlab = NULL, ylab = "ATT", ...)
 - ...:
 
   passed to
-  [`summary.panglm_attgt()`](https://ielbadisy.github.io/panglm/reference/summary.panglm_attgt.md)
+  [`summary.panglm_attgt()`](https://elbadisyimad.com/panglm/reference/summary.panglm_attgt.md)
   (for example `min_e`, `max_e`) and then to
   [`graphics::plot()`](https://rdrr.io/r/graphics/plot.default.html)
 
@@ -54,7 +54,7 @@ the plotted summary, invisibly
 ## See also
 
 Other attgt methods:
-[`summary.panglm_attgt()`](https://ielbadisy.github.io/panglm/reference/summary.panglm_attgt.md)
+[`summary.panglm_attgt()`](https://elbadisyimad.com/panglm/reference/summary.panglm_attgt.md)
 
 ## Examples
 

@@ -30,8 +30,8 @@ an object of class `"summary.paniv"`: a list with the coefficient table
 ## See also
 
 Other paniv methods:
-[`predict.paniv()`](https://ielbadisy.github.io/panglm/reference/predict.paniv.md),
-[`vcov.paniv()`](https://ielbadisy.github.io/panglm/reference/vcov.paniv.md)
+[`predict.paniv()`](https://elbadisyimad.com/panglm/reference/predict.paniv.md),
+[`vcov.paniv()`](https://elbadisyimad.com/panglm/reference/vcov.paniv.md)
 
 ## Examples
 

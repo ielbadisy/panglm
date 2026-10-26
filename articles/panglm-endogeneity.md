@@ -9,10 +9,10 @@ offers for these cases:
 
 | Problem | Example | Tool |
 |----|----|----|
-| Time-varying regressor correlated with the error | insurance chosen after a health shock | [`paniv()`](https://ielbadisy.github.io/panglm/reference/paniv.md), fixed-effects 2SLS |
+| Time-varying regressor correlated with the error | insurance chosen after a health shock | [`paniv()`](https://elbadisyimad.com/panglm/reference/paniv.md), fixed-effects 2SLS |
 | Time-invariant regressor correlated with the individual effect | schooling and frailty | `paniv(model = "hausmantaylor")` |
-| Lagged outcome, state dependence | habit persistence in smoking | [`pangmm()`](https://ielbadisy.github.io/panglm/reference/pangmm.md), Arellano-Bond and Blundell-Bond |
-| Outcome observed only for a selected subsample | questionnaire non-response | [`panselect()`](https://ielbadisy.github.io/panglm/reference/panselect.md), Wooldridge (1995) correction |
+| Lagged outcome, state dependence | habit persistence in smoking | [`pangmm()`](https://elbadisyimad.com/panglm/reference/pangmm.md), Arellano-Bond and Blundell-Bond |
+| Outcome observed only for a selected subsample | questionnaire non-response | [`panselect()`](https://elbadisyimad.com/panglm/reference/panselect.md), Wooldridge (1995) correction |
 
 The data are simulated with known true values so that the bias of the
 naive estimators is visible. The samples are small to keep the build
@@ -262,7 +262,7 @@ GMM become weak (Bun and Windmeijer 2010). Practical rules:
 - prefer the two-step estimator;
 - use `collapse = TRUE` and a small `maxlag`, so that the instrument
   count stays well below the number of individuals
-  ([`pangmm()`](https://ielbadisy.github.io/panglm/reference/pangmm.md)
+  ([`pangmm()`](https://elbadisyimad.com/panglm/reference/pangmm.md)
   warns when it does not; the uncollapsed fit above already uses 21
   instruments with only 7 waves);
 - treat a Hansen p-value close to 1 (0.96 above) as a warning sign, not
@@ -270,9 +270,9 @@ GMM become weak (Bun and Windmeijer 2010). Practical rules:
 - check that the persistence estimate lies between the fixed-effects
   (biased down) and pooled OLS (biased up) estimates (Bond 2002).
 
-[`panglm()`](https://ielbadisy.github.io/panglm/reference/panglm.md)
-does not create panel lags in its formula, so build the lagged outcome
-first for the bounds.
+[`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md) does
+not create panel lags in its formula, so build the lagged outcome first
+for the bounds.
 
 ``` r
 
@@ -379,7 +379,7 @@ system GMM, including collapsed instruments, the Windmeijer correction
 and the Arellano-Bond, Sargan and Hansen tests, reproduce
 [`plm::pgmm()`](https://rdrr.io/pkg/plm/man/pgmm.html). No R package
 implements the Wooldridge (1995) panel correction, so
-[`panselect()`](https://ielbadisy.github.io/panglm/reference/panselect.md)
+[`panselect()`](https://elbadisyimad.com/panglm/reference/panselect.md)
 is validated step by step: the probits against
 [`stats::glm()`](https://rdrr.io/r/stats/glm.html), the outcome equation
 against `plm`, the covariance against `sandwich`, and the one-period

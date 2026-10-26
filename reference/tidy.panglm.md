@@ -36,23 +36,23 @@ a `data.frame` with one row per coefficient
 
 ## See also
 
-[tidy-methods](https://ielbadisy.github.io/panglm/reference/tidy-methods.md)
+[tidy-methods](https://elbadisyimad.com/panglm/reference/tidy-methods.md)
 for the other model classes.
 
 Other panglm methods:
-[`confint.panglm()`](https://ielbadisy.github.io/panglm/reference/confint.panglm.md),
-[`effectcurve()`](https://ielbadisy.github.io/panglm/reference/effectcurve.md),
-[`fitted.panglm()`](https://ielbadisy.github.io/panglm/reference/fitted.panglm.md),
-[`glance.panglm()`](https://ielbadisy.github.io/panglm/reference/glance.panglm.md),
-[`logLik.panglm()`](https://ielbadisy.github.io/panglm/reference/logLik.panglm.md),
-[`model.matrix.panglm()`](https://ielbadisy.github.io/panglm/reference/model.matrix.panglm.md),
-[`partialeffects.panordered()`](https://ielbadisy.github.io/panglm/reference/partialeffects.md),
-[`plot.panglm()`](https://ielbadisy.github.io/panglm/reference/plot.panglm.md),
-[`plot.panglm_effectcurve()`](https://ielbadisy.github.io/panglm/reference/plot.panglm_effectcurve.md),
-[`predict.panglm()`](https://ielbadisy.github.io/panglm/reference/predict.panglm.md),
-[`predict.panordered()`](https://ielbadisy.github.io/panglm/reference/predict.panordered.md),
-[`summary.panglm()`](https://ielbadisy.github.io/panglm/reference/summary.panglm.md),
-[`vcov.panglm()`](https://ielbadisy.github.io/panglm/reference/vcov.panglm.md)
+[`confint.panglm()`](https://elbadisyimad.com/panglm/reference/confint.panglm.md),
+[`effectcurve()`](https://elbadisyimad.com/panglm/reference/effectcurve.md),
+[`fitted.panglm()`](https://elbadisyimad.com/panglm/reference/fitted.panglm.md),
+[`glance.panglm()`](https://elbadisyimad.com/panglm/reference/glance.panglm.md),
+[`logLik.panglm()`](https://elbadisyimad.com/panglm/reference/logLik.panglm.md),
+[`model.matrix.panglm()`](https://elbadisyimad.com/panglm/reference/model.matrix.panglm.md),
+[`partialeffects.panordered()`](https://elbadisyimad.com/panglm/reference/partialeffects.md),
+[`plot.panglm()`](https://elbadisyimad.com/panglm/reference/plot.panglm.md),
+[`plot.panglm_effectcurve()`](https://elbadisyimad.com/panglm/reference/plot.panglm_effectcurve.md),
+[`predict.panglm()`](https://elbadisyimad.com/panglm/reference/predict.panglm.md),
+[`predict.panordered()`](https://elbadisyimad.com/panglm/reference/predict.panordered.md),
+[`summary.panglm()`](https://elbadisyimad.com/panglm/reference/summary.panglm.md),
+[`vcov.panglm()`](https://elbadisyimad.com/panglm/reference/vcov.panglm.md)
 
 ## Examples
 

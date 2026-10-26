@@ -32,8 +32,8 @@ one per quantile
 ## See also
 
 Other panqr methods:
-[`plot.panqr()`](https://ielbadisy.github.io/panglm/reference/plot.panqr.md),
-[`summary.panqr()`](https://ielbadisy.github.io/panglm/reference/summary.panqr.md)
+[`plot.panqr()`](https://elbadisyimad.com/panglm/reference/plot.panqr.md),
+[`summary.panqr()`](https://elbadisyimad.com/panglm/reference/summary.panqr.md)
 
 ## Examples
 

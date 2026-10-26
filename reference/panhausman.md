@@ -74,19 +74,18 @@ The classical test is checked against
 [`plm::phtest()`](https://rdrr.io/pkg/plm/man/phtest.html) in the
 package tests. The Mundlak test is the Wald test on the individual means
 of the correlated random effects fit of
-[`panglm()`](https://ielbadisy.github.io/panglm/reference/panglm.md),
-whose pooled and random versions are checked to reproduce the within
-slope.
+[`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md), whose
+pooled and random versions are checked to reproduce the within slope.
 
 ## See also
 
-[`panglm()`](https://ielbadisy.github.io/panglm/reference/panglm.md)
-with `cre = TRUE`, whose summary reports the Mundlak test.
+[`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md) with
+`cre = TRUE`, whose summary reports the Mundlak test.
 
 Other tests:
-[`jointtest()`](https://ielbadisy.github.io/panglm/reference/jointtest.md),
-[`lineartest()`](https://ielbadisy.github.io/panglm/reference/lineartest.md),
-[`pandispersiontest()`](https://ielbadisy.github.io/panglm/reference/pandispersiontest.md)
+[`jointtest()`](https://elbadisyimad.com/panglm/reference/jointtest.md),
+[`lineartest()`](https://elbadisyimad.com/panglm/reference/lineartest.md),
+[`pandispersiontest()`](https://elbadisyimad.com/panglm/reference/pandispersiontest.md)
 
 ## Examples
 

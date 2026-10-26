@@ -56,7 +56,7 @@ panglm_hurdle(
 - count_family:
 
   passed as `family` to
-  [`panhurdle()`](https://ielbadisy.github.io/panglm/reference/panhurdle.md)
+  [`panhurdle()`](https://elbadisyimad.com/panglm/reference/panhurdle.md)
 
 ## Value
 
@@ -70,17 +70,17 @@ underscores:
 |  |  |
 |----|----|
 | **Deprecated** | **Replacement** |
-| `gaussian_family()` | [`gaussianfamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md) |
-| `binomial_family()` | [`binomialfamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md) |
-| `poisson_family()` | [`poissonfamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md) |
-| `negbin_family()` | [`negbinfamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md) |
-| `gamma_family()` | [`gammafamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md) |
-| `beta_family()` | [`betafamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md) |
-| `ordered_family()` | [`orderedfamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md) |
-| `tobit_family()` | [`tobitfamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md) |
-| `panglm_dispersiontest()` | [`pandispersiontest()`](https://ielbadisy.github.io/panglm/reference/pandispersiontest.md) |
-| `panglm_hausman()` | [`panhausman()`](https://ielbadisy.github.io/panglm/reference/panhausman.md) |
-| `panglm_hurdle()` | [`panhurdle()`](https://ielbadisy.github.io/panglm/reference/panhurdle.md) |
+| `gaussian_family()` | [`gaussianfamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md) |
+| `binomial_family()` | [`binomialfamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md) |
+| `poisson_family()` | [`poissonfamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md) |
+| `negbin_family()` | [`negbinfamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md) |
+| `gamma_family()` | [`gammafamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md) |
+| `beta_family()` | [`betafamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md) |
+| `ordered_family()` | [`orderedfamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md) |
+| `tobit_family()` | [`tobitfamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md) |
+| `panglm_dispersiontest()` | [`pandispersiontest()`](https://elbadisyimad.com/panglm/reference/pandispersiontest.md) |
+| `panglm_hausman()` | [`panhausman()`](https://elbadisyimad.com/panglm/reference/panhausman.md) |
+| `panglm_hurdle()` | [`panhurdle()`](https://elbadisyimad.com/panglm/reference/panhurdle.md) |
 
 `panglm_hurdle(count_family = )` is `panhurdle(family = )`. The objects
 returned keep their classes (`"panglm_dispersiontest"`,

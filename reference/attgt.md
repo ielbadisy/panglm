@@ -9,11 +9,11 @@ clean control group (never-treated individuals, or individuals not yet
 treated by period `t`), so that already-treated individuals are never
 used as controls. This avoids the negative weights of the two-way
 fixed-effects regression of
-[`did()`](https://ielbadisy.github.io/panglm/reference/did.md) under
+[`did()`](https://elbadisyimad.com/panglm/reference/did.md) under
 staggered adoption with heterogeneous effects. The `ATT(g, t)` are then
 aggregated into an overall effect, an event study (effect by time since
 treatment), effects by cohort or by calendar period with
-[`summary.panglm_attgt()`](https://ielbadisy.github.io/panglm/reference/summary.panglm_attgt.md).
+[`summary.panglm_attgt()`](https://elbadisyimad.com/panglm/reference/summary.panglm_attgt.md).
 
 ## Usage
 
@@ -128,7 +128,7 @@ attgt(
   are reproducible and the global random number generator is left as it
   was; otherwise a seed is drawn from it. Either way the seed is stored
   in the fit and reused by
-  [`summary.panglm_attgt()`](https://ielbadisy.github.io/panglm/reference/summary.panglm_attgt.md).
+  [`summary.panglm_attgt()`](https://elbadisyimad.com/panglm/reference/summary.panglm_attgt.md).
 
 ## Value
 
@@ -204,7 +204,7 @@ studentized deviation across all `ATT(g, t)` (or all levels of an
 aggregation), and the uniform confidence bands `band_lower`,
 `band_upper` cover all effects jointly with probability `level`. The
 aggregations of
-[`summary.panglm_attgt()`](https://ielbadisy.github.io/panglm/reference/summary.panglm_attgt.md)
+[`summary.panglm_attgt()`](https://elbadisyimad.com/panglm/reference/summary.panglm_attgt.md)
 reuse the same multiplier draws (they are generated from `seed`), so
 that they are coherent with the `ATT(g, t)`. Pointwise intervals
 (`lower`, `upper`) use the normal critical value with the bootstrap
@@ -242,19 +242,19 @@ linear models. *The Annals of Statistics*, 21, 255-285.
 
 ## See also
 
-[`summary.panglm_attgt()`](https://ielbadisy.github.io/panglm/reference/summary.panglm_attgt.md)
+[`summary.panglm_attgt()`](https://elbadisyimad.com/panglm/reference/summary.panglm_attgt.md)
 for the aggregations,
-[`etwfe()`](https://ielbadisy.github.io/panglm/reference/etwfe.md) for
-the extended two-way fixed-effects alternative (also for count and
-binary outcomes),
-[`did()`](https://ielbadisy.github.io/panglm/reference/did.md) and
-[`eventstudy()`](https://ielbadisy.github.io/panglm/reference/eventstudy.md)
+[`etwfe()`](https://elbadisyimad.com/panglm/reference/etwfe.md) for the
+extended two-way fixed-effects alternative (also for count and binary
+outcomes), [`did()`](https://elbadisyimad.com/panglm/reference/did.md)
+and
+[`eventstudy()`](https://elbadisyimad.com/panglm/reference/eventstudy.md)
 for the TWFE versions.
 
 Other policy evaluation:
-[`did()`](https://ielbadisy.github.io/panglm/reference/did.md),
-[`etwfe()`](https://ielbadisy.github.io/panglm/reference/etwfe.md),
-[`eventstudy()`](https://ielbadisy.github.io/panglm/reference/eventstudy.md)
+[`did()`](https://elbadisyimad.com/panglm/reference/did.md),
+[`etwfe()`](https://elbadisyimad.com/panglm/reference/etwfe.md),
+[`eventstudy()`](https://elbadisyimad.com/panglm/reference/eventstudy.md)
 
 ## Examples
 

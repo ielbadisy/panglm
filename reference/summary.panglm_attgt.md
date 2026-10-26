@@ -1,8 +1,8 @@
 # Aggregate group-time average treatment effects
 
 Combines the `ATT(g, t)` of an
-[`attgt()`](https://ielbadisy.github.io/panglm/reference/attgt.md) fit
-into summary effects, as in Callaway and Sant'Anna (2021, Section 3) and
+[`attgt()`](https://elbadisyimad.com/panglm/reference/attgt.md) fit into
+summary effects, as in Callaway and Sant'Anna (2021, Section 3) and
 [`did::aggte()`](https://bcallaway11.github.io/did/reference/aggte.html):
 
 - `"simple"`: the average of all post-treatment `ATT(g, t)` weighted by
@@ -39,7 +39,7 @@ summary(
 - object:
 
   a `"panglm_attgt"` fit from
-  [`attgt()`](https://ielbadisy.github.io/panglm/reference/attgt.md)
+  [`attgt()`](https://elbadisyimad.com/panglm/reference/attgt.md)
 
 - type:
 
@@ -78,7 +78,7 @@ attribute `"inf"` of `estimates`.
 
 Standard errors come from the influence functions and account for the
 estimation of the cohort-size weights. When the fit was bootstrapped
-([`attgt()`](https://ielbadisy.github.io/panglm/reference/attgt.md) with
+([`attgt()`](https://elbadisyimad.com/panglm/reference/attgt.md) with
 `bstrap = TRUE`), the standard errors of the aggregated effects come
 from the same multiplier draws and, with `cband = TRUE`, the effects by
 level get uniform confidence bands (`band_lower`, `band_upper`) from the
@@ -89,7 +89,7 @@ Clustering follows the fit.
 ## See also
 
 Other attgt methods:
-[`plot.panglm_attgt()`](https://ielbadisy.github.io/panglm/reference/plot.panglm_attgt.md)
+[`plot.panglm_attgt()`](https://elbadisyimad.com/panglm/reference/plot.panglm_attgt.md)
 
 ## Examples
 

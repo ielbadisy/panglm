@@ -1,7 +1,7 @@
 # Family specifications for panglm
 
 Lightweight family objects used by
-[`panglm()`](https://ielbadisy.github.io/panglm/reference/panglm.md),
+[`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md),
 analogous in spirit to
 [stats::family](https://rdrr.io/r/stats/family.html) objects but keyed
 to the integer codes the C++ backend expects (see `src/families.h`).
@@ -58,7 +58,7 @@ quadrature) are available for both links, `model = "within"` for the
 logit link only (the "blow-up and cluster" fixed-effects ordered logit
 of Baetschmann, Staub and Winkelmann 2015). The fit has class
 `c("panordered", "panglm")`; see
-[`predict.panordered()`](https://ielbadisy.github.io/panglm/reference/predict.panordered.md).
+[`predict.panordered()`](https://elbadisyimad.com/panglm/reference/predict.panordered.md).
 
 `betafamily()` is beta regression for continuous outcomes in the open
 interval (0, 1), such as utility index scores rescaled to (0, 1),
@@ -85,7 +85,7 @@ fixed-effects Tobit (incidental parameters); use `model = "random"` with
 `cre = TRUE`. `predict(type = "link")` returns the latent mean `x'beta`
 and `predict(type = "response")` the mean of the observed, censored
 outcome (averaged over the random intercept), which is the scale of
-[`partialeffects()`](https://ielbadisy.github.io/panglm/reference/partialeffects.md).
+[`partialeffects()`](https://elbadisyimad.com/panglm/reference/partialeffects.md).
 `fit$sigma_e` and `fit$sigma` (random intercept SD) are stored on the
 fit.
 
@@ -111,9 +111,9 @@ variables. *Econometrica*, 26, 24-36.
 
 ## See also
 
-[`panglm()`](https://ielbadisy.github.io/panglm/reference/panglm.md),
-whose `family` argument takes these objects, and
-[panglm-deprecated](https://ielbadisy.github.io/panglm/reference/panglm-deprecated.md)
+[`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md), whose
+`family` argument takes these objects, and
+[panglm-deprecated](https://elbadisyimad.com/panglm/reference/panglm-deprecated.md)
 for the former names.
 
 ## Examples

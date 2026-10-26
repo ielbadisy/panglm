@@ -12,7 +12,7 @@ and period effects and `F` is the identity, the exponential or the
 logistic function. Because the cell effects are unrestricted, the
 estimator does not suffer from the negative weights of the
 single-coefficient TWFE regression of
-[`did()`](https://ielbadisy.github.io/panglm/reference/did.md); in the
+[`did()`](https://elbadisyimad.com/panglm/reference/did.md); in the
 linear case with `control = "notyet"` it is numerically equivalent to an
 imputation estimator. For nonlinear models, parallel trends is imposed
 on the index (for example on the log of the mean for Poisson), which
@@ -86,19 +86,19 @@ etwfe(
   [`etwfe::etwfe()`](http://grantmcdermott.com/etwfe/reference/etwfe.md)
   and `fixest`) and the averages of the treatment effects over the
   treated observations in
-  [`summary.panglm_etwfe()`](https://ielbadisy.github.io/panglm/reference/summary.panglm_etwfe.md)
+  [`summary.panglm_etwfe()`](https://elbadisyimad.com/panglm/reference/summary.panglm_etwfe.md)
   (as `wts` in
   [`etwfe::emfx()`](http://grantmcdermott.com/etwfe/reference/emfx.md)).
   The centring of the controls at their cohort means (and of `xvar` at
   its cell means) is unweighted, as in `etwfe`. Unlike in
-  [`attgt()`](https://ielbadisy.github.io/panglm/reference/attgt.md),
-  the weights need not be constant within individuals: the model is a
+  [`attgt()`](https://elbadisyimad.com/panglm/reference/attgt.md), the
+  weights need not be constant within individuals: the model is a
   weighted pooled (quasi-)likelihood over the rows, so observation-level
   weights are well defined, and the cluster-robust covariance by
   individual remains valid (as in `fixest`). Use weights constant within
   individuals when they are sampling weights of the individuals, so that
   the estimates are comparable with
-  [`attgt()`](https://ielbadisy.github.io/panglm/reference/attgt.md).
+  [`attgt()`](https://elbadisyimad.com/panglm/reference/attgt.md).
 
 - xvar:
 
@@ -128,7 +128,7 @@ response scale as marginal effects: for each treated observation, the
 difference between the predicted mean with its cell effect and without
 it, averaged over the treated observations (all of them, by cohort, by
 calendar period or by time since treatment; see
-[`summary.panglm_etwfe()`](https://ielbadisy.github.io/panglm/reference/summary.panglm_etwfe.md)).
+[`summary.panglm_etwfe()`](https://elbadisyimad.com/panglm/reference/summary.panglm_etwfe.md)).
 Standard errors use the delta method with analytic gradients.
 
 ## Specification
@@ -186,7 +186,7 @@ period effect becomes a linear function of the covariate, with the cell
 coefficient as the effect at the cell mean. This is the specification of
 the `etwfe` package; the level of the covariate itself is not a
 regressor, so add it to `formula` as a control to adjust for it as well.
-[`summary.panglm_etwfe()`](https://ielbadisy.github.io/panglm/reference/summary.panglm_etwfe.md)
+[`summary.panglm_etwfe()`](https://elbadisyimad.com/panglm/reference/summary.panglm_etwfe.md)
 then reports the ATTs separately for each value of the covariate
 (`byxvar = TRUE`, the default for such a fit), as
 `etwfe::emfx(by_xvar = TRUE)`; with a continuous covariate there is one
@@ -217,16 +217,16 @@ difference-in-differences with panel data. *The Econometrics Journal*,
 
 ## See also
 
-[`attgt()`](https://ielbadisy.github.io/panglm/reference/attgt.md) for
-the Callaway and Sant'Anna estimator,
-[`did()`](https://ielbadisy.github.io/panglm/reference/did.md) and
-[`eventstudy()`](https://ielbadisy.github.io/panglm/reference/eventstudy.md)
+[`attgt()`](https://elbadisyimad.com/panglm/reference/attgt.md) for the
+Callaway and Sant'Anna estimator,
+[`did()`](https://elbadisyimad.com/panglm/reference/did.md) and
+[`eventstudy()`](https://elbadisyimad.com/panglm/reference/eventstudy.md)
 for the TWFE versions.
 
 Other policy evaluation:
-[`attgt()`](https://ielbadisy.github.io/panglm/reference/attgt.md),
-[`did()`](https://ielbadisy.github.io/panglm/reference/did.md),
-[`eventstudy()`](https://ielbadisy.github.io/panglm/reference/eventstudy.md)
+[`attgt()`](https://elbadisyimad.com/panglm/reference/attgt.md),
+[`did()`](https://elbadisyimad.com/panglm/reference/did.md),
+[`eventstudy()`](https://elbadisyimad.com/panglm/reference/eventstudy.md)
 
 ## Examples
 

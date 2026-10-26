@@ -28,7 +28,7 @@ predict(
   estimation-sample offsets without `newdata`, the
   [`offset()`](https://rdrr.io/r/stats/offset.html) terms of the formula
   evaluated in `newdata` otherwise (an `offset` argument of
-  [`panfmm()`](https://ielbadisy.github.io/panglm/reference/panfmm.md)
+  [`panfmm()`](https://elbadisyimad.com/panglm/reference/panfmm.md)
   cannot be evaluated in `newdata` and is not applied, with a warning)
 
 - type:
@@ -63,8 +63,8 @@ a numeric vector (`"response"`), an integer vector of class labels
 ## See also
 
 Other panfmm methods:
-[`summary.panfmm()`](https://ielbadisy.github.io/panglm/reference/summary.panfmm.md),
-[`vcov.panfmm()`](https://ielbadisy.github.io/panglm/reference/vcov.panfmm.md)
+[`summary.panfmm()`](https://elbadisyimad.com/panglm/reference/summary.panfmm.md),
+[`vcov.panfmm()`](https://elbadisyimad.com/panglm/reference/vcov.panfmm.md)
 
 ## Examples
 

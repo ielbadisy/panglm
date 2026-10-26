@@ -41,7 +41,7 @@ jointtest(object, terms = NULL, pattern = NULL, R = NULL, r = 0, vcov = NULL)
 - vcov:
 
   `NULL` (the covariance stored on the fit) or a type passed to
-  [`vcov.panglm()`](https://ielbadisy.github.io/panglm/reference/vcov.panglm.md),
+  [`vcov.panglm()`](https://elbadisyimad.com/panglm/reference/vcov.panglm.md),
   e.g. `"cluster"`
 
 ## Value
@@ -57,9 +57,9 @@ Checked against a hand computation of the Wald statistic, in both the
 ## See also
 
 Other tests:
-[`lineartest()`](https://ielbadisy.github.io/panglm/reference/lineartest.md),
-[`pandispersiontest()`](https://ielbadisy.github.io/panglm/reference/pandispersiontest.md),
-[`panhausman()`](https://ielbadisy.github.io/panglm/reference/panhausman.md)
+[`lineartest()`](https://elbadisyimad.com/panglm/reference/lineartest.md),
+[`pandispersiontest()`](https://elbadisyimad.com/panglm/reference/pandispersiontest.md),
+[`panhausman()`](https://elbadisyimad.com/panglm/reference/panhausman.md)
 
 ## Examples
 

@@ -10,32 +10,32 @@ package; the help page of each model function names them in a
 ### Deprecations and changed behaviour
 
 - Exported names no longer use underscores. The families are now
-  [`gaussianfamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md),
-  [`poissonfamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md),
-  [`binomialfamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md),
-  [`negbinfamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md),
-  [`gammafamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md),
-  [`betafamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md),
-  [`orderedfamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md)
+  [`gaussianfamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md),
+  [`poissonfamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md),
+  [`binomialfamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md),
+  [`negbinfamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md),
+  [`gammafamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md),
+  [`betafamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md),
+  [`orderedfamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md)
   and
-  [`tobitfamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md);
-  [`panglm_hausman()`](https://ielbadisy.github.io/panglm/reference/panglm-deprecated.md),
-  [`panglm_dispersiontest()`](https://ielbadisy.github.io/panglm/reference/panglm-deprecated.md)
+  [`tobitfamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md);
+  [`panglm_hausman()`](https://elbadisyimad.com/panglm/reference/panglm-deprecated.md),
+  [`panglm_dispersiontest()`](https://elbadisyimad.com/panglm/reference/panglm-deprecated.md)
   and
-  [`panglm_hurdle()`](https://ielbadisy.github.io/panglm/reference/panglm-deprecated.md)
+  [`panglm_hurdle()`](https://elbadisyimad.com/panglm/reference/panglm-deprecated.md)
   are now
-  [`panhausman()`](https://ielbadisy.github.io/panglm/reference/panhausman.md),
-  [`pandispersiontest()`](https://ielbadisy.github.io/panglm/reference/pandispersiontest.md)
+  [`panhausman()`](https://elbadisyimad.com/panglm/reference/panhausman.md),
+  [`pandispersiontest()`](https://elbadisyimad.com/panglm/reference/pandispersiontest.md)
   and
-  [`panhurdle()`](https://ielbadisy.github.io/panglm/reference/panhurdle.md).
+  [`panhurdle()`](https://elbadisyimad.com/panglm/reference/panhurdle.md).
   The old names still work and warn once per session; see
-  [`?"panglm-deprecated"`](https://ielbadisy.github.io/panglm/reference/panglm-deprecated.md).
+  [`?"panglm-deprecated"`](https://elbadisyimad.com/panglm/reference/panglm-deprecated.md).
   Result classes are unchanged.
-- [`panhurdle()`](https://ielbadisy.github.io/panglm/reference/panhurdle.md)
+- [`panhurdle()`](https://elbadisyimad.com/panglm/reference/panhurdle.md)
   takes `family =` instead of `count_family =`, and
-  [`panqr()`](https://ielbadisy.github.io/panglm/reference/panqr.md)
-  takes `boot =` instead of `R =` and gains `seed`. The old arguments
-  still work with a deprecation warning.
+  [`panqr()`](https://elbadisyimad.com/panglm/reference/panqr.md) takes
+  `boot =` instead of `R =` and gains `seed`. The old arguments still
+  work with a deprecation warning.
 - `predict.panfmm(type = "class")` now returns the modal class label;
   the class-specific means it returned before are `type = "components"`.
   A message flags the change once per session.
@@ -46,14 +46,14 @@ package; the help page of each model function names them in a
   Gaussian family (plm).
 - `tobitfamily(left, right)`: censored outcomes, pooled or with a random
   intercept (AER, censReg).
-- [`orderedfamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md):
+- [`orderedfamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md):
   ordered logit and probit, pooled, random intercept, and the
   fixed-effects ordered logit by “blow-up and cluster” (Baetschmann,
   Staub and Winkelmann 2015).
-- [`betafamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md):
+- [`betafamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md):
   beta regression for outcomes in (0, 1), pooled or with a random
   intercept (betareg, glmmTMB).
-- [`gammafamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md):
+- [`gammafamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md):
   gamma regression with log link for costs, pooled, fixed effects or
   random intercept.
 - Two-way fixed-effects logit:
@@ -64,54 +64,53 @@ package; the help page of each model function names them in a
   ML with any number of slopes (lme4); Poisson, logit, probit, negative
   binomial and gamma fits use adaptive Gauss-Hermite quadrature with any
   number of slopes (glmmTMB, GLMMadaptive).
-- [`paniv()`](https://ielbadisy.github.io/panglm/reference/paniv.md):
-  panel instrumental variables (fixed effects, G2SLS or EC2SLS random
-  effects, pooled 2SLS) and the Hausman-Taylor estimator, with
-  first-stage F statistics and Sargan/Hansen tests (plm).
-- [`pangmm()`](https://ielbadisy.github.io/panglm/reference/pangmm.md):
+- [`paniv()`](https://elbadisyimad.com/panglm/reference/paniv.md): panel
+  instrumental variables (fixed effects, G2SLS or EC2SLS random effects,
+  pooled 2SLS) and the Hausman-Taylor estimator, with first-stage F
+  statistics and Sargan/Hansen tests (plm).
+- [`pangmm()`](https://elbadisyimad.com/panglm/reference/pangmm.md):
   Arellano-Bond difference and Blundell-Bond system GMM, one- or
   two-step with Windmeijer standard errors, AR and Hansen tests,
   collapsed instruments and lag limits; it warns when instruments
   outnumber individuals (plm::pgmm).
-- [`panselect()`](https://ielbadisy.github.io/panglm/reference/panselect.md):
+- [`panselect()`](https://elbadisyimad.com/panglm/reference/panselect.md):
   the Wooldridge (1995) correction for attrition or death in cohort
   studies (glm, plm, sampleSelection).
-- [`panqr()`](https://ielbadisy.github.io/panglm/reference/panqr.md):
-  panel quantile regression by Canay (2011), MM-QR (Machado and Santos
+- [`panqr()`](https://elbadisyimad.com/panglm/reference/panqr.md): panel
+  quantile regression by Canay (2011), MM-QR (Machado and Santos
   Silva 2019) or pooling, with a
   [`plot()`](https://rdrr.io/r/graphics/plot.default.html) method
   (quantreg).
-- [`panfmm()`](https://ielbadisy.github.io/panglm/reference/panfmm.md)
-  and
-  [`panfmmselect()`](https://ielbadisy.github.io/panglm/reference/panfmmselect.md):
+- [`panfmm()`](https://elbadisyimad.com/panglm/reference/panfmm.md) and
+  [`panfmmselect()`](https://elbadisyimad.com/panglm/reference/panfmmselect.md):
   latent class GLMs with class membership constant within individual,
   Poisson, NB2, Gaussian, logit and probit components, weights, offsets
   and a concomitant model (flexmix).
-- [`twopart()`](https://ielbadisy.github.io/panglm/reference/twopart.md):
+- [`twopart()`](https://elbadisyimad.com/panglm/reference/twopart.md):
   two-part models for semicontinuous costs, with correlated random
   intercepts (`correlated = TRUE`).
-- [`did()`](https://ielbadisy.github.io/panglm/reference/did.md) and
-  [`eventstudy()`](https://ielbadisy.github.io/panglm/reference/eventstudy.md):
+- [`did()`](https://elbadisyimad.com/panglm/reference/did.md) and
+  [`eventstudy()`](https://elbadisyimad.com/panglm/reference/eventstudy.md):
   two-way fixed-effects difference-in-differences and event studies for
   Gaussian, Poisson, negative binomial and binomial (conditional logit)
   outcomes (fixest, survival::clogit).
-- [`attgt()`](https://ielbadisy.github.io/panglm/reference/attgt.md):
+- [`attgt()`](https://elbadisyimad.com/panglm/reference/attgt.md):
   Callaway and Sant’Anna (2021) group-time ATTs with aggregations,
   pre-trend test, weights, extra clustering and a multiplier bootstrap
   with uniform bands (did).
-- [`etwfe()`](https://ielbadisy.github.io/panglm/reference/etwfe.md):
-  the Wooldridge (2023) extended two-way FE estimator for linear,
-  Poisson and logit outcomes, with weights, `xvar` and `ivar` (etwfe).
+- [`etwfe()`](https://elbadisyimad.com/panglm/reference/etwfe.md): the
+  Wooldridge (2023) extended two-way FE estimator for linear, Poisson
+  and logit outcomes, with weights, `xvar` and `ivar` (etwfe).
 
 ### New features
 
 - [`lag()`](https://rdrr.io/r/stats/lag.html), `lead()` and
   [`diff()`](https://rdrr.io/r/base/diff.html) in the formulas of
-  [`panglm()`](https://ielbadisy.github.io/panglm/reference/panglm.md),
-  [`paniv()`](https://ielbadisy.github.io/panglm/reference/paniv.md),
-  [`panqr()`](https://ielbadisy.github.io/panglm/reference/panqr.md) and
-  [`panfmm()`](https://ielbadisy.github.io/panglm/reference/panfmm.md)
-  are taken within each individual, with `NA` at the start of each panel
+  [`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md),
+  [`paniv()`](https://elbadisyimad.com/panglm/reference/paniv.md),
+  [`panqr()`](https://elbadisyimad.com/panglm/reference/panqr.md) and
+  [`panfmm()`](https://elbadisyimad.com/panglm/reference/panfmm.md) are
+  taken within each individual, with `NA` at the start of each panel
   (plm). Model functions that cannot support them stop with an
   informative error.
 - `cre = TRUE`: correlated random effects (Mundlak) for pooled and
@@ -119,25 +118,25 @@ package; the help page of each model function names them in a
   [`summary()`](https://rdrr.io/r/base/summary.html).
 - `dynamic = TRUE`: lagged and initial outcomes with Mundlak means
   (Wooldridge 2005 initial conditions).
-- [`partialeffects()`](https://ielbadisy.github.io/panglm/reference/partialeffects.md):
+- [`partialeffects()`](https://elbadisyimad.com/panglm/reference/partialeffects.md):
   average partial effects with delta-method standard errors.
 - Weights: pooled and random-effects fits of every family,
-  [`twopart()`](https://ielbadisy.github.io/panglm/reference/twopart.md),
-  [`panfmm()`](https://ielbadisy.github.io/panglm/reference/panfmm.md),
-  [`attgt()`](https://ielbadisy.github.io/panglm/reference/attgt.md) and
-  [`etwfe()`](https://ielbadisy.github.io/panglm/reference/etwfe.md)
-  accept weights, given as a vector or a column name. `offset` also
-  accepts a column name.
+  [`twopart()`](https://elbadisyimad.com/panglm/reference/twopart.md),
+  [`panfmm()`](https://elbadisyimad.com/panglm/reference/panfmm.md),
+  [`attgt()`](https://elbadisyimad.com/panglm/reference/attgt.md) and
+  [`etwfe()`](https://elbadisyimad.com/panglm/reference/etwfe.md) accept
+  weights, given as a vector or a column name. `offset` also accepts a
+  column name.
 - Splines:
-  [`jointtest()`](https://ielbadisy.github.io/panglm/reference/jointtest.md),
-  [`lineartest()`](https://ielbadisy.github.io/panglm/reference/lineartest.md),
-  [`effectcurve()`](https://ielbadisy.github.io/panglm/reference/effectcurve.md)
+  [`jointtest()`](https://elbadisyimad.com/panglm/reference/jointtest.md),
+  [`lineartest()`](https://elbadisyimad.com/panglm/reference/lineartest.md),
+  [`effectcurve()`](https://elbadisyimad.com/panglm/reference/effectcurve.md)
   with a [`plot()`](https://rdrr.io/r/graphics/plot.default.html)
   method, and
   [`model.matrix()`](https://rdrr.io/r/stats/model.matrix.html) that
   keeps the knots on new data.
 - `panhausman(method = "mundlak")`: the regression-based Hausman test.
-- [`pangmm()`](https://ielbadisy.github.io/panglm/reference/pangmm.md)
+- [`pangmm()`](https://elbadisyimad.com/panglm/reference/pangmm.md)
   accepts `vcov = "cluster"`.
 - `tidy()` and `glance()` for every model class, so modelsummary works;
   `glance()` reports theta for negative binomial fits and an adjusted
@@ -151,7 +150,7 @@ package; the help page of each model function names them in a
   [`logLik()`](https://rdrr.io/r/stats/logLik.html) for event studies;
   [`confint()`](https://rdrr.io/r/stats/confint.html) for `twopart`;
   full methods for
-  [`panhurdle()`](https://ielbadisy.github.io/panglm/reference/panhurdle.md)
+  [`panhurdle()`](https://elbadisyimad.com/panglm/reference/panhurdle.md)
   fits; one print style across classes.
 - `options(panglm.threads)` caps the parallel threads, which are also
   capped by `OMP_THREAD_LIMIT` and at 2 under `R CMD check`. OpenMP is
@@ -180,12 +179,12 @@ package; the help page of each model function names them in a
 - A fit made with `vcov = "HC1"` or `"cluster"` overwrote its
   model-based covariance; `vcov(fit, type = "classical")` now returns
   it.
-- [`panhausman()`](https://ielbadisy.github.io/panglm/reference/panhausman.md)
+- [`panhausman()`](https://elbadisyimad.com/panglm/reference/panhausman.md)
   always uses the model-based covariances in the classical contrast.
 - Negative binomial summaries print theta and its standard error instead
   of “Dispersion parameter: 1”.
-- [`did()`](https://ielbadisy.github.io/panglm/reference/did.md) and
-  [`eventstudy()`](https://ielbadisy.github.io/panglm/reference/eventstudy.md)
+- [`did()`](https://elbadisyimad.com/panglm/reference/did.md) and
+  [`eventstudy()`](https://elbadisyimad.com/panglm/reference/eventstudy.md)
   summaries show the user’s call.
 - `paniv(model = "random")` no longer warns about regressors it keeps.
 - A factor individual index works.
@@ -206,11 +205,11 @@ package; the help page of each model function names them in a
 CRAN release: 2026-09-22
 
 - Added `\value` documentation to
-  [`confint.panglm()`](https://ielbadisy.github.io/panglm/reference/confint.panglm.md),
-  [`fitted.panglm()`](https://ielbadisy.github.io/panglm/reference/fitted.panglm.md),
-  [`summary.panglm()`](https://ielbadisy.github.io/panglm/reference/summary.panglm.md),
+  [`confint.panglm()`](https://elbadisyimad.com/panglm/reference/confint.panglm.md),
+  [`fitted.panglm()`](https://elbadisyimad.com/panglm/reference/fitted.panglm.md),
+  [`summary.panglm()`](https://elbadisyimad.com/panglm/reference/summary.panglm.md),
   and
-  [`vcov.panglm()`](https://ielbadisy.github.io/panglm/reference/vcov.panglm.md),
+  [`vcov.panglm()`](https://elbadisyimad.com/panglm/reference/vcov.panglm.md),
   describing the structure and meaning of each return value (CRAN
   resubmission).
 
@@ -246,7 +245,7 @@ CRAN release: 2026-09-22
 
 ### New features
 
-- [`glance.panglm()`](https://ielbadisy.github.io/panglm/reference/glance.panglm.md)
+- [`glance.panglm()`](https://elbadisyimad.com/panglm/reference/glance.panglm.md)
   now reports `r.squared`/`adj.r.squared` (computed from
   [`fitted.values()`](https://rdrr.io/r/stats/fitted.values.html)/`y`)
   for every model type; previously not reported at all.
@@ -277,12 +276,12 @@ simulated COPD follow-up panel), and runnable `@examples` to every
 exported function and documented method.
 
 - Added
-  [`plot.panglm()`](https://ielbadisy.github.io/panglm/reference/plot.panglm.md)
+  [`plot.panglm()`](https://elbadisyimad.com/panglm/reference/plot.panglm.md)
   for coefficient, residual, and fitted-value views, and
-  [`plot.panglm_hurdle()`](https://ielbadisy.github.io/panglm/reference/plot.panglm_hurdle.md)
+  [`plot.panglm_hurdle()`](https://elbadisyimad.com/panglm/reference/plot.panglm_hurdle.md)
   for the two hurdle components.
 - Added zero-truncated NB2 positive-count models to
-  [`panglm_hurdle()`](https://ielbadisy.github.io/panglm/reference/panglm-deprecated.md)
+  [`panglm_hurdle()`](https://elbadisyimad.com/panglm/reference/panglm-deprecated.md)
   through `count_family = "negbin"`.
 - Added HC1 and cluster-robust covariance estimates for one-way
   conditional binomial fixed-effects models.
@@ -383,16 +382,16 @@ Initial release.
   contribute sampling variability of their own. Random-effects models
   intentionally keep model-based (information-matrix) SEs only, matching
   `lme4`/`glmmTMB` convention.
-- [`confint.panglm()`](https://ielbadisy.github.io/panglm/reference/confint.panglm.md)
+- [`confint.panglm()`](https://elbadisyimad.com/panglm/reference/confint.panglm.md)
   – Wald intervals using whichever vcov the fit currently carries.
-- [`panglm_dispersiontest()`](https://ielbadisy.github.io/panglm/reference/panglm-deprecated.md)
+- [`panglm_dispersiontest()`](https://elbadisyimad.com/panglm/reference/panglm-deprecated.md)
   – Pearson chi-squared/df overdispersion test for poisson/negbin fits
   with available `fitted.values`. Observations with a zero or
   unavailable fitted value (e.g. rows in an all-zero group screened out
   of a fixed-effects negbin fit) are excluded from the statistic rather
   than producing a `0/0` = `NaN`; the excluded count is reported as
   `n_excluded` on the returned object.
-- [`panglm_hausman()`](https://ielbadisy.github.io/panglm/reference/panglm-deprecated.md)
+- [`panglm_hausman()`](https://elbadisyimad.com/panglm/reference/panglm-deprecated.md)
   for FE-vs-RE specification testing.
 - `tidy()`/`glance()` methods registered against
   [`generics::tidy`](https://generics.r-lib.org/reference/tidy.html)/`glance`
@@ -400,11 +399,11 @@ Initial release.
 
 ### Zero-inflated counts
 
-- [`panglm_hurdle()`](https://ielbadisy.github.io/panglm/reference/panglm-deprecated.md):
+- [`panglm_hurdle()`](https://elbadisyimad.com/panglm/reference/panglm-deprecated.md):
   a fixed-effects hurdle model for panels with structural zeros (a
   pattern that shows up as extreme, family-invariant overdispersion
   under either `family = "poisson"` or `family = "negbin"` in
-  [`panglm()`](https://ielbadisy.github.io/panglm/reference/panglm.md)).
+  [`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md)).
   Fits `1(y>0)` via the existing conditional-logit FE estimator, and a
   zero-truncated Poisson or NB2 FE model (an Allison-Waterman-style
   dummy-variable estimator, Newton-Raphson with exact Fisher

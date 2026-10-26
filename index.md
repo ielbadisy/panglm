@@ -21,18 +21,18 @@ remotes::install_github("ielbadisy/panglm")
 
 | Task | Function | Validated against |
 |----|----|----|
-| Continuous, binary, count, ordered, positive, bounded and censored outcomes (pooled, within, between, random effects) | [`panglm()`](https://ielbadisy.github.io/panglm/reference/panglm.md) | [`stats::glm()`](https://rdrr.io/r/stats/glm.html), plm, pglm, fixest, [`survival::clogit()`](https://rdrr.io/pkg/survival/man/clogit.html), [`MASS::polr()`](https://rdrr.io/pkg/MASS/man/polr.html), ordinal, [`AER::tobit()`](https://rdrr.io/pkg/AER/man/tobit.html), betareg, glmmTMB |
+| Continuous, binary, count, ordered, positive, bounded and censored outcomes (pooled, within, between, random effects) | [`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md) | [`stats::glm()`](https://rdrr.io/r/stats/glm.html), plm, pglm, fixest, [`survival::clogit()`](https://rdrr.io/pkg/survival/man/clogit.html), [`MASS::polr()`](https://rdrr.io/pkg/MASS/man/polr.html), ordinal, [`AER::tobit()`](https://rdrr.io/pkg/AER/man/tobit.html), betareg, glmmTMB |
 | Random slopes | `panglm(model = "random", random = ~ x)` | lme4, glmmTMB, GLMMadaptive |
-| Costs with zeros (two-part model) | [`twopart()`](https://ielbadisy.github.io/panglm/reference/twopart.md) | [`stats::glm()`](https://rdrr.io/r/stats/glm.html), numerical integration |
-| Counts with structural zeros | [`panhurdle()`](https://ielbadisy.github.io/panglm/reference/panhurdle.md) | [`pscl::hurdle()`](https://rdrr.io/pkg/pscl/man/hurdle.html), [`survival::clogit()`](https://rdrr.io/pkg/survival/man/clogit.html) |
-| Difference-in-differences and event studies | [`did()`](https://ielbadisy.github.io/panglm/reference/did.md), [`eventstudy()`](https://ielbadisy.github.io/panglm/reference/eventstudy.md) | fixest, [`survival::clogit()`](https://rdrr.io/pkg/survival/man/clogit.html) |
-| Staggered adoption | [`attgt()`](https://ielbadisy.github.io/panglm/reference/attgt.md), [`etwfe()`](https://ielbadisy.github.io/panglm/reference/etwfe.md) | [`did::att_gt()`](https://bcallaway11.github.io/did/reference/att_gt.html), [`etwfe::etwfe()`](http://grantmcdermott.com/etwfe/reference/etwfe.md) |
-| Instrumental variables and Hausman-Taylor | [`paniv()`](https://ielbadisy.github.io/panglm/reference/paniv.md) | [`plm::plm()`](https://rdrr.io/pkg/plm/man/plm.html), [`plm::pht()`](https://rdrr.io/pkg/plm/man/pht.html), [`AER::ivreg()`](https://rdrr.io/pkg/AER/man/ivreg.html), fixest |
-| Dynamic panels (difference and system GMM) | [`pangmm()`](https://ielbadisy.github.io/panglm/reference/pangmm.md) | [`plm::pgmm()`](https://rdrr.io/pkg/plm/man/pgmm.html) |
-| Sample selection | [`panselect()`](https://ielbadisy.github.io/panglm/reference/panselect.md) | [`sampleSelection::heckit()`](https://rdrr.io/pkg/sampleSelection/man/selection.html), plm |
-| Quantile regression | [`panqr()`](https://ielbadisy.github.io/panglm/reference/panqr.md) | [`quantreg::rq()`](https://rdrr.io/pkg/quantreg/man/rq.html) |
-| Latent classes | [`panfmm()`](https://ielbadisy.github.io/panglm/reference/panfmm.md), [`panfmmselect()`](https://ielbadisy.github.io/panglm/reference/panfmmselect.md) | flexmix |
-| Specification tests | [`panhausman()`](https://ielbadisy.github.io/panglm/reference/panhausman.md), [`pandispersiontest()`](https://ielbadisy.github.io/panglm/reference/pandispersiontest.md), [`jointtest()`](https://ielbadisy.github.io/panglm/reference/jointtest.md), [`lineartest()`](https://ielbadisy.github.io/panglm/reference/lineartest.md) | [`plm::phtest()`](https://rdrr.io/pkg/plm/man/phtest.html) |
+| Costs with zeros (two-part model) | [`twopart()`](https://elbadisyimad.com/panglm/reference/twopart.md) | [`stats::glm()`](https://rdrr.io/r/stats/glm.html), numerical integration |
+| Counts with structural zeros | [`panhurdle()`](https://elbadisyimad.com/panglm/reference/panhurdle.md) | [`pscl::hurdle()`](https://rdrr.io/pkg/pscl/man/hurdle.html), [`survival::clogit()`](https://rdrr.io/pkg/survival/man/clogit.html) |
+| Difference-in-differences and event studies | [`did()`](https://elbadisyimad.com/panglm/reference/did.md), [`eventstudy()`](https://elbadisyimad.com/panglm/reference/eventstudy.md) | fixest, [`survival::clogit()`](https://rdrr.io/pkg/survival/man/clogit.html) |
+| Staggered adoption | [`attgt()`](https://elbadisyimad.com/panglm/reference/attgt.md), [`etwfe()`](https://elbadisyimad.com/panglm/reference/etwfe.md) | [`did::att_gt()`](https://bcallaway11.github.io/did/reference/att_gt.html), [`etwfe::etwfe()`](http://grantmcdermott.com/etwfe/reference/etwfe.md) |
+| Instrumental variables and Hausman-Taylor | [`paniv()`](https://elbadisyimad.com/panglm/reference/paniv.md) | [`plm::plm()`](https://rdrr.io/pkg/plm/man/plm.html), [`plm::pht()`](https://rdrr.io/pkg/plm/man/pht.html), [`AER::ivreg()`](https://rdrr.io/pkg/AER/man/ivreg.html), fixest |
+| Dynamic panels (difference and system GMM) | [`pangmm()`](https://elbadisyimad.com/panglm/reference/pangmm.md) | [`plm::pgmm()`](https://rdrr.io/pkg/plm/man/pgmm.html) |
+| Sample selection | [`panselect()`](https://elbadisyimad.com/panglm/reference/panselect.md) | [`sampleSelection::heckit()`](https://rdrr.io/pkg/sampleSelection/man/selection.html), plm |
+| Quantile regression | [`panqr()`](https://elbadisyimad.com/panglm/reference/panqr.md) | [`quantreg::rq()`](https://rdrr.io/pkg/quantreg/man/rq.html) |
+| Latent classes | [`panfmm()`](https://elbadisyimad.com/panglm/reference/panfmm.md), [`panfmmselect()`](https://elbadisyimad.com/panglm/reference/panfmmselect.md) | flexmix |
+| Specification tests | [`panhausman()`](https://elbadisyimad.com/panglm/reference/panhausman.md), [`pandispersiontest()`](https://elbadisyimad.com/panglm/reference/pandispersiontest.md), [`jointtest()`](https://elbadisyimad.com/panglm/reference/jointtest.md), [`lineartest()`](https://elbadisyimad.com/panglm/reference/lineartest.md) | [`plm::phtest()`](https://rdrr.io/pkg/plm/man/phtest.html) |
 
 Each help page has a Validation section, and the comparisons themselves
 are in the [validation
@@ -98,18 +98,18 @@ partialeffects(re)
 ## Learn more
 
 - [Getting started with
-  panglm](https://ielbadisy.github.io/panglm/articles/panglm-intro.html)
+  panglm](https://elbadisyimad.com/panglm/articles/panglm-intro.html)
 - [Counts, costs, bounded and censored
-  outcomes](https://ielbadisy.github.io/panglm/articles/panglm-outcomes.html)
+  outcomes](https://elbadisyimad.com/panglm/articles/panglm-outcomes.html)
 - [Endogeneity: IV, Hausman-Taylor, GMM and
-  selection](https://ielbadisy.github.io/panglm/articles/panglm-endogeneity.html)
+  selection](https://elbadisyimad.com/panglm/articles/panglm-endogeneity.html)
 - [Policy evaluation: DiD, event studies, attgt and
-  etwfe](https://ielbadisy.github.io/panglm/articles/panglm-policy.html)
+  etwfe](https://elbadisyimad.com/panglm/articles/panglm-policy.html)
 - [Heterogeneity: random slopes, latent classes and quantile
-  regression](https://ielbadisy.github.io/panglm/articles/panglm-heterogeneity.html)
+  regression](https://elbadisyimad.com/panglm/articles/panglm-heterogeneity.html)
 - [Technical
-  reference](https://ielbadisy.github.io/panglm/articles/panglm-methods.html)
-- [Function reference](https://ielbadisy.github.io/panglm/reference/)
+  reference](https://elbadisyimad.com/panglm/articles/panglm-methods.html)
+- [Function reference](https://elbadisyimad.com/panglm/reference/)
 
 panglm is the software of a forthcoming book on panel data methods for
 health econometrics, whose examples it runs throughout.

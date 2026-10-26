@@ -8,11 +8,11 @@ vignettes:
 
 | Topic | Vignette |
 |----|----|
-| Data layout, pooled, within, between, random and correlated random effects, standard errors, partial effects, tables | [`vignette("panglm-intro")`](https://ielbadisy.github.io/panglm/articles/panglm-intro.md) |
-| Counts, hurdle, two-part costs, beta, ordered and tobit models | [`vignette("panglm-outcomes")`](https://ielbadisy.github.io/panglm/articles/panglm-outcomes.md) |
-| Instrumental variables, Hausman-Taylor, dynamic GMM, sample selection | [`vignette("panglm-endogeneity")`](https://ielbadisy.github.io/panglm/articles/panglm-endogeneity.md) |
-| Difference-in-differences, event studies, staggered adoption | [`vignette("panglm-policy")`](https://ielbadisy.github.io/panglm/articles/panglm-policy.md) |
-| Random slopes, latent classes, quantile regression | [`vignette("panglm-heterogeneity")`](https://ielbadisy.github.io/panglm/articles/panglm-heterogeneity.md) |
+| Data layout, pooled, within, between, random and correlated random effects, standard errors, partial effects, tables | [`vignette("panglm-intro")`](https://elbadisyimad.com/panglm/articles/panglm-intro.md) |
+| Counts, hurdle, two-part costs, beta, ordered and tobit models | [`vignette("panglm-outcomes")`](https://elbadisyimad.com/panglm/articles/panglm-outcomes.md) |
+| Instrumental variables, Hausman-Taylor, dynamic GMM, sample selection | [`vignette("panglm-endogeneity")`](https://elbadisyimad.com/panglm/articles/panglm-endogeneity.md) |
+| Difference-in-differences, event studies, staggered adoption | [`vignette("panglm-policy")`](https://elbadisyimad.com/panglm/articles/panglm-policy.md) |
+| Random slopes, latent classes, quantile regression | [`vignette("panglm-heterogeneity")`](https://elbadisyimad.com/panglm/articles/panglm-heterogeneity.md) |
 
 The numerical routines use Rcpp, RcppArmadillo and RcppParallel.
 
@@ -191,7 +191,7 @@ random-intercept fits for both links; the fixed-effects model above for
 the logit link.
 
 **Beta.**
-[`betafamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md):
+[`betafamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md):
 $`y_{it} \sim \mathrm{Beta}(\mu_{it}\phi,
 (1 - \mu_{it})\phi)`$ with $`g(\mu_{it}) = x_{it}^{\mathsf T}\beta`$, so
 $`\mathrm{Var}(y_{it}) = \mu_{it}(1 - \mu_{it})/(1 + \phi)`$ (Ferrari
@@ -210,8 +210,8 @@ normal density. Pooled and random-intercept models; the random intercept
 SD is `fit$sigma` and the error SD `fit$sigma_e`.
 
 **Two-part.**
-[`twopart()`](https://ielbadisy.github.io/panglm/reference/twopart.md)
-fits the model of Duan et al. (1983),
+[`twopart()`](https://elbadisyimad.com/panglm/reference/twopart.md) fits
+the model of Duan et al. (1983),
 $`E(y_{it}) = P(y_{it} > 0)\, E(y_{it} \mid y_{it} > 0)`$, with a probit
 or logit first part and a gamma (log link) or lognormal positive part,
 pooled or with random intercepts, optionally with `cre = TRUE`. The
@@ -230,7 +230,7 @@ E_{u_1}\{F(x_{it}^{\mathsf T}\gamma + u_1)\, e^{c u_1}\},
 ```
 
 **Hurdle.**
-[`panhurdle()`](https://ielbadisy.github.io/panglm/reference/panhurdle.md)
+[`panhurdle()`](https://elbadisyimad.com/panglm/reference/panhurdle.md)
 fits two fixed-effects parts: a conditional logit for $`1(y_{it} > 0)`$
 and a zero-truncated Poisson or NB2 model for the positive counts, with
 density $`f(y \mid \mu, \theta)/\{1 - f(0 \mid \mu, \theta)\}`$ for
@@ -239,7 +239,7 @@ $`y > 0`$ and one intercept per individual.
 ## Endogenous regressors
 
 **Two-stage least squares.**
-[`paniv()`](https://ielbadisy.github.io/panglm/reference/paniv.md) takes
+[`paniv()`](https://elbadisyimad.com/panglm/reference/paniv.md) takes
 `y ~ regressors | instruments`, where the second part is the full
 instrument set. With $`\tilde a`$ the within, quasi-demeaned or
 untransformed version of a variable and
@@ -268,8 +268,8 @@ the instruments, so the exogenous time-varying regressors must be at
 least as many as the endogenous time-invariant ones.
 
 **Dynamic GMM.**
-[`pangmm()`](https://ielbadisy.github.io/panglm/reference/pangmm.md)
-fits $`y_{it} = \rho y_{i,t-1} + x_{it}^{\mathsf T}\beta + \alpha_i +
+[`pangmm()`](https://elbadisyimad.com/panglm/reference/pangmm.md) fits
+$`y_{it} = \rho y_{i,t-1} + x_{it}^{\mathsf T}\beta + \alpha_i +
 \varepsilon_{it}`$. The difference estimator of Arellano and Bond (1991)
 uses $`E(y_{is}\Delta\varepsilon_{it}) = 0`$ for $`s \le t - 2`$; the
 system estimator of Blundell and Bond (1998) (`transformation = "ld"`)
@@ -279,7 +279,7 @@ Windmeijer (2005) correction. Reported tests: Arellano-Bond AR(1) and
 AR(2), Sargan and Hansen.
 
 **Sample selection.**
-[`panselect()`](https://ielbadisy.github.io/panglm/reference/panselect.md)
+[`panselect()`](https://elbadisyimad.com/panglm/reference/panselect.md)
 implements Wooldridge (1995). A probit for selection is fitted in each
 period, with the individual means of the selection regressors
 (`mundlak = TRUE`). The inverse Mills ratio, interacted with period
@@ -292,13 +292,13 @@ from a cluster bootstrap over both steps (`boot` replicates).
 ## Policy evaluation
 
 **Two-way fixed effects.**
-[`did()`](https://ielbadisy.github.io/panglm/reference/did.md) fits
+[`did()`](https://elbadisyimad.com/panglm/reference/did.md) fits
 $`g\{E(y_{it})\} = \alpha_i + \lambda_t + \delta D_{it} +
 x_{it}^{\mathsf T}\beta`$, with $`D_{it} = 1(t \ge g_i)`$ and $`g_i`$
 the first treated period. Gaussian, Poisson, negative binomial and
 conditional logit fits are available. Poisson TWFE needs only the
 conditional mean to be correct (Wooldridge 2023).
-[`eventstudy()`](https://ielbadisy.github.io/panglm/reference/eventstudy.md)
+[`eventstudy()`](https://elbadisyimad.com/panglm/reference/eventstudy.md)
 replaces $`D_{it}`$ with indicators of event time $`e = t - g_i`$ from
 `-leads` to `lags`, reference `ref = -1`, with the end points binned by
 default. Its Wald test of the leads is the pre-trend test. Under
@@ -307,7 +307,7 @@ weighted average of two-by-two comparisons with possibly negative
 weights (Goodman-Bacon 2021; Sun and Abraham 2021).
 
 **Group-time effects.**
-[`attgt()`](https://ielbadisy.github.io/panglm/reference/attgt.md)
+[`attgt()`](https://elbadisyimad.com/panglm/reference/attgt.md)
 estimates, for each cohort $`g`$ and period $`t`$,
 
 ``` math
@@ -328,7 +328,7 @@ functions, or from the multiplier bootstrap (`bstrap`, `biters`), which
 allows a coarser `cluster` and uniform bands (`cband`).
 
 **Extended TWFE.**
-[`etwfe()`](https://ielbadisy.github.io/panglm/reference/etwfe.md)
+[`etwfe()`](https://elbadisyimad.com/panglm/reference/etwfe.md)
 (Wooldridge 2021, 2023) fits one pooled regression with cohort and
 period effects and a treatment indicator for every treated cohort by
 post-period cell; covariates enter centred at their cohort means and
@@ -341,7 +341,7 @@ delta-method standard errors. `xvar` gives effects by a covariate;
 
 ## Finite mixtures
 
-[`panfmm()`](https://ielbadisy.github.io/panglm/reference/panfmm.md)
+[`panfmm()`](https://elbadisyimad.com/panglm/reference/panfmm.md)
 assumes each individual belongs to one of $`k`$ latent classes for all
 its observations, so the likelihood contribution is
 
@@ -357,14 +357,14 @@ with Gaussian, Poisson, NB2 or binomial components (Deb and Trivedi
 (`concomitant`). EM is run from `nstart` random starts and the best fit
 kept; the covariance is the inverse observed information of the full
 likelihood, or its cluster sandwich.
-[`panfmmselect()`](https://ielbadisy.github.io/panglm/reference/panfmmselect.md)
+[`panfmmselect()`](https://elbadisyimad.com/panglm/reference/panfmmselect.md)
 compares $`k`$ by AIC and BIC. `predict(type = "posterior")` returns the
 posterior class probabilities.
 
 ## Quantile regression
 
-[`panqr()`](https://ielbadisy.github.io/panglm/reference/panqr.md)
-assumes $`Q_{y_{it}}(\tau \mid x_{it}, \alpha_i) = \alpha_i +
+[`panqr()`](https://elbadisyimad.com/panglm/reference/panqr.md) assumes
+$`Q_{y_{it}}(\tau \mid x_{it}, \alpha_i) = \alpha_i +
 x_{it}^{\mathsf T}\beta(\tau)`$ with location-shift individual effects.
 
 - `"canay"` (Canay 2011): $`\hat\alpha_i`$ from the within regression,
@@ -435,7 +435,7 @@ by about $`T/(T - 1)`$. The Wald form is preferred.
 
 ## Average partial effects
 
-[`partialeffects()`](https://ielbadisy.github.io/panglm/reference/partialeffects.md)
+[`partialeffects()`](https://elbadisyimad.com/panglm/reference/partialeffects.md)
 averages $`\partial E(y_{it} \mid x_{it}) / \partial x_{itj}`$ over the
 sample for continuous regressors, and the discrete change for binary and
 factor regressors, with delta-method standard errors from the stored
@@ -474,10 +474,10 @@ sqrt(c(classical = vcov(fit_fe), HC1 = vcov(fit_fe, type = "HC1"),
 #> 0.005974855 0.005293113 0.006071829
 ```
 
-[`panhausman()`](https://ielbadisy.github.io/panglm/reference/panhausman.md)
+[`panhausman()`](https://elbadisyimad.com/panglm/reference/panhausman.md)
 compares compatible fixed- and random-effects fits with the covariance
 difference, or in its Mundlak form with any covariance.
-[`pandispersiontest()`](https://ielbadisy.github.io/panglm/reference/pandispersiontest.md)
+[`pandispersiontest()`](https://elbadisyimad.com/panglm/reference/pandispersiontest.md)
 reports the Pearson statistic over its residual degrees of freedom for
 count fits.
 
@@ -544,20 +544,19 @@ model:
 - Random effects: every family; random slopes for Gaussian, Poisson,
   NB2, gamma and binomial models.
 - Linear only: instrumental variables
-  ([`paniv()`](https://ielbadisy.github.io/panglm/reference/paniv.md)),
-  GMM
-  ([`pangmm()`](https://ielbadisy.github.io/panglm/reference/pangmm.md)),
+  ([`paniv()`](https://elbadisyimad.com/panglm/reference/paniv.md)), GMM
+  ([`pangmm()`](https://elbadisyimad.com/panglm/reference/pangmm.md)),
   selection
-  ([`panselect()`](https://ielbadisy.github.io/panglm/reference/panselect.md))
+  ([`panselect()`](https://elbadisyimad.com/panglm/reference/panselect.md))
   and quantile regression
-  ([`panqr()`](https://ielbadisy.github.io/panglm/reference/panqr.md)).
-- Policy: [`did()`](https://ielbadisy.github.io/panglm/reference/did.md)
+  ([`panqr()`](https://elbadisyimad.com/panglm/reference/panqr.md)).
+- Policy: [`did()`](https://elbadisyimad.com/panglm/reference/did.md)
   and
-  [`eventstudy()`](https://ielbadisy.github.io/panglm/reference/eventstudy.md)
+  [`eventstudy()`](https://elbadisyimad.com/panglm/reference/eventstudy.md)
   for Gaussian, count and binary outcomes;
-  [`attgt()`](https://ielbadisy.github.io/panglm/reference/attgt.md) for
+  [`attgt()`](https://elbadisyimad.com/panglm/reference/attgt.md) for
   continuous outcomes;
-  [`etwfe()`](https://ielbadisy.github.io/panglm/reference/etwfe.md) for
+  [`etwfe()`](https://elbadisyimad.com/panglm/reference/etwfe.md) for
   Gaussian, Poisson and binary outcomes.
 
 These restrictions keep unlike estimators from being presented under a

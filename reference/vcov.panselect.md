@@ -33,8 +33,8 @@ the covariance matrix of the outcome-equation coefficients
 ## See also
 
 Other panselect methods:
-[`predict.panselect()`](https://ielbadisy.github.io/panglm/reference/predict.panselect.md),
-[`summary.panselect()`](https://ielbadisy.github.io/panglm/reference/summary.panselect.md)
+[`predict.panselect()`](https://elbadisyimad.com/panglm/reference/predict.panselect.md),
+[`summary.panselect()`](https://elbadisyimad.com/panglm/reference/summary.panselect.md)
 
 ## Examples
 

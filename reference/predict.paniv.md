@@ -1,17 +1,17 @@
 # Predictions from a panel instrumental-variables fit
 
 Linear predictions from a
-[`paniv()`](https://ielbadisy.github.io/panglm/reference/paniv.md) fit.
-For `model = "pooling"`, `"random"` and `"hausmantaylor"` the prediction
-is the linear index `x'b` (with the intercept), the conditional mean
-given the regressors that does not involve the individual effect; this
-is what [`predict()`](https://rdrr.io/r/stats/predict.html) returns for
+[`paniv()`](https://elbadisyimad.com/panglm/reference/paniv.md) fit. For
+`model = "pooling"`, `"random"` and `"hausmantaylor"` the prediction is
+the linear index `x'b` (with the intercept), the conditional mean given
+the regressors that does not involve the individual effect; this is what
+[`predict()`](https://rdrr.io/r/stats/predict.html) returns for
 [`AER::ivreg()`](https://rdrr.io/pkg/AER/man/ivreg.html) and
 [`plm::plm()`](https://rdrr.io/pkg/plm/man/plm.html) fits of these
 models. For `model = "within"` the estimated individual effects
 `a_i = mean_t(y_it - x_it'b)` are added (and, for `effect = "twoways"`,
 the time effects, from the two-way decomposition of `y - x'b`), as in
-[`predict.panglm()`](https://ielbadisy.github.io/panglm/reference/predict.panglm.md).
+[`predict.panglm()`](https://elbadisyimad.com/panglm/reference/predict.panglm.md).
 
 ## Usage
 
@@ -65,8 +65,8 @@ package's validation suite on GitHub.
 ## See also
 
 Other paniv methods:
-[`summary.paniv()`](https://ielbadisy.github.io/panglm/reference/summary.paniv.md),
-[`vcov.paniv()`](https://ielbadisy.github.io/panglm/reference/vcov.paniv.md)
+[`summary.paniv()`](https://elbadisyimad.com/panglm/reference/summary.paniv.md),
+[`vcov.paniv()`](https://elbadisyimad.com/panglm/reference/vcov.paniv.md)
 
 ## Examples
 

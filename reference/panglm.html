@@ -85,7 +85,8 @@ package vignette for the estimators currently implemented per family.</p>
 <dl><dt id="arg-formula">formula<a class="anchor" aria-label="anchor" href="#arg-formula"></a></dt>
 <dd><p>a model formula, e.g. <code>y ~ x1 + x2</code>.
 <code>lag(x, k)</code>, <code>lead(x, k)</code> and <code>diff(x)</code> are taken within each
-individual on the grid of sorted distinct time values (needs
+individual on the grid of sorted distinct time values (see
+"Lags and differences" in <code>panglm()</code>; needs
 <code>index = c(id, time)</code>); the first waves of each individual get <code>NA</code>
 and leave the sample, and <code>lag(x, 0:2)</code> gives several lags</p></dd>
 
@@ -267,6 +268,24 @@ Methods: <code>print</code>, <code>summary</code>, <code>coef</code>, <code>vcov
 <code><a href="partialeffects.html">partialeffects()</a></code>, <code><a href="effectcurve.html">effectcurve()</a></code>, <code>tidy</code> and <code>glance</code>.</p>
     </div>
     <div class="section level2">
+    <h2 id="lags-and-differences">Lags and differences<a class="anchor" aria-label="anchor" href="#lags-and-differences"></a></h2>
+
+
+<p>Inside the formula, <code>lag(x, k)</code>, <code>lead(x, k)</code> and
+<code>diff(x, lag, differences)</code> are taken within each individual, never
+across individuals. Shifts step through the sorted distinct values of
+the time index, so <code>lag(x, 1)</code> is the value at the previous observed
+wave. With gaps in the time index this differs from plm: for waves
+coded 2010, 2012, 2014, <code>lag(x, 1)</code> at 2012 is the 2010 value in
+panglm, while <code><a href="https://rdrr.io/r/stats/lag.html" class="external-link">plm::lag()</a></code> (which shifts by the numeric time value)
+gives <code>NA</code>. To obtain plm's behaviour, keep a row for every period,
+with <code>NA</code> outcomes for the missing waves. <code><a href="pangmm.html">pangmm()</a></code> uses the same rule.
+The first <code>k</code> waves of each individual get <code>NA</code> and leave the
+estimation sample. <code><a href="https://rdrr.io/r/base/diff.html" class="external-link">diff()</a></code> follows base R's <code>diff(x, lag, differences)</code>;
+plm's third argument of <code><a href="https://rdrr.io/r/base/diff.html" class="external-link">diff()</a></code> is <code>shift</code>, not <code>differences</code>.
+The same rule applies in <code><a href="paniv.html">paniv()</a></code>, <code><a href="panqr.html">panqr()</a></code> and <code><a href="panfmm.html">panfmm()</a></code>.</p>
+    </div>
+    <div class="section level2">
     <h2 id="validation">Validation<a class="anchor" aria-label="anchor" href="#validation"></a></h2>
 
 
@@ -405,7 +424,7 @@ model, <a href="tidy-methods.html">tidy-methods</a> for <code>tidy()</code> and 
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>              Estimate Std. Error z value Pr(&gt;|z|)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)  3.872439   0.414554   9.341  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)  3.872439   0.414555   9.341  &lt; 2e-16 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> visit       -0.004717   0.008262  -0.571  0.56808    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> treatment    0.251411   0.110762   2.270  0.02322 *  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> age         -0.013627   0.006396  -2.131  0.03312 *  </span>
@@ -421,8 +440,8 @@ model, <a href="tidy-methods.html">tidy-methods</a> for <code>tidy()</code> and 
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span><span class="va">fit_rs</span><span class="op">$</span><span class="va">varcomp</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>              (Intercept)         visit</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)  0.178115843 -1.253264e-03</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> visit       -0.001253264  8.818254e-06</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)  0.178115951 -1.253272e-03</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> visit       -0.001253272  8.818356e-06</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># two-way conditional logit: smoking across survey waves, with year</span></span></span>
 <span class="r-in"><span><span class="co"># shocks (e.g. a tobacco tax) absorbed by the time effects</span></span></span>
@@ -453,7 +472,7 @@ model, <a href="tidy-methods.html">tidy-methods</a> for <code>tidy()</code> and 
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: -282.3 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Dispersion parameter: 1 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 34</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 35</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span><span class="va">fit_2w</span><span class="op">$</span><span class="va">time_effects</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>          1          2          3          4          5 </span>

@@ -30,8 +30,8 @@ information.
 ## See also
 
 Other panselect methods:
-[`predict.panselect()`](https://ielbadisy.github.io/panglm/reference/predict.panselect.md),
-[`vcov.panselect()`](https://ielbadisy.github.io/panglm/reference/vcov.panselect.md)
+[`predict.panselect()`](https://elbadisyimad.com/panglm/reference/predict.panselect.md),
+[`vcov.panselect()`](https://elbadisyimad.com/panglm/reference/vcov.panselect.md)
 
 ## Examples
 

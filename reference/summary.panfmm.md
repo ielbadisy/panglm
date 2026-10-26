@@ -32,8 +32,8 @@ fit information (`call`, `loglik`, `AIC`, `BIC`, `nobs`, `n_groups`,
 ## See also
 
 Other panfmm methods:
-[`predict.panfmm()`](https://ielbadisy.github.io/panglm/reference/predict.panfmm.md),
-[`vcov.panfmm()`](https://ielbadisy.github.io/panglm/reference/vcov.panfmm.md)
+[`predict.panfmm()`](https://elbadisyimad.com/panglm/reference/predict.panfmm.md),
+[`vcov.panfmm()`](https://elbadisyimad.com/panglm/reference/vcov.panfmm.md)
 
 ## Examples
 

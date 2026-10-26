@@ -6,7 +6,7 @@ effect (on the response scale). The averages are taken over all treated
 observations (`"simple"`), by cohort (`"group"`), by calendar period
 (`"calendar"`) or by time since treatment (`"event"`), with delta-method
 standard errors. With sampling weights in
-[`etwfe()`](https://ielbadisy.github.io/panglm/reference/etwfe.md), the
+[`etwfe()`](https://elbadisyimad.com/panglm/reference/etwfe.md), the
 averages are weighted. They correspond to
 [`etwfe::emfx()`](http://grantmcdermott.com/etwfe/reference/emfx.md).
 With `control = "never"`, the event study also reports the pre-treatment
@@ -30,7 +30,7 @@ summary(
 - object:
 
   a `"panglm_etwfe"` fit from
-  [`etwfe()`](https://ielbadisy.github.io/panglm/reference/etwfe.md)
+  [`etwfe()`](https://elbadisyimad.com/panglm/reference/etwfe.md)
 
 - type:
 
@@ -63,7 +63,7 @@ the fit information.
 ## See also
 
 Other etwfe methods:
-[`plot.panglm_etwfe()`](https://ielbadisy.github.io/panglm/reference/plot.panglm_etwfe.md)
+[`plot.panglm_etwfe()`](https://elbadisyimad.com/panglm/reference/plot.panglm_etwfe.md)
 
 ## Examples
 

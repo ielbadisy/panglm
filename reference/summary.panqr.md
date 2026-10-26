@@ -30,8 +30,8 @@ standardized errors for MM-QR, and the fit information (`call`, `model`,
 ## See also
 
 Other panqr methods:
-[`plot.panqr()`](https://ielbadisy.github.io/panglm/reference/plot.panqr.md),
-[`vcov.panqr()`](https://ielbadisy.github.io/panglm/reference/vcov.panqr.md)
+[`plot.panqr()`](https://elbadisyimad.com/panglm/reference/plot.panqr.md),
+[`vcov.panqr()`](https://elbadisyimad.com/panglm/reference/vcov.panqr.md)
 
 ## Examples
 

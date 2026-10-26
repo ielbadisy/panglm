@@ -5,7 +5,7 @@ report *structural* zeros (never observed to occur), rather than zeros
 arising from ordinary Poisson/NB sampling variation at a low mean, a
 pattern that shows up as extreme, family-invariant overdispersion under
 either `family = "poisson"` or `family = "negbin"` in
-[`panglm()`](https://ielbadisy.github.io/panglm/reference/panglm.md).
+[`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md).
 
 ## Usage
 
@@ -52,7 +52,7 @@ panhurdle(
 ## Value
 
 an object of class `"panglm_hurdle"`: a list with `zero` (the
-[`panglm()`](https://ielbadisy.github.io/panglm/reference/panglm.md)
+[`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md)
 binomial fit for the zero-vs-positive part) and `count` (the
 zero-truncated fixed-effects fit for the count part). Methods: `print`,
 `summary`, `coef`, `vcov`, `confint`, `nobs`, `plot`, `tidy` and
@@ -62,7 +62,7 @@ zero-truncated fixed-effects fit for the count part). Methods: `print`,
 
 The model is fit in two independent parts, both using fixed effects, and
 reported together rather than folded into
-[`panglm()`](https://ielbadisy.github.io/panglm/reference/panglm.md)'s
+[`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md)'s
 single-family dispatch, since they operate on different sample sizes
 (the count part drops the zeros):
 
@@ -89,7 +89,7 @@ carries zero weight.
 ## Validation
 
 The zero part is the conditional logit of
-[`panglm()`](https://ielbadisy.github.io/panglm/reference/panglm.md),
+[`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md),
 checked against
 [`survival::clogit()`](https://rdrr.io/pkg/survival/man/clogit.html).
 The zero-truncated Poisson and NB2 count parts are checked against the
@@ -99,24 +99,24 @@ package tests.
 
 ## See also
 
-[hurdle-methods](https://ielbadisy.github.io/panglm/reference/hurdle-methods.md)
+[hurdle-methods](https://elbadisyimad.com/panglm/reference/hurdle-methods.md)
 and
-[`plot.panglm_hurdle()`](https://ielbadisy.github.io/panglm/reference/plot.panglm_hurdle.md)
+[`plot.panglm_hurdle()`](https://elbadisyimad.com/panglm/reference/plot.panglm_hurdle.md)
 for the fitted model,
-[`pandispersiontest()`](https://ielbadisy.github.io/panglm/reference/pandispersiontest.md)
+[`pandispersiontest()`](https://elbadisyimad.com/panglm/reference/pandispersiontest.md)
 to check the count part,
-[`twopart()`](https://ielbadisy.github.io/panglm/reference/twopart.md)
-for continuous costs.
+[`twopart()`](https://elbadisyimad.com/panglm/reference/twopart.md) for
+continuous costs.
 
 Other panel models:
-[`panfmm()`](https://ielbadisy.github.io/panglm/reference/panfmm.md),
-[`panfmmselect()`](https://ielbadisy.github.io/panglm/reference/panfmmselect.md),
-[`panglm()`](https://ielbadisy.github.io/panglm/reference/panglm.md),
-[`pangmm()`](https://ielbadisy.github.io/panglm/reference/pangmm.md),
-[`paniv()`](https://ielbadisy.github.io/panglm/reference/paniv.md),
-[`panqr()`](https://ielbadisy.github.io/panglm/reference/panqr.md),
-[`panselect()`](https://ielbadisy.github.io/panglm/reference/panselect.md),
-[`twopart()`](https://ielbadisy.github.io/panglm/reference/twopart.md)
+[`panfmm()`](https://elbadisyimad.com/panglm/reference/panfmm.md),
+[`panfmmselect()`](https://elbadisyimad.com/panglm/reference/panfmmselect.md),
+[`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md),
+[`pangmm()`](https://elbadisyimad.com/panglm/reference/pangmm.md),
+[`paniv()`](https://elbadisyimad.com/panglm/reference/paniv.md),
+[`panqr()`](https://elbadisyimad.com/panglm/reference/panqr.md),
+[`panselect()`](https://elbadisyimad.com/panglm/reference/panselect.md),
+[`twopart()`](https://elbadisyimad.com/panglm/reference/twopart.md)
 
 ## Examples
 

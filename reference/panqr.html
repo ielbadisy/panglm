@@ -88,7 +88,8 @@ estimated in one call.</p>
 <dl><dt id="arg-formula">formula<a class="anchor" aria-label="anchor" href="#arg-formula"></a></dt>
 <dd><p>a formula <code>y ~ regressors</code>.
 <code>lag(x, k)</code>, <code>lead(x, k)</code> and <code>diff(x)</code> are taken within each
-individual on the grid of sorted distinct time values (needs
+individual on the grid of sorted distinct time values (see
+"Lags and differences" in <code><a href="panglm.html">panglm()</a></code>; needs
 <code>index = c(id, time)</code>); the first waves of each individual get <code>NA</code>
 and leave the sample, and <code>lag(x, 0:2)</code> gives several lags</p></dd>
 

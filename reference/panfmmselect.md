@@ -1,11 +1,10 @@
 # Compare latent class panel models with different numbers of classes
 
-Fits
-[`panfmm()`](https://ielbadisy.github.io/panglm/reference/panfmm.md) for
-each number of classes in `k` and tabulates the log-likelihood, number
-of parameters, AIC and BIC (with `n` the number of observations), the
-usual criteria for choosing the number of classes (Deb and Trivedi 2002
-prefer BIC). Mixtures with too many classes may fail to converge or
+Fits [`panfmm()`](https://elbadisyimad.com/panglm/reference/panfmm.md)
+for each number of classes in `k` and tabulates the log-likelihood,
+number of parameters, AIC and BIC (with `n` the number of observations),
+the usual criteria for choosing the number of classes (Deb and Trivedi
+2002 prefer BIC). Mixtures with too many classes may fail to converge or
 return near-empty classes; such fits are reported with `NA`.
 
 ## Usage
@@ -27,7 +26,7 @@ panfmmselect(
 - formula, data, index, family, concomitant, ...:
 
   passed to
-  [`panfmm()`](https://ielbadisy.github.io/panglm/reference/panfmm.md)
+  [`panfmm()`](https://elbadisyimad.com/panglm/reference/panfmm.md)
 
 - k:
 
@@ -42,21 +41,21 @@ attribute `"fits"`
 ## Validation
 
 Each fit is a
-[`panfmm()`](https://ielbadisy.github.io/panglm/reference/panfmm.md)
-fit, whose log-likelihood and BIC are checked against flexmix in the
+[`panfmm()`](https://elbadisyimad.com/panglm/reference/panfmm.md) fit,
+whose log-likelihood and BIC are checked against flexmix in the
 package's validation suite on GitHub.
 
 ## See also
 
 Other panel models:
-[`panfmm()`](https://ielbadisy.github.io/panglm/reference/panfmm.md),
-[`panglm()`](https://ielbadisy.github.io/panglm/reference/panglm.md),
-[`pangmm()`](https://ielbadisy.github.io/panglm/reference/pangmm.md),
-[`panhurdle()`](https://ielbadisy.github.io/panglm/reference/panhurdle.md),
-[`paniv()`](https://ielbadisy.github.io/panglm/reference/paniv.md),
-[`panqr()`](https://ielbadisy.github.io/panglm/reference/panqr.md),
-[`panselect()`](https://ielbadisy.github.io/panglm/reference/panselect.md),
-[`twopart()`](https://ielbadisy.github.io/panglm/reference/twopart.md)
+[`panfmm()`](https://elbadisyimad.com/panglm/reference/panfmm.md),
+[`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md),
+[`pangmm()`](https://elbadisyimad.com/panglm/reference/pangmm.md),
+[`panhurdle()`](https://elbadisyimad.com/panglm/reference/panhurdle.md),
+[`paniv()`](https://elbadisyimad.com/panglm/reference/paniv.md),
+[`panqr()`](https://elbadisyimad.com/panglm/reference/panqr.md),
+[`panselect()`](https://elbadisyimad.com/panglm/reference/panselect.md),
+[`twopart()`](https://elbadisyimad.com/panglm/reference/twopart.md)
 
 ## Examples
 

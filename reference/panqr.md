@@ -30,9 +30,10 @@ panqr(
 
   a formula `y ~ regressors`. `lag(x, k)`, `lead(x, k)` and `diff(x)`
   are taken within each individual on the grid of sorted distinct time
-  values (needs `index = c(id, time)`); the first waves of each
-  individual get `NA` and leave the sample, and `lag(x, 0:2)` gives
-  several lags
+  values (see "Lags and differences" in
+  [`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md);
+  needs `index = c(id, time)`); the first waves of each individual get
+  `NA` and leave the sample, and `lag(x, 0:2)` gives several lags
 
 - data:
 
@@ -191,23 +192,23 @@ moments. *Journal of Econometrics*, 213(1), 145-173.
 
 ## See also
 
-[`summary.panqr()`](https://ielbadisy.github.io/panglm/reference/summary.panqr.md),
-[`vcov.panqr()`](https://ielbadisy.github.io/panglm/reference/vcov.panqr.md)
+[`summary.panqr()`](https://elbadisyimad.com/panglm/reference/summary.panqr.md),
+[`vcov.panqr()`](https://elbadisyimad.com/panglm/reference/vcov.panqr.md)
 and
-[`plot.panqr()`](https://ielbadisy.github.io/panglm/reference/plot.panqr.md)
+[`plot.panqr()`](https://elbadisyimad.com/panglm/reference/plot.panqr.md)
 for the fitted model,
-[tidy-methods](https://ielbadisy.github.io/panglm/reference/tidy-methods.md)
+[tidy-methods](https://elbadisyimad.com/panglm/reference/tidy-methods.md)
 for `tidy()` and `glance()`.
 
 Other panel models:
-[`panfmm()`](https://ielbadisy.github.io/panglm/reference/panfmm.md),
-[`panfmmselect()`](https://ielbadisy.github.io/panglm/reference/panfmmselect.md),
-[`panglm()`](https://ielbadisy.github.io/panglm/reference/panglm.md),
-[`pangmm()`](https://ielbadisy.github.io/panglm/reference/pangmm.md),
-[`panhurdle()`](https://ielbadisy.github.io/panglm/reference/panhurdle.md),
-[`paniv()`](https://ielbadisy.github.io/panglm/reference/paniv.md),
-[`panselect()`](https://ielbadisy.github.io/panglm/reference/panselect.md),
-[`twopart()`](https://ielbadisy.github.io/panglm/reference/twopart.md)
+[`panfmm()`](https://elbadisyimad.com/panglm/reference/panfmm.md),
+[`panfmmselect()`](https://elbadisyimad.com/panglm/reference/panfmmselect.md),
+[`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md),
+[`pangmm()`](https://elbadisyimad.com/panglm/reference/pangmm.md),
+[`panhurdle()`](https://elbadisyimad.com/panglm/reference/panhurdle.md),
+[`paniv()`](https://elbadisyimad.com/panglm/reference/paniv.md),
+[`panselect()`](https://elbadisyimad.com/panglm/reference/panselect.md),
+[`twopart()`](https://elbadisyimad.com/panglm/reference/twopart.md)
 
 ## Examples
 

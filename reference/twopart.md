@@ -83,23 +83,23 @@ twopart(
 - vcov:
 
   covariance type passed to
-  [`panglm()`](https://ielbadisy.github.io/panglm/reference/panglm.md)
-  for both parts
+  [`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md) for
+  both parts
 
 - R, maxit, tol:
 
   passed to
-  [`panglm()`](https://ielbadisy.github.io/panglm/reference/panglm.md)
+  [`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md)
 
 ## Value
 
 an object of class `"twopart"` with components `binary` and `positive`
 (the two
-[`panglm()`](https://ielbadisy.github.io/panglm/reference/panglm.md)
-fits), `retransformation` (the factor `phi`, 1 for the gamma part) and
-the settings used. Methods: `print`, `summary`, `coef`, `vcov`,
-`confint`, `predict`, `fitted`, `logLik`, `nobs`,
-[`partialeffects()`](https://ielbadisy.github.io/panglm/reference/partialeffects.md),
+[`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md) fits),
+`retransformation` (the factor `phi`, 1 for the gamma part) and the
+settings used. Methods: `print`, `summary`, `coef`, `vcov`, `confint`,
+`predict`, `fitted`, `logLik`, `nobs`,
+[`partialeffects()`](https://elbadisyimad.com/panglm/reference/partialeffects.md),
 `tidy` and `glance`.
 
 ## Details
@@ -135,9 +135,9 @@ both parts, the Mundlak correlated random effects device.
 ## Validation
 
 Both parts are
-[`panglm()`](https://ielbadisy.github.io/panglm/reference/panglm.md)
-fits and share its validation. The package tests also check that the
-pooled two-part prediction is the product of the two
+[`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md) fits
+and share its validation. The package tests also check that the pooled
+two-part prediction is the product of the two
 [`stats::glm()`](https://rdrr.io/r/stats/glm.html) fits, the smearing
 retransformation of the lognormal part, and the correlated
 random-intercept likelihood against two-dimensional numerical
@@ -161,23 +161,23 @@ Economics*, 13, 705-724.
 
 ## See also
 
-[`predict.twopart()`](https://ielbadisy.github.io/panglm/reference/predict.twopart.md),
-[`confint.twopart()`](https://ielbadisy.github.io/panglm/reference/confint.twopart.md)
+[`predict.twopart()`](https://elbadisyimad.com/panglm/reference/predict.twopart.md),
+[`confint.twopart()`](https://elbadisyimad.com/panglm/reference/confint.twopart.md)
 and
-[`partialeffects()`](https://ielbadisy.github.io/panglm/reference/partialeffects.md)
+[`partialeffects()`](https://elbadisyimad.com/panglm/reference/partialeffects.md)
 for the fitted model,
-[tidy-methods](https://ielbadisy.github.io/panglm/reference/tidy-methods.md)
+[tidy-methods](https://elbadisyimad.com/panglm/reference/tidy-methods.md)
 for `tidy()` and `glance()`.
 
 Other panel models:
-[`panfmm()`](https://ielbadisy.github.io/panglm/reference/panfmm.md),
-[`panfmmselect()`](https://ielbadisy.github.io/panglm/reference/panfmmselect.md),
-[`panglm()`](https://ielbadisy.github.io/panglm/reference/panglm.md),
-[`pangmm()`](https://ielbadisy.github.io/panglm/reference/pangmm.md),
-[`panhurdle()`](https://ielbadisy.github.io/panglm/reference/panhurdle.md),
-[`paniv()`](https://ielbadisy.github.io/panglm/reference/paniv.md),
-[`panqr()`](https://ielbadisy.github.io/panglm/reference/panqr.md),
-[`panselect()`](https://ielbadisy.github.io/panglm/reference/panselect.md)
+[`panfmm()`](https://elbadisyimad.com/panglm/reference/panfmm.md),
+[`panfmmselect()`](https://elbadisyimad.com/panglm/reference/panfmmselect.md),
+[`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md),
+[`pangmm()`](https://elbadisyimad.com/panglm/reference/pangmm.md),
+[`panhurdle()`](https://elbadisyimad.com/panglm/reference/panhurdle.md),
+[`paniv()`](https://elbadisyimad.com/panglm/reference/paniv.md),
+[`panqr()`](https://elbadisyimad.com/panglm/reference/panqr.md),
+[`panselect()`](https://elbadisyimad.com/panglm/reference/panselect.md)
 
 ## Examples
 

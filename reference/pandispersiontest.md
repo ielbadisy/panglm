@@ -39,13 +39,13 @@ ones.
 
 ## See also
 
-[`negbinfamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md)
+[`negbinfamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md)
 for the negative binomial alternative.
 
 Other tests:
-[`jointtest()`](https://ielbadisy.github.io/panglm/reference/jointtest.md),
-[`lineartest()`](https://ielbadisy.github.io/panglm/reference/lineartest.md),
-[`panhausman()`](https://ielbadisy.github.io/panglm/reference/panhausman.md)
+[`jointtest()`](https://elbadisyimad.com/panglm/reference/jointtest.md),
+[`lineartest()`](https://elbadisyimad.com/panglm/reference/lineartest.md),
+[`panhausman()`](https://elbadisyimad.com/panglm/reference/panhausman.md)
 
 ## Examples
 

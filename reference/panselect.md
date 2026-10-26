@@ -173,23 +173,23 @@ Panel Data*, 2nd edition, section 19.9. MIT Press.
 
 ## See also
 
-[`summary.panselect()`](https://ielbadisy.github.io/panglm/reference/summary.panselect.md),
-[`vcov.panselect()`](https://ielbadisy.github.io/panglm/reference/vcov.panselect.md)
+[`summary.panselect()`](https://elbadisyimad.com/panglm/reference/summary.panselect.md),
+[`vcov.panselect()`](https://elbadisyimad.com/panglm/reference/vcov.panselect.md)
 and
-[`predict.panselect()`](https://ielbadisy.github.io/panglm/reference/predict.panselect.md)
+[`predict.panselect()`](https://elbadisyimad.com/panglm/reference/predict.panselect.md)
 for the fitted model,
-[tidy-methods](https://ielbadisy.github.io/panglm/reference/tidy-methods.md)
+[tidy-methods](https://elbadisyimad.com/panglm/reference/tidy-methods.md)
 for `tidy()` and `glance()`.
 
 Other panel models:
-[`panfmm()`](https://ielbadisy.github.io/panglm/reference/panfmm.md),
-[`panfmmselect()`](https://ielbadisy.github.io/panglm/reference/panfmmselect.md),
-[`panglm()`](https://ielbadisy.github.io/panglm/reference/panglm.md),
-[`pangmm()`](https://ielbadisy.github.io/panglm/reference/pangmm.md),
-[`panhurdle()`](https://ielbadisy.github.io/panglm/reference/panhurdle.md),
-[`paniv()`](https://ielbadisy.github.io/panglm/reference/paniv.md),
-[`panqr()`](https://ielbadisy.github.io/panglm/reference/panqr.md),
-[`twopart()`](https://ielbadisy.github.io/panglm/reference/twopart.md)
+[`panfmm()`](https://elbadisyimad.com/panglm/reference/panfmm.md),
+[`panfmmselect()`](https://elbadisyimad.com/panglm/reference/panfmmselect.md),
+[`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md),
+[`pangmm()`](https://elbadisyimad.com/panglm/reference/pangmm.md),
+[`panhurdle()`](https://elbadisyimad.com/panglm/reference/panhurdle.md),
+[`paniv()`](https://elbadisyimad.com/panglm/reference/paniv.md),
+[`panqr()`](https://elbadisyimad.com/panglm/reference/panqr.md),
+[`twopart()`](https://elbadisyimad.com/panglm/reference/twopart.md)
 
 ## Examples
 

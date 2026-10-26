@@ -14,7 +14,7 @@ plot(x, xlab = "Event time", ylab = "Estimate", ...)
 - x:
 
   a `"panglm_eventstudy"` object from
-  [`eventstudy()`](https://ielbadisy.github.io/panglm/reference/eventstudy.md)
+  [`eventstudy()`](https://elbadisyimad.com/panglm/reference/eventstudy.md)
 
 - xlab, ylab:
 
@@ -32,7 +32,7 @@ plot(x, xlab = "Event time", ylab = "Estimate", ...)
 ## See also
 
 Other eventstudy methods:
-[`eventstudy-methods`](https://ielbadisy.github.io/panglm/reference/eventstudy-methods.md)
+[`eventstudy-methods`](https://elbadisyimad.com/panglm/reference/eventstudy-methods.md)
 
 ## Examples
 

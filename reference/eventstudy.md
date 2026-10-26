@@ -1,7 +1,7 @@
 # Event-study regression with a pre-trend test
 
 Replaces the single treatment indicator of
-[`did()`](https://ielbadisy.github.io/panglm/reference/did.md) by
+[`did()`](https://elbadisyimad.com/panglm/reference/did.md) by
 indicators of event time `e = t - first treated period`, from `-leads`
 to `lags`, with `e = ref` (by default the period before treatment) as
 the omitted reference, in a two-way fixed-effects model. Event times
@@ -81,16 +81,16 @@ eventstudy(
 - ...:
 
   further arguments passed to
-  [`panglm()`](https://ielbadisy.github.io/panglm/reference/panglm.md)
+  [`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md)
 
 ## Value
 
 an object of class `"panglm_eventstudy"`: a list with `fit` (the
-[`panglm()`](https://ielbadisy.github.io/panglm/reference/panglm.md)
-fit), `estimates` (a data frame with `event`, `estimate`, `se`, `lower`,
+[`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md) fit),
+`estimates` (a data frame with `event`, `estimate`, `se`, `lower`,
 `upper`; the reference row is zero) and `pretrend` (the joint test of
 the leads, from
-[`jointtest()`](https://ielbadisy.github.io/panglm/reference/jointtest.md))
+[`jointtest()`](https://elbadisyimad.com/panglm/reference/jointtest.md))
 and `call` (the `eventstudy()` call, also stored as the `call` of
 `fit`). Methods: `print`, `summary`, `coef`, `vcov`, `confint`,
 `logLik`, `nobs`, `plot`, `tidy` and `glance`.
@@ -103,12 +103,11 @@ second coefficient is dropped (with a warning). With staggered adoption
 and heterogeneous effects the TWFE event-study coefficients are
 contaminated by effects from other periods (Sun and Abraham 2021); use a
 heterogeneity-robust estimator such as
-[`attgt()`](https://ielbadisy.github.io/panglm/reference/attgt.md) or
-[`etwfe()`](https://ielbadisy.github.io/panglm/reference/etwfe.md)
-there.
+[`attgt()`](https://elbadisyimad.com/panglm/reference/attgt.md) or
+[`etwfe()`](https://elbadisyimad.com/panglm/reference/etwfe.md) there.
 
 With `family = "binomial"` the model is the two-way conditional logit
-(see [`did()`](https://ielbadisy.github.io/panglm/reference/did.md)) and
+(see [`did()`](https://elbadisyimad.com/panglm/reference/did.md)) and
 the event-time coefficients are log odds ratios relative to the
 reference event time.
 
@@ -135,17 +134,17 @@ Econometrics*, 225, 175-199.
 
 ## See also
 
-[eventstudy-methods](https://ielbadisy.github.io/panglm/reference/eventstudy-methods.md)
+[eventstudy-methods](https://elbadisyimad.com/panglm/reference/eventstudy-methods.md)
 and
-[`plot.panglm_eventstudy()`](https://ielbadisy.github.io/panglm/reference/plot.panglm_eventstudy.md)
+[`plot.panglm_eventstudy()`](https://elbadisyimad.com/panglm/reference/plot.panglm_eventstudy.md)
 for the fitted model,
-[tidy-methods](https://ielbadisy.github.io/panglm/reference/tidy-methods.md)
+[tidy-methods](https://elbadisyimad.com/panglm/reference/tidy-methods.md)
 for `tidy()` and `glance()`.
 
 Other policy evaluation:
-[`attgt()`](https://ielbadisy.github.io/panglm/reference/attgt.md),
-[`did()`](https://ielbadisy.github.io/panglm/reference/did.md),
-[`etwfe()`](https://ielbadisy.github.io/panglm/reference/etwfe.md)
+[`attgt()`](https://elbadisyimad.com/panglm/reference/attgt.md),
+[`did()`](https://elbadisyimad.com/panglm/reference/did.md),
+[`etwfe()`](https://elbadisyimad.com/panglm/reference/etwfe.md)
 
 ## Examples
 

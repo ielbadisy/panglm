@@ -4,7 +4,7 @@
 [`nobs()`](https://rdrr.io/r/stats/nobs.html),
 [`confint()`](https://rdrr.io/r/stats/confint.html) and
 [`summary()`](https://rdrr.io/r/base/summary.html) for the fits of
-[`eventstudy()`](https://ielbadisy.github.io/panglm/reference/eventstudy.md).
+[`eventstudy()`](https://elbadisyimad.com/panglm/reference/eventstudy.md).
 The coefficients are labelled by event time, as in
 [`coef()`](https://rdrr.io/r/stats/coef.html). The reference period
 enters as a coefficient fixed at zero, with zero variance and covariance
@@ -40,7 +40,7 @@ logLik(object, ...)
 - object:
 
   a `"panglm_eventstudy"` fit from
-  [`eventstudy()`](https://ielbadisy.github.io/panglm/reference/eventstudy.md)
+  [`eventstudy()`](https://elbadisyimad.com/panglm/reference/eventstudy.md)
 
 - ...:
 
@@ -83,7 +83,7 @@ description.
 ## See also
 
 Other eventstudy methods:
-[`plot.panglm_eventstudy()`](https://ielbadisy.github.io/panglm/reference/plot.panglm_eventstudy.md)
+[`plot.panglm_eventstudy()`](https://elbadisyimad.com/panglm/reference/plot.panglm_eventstudy.md)
 
 ## Examples
 

@@ -2,7 +2,7 @@
 
 With `type = NULL` (the default) the covariance the object was fit with
 is returned (set by the `vcov` argument of
-[`panglm()`](https://ielbadisy.github.io/panglm/reference/panglm.md)).
+[`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md)).
 `type = "classical"` returns the model-based covariance, also for a fit
 made with a robust `vcov`. `type = "HC1"` (heteroskedasticity-robust /
 White) and `type = "cluster"` (cluster-robust sandwich, clustered by the
@@ -63,19 +63,19 @@ dimension.
 ## See also
 
 Other panglm methods:
-[`confint.panglm()`](https://ielbadisy.github.io/panglm/reference/confint.panglm.md),
-[`effectcurve()`](https://ielbadisy.github.io/panglm/reference/effectcurve.md),
-[`fitted.panglm()`](https://ielbadisy.github.io/panglm/reference/fitted.panglm.md),
-[`glance.panglm()`](https://ielbadisy.github.io/panglm/reference/glance.panglm.md),
-[`logLik.panglm()`](https://ielbadisy.github.io/panglm/reference/logLik.panglm.md),
-[`model.matrix.panglm()`](https://ielbadisy.github.io/panglm/reference/model.matrix.panglm.md),
-[`partialeffects.panordered()`](https://ielbadisy.github.io/panglm/reference/partialeffects.md),
-[`plot.panglm()`](https://ielbadisy.github.io/panglm/reference/plot.panglm.md),
-[`plot.panglm_effectcurve()`](https://ielbadisy.github.io/panglm/reference/plot.panglm_effectcurve.md),
-[`predict.panglm()`](https://ielbadisy.github.io/panglm/reference/predict.panglm.md),
-[`predict.panordered()`](https://ielbadisy.github.io/panglm/reference/predict.panordered.md),
-[`summary.panglm()`](https://ielbadisy.github.io/panglm/reference/summary.panglm.md),
-[`tidy.panglm()`](https://ielbadisy.github.io/panglm/reference/tidy.panglm.md)
+[`confint.panglm()`](https://elbadisyimad.com/panglm/reference/confint.panglm.md),
+[`effectcurve()`](https://elbadisyimad.com/panglm/reference/effectcurve.md),
+[`fitted.panglm()`](https://elbadisyimad.com/panglm/reference/fitted.panglm.md),
+[`glance.panglm()`](https://elbadisyimad.com/panglm/reference/glance.panglm.md),
+[`logLik.panglm()`](https://elbadisyimad.com/panglm/reference/logLik.panglm.md),
+[`model.matrix.panglm()`](https://elbadisyimad.com/panglm/reference/model.matrix.panglm.md),
+[`partialeffects.panordered()`](https://elbadisyimad.com/panglm/reference/partialeffects.md),
+[`plot.panglm()`](https://elbadisyimad.com/panglm/reference/plot.panglm.md),
+[`plot.panglm_effectcurve()`](https://elbadisyimad.com/panglm/reference/plot.panglm_effectcurve.md),
+[`predict.panglm()`](https://elbadisyimad.com/panglm/reference/predict.panglm.md),
+[`predict.panordered()`](https://elbadisyimad.com/panglm/reference/predict.panordered.md),
+[`summary.panglm()`](https://elbadisyimad.com/panglm/reference/summary.panglm.md),
+[`tidy.panglm()`](https://elbadisyimad.com/panglm/reference/tidy.panglm.md)
 
 ## Examples
 

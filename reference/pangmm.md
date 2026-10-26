@@ -73,7 +73,7 @@ pangmm(
   clustered by individual) or `"classical"`; `"cluster"` is accepted as
   a synonym of `"robust"`, the name used by the other estimators of the
   package. See
-  [`vcov.pangmm()`](https://ielbadisy.github.io/panglm/reference/vcov.pangmm.md)
+  [`vcov.pangmm()`](https://elbadisyimad.com/panglm/reference/vcov.pangmm.md)
   to switch after fitting
 
 ## Value
@@ -243,23 +243,23 @@ and system GMM in Stata. *Stata Journal*, 9, 86-136.
 
 ## See also
 
-[`summary.pangmm()`](https://ielbadisy.github.io/panglm/reference/summary.pangmm.md),
-[`vcov.pangmm()`](https://ielbadisy.github.io/panglm/reference/vcov.pangmm.md)
+[`summary.pangmm()`](https://elbadisyimad.com/panglm/reference/summary.pangmm.md),
+[`vcov.pangmm()`](https://elbadisyimad.com/panglm/reference/vcov.pangmm.md)
 and
-[`predict.pangmm()`](https://ielbadisy.github.io/panglm/reference/predict.pangmm.md)
+[`predict.pangmm()`](https://elbadisyimad.com/panglm/reference/predict.pangmm.md)
 for the fitted model,
-[tidy-methods](https://ielbadisy.github.io/panglm/reference/tidy-methods.md)
+[tidy-methods](https://elbadisyimad.com/panglm/reference/tidy-methods.md)
 for `tidy()` and `glance()`.
 
 Other panel models:
-[`panfmm()`](https://ielbadisy.github.io/panglm/reference/panfmm.md),
-[`panfmmselect()`](https://ielbadisy.github.io/panglm/reference/panfmmselect.md),
-[`panglm()`](https://ielbadisy.github.io/panglm/reference/panglm.md),
-[`panhurdle()`](https://ielbadisy.github.io/panglm/reference/panhurdle.md),
-[`paniv()`](https://ielbadisy.github.io/panglm/reference/paniv.md),
-[`panqr()`](https://ielbadisy.github.io/panglm/reference/panqr.md),
-[`panselect()`](https://ielbadisy.github.io/panglm/reference/panselect.md),
-[`twopart()`](https://ielbadisy.github.io/panglm/reference/twopart.md)
+[`panfmm()`](https://elbadisyimad.com/panglm/reference/panfmm.md),
+[`panfmmselect()`](https://elbadisyimad.com/panglm/reference/panfmmselect.md),
+[`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md),
+[`panhurdle()`](https://elbadisyimad.com/panglm/reference/panhurdle.md),
+[`paniv()`](https://elbadisyimad.com/panglm/reference/paniv.md),
+[`panqr()`](https://elbadisyimad.com/panglm/reference/panqr.md),
+[`panselect()`](https://elbadisyimad.com/panglm/reference/panselect.md),
+[`twopart()`](https://elbadisyimad.com/panglm/reference/twopart.md)
 
 ## Examples
 

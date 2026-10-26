@@ -42,8 +42,10 @@ panfmm(
   `offset(log(exposure))` for counts over different exposure periods;
   the offset enters the linear predictor of every class with
   coefficient 1. `lag(x, k)`, `lead(x, k)` and `diff(x)` are taken
-  within each individual on the grid of sorted distinct time values
-  (needs `index = c(id, time)`); the first waves of each individual get
+  within each individual on the grid of sorted distinct time values (see
+  "Lags and differences" in
+  [`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md);
+  needs `index = c(id, time)`); the first waves of each individual get
   `NA` and leave the sample, and `lag(x, 0:2)` gives several lags
 
 - data:
@@ -84,7 +86,7 @@ panfmm(
 
   `"classical"` (inverse negative Hessian) or `"cluster"` (sandwich
   clustered by individual); see
-  [`vcov.panfmm()`](https://ielbadisy.github.io/panglm/reference/vcov.panfmm.md)
+  [`vcov.panfmm()`](https://elbadisyimad.com/panglm/reference/vcov.panfmm.md)
 
 - maxit:
 
@@ -222,23 +224,23 @@ Statistical Software*, 28(4).
 
 ## See also
 
-[`summary.panfmm()`](https://ielbadisy.github.io/panglm/reference/summary.panfmm.md),
-[`vcov.panfmm()`](https://ielbadisy.github.io/panglm/reference/vcov.panfmm.md)
+[`summary.panfmm()`](https://elbadisyimad.com/panglm/reference/summary.panfmm.md),
+[`vcov.panfmm()`](https://elbadisyimad.com/panglm/reference/vcov.panfmm.md)
 and
-[`predict.panfmm()`](https://ielbadisy.github.io/panglm/reference/predict.panfmm.md)
+[`predict.panfmm()`](https://elbadisyimad.com/panglm/reference/predict.panfmm.md)
 for the fitted model,
-[tidy-methods](https://ielbadisy.github.io/panglm/reference/tidy-methods.md)
+[tidy-methods](https://elbadisyimad.com/panglm/reference/tidy-methods.md)
 for `tidy()` and `glance()`.
 
 Other panel models:
-[`panfmmselect()`](https://ielbadisy.github.io/panglm/reference/panfmmselect.md),
-[`panglm()`](https://ielbadisy.github.io/panglm/reference/panglm.md),
-[`pangmm()`](https://ielbadisy.github.io/panglm/reference/pangmm.md),
-[`panhurdle()`](https://ielbadisy.github.io/panglm/reference/panhurdle.md),
-[`paniv()`](https://ielbadisy.github.io/panglm/reference/paniv.md),
-[`panqr()`](https://ielbadisy.github.io/panglm/reference/panqr.md),
-[`panselect()`](https://ielbadisy.github.io/panglm/reference/panselect.md),
-[`twopart()`](https://ielbadisy.github.io/panglm/reference/twopart.md)
+[`panfmmselect()`](https://elbadisyimad.com/panglm/reference/panfmmselect.md),
+[`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md),
+[`pangmm()`](https://elbadisyimad.com/panglm/reference/pangmm.md),
+[`panhurdle()`](https://elbadisyimad.com/panglm/reference/panhurdle.md),
+[`paniv()`](https://elbadisyimad.com/panglm/reference/paniv.md),
+[`panqr()`](https://elbadisyimad.com/panglm/reference/panqr.md),
+[`panselect()`](https://elbadisyimad.com/panglm/reference/panselect.md),
+[`twopart()`](https://elbadisyimad.com/panglm/reference/twopart.md)
 
 ## Examples
 

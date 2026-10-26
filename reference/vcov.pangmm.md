@@ -34,8 +34,8 @@ the covariance matrix of the coefficients
 ## See also
 
 Other pangmm methods:
-[`predict.pangmm()`](https://ielbadisy.github.io/panglm/reference/predict.pangmm.md),
-[`summary.pangmm()`](https://ielbadisy.github.io/panglm/reference/summary.pangmm.md)
+[`predict.pangmm()`](https://elbadisyimad.com/panglm/reference/predict.pangmm.md),
+[`summary.pangmm()`](https://elbadisyimad.com/panglm/reference/summary.pangmm.md)
 
 ## Examples
 

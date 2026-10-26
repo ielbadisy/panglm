@@ -7,16 +7,16 @@ choose between them, which standard errors to report, and how to get
 average partial effects, predictions, tables and plots. The other
 vignettes build on it:
 
-- [`vignette("panglm-outcomes")`](https://ielbadisy.github.io/panglm/articles/panglm-outcomes.md):
+- [`vignette("panglm-outcomes")`](https://elbadisyimad.com/panglm/articles/panglm-outcomes.md):
   counts, costs, bounded and censored outcomes;
-- [`vignette("panglm-endogeneity")`](https://ielbadisy.github.io/panglm/articles/panglm-endogeneity.md):
+- [`vignette("panglm-endogeneity")`](https://elbadisyimad.com/panglm/articles/panglm-endogeneity.md):
   instrumental variables, Hausman-Taylor, dynamic GMM and sample
   selection;
-- [`vignette("panglm-policy")`](https://ielbadisy.github.io/panglm/articles/panglm-policy.md):
+- [`vignette("panglm-policy")`](https://elbadisyimad.com/panglm/articles/panglm-policy.md):
   difference-in-differences, event studies and staggered adoption;
-- [`vignette("panglm-heterogeneity")`](https://ielbadisy.github.io/panglm/articles/panglm-heterogeneity.md):
+- [`vignette("panglm-heterogeneity")`](https://elbadisyimad.com/panglm/articles/panglm-heterogeneity.md):
   random slopes, latent classes and quantile regression;
-- [`vignette("panglm-methods")`](https://ielbadisy.github.io/panglm/articles/panglm-methods.md):
+- [`vignette("panglm-methods")`](https://elbadisyimad.com/panglm/articles/panglm-methods.md):
   the technical reference.
 
 Which estimator to start from:
@@ -257,7 +257,7 @@ confint(fit_fe)
 
 The same interface fits binary, count and other nonlinear models through
 `family`. Their coefficients are on the link scale.
-[`partialeffects()`](https://ielbadisy.github.io/panglm/reference/partialeffects.md)
+[`partialeffects()`](https://elbadisyimad.com/panglm/reference/partialeffects.md)
 reports average partial effects on the outcome scale: the mean
 derivative for continuous regressors and the mean discrete change for
 binary ones, with delta-method standard errors from the stored

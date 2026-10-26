@@ -40,8 +40,8 @@ the covariance matrix of all parameters
 ## See also
 
 Other panfmm methods:
-[`predict.panfmm()`](https://ielbadisy.github.io/panglm/reference/predict.panfmm.md),
-[`summary.panfmm()`](https://ielbadisy.github.io/panglm/reference/summary.panfmm.md)
+[`predict.panfmm()`](https://elbadisyimad.com/panglm/reference/predict.panfmm.md),
+[`summary.panfmm()`](https://elbadisyimad.com/panglm/reference/summary.panfmm.md)
 
 ## Examples
 

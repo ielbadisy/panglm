@@ -11,7 +11,7 @@ the `q - 1` restrictions that the coefficient vector is orthogonal to
 the complement of `a`, so it accepts any covariance type, including
 cluster-robust ones. For a test of whether the regressor matters at all,
 use
-[`jointtest()`](https://ielbadisy.github.io/panglm/reference/jointtest.md)
+[`jointtest()`](https://elbadisyimad.com/panglm/reference/jointtest.md)
 on its columns.
 
 ## Usage
@@ -33,12 +33,12 @@ lineartest(object, variable, vcov = NULL)
 - vcov:
 
   `NULL` (the covariance stored on the fit) or a type passed to
-  [`vcov.panglm()`](https://ielbadisy.github.io/panglm/reference/vcov.panglm.md)
+  [`vcov.panglm()`](https://elbadisyimad.com/panglm/reference/vcov.panglm.md)
 
 ## Value
 
 an object of class `"panglm_jointtest"`, as returned by
-[`jointtest()`](https://ielbadisy.github.io/panglm/reference/jointtest.md).
+[`jointtest()`](https://elbadisyimad.com/panglm/reference/jointtest.md).
 
 ## Validation
 
@@ -49,9 +49,9 @@ statistic against the Wald statistic.
 ## See also
 
 Other tests:
-[`jointtest()`](https://ielbadisy.github.io/panglm/reference/jointtest.md),
-[`pandispersiontest()`](https://ielbadisy.github.io/panglm/reference/pandispersiontest.md),
-[`panhausman()`](https://ielbadisy.github.io/panglm/reference/panhausman.md)
+[`jointtest()`](https://elbadisyimad.com/panglm/reference/jointtest.md),
+[`pandispersiontest()`](https://elbadisyimad.com/panglm/reference/pandispersiontest.md),
+[`panhausman()`](https://elbadisyimad.com/panglm/reference/panhausman.md)
 
 ## Examples
 

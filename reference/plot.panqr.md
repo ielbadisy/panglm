@@ -1,7 +1,7 @@
 # Plot a panel quantile regression fit
 
 Base-graphics plot of the coefficients of a
-[`panqr()`](https://ielbadisy.github.io/panglm/reference/panqr.md) fit
+[`panqr()`](https://elbadisyimad.com/panglm/reference/panqr.md) fit
 across the estimated quantiles, one panel per term: the estimates joined
 by a line, a shaded pointwise Wald confidence band (from the same
 variances as [`confint()`](https://rdrr.io/r/stats/confint.html)), and a
@@ -77,8 +77,8 @@ plot(
 ## See also
 
 Other panqr methods:
-[`summary.panqr()`](https://ielbadisy.github.io/panglm/reference/summary.panqr.md),
-[`vcov.panqr()`](https://ielbadisy.github.io/panglm/reference/vcov.panqr.md)
+[`summary.panqr()`](https://elbadisyimad.com/panglm/reference/summary.panqr.md),
+[`vcov.panqr()`](https://elbadisyimad.com/panglm/reference/vcov.panqr.md)
 
 ## Examples
 

@@ -1,7 +1,7 @@
 # Predictions from a panel sample-selection fit
 
 Predictions from a
-[`panselect()`](https://ielbadisy.github.io/panglm/reference/panselect.md)
+[`panselect()`](https://elbadisyimad.com/panglm/reference/panselect.md)
 fit on `newdata`, a long data frame with the panel index columns and the
 variables of both equations (the outcome and the selection indicator
 themselves are not needed).
@@ -78,8 +78,8 @@ validation suite on GitHub.
 ## See also
 
 Other panselect methods:
-[`summary.panselect()`](https://ielbadisy.github.io/panglm/reference/summary.panselect.md),
-[`vcov.panselect()`](https://ielbadisy.github.io/panglm/reference/vcov.panselect.md)
+[`summary.panselect()`](https://elbadisyimad.com/panglm/reference/summary.panselect.md),
+[`vcov.panselect()`](https://elbadisyimad.com/panglm/reference/vcov.panselect.md)
 
 ## Examples
 

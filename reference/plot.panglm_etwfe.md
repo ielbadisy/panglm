@@ -1,9 +1,8 @@
 # Plot ETWFE treatment effects
 
 Plots the event-study aggregation of an
-[`etwfe()`](https://ielbadisy.github.io/panglm/reference/etwfe.md) fit
-(or the cohort or calendar aggregation) with pointwise confidence
-intervals.
+[`etwfe()`](https://elbadisyimad.com/panglm/reference/etwfe.md) fit (or
+the cohort or calendar aggregation) with pointwise confidence intervals.
 
 ## Usage
 
@@ -20,7 +19,7 @@ plot(x, type = NULL, xlab = NULL, ylab = "ATT", ...)
 - x:
 
   a `"panglm_etwfe"` fit from
-  [`etwfe()`](https://ielbadisy.github.io/panglm/reference/etwfe.md), or
+  [`etwfe()`](https://elbadisyimad.com/panglm/reference/etwfe.md), or
   its summary
 
 - type:
@@ -43,7 +42,7 @@ the plotted summary, invisibly
 ## See also
 
 Other etwfe methods:
-[`summary.panglm_etwfe()`](https://ielbadisy.github.io/panglm/reference/summary.panglm_etwfe.md)
+[`summary.panglm_etwfe()`](https://elbadisyimad.com/panglm/reference/summary.panglm_etwfe.md)
 
 ## Examples
 

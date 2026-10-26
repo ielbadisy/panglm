@@ -1,8 +1,8 @@
 # Confidence intervals for a two-part model
 
 Wald intervals for the coefficients of both parts of a
-[`twopart()`](https://ielbadisy.github.io/panglm/reference/twopart.md)
-fit, named as in [`coef()`](https://rdrr.io/r/stats/coef.html)
+[`twopart()`](https://elbadisyimad.com/panglm/reference/twopart.md) fit,
+named as in [`coef()`](https://rdrr.io/r/stats/coef.html)
 (`"binary:..."`, `"positive:..."`), from
 [`vcov()`](https://rdrr.io/r/stats/vcov.html) (block diagonal for
 independent parts, the joint covariance for `correlated = TRUE`).
@@ -39,7 +39,7 @@ a two-column matrix
 ## See also
 
 Other twopart methods:
-[`predict.twopart()`](https://ielbadisy.github.io/panglm/reference/predict.twopart.md)
+[`predict.twopart()`](https://elbadisyimad.com/panglm/reference/predict.twopart.md)
 
 ## Examples
 
@@ -54,6 +54,6 @@ confint(fit)
 #> binary:treatment     -4.799854e-01 1.997329e-01
 #> binary:crp           -7.260436e-02 8.511146e-02
 #> positive:(Intercept)  6.000000e+00 6.000000e+00
-#> positive:treatment    8.425852e-14 1.294359e-13
+#> positive:treatment    8.387221e-14 1.298222e-13
 #> positive:crp          1.000000e-01 1.000000e-01
 ```

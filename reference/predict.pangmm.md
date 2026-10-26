@@ -1,8 +1,8 @@
 # Predictions from a dynamic panel GMM fit
 
 Linear predictions from a
-[`pangmm()`](https://ielbadisy.github.io/panglm/reference/pangmm.md) fit
-on `newdata`, a long data frame with the panel index columns and the
+[`pangmm()`](https://elbadisyimad.com/panglm/reference/pangmm.md) fit on
+`newdata`, a long data frame with the panel index columns and the
 variables of the first part of the formula. Lags are taken within
 individuals over the sorted periods of `newdata`, as in the fit.
 
@@ -66,8 +66,8 @@ validation suite on GitHub.
 ## See also
 
 Other pangmm methods:
-[`summary.pangmm()`](https://ielbadisy.github.io/panglm/reference/summary.pangmm.md),
-[`vcov.pangmm()`](https://ielbadisy.github.io/panglm/reference/vcov.pangmm.md)
+[`summary.pangmm()`](https://elbadisyimad.com/panglm/reference/summary.pangmm.md),
+[`vcov.pangmm()`](https://elbadisyimad.com/panglm/reference/vcov.pangmm.md)
 
 ## Examples
 

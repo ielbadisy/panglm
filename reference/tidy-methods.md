@@ -4,15 +4,15 @@ Implement the
 [`generics::tidy()`](https://generics.r-lib.org/reference/tidy.html) and
 [`generics::glance()`](https://generics.r-lib.org/reference/glance.html)
 generics for the fits of
-[`twopart()`](https://ielbadisy.github.io/panglm/reference/twopart.md),
-[`pangmm()`](https://ielbadisy.github.io/panglm/reference/pangmm.md),
-[`paniv()`](https://ielbadisy.github.io/panglm/reference/paniv.md),
-[`panqr()`](https://ielbadisy.github.io/panglm/reference/panqr.md),
-[`panselect()`](https://ielbadisy.github.io/panglm/reference/panselect.md),
-[`panfmm()`](https://ielbadisy.github.io/panglm/reference/panfmm.md),
-[`attgt()`](https://ielbadisy.github.io/panglm/reference/attgt.md),
-[`etwfe()`](https://ielbadisy.github.io/panglm/reference/etwfe.md) and
-[`eventstudy()`](https://ielbadisy.github.io/panglm/reference/eventstudy.md),
+[`twopart()`](https://elbadisyimad.com/panglm/reference/twopart.md),
+[`pangmm()`](https://elbadisyimad.com/panglm/reference/pangmm.md),
+[`paniv()`](https://elbadisyimad.com/panglm/reference/paniv.md),
+[`panqr()`](https://elbadisyimad.com/panglm/reference/panqr.md),
+[`panselect()`](https://elbadisyimad.com/panglm/reference/panselect.md),
+[`panfmm()`](https://elbadisyimad.com/panglm/reference/panfmm.md),
+[`attgt()`](https://elbadisyimad.com/panglm/reference/attgt.md),
+[`etwfe()`](https://elbadisyimad.com/panglm/reference/etwfe.md) and
+[`eventstudy()`](https://elbadisyimad.com/panglm/reference/eventstudy.md),
 the hurdle model, and for the test objects of the Hausman, joint Wald
 and dispersion tests, so that they work with `broom` and `modelsummary`.
 
@@ -132,8 +132,8 @@ glance(x, ...)
 
 - type:
 
-  for [`attgt()`](https://ielbadisy.github.io/panglm/reference/attgt.md)
-  and [`etwfe()`](https://ielbadisy.github.io/panglm/reference/etwfe.md)
+  for [`attgt()`](https://elbadisyimad.com/panglm/reference/attgt.md)
+  and [`etwfe()`](https://elbadisyimad.com/panglm/reference/etwfe.md)
   fits, which effects to tidy (see Details)
 
 ## Value
@@ -155,17 +155,17 @@ identify the rows where a fit has several blocks of coefficients:
 `"prior"`), `class` (panfmm), `tau` (panqr: one row per term and
 quantile), `group`, `time`, `event` (attgt, etwfe, eventstudy).
 
-For [`attgt()`](https://ielbadisy.github.io/panglm/reference/attgt.md),
+For [`attgt()`](https://elbadisyimad.com/panglm/reference/attgt.md),
 `type = "attgt"` (the default) gives one row per group-time effect
 `ATT(g, t)`, named as in [`coef()`](https://rdrr.io/r/stats/coef.html);
 the other types are the aggregations of
-[`summary.panglm_attgt()`](https://ielbadisy.github.io/panglm/reference/summary.panglm_attgt.md).
-For [`etwfe()`](https://ielbadisy.github.io/panglm/reference/etwfe.md),
+[`summary.panglm_attgt()`](https://elbadisyimad.com/panglm/reference/summary.panglm_attgt.md).
+For [`etwfe()`](https://elbadisyimad.com/panglm/reference/etwfe.md),
 `type = "simple"` (the default) gives the overall ATT, `"group"`,
 `"calendar"` and `"event"` the aggregations of
-[`summary.panglm_etwfe()`](https://ielbadisy.github.io/panglm/reference/summary.panglm_etwfe.md),
+[`summary.panglm_etwfe()`](https://elbadisyimad.com/panglm/reference/summary.panglm_etwfe.md),
 and `"coefficients"` the coefficients of the underlying regression. For
-[`eventstudy()`](https://ielbadisy.github.io/panglm/reference/eventstudy.md)
+[`eventstudy()`](https://elbadisyimad.com/panglm/reference/eventstudy.md)
 the reference period is a row with estimate and standard error zero and
 a missing statistic. A statistic is missing whenever its standard error
 is zero or missing.
@@ -181,10 +181,10 @@ where the model is fitted by maximum likelihood (twopart, panfmm), and
 the specification tests reported by
 [`summary()`](https://rdrr.io/r/base/summary.html) (for example the
 Sargan, Hansen and Arellano-Bond tests of
-[`pangmm()`](https://ielbadisy.github.io/panglm/reference/pangmm.md),
-the pre-trend test of
-[`attgt()`](https://ielbadisy.github.io/panglm/reference/attgt.md) and
-[`eventstudy()`](https://ielbadisy.github.io/panglm/reference/eventstudy.md)).
+[`pangmm()`](https://elbadisyimad.com/panglm/reference/pangmm.md), the
+pre-trend test of
+[`attgt()`](https://elbadisyimad.com/panglm/reference/attgt.md) and
+[`eventstudy()`](https://elbadisyimad.com/panglm/reference/eventstudy.md)).
 
 ## Validation
 
@@ -200,10 +200,10 @@ the package's validation suite on GitHub, and the intervals against
 
 ## See also
 
-[`tidy.panglm()`](https://ielbadisy.github.io/panglm/reference/tidy.panglm.md)
+[`tidy.panglm()`](https://elbadisyimad.com/panglm/reference/tidy.panglm.md)
 and
-[`glance.panglm()`](https://ielbadisy.github.io/panglm/reference/glance.panglm.md)
-for [`panglm()`](https://ielbadisy.github.io/panglm/reference/panglm.md)
+[`glance.panglm()`](https://elbadisyimad.com/panglm/reference/glance.panglm.md)
+for [`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md)
 fits.
 
 ## Examples
