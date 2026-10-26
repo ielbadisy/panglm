@@ -24,7 +24,7 @@ linked to, whose threads are controlled outside panglm (for example with
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://ielbadisy.github.io/panglm/}
+  \item \url{https://elbadisyimad.com/panglm/}
   \item \url{https://CRAN.R-project.org/package=panglm}
   \item \url{https://github.com/ielbadisy/panglm}
   \item Report bugs at \url{https://github.com/ielbadisy/panglm/issues}

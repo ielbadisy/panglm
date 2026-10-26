@@ -106,18 +106,18 @@ partialeffects(re)
 ## Learn more
 
 - [Getting started with
-  panglm](https://ielbadisy.github.io/panglm/articles/panglm-intro.html)
+  panglm](https://elbadisyimad.com/panglm/articles/panglm-intro.html)
 - [Counts, costs, bounded and censored
-  outcomes](https://ielbadisy.github.io/panglm/articles/panglm-outcomes.html)
+  outcomes](https://elbadisyimad.com/panglm/articles/panglm-outcomes.html)
 - [Endogeneity: IV, Hausman-Taylor, GMM and
-  selection](https://ielbadisy.github.io/panglm/articles/panglm-endogeneity.html)
+  selection](https://elbadisyimad.com/panglm/articles/panglm-endogeneity.html)
 - [Policy evaluation: DiD, event studies, attgt and
-  etwfe](https://ielbadisy.github.io/panglm/articles/panglm-policy.html)
+  etwfe](https://elbadisyimad.com/panglm/articles/panglm-policy.html)
 - [Heterogeneity: random slopes, latent classes and quantile
-  regression](https://ielbadisy.github.io/panglm/articles/panglm-heterogeneity.html)
+  regression](https://elbadisyimad.com/panglm/articles/panglm-heterogeneity.html)
 - [Technical
-  reference](https://ielbadisy.github.io/panglm/articles/panglm-methods.html)
-- [Function reference](https://ielbadisy.github.io/panglm/reference/)
+  reference](https://elbadisyimad.com/panglm/articles/panglm-methods.html)
+- [Function reference](https://elbadisyimad.com/panglm/reference/)
 
 panglm is the software of a forthcoming book on panel data methods for
 health econometrics, whose examples it runs throughout.
