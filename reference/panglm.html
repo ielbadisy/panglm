@@ -121,7 +121,12 @@ same, since each individual is one observation of the means regression.</p></dd>
 <code>"negbin"</code>, <code>"gamma"</code>, <code>"ologit"</code>, <code>"oprobit"</code>, <code>"beta"</code>, <code>"tobit"</code>,
 or a family spec from <code><a href="panglm-families.html">gaussianfamily()</a></code> / <code><a href="panglm-families.html">poissonfamily()</a></code> /
 <code><a href="panglm-families.html">binomialfamily()</a></code> / <code><a href="panglm-families.html">negbinfamily()</a></code> / <code><a href="panglm-families.html">gammafamily()</a></code> /
-<code><a href="panglm-families.html">orderedfamily()</a></code> / <code><a href="panglm-families.html">betafamily()</a></code> / <code><a href="panglm-families.html">tobitfamily()</a></code></p></dd>
+<code><a href="panglm-families.html">orderedfamily()</a></code> / <code><a href="panglm-families.html">betafamily()</a></code> / <code><a href="panglm-families.html">tobitfamily()</a></code>. Base R family
+objects with a matching distribution and link are also accepted and
+mapped onto these: <code><a href="https://rdrr.io/r/stats/family.html" class="external-link">stats::gaussian()</a></code>, <code><a href="https://rdrr.io/r/stats/family.html" class="external-link">stats::poisson()</a></code>,
+<code>stats::binomial("logit")</code>, <code>stats::binomial("probit")</code> and
+<code>stats::Gamma("log")</code>; other stats families stop with an error naming
+the panglm constructor to use.</p></dd>
 
 
 <dt id="arg-weights">weights<a class="anchor" aria-label="anchor" href="#arg-weights"></a></dt>
@@ -488,7 +493,7 @@ model, <a href="tidy-methods.html">tidy-methods</a> for <code>tidy()</code> and 
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: -282.3 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Dispersion parameter: 1 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 35</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 5</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span><span class="va">fit_2w</span><span class="op">$</span><span class="va">time_effects</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>          1          2          3          4          5 </span>

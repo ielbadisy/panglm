@@ -76,7 +76,14 @@ panglm(
   /
   [`betafamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md)
   /
-  [`tobitfamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md)
+  [`tobitfamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md).
+  Base R family objects with a matching distribution and link are also
+  accepted and mapped onto these:
+  [`stats::gaussian()`](https://rdrr.io/r/stats/family.html),
+  [`stats::poisson()`](https://rdrr.io/r/stats/family.html),
+  `stats::binomial("logit")`, `stats::binomial("probit")` and
+  `stats::Gamma("log")`; other stats families stop with an error naming
+  the panglm constructor to use.
 
 - weights:
 
@@ -490,7 +497,7 @@ summary(fit_2w)
 #> 
 #> Log-likelihood: -282.3 
 #> Dispersion parameter: 1 
-#> Iterations: 35
+#> Iterations: 5
 #> 
 fit_2w$time_effects
 #>          1          2          3          4          5 

@@ -131,9 +131,12 @@ L_i(\beta \mid S_i) =
 ```
 
 evaluated with its score by a forward and backward recursion. Units with
-all-zero or all-one responses carry no information and are dropped. With
-`effect = "twoways"` the individual effects are conditioned out and time
-effects enter as dummies.
+all-zero or all-one responses carry no information and are dropped. The
+likelihood is maximized by Newton-Raphson; the gradient and Hessian are
+exact, from the derivatives of the same recursion (the algorithm of
+`survival::clogit(method = "exact")`), and the inverse of that Hessian
+is the classical covariance. With `effect = "twoways"` the individual
+effects are conditioned out and time effects enter as dummies.
 
 **Ordered logit.** `model = "within"` fits the blow-up and cluster
 estimator of Baetschmann, Staub and Winkelmann (2015): each observation

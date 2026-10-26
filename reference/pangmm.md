@@ -154,6 +154,12 @@ dummies in the level equation (which instrument themselves there). With
 a constant in the level equation
 ([`plm::pgmm()`](https://rdrr.io/pkg/plm/man/pgmm.html) omits it).
 
+Regressors that are not identified, because they are collinear with the
+time effects (for instance age in a balanced annual panel, whose first
+difference is constant) or with each other, are dropped with a warning,
+as in [`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md);
+they remain standard instruments when listed as such.
+
 ## Inference
 
 `vcov = "robust"` gives the one-step sandwich covariance or, for the

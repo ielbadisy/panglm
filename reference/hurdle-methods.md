@@ -88,10 +88,10 @@ fit <- panhurdle(exacerbations ~ crp, data = copd, index = c("id", "visit"))
 #> 26 group(s) with no within-group outcome variation dropped (all-0 or all-1) -- they carry no information for the conditional likelihood.
 coef(fit)
 #>   zero:crp  count:crp 
-#> 0.10889451 0.04246066 
+#> 0.10889286 0.04246066 
 confint(fit)
 #>                 2.5 %     97.5 %
-#> zero:crp  -0.05129217 0.26908120
+#> zero:crp  -0.05129363 0.26907935
 #> count:crp -0.00624235 0.09116367
 summary(fit)
 #> 

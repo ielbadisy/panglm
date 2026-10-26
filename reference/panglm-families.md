@@ -236,5 +236,5 @@ fit <- panglm(hospitalized ~ crp, data = copd, index = c("id", "visit"),
 #> 17 group(s) with no within-group outcome variation dropped (all-0 or all-1) -- they carry no information for the conditional likelihood.
 coef(fit)
 #>        crp 
-#> 0.09668049 
+#> 0.09667869 
 ```

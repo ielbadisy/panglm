@@ -215,6 +215,10 @@ differences for difference GMM, and for system GMM a constant and time
 dummies in the level equation (which instrument themselves there). With
 <code>effect = "individual"</code> there are no time effects; system GMM then keeps
 a constant in the level equation (<code><a href="https://rdrr.io/pkg/plm/man/pgmm.html" class="external-link">plm::pgmm()</a></code> omits it).</p>
+<p>Regressors that are not identified, because they are collinear with the
+time effects (for instance age in a balanced annual panel, whose first
+difference is constant) or with each other, are dropped with a warning,
+as in <code><a href="panglm.html">panglm()</a></code>; they remain standard instruments when listed as such.</p>
     </div>
     <div class="section level2">
     <h2 id="inference">Inference<a class="anchor" aria-label="anchor" href="#inference"></a></h2>
