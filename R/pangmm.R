@@ -64,6 +64,11 @@
 #' `effect = "individual"` there are no time effects; system GMM then keeps
 #' a constant in the level equation (`plm::pgmm()` omits it).
 #'
+#' Regressors that are not identified, because they are collinear with the
+#' time effects (for instance age in a balanced annual panel, whose first
+#' difference is constant) or with each other, are dropped with a warning,
+#' as in [panglm()]; they remain standard instruments when listed as such.
+#'
 #' @section Inference:
 #' `vcov = "robust"` gives the one-step sandwich covariance or, for the
 #' two-step estimator, the Windmeijer (2005) finite-sample corrected
@@ -443,6 +448,24 @@ pangmm <- function(formula, data, index,
   if (any(colSums(X != 0) == 0)) {
     stop("regressor(s) with no usable observation: ",
          paste(colnames(X)[colSums(X != 0) == 0], collapse = ", "), call. = FALSE)
+  }
+  # regressors collinear with the time effects (e.g. age in a balanced
+  # annual panel, whose first difference is constant) or with each other
+  # are not identified: drop them, keeping the time effects, as panglm() does.
+  # Identification needs a full-rank Z'X; its columns are scaled to unit
+  # length so that the tolerance does not depend on the units of the data.
+  ord <- c(intersect(timedummies, colnames(X)), setdiff(colnames(X), timedummies))
+  ZX <- crossprod(W, X[, ord, drop = FALSE])
+  cn <- sqrt(colSums(ZX^2))
+  qx <- qr(sweep(ZX, 2L, ifelse(cn > 0, cn, 1), "/"), tol = 1e-7)
+  if (qx$rank < ncol(X)) {
+    keep <- ord[qx$pivot[seq_len(qx$rank)]]
+    dropped <- setdiff(colnames(X), keep)
+    warning("rank-deficient model matrix: dropping unidentified column(s): ",
+            paste(dropped, collapse = ", "),
+            " (collinear with the time effects or the other regressors)", call. = FALSE)
+    X <- X[, colnames(X) %in% keep, drop = FALSE]
+    timedummies <- intersect(timedummies, colnames(X))
   }
   k <- ncol(X)
   L <- ncol(W)

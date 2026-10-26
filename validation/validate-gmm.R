@@ -56,7 +56,20 @@ for (i in seq_len(N)) {
 }
 bmi <- bmi[-sample(nrow(bmi), round(0.1 * nrow(bmi))), ]
 
+# RAND HIE, individuals observed in all five years: age rises by one each
+# year, so in the differenced equation it is collinear with the time
+# effects. pangmm() drops it with a warning (keeping it as a standard
+# instrument); plm::pgmm() stops on the singular system, so it is fitted
+# without age as a regressor and with age among the standard instruments.
+data("HealthIns", package = "pglm")
+hie5 <- transform(HealthIns, lmed = log1p(med))
+hie5 <- hie5[hie5$id %in% names(which(table(hie5$id) == 5)), ]
+
 fits <- list(
+  list(data = "HealthIns (balanced, T = 5)", label = "difference GMM, age collinear with time",
+       f = lmed ~ lag(lmed, 1) + age + size | lag(lmed, 2:99),
+       fplm = lmed ~ lag(lmed, 1) + size | lag(lmed, 2:99) | age + size,
+       d = hie5, idx = c("id", "year"), args = list()),
   list(data = "EmplUK", label = "difference GMM",
        f = log(emp) ~ lag(log(emp), 1:2) + lag(log(wage), 0:1) + log(capital) +
          lag(log(output), 0:1) | lag(log(emp), 2:99),
@@ -121,8 +134,11 @@ for (s in fits) {
   plm_args <- s$args[intersect(names(s$args), c("transformation", "collapse", "effect"))]
   b1 <- do.call(plm::pgmm, c(list(fplm, data = s$d, index = s$idx, model = "onestep"), plm_args))
   b2 <- do.call(plm::pgmm, c(list(fplm, data = s$d, index = s$idx, model = "twosteps"), plm_args))
-  a1 <- do.call(pangmm, c(list(s$f, data = s$d, index = s$idx, model = "onestep"), s$args))
-  a2 <- do.call(pangmm, c(list(s$f, data = s$d, index = s$idx, model = "twostep"), s$args))
+  # the HIE fit warns about the dropped regressor and the singular weights
+  a1 <- suppressWarnings(do.call(pangmm, c(list(s$f, data = s$d, index = s$idx,
+                                                model = "onestep"), s$args)))
+  a2 <- suppressWarnings(do.call(pangmm, c(list(s$f, data = s$d, index = s$idx,
+                                                model = "twostep"), s$args)))
   Np <- length(b1$W)
   vb1 <- plm::vcovHC(b1)
   vb2 <- plm::vcovHC(b2)

@@ -132,6 +132,11 @@ differences for difference GMM, and for system GMM a constant and time
 dummies in the level equation (which instrument themselves there). With
 \code{effect = "individual"} there are no time effects; system GMM then keeps
 a constant in the level equation (\code{plm::pgmm()} omits it).
+
+Regressors that are not identified, because they are collinear with the
+time effects (for instance age in a balanced annual panel, whose first
+difference is constant) or with each other, are dropped with a warning,
+as in \code{\link[=panglm]{panglm()}}; they remain standard instruments when listed as such.
 }
 
 \section{Inference}{

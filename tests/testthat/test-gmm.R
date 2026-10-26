@@ -213,3 +213,25 @@ test_that("pangmm() accepts vcov = 'cluster' as a synonym of 'robust'", {
   expect_identical(b$vcov_type, "robust")
   expect_identical(vcov(a, type = "cluster"), vcov(a, type = "robust"))
 })
+
+test_that("pangmm drops a regressor collinear with the time effects with a warning", {
+  set.seed(3)
+  N <- 150; TT <- 6
+  d <- data.frame(id = rep(seq_len(N), each = TT), t = rep(seq_len(TT), N))
+  d$age <- rep(runif(N, 20, 60), each = TT) + d$t  # first difference is 1
+  d$x <- rnorm(nrow(d))
+  mu <- rnorm(N)
+  d$y <- 0
+  for (i in seq_len(N)) {
+    r <- (i - 1) * TT + seq_len(TT)
+    y <- mu[i]
+    for (s in seq_len(TT)) { y <- 0.5 * y + 0.3 * d$x[r[s]] + mu[i] + rnorm(1); d$y[r[s]] <- y }
+  }
+  expect_warning(
+    a <- pangmm(y ~ lag(y, 1) + age + x | lag(y, 2:99), data = d, index = c("id", "t")),
+    "dropping unidentified column\\(s\\): age")
+  b <- pangmm(y ~ lag(y, 1) + x | lag(y, 2:99) | age + x, data = d, index = c("id", "t"))
+  expect_equal(coef(a), coef(b))
+  expect_equal(vcov(a), vcov(b))
+  expect_false("age" %in% names(coef(a)))
+})
