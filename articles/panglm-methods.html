@@ -218,9 +218,22 @@ it regresses
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>y</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo>−</mo><msub><mi>λ</mi><mi>i</mi></msub><msub><mover><mi>y</mi><mo accent="true">‾</mo></mover><mi>i</mi></msub></mrow><annotation encoding="application/x-tex">y_{it} - \lambda_i \bar y_i</annotation></semantics></math>
 on
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>x</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo>−</mo><msub><mi>λ</mi><mi>i</mi></msub><msub><mover><mi>x</mi><mo accent="true">‾</mo></mover><mi>i</mi></msub></mrow><annotation encoding="application/x-tex">x_{it} - \lambda_i \bar x_i</annotation></semantics></math>,
-with variance components from the within and between residuals. With
-weights, or with random slopes, the Gaussian model is fitted by maximum
-likelihood instead.</p>
+with variance components from the within and between residuals. In a
+balanced panel
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mover><mi>σ</mi><mo accent="true">̂</mo></mover><mi>α</mi><mn>2</mn></msubsup><mo>=</mo><msubsup><mi>s</mi><mi>b</mi><mn>2</mn></msubsup><mo>−</mo><msubsup><mover><mi>σ</mi><mo accent="true">̂</mo></mover><mi>ε</mi><mn>2</mn></msubsup><mi>/</mi><mi>T</mi></mrow><annotation encoding="application/x-tex">\hat\sigma_\alpha^2 = s_b^2 - \hat\sigma_\varepsilon^2 / T</annotation></semantics></math>
+with
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>s</mi><mi>b</mi><mn>2</mn></msubsup><annotation encoding="application/x-tex">s_b^2</annotation></semantics></math>
+the residual variance of the between regression. In an unbalanced panel
+the between regression weights each individual by
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>T</mi><mi>i</mi></msub><annotation encoding="application/x-tex">T_i</annotation></semantics></math>
+and the variance components solve the trace-based moment equations of
+<code>plm</code> (<code>random.method = "swar"</code>), which reduce to
+the balanced ones when all
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>T</mi><mi>i</mi></msub><annotation encoding="application/x-tex">T_i</annotation></semantics></math>
+are equal. A negative
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mover><mi>σ</mi><mo accent="true">̂</mo></mover><mi>α</mi><mn>2</mn></msubsup><annotation encoding="application/x-tex">\hat\sigma_\alpha^2</annotation></semantics></math>
+is set to zero with a warning. With weights, or with random slopes, the
+Gaussian model is fitted by maximum likelihood instead.</p>
 </div>
 <div class="section level2">
 <h2 id="nonlinear-fixed-effects">Nonlinear fixed effects<a class="anchor" aria-label="anchor" href="#nonlinear-fixed-effects"></a>
