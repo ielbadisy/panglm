@@ -187,7 +187,9 @@ test_that("a GLM slope variance at the boundary keeps finite standard errors", {
   tm <- suppressWarnings(glmmTMB::glmmTMB(yc ~ time + x + (1 + time | id), data = d,
                                           family = stats::poisson()))
   expect_equal(unname(se), unname(sqrt(diag(vcov(tm)$cond))), tolerance = 1e-4)
-  expect_equal(as.numeric(logLik(f)), as.numeric(logLik(tm)), tolerance = 1e-6)
+  # logLik() of glmmTMB is NA on some platforms when its Hessian is not positive
+  # definite at the boundary, so compare with the minimized objective instead
+  expect_equal(as.numeric(logLik(f)), -tm$fit$objective, tolerance = 1e-6)
   # a singular information matrix falls back on its generalized inverse
   H <- -diag(c(4, 1, 0))
   V <- slopes_theta_vcov(H)
