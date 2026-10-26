@@ -38,17 +38,34 @@
 #' `vcov = "bootstrap"` resamples whole individuals with replacement (a
 #' cluster bootstrap) `boot` times, repeats every step of the estimator and
 #' returns the covariance of the replicates. `vcov = "analytic"` gives:
-#' * `"mmqr"`: the asymptotic covariance of Machado and Santos Silva (2019),
-#'   with the matrix layout of `xtqreg` (version 1.5): it combines the
-#'   influence of the location, scale and `q(tau)` estimates, with the
-#'   density of the standardized error at `q(tau)` estimated by the
-#'   difference quotient `2h / (q(tau + h) - q(tau - h))` (as Stata's
-#'   `qreg, vce(iid)`) and the Hall and Sheather bandwidth `h`. The scale
-#'   influence uses the centered `V = 2 U (I(U >= 0) - mean(I(U >= 0))) - 1`
-#'   of the paper (also used by the Stata command `mmqreg`); `xtqreg` 1.5
-#'   omits the `- 1`, which inflates its standard errors away from the
-#'   median (by about 30% at `tau = 0.9` in simulations, where the centered
-#'   version matches the Monte Carlo standard deviation).
+#' * `"mmqr"`: a cluster-robust (by individual, or by `cluster`) sandwich
+#'   built from the influence function of `b(tau) = b + g q(tau)`. The
+#'   influence of observation `it` adds the three steps of the estimator:
+#'   the location within regression, `Q^{-1} x~_it R_it`; the scale within
+#'   regression, `q(tau) Q^{-1} x~_it sigma_it V_it`; and the quantile
+#'   `q(tau)`, `g s_i w_it / sum(s)`, with `Q = sum x~ x~'`, `s_i` the
+#'   scale of individual `i` at the regressor means and
+#'   `w_it = (tau - I(U_it <= q(tau))) / f(q(tau)) - U_it - q(tau) V_it`.
+#'   These are summed within clusters into `psi_g`, and
+#'   `V = G / (G - 1) * sum_g psi_g psi_g'` for `G` clusters. The density
+#'   of the standardized error at `q(tau)` is the difference quotient
+#'   `2h / (q(tau + h) - q(tau - h))` (as Stata's `qreg, vce(iid)`) with the
+#'   Hall and Sheather bandwidth `h`. The scale influence uses the centered
+#'   `V = 2 U (I(U >= 0) - mean(I(U >= 0))) - 1` of the paper (also used by
+#'   the Stata command `mmqreg`). Unlike the iid formula, it allows the
+#'   errors of an individual to be dependent (serial correlation, or an
+#'   individual component in `U`) and the errors to be heteroskedastic.
+#'
+#' `vcov = "iid"` (MM-QR only) gives the asymptotic covariance of Machado
+#' and Santos Silva (2019) under independent observations, with the matrix
+#' layout of `xtqreg` (version 1.5) and the same density estimate and
+#' centered `V`; `xtqreg` 1.5 omits the `- 1` in `V`, which inflates its
+#' standard errors away from the median. This was the analytic covariance
+#' of `"mmqr"` before panglm 1.6.1. It replaces observation-level products
+#' by their sample means and ignores the dependence within individuals; it
+#' can be far off with short panels (see the package's validation suite).
+#'
+#' The other models with `vcov = "analytic"`:
 #' * `"canay"`: a cluster-robust (by individual) sandwich built from the
 #'   influence function of the two-step estimator, which corrects the
 #'   quantile regression score `(tau - I(e < 0)) x` for the estimation of
@@ -62,7 +79,8 @@
 #' * `"pooling"`: the same kernel sandwich without the first-step terms,
 #'   clustered by individual.
 #'
-#' The cluster sandwiches carry no finite-sample factor. For `"mmqr"` the
+#' The `"canay"` and `"pooling"` cluster sandwiches carry no finite-sample
+#' factor; the `"mmqr"` one carries `G / (G - 1)`. For `"mmqr"` the
 #' location and scale coefficients are returned with the cluster-robust
 #' within covariance of the rest of the package
 #' (`G / (G - 1) * (n - 1) / (n - k)`, as `plm::vcovHC(type = "sss")`).
@@ -78,14 +96,18 @@
 #'   (and time) columns
 #' @param tau numeric vector of quantiles, each strictly between 0 and 1
 #' @param model `"canay"`, `"mmqr"` or `"pooling"`
-#' @param vcov `"analytic"`, `"bootstrap"` or `"none"`; the default is
-#'   `"bootstrap"` for `"canay"` and `"analytic"` otherwise
+#' @param vcov `"analytic"` (cluster-robust), `"iid"` (MM-QR only),
+#'   `"bootstrap"` or `"none"`; the default is `"bootstrap"` for `"canay"`
+#'   and `"analytic"` otherwise
 #' @param boot number of bootstrap replications for `vcov = "bootstrap"`
 #' @param na.action missing-data action passed to [stats::model.frame()]
 #' @param seed optional random seed for the bootstrap; the global random
 #'   number state is restored afterwards. With `seed = NULL` (the default)
 #'   the draws come from the global random number stream.
 #' @param R deprecated; use `boot`
+#' @param cluster optional name of a column of `data` to cluster the
+#'   analytic covariance on (`vcov = "analytic"` only, including the MM-QR
+#'   location and scale covariances); the default clusters by individual
 #' @return an object of class `"panqr"`, a list with components
 #'   `coefficients` (a matrix with one column per quantile), `vcov` (a list
 #'   of covariance matrices, one per quantile, or `NULL` for
@@ -97,6 +119,7 @@
 #'   `coefficients` and `vcov`), `q` (the quantiles of the standardized
 #'   errors) and `delta` (the individual scale effects including the
 #'   constant, so that `alpha_i(tau) = alpha_i + delta_i q(tau)`),
+#'   `cluster` and `n_clusters` (for the analytic covariances),
 #'   `dropped` (time-invariant regressors dropped), `n_singletons`
 #'   (individuals observed once, dropped for `"canay"` and `"mmqr"`), `nobs`,
 #'   `n_groups`,
@@ -117,9 +140,11 @@
 #' Checked in the package's validation suite on GitHub: the pooled model
 #' against `quantreg::rq()` and its kernel sandwich; the Canay and MM-QR
 #' estimators against implementations built from `plm::plm()`, `stats::lm()`
-#' and `quantreg::rq()`, with the MM-QR covariance checked against the formulas
-#' of the Stata command `xtqreg`; and Monte Carlo checks that the analytic
-#' standard errors match the sampling standard deviation.
+#' and `quantreg::rq()`, with the MM-QR iid covariance checked against the
+#' formulas of the Stata command `xtqreg`; the MM-QR cluster covariance
+#' against the cluster bootstrap and by Monte Carlo coverage with serially
+#' correlated errors; and Monte Carlo checks that the analytic standard
+#' errors match the sampling standard deviation.
 #' @examples
 #' # Simulated panel of 300 patients over 6 years. Annual health costs have
 #' # a patient effect and a heavy upper tail that widens with chronic
@@ -149,7 +174,7 @@
 panqr <- function(formula, data, index, tau = 0.5,
                   model = c("canay", "mmqr", "pooling"),
                   vcov = NULL, boot = 200, na.action = stats::na.omit,
-                  seed = NULL, R) {
+                  seed = NULL, R, cluster = NULL) {
   if (!missing(R)) {
     deprecate_once("panqr(R = )", "panqr(boot = )", what = "argument")
     if (!missing(boot)) stop("give only one of 'boot' and 'R'", call. = FALSE)
@@ -158,7 +183,19 @@ panqr <- function(formula, data, index, tau = 0.5,
   R <- boot
   model <- match.arg(model)
   if (is.null(vcov)) vcov <- if (model == "canay") "bootstrap" else "analytic"
-  vcov <- match.arg(vcov, c("analytic", "bootstrap", "none"))
+  vcov <- match.arg(vcov, c("analytic", "iid", "bootstrap", "none"))
+  if (vcov == "iid" && model != "mmqr") {
+    stop("vcov = 'iid' is available for model = 'mmqr' only", call. = FALSE)
+  }
+  if (!is.null(cluster)) {
+    if (!is.character(cluster) || length(cluster) != 1L || !cluster %in% names(data)) {
+      stop("'cluster' must be the name of one column of 'data'", call. = FALSE)
+    }
+    if (vcov != "analytic") {
+      stop("'cluster' applies to vcov = 'analytic' only (the bootstrap resamples individuals)",
+           call. = FALSE)
+    }
+  }
   if (!is.numeric(tau) || !length(tau) || anyNA(tau) || any(tau <= 0 | tau >= 1)) {
     stop("'tau' must be a numeric vector of quantiles strictly between 0 and 1", call. = FALSE)
   }
@@ -238,10 +275,19 @@ panqr <- function(formula, data, index, tau = 0.5,
     if (ncol(X) < 2L) stop("no time-varying regressors left", call. = FALSE)
   }
 
+  cgroup <- group
+  if (!is.null(cluster)) {
+    cl <- data[[cluster]][model_rows][ord]
+    if (anyNA(cl)) stop("the cluster column must not contain missing values", call. = FALSE)
+    cgroup <- match(cl, unique(cl))
+    if (max(cgroup) < 2L) stop("'cluster' must have at least two distinct values", call. = FALSE)
+  }
+  se <- vcov %in% c("analytic", "iid")
   fit <- switch(model,
-    canay = panqr_canay(y, X, group, tau, se = vcov == "analytic"),
-    mmqr = panqr_mmqr(y, X[, -1L, drop = FALSE], group, tau, se = vcov == "analytic"),
-    pooling = panqr_pooling(y, X, group, tau, se = vcov == "analytic")
+    canay = panqr_canay(y, X, group, tau, se = se, cluster = cgroup),
+    mmqr = panqr_mmqr(y, X[, -1L, drop = FALSE], group, tau, se = se,
+                      type = if (vcov == "iid") "iid" else "cluster", cluster = cgroup),
+    pooling = panqr_pooling(y, X, group, tau, se = se, cluster = cgroup)
   )
 
   if (vcov == "bootstrap") {
@@ -264,6 +310,8 @@ panqr <- function(formula, data, index, tau = 0.5,
   fit$tau <- tau
   fit$vcov_type <- vcov
   fit$R <- if (vcov == "bootstrap") R else NULL
+  fit$cluster <- cluster
+  fit$n_clusters <- if (se) max(cgroup) else NULL
   fit$dropped <- dropped
   fit$index <- index
   fit$nobs <- length(y)
@@ -348,20 +396,20 @@ qr_sandwich <- function(X, f, score, group) {
   v
 }
 
-panqr_pooling <- function(y, X, group, tau, se) {
+panqr_pooling <- function(y, X, group, tau, se, cluster = group) {
   coef <- qr_rq_coef(X, y, tau)
   out <- list(coefficients = coef)
   if (se) {
     out$vcov <- lapply(seq_along(tau), function(j) {
       e <- as.vector(y - X %*% coef[, j])
       f <- qr_kernel_density(e, tau[j])
-      qr_sandwich(X, f, X * (tau[j] - (e < 0)), group)
+      qr_sandwich(X, f, X * (tau[j] - (e < 0)), cluster)
     })
   }
   out
 }
 
-panqr_canay <- function(y, X, group, tau, se) {
+panqr_canay <- function(y, X, group, tau, se, cluster = group) {
   Xs <- X[, -1L, drop = FALSE]
   w <- qr_within_fit(y, Xs, group)
   yadj <- y - w$alpha[group]
@@ -380,7 +428,7 @@ panqr_canay <- function(y, X, group, tau, se) {
       m_c <- sweep(m_i, 2, colMeans(fX))
       H <- crossprod(fX, xbar_c)
       score <- X * (tau[j] - (e < 0)) - m_c * u + (w$Xw * u) %*% t(H %*% Qinv)
-      qr_sandwich(X, f, score, group)
+      qr_sandwich(X, f, score, cluster)
     })
   }
   out
@@ -394,7 +442,7 @@ qr_sample_quantile <- function(x, tau) {
   x[max(1L, ceiling(length(x) * tau - 1e-10))]
 }
 
-panqr_mmqr <- function(y, Xs, group, tau, se) {
+panqr_mmqr <- function(y, Xs, group, tau, se, type = "cluster", cluster = group) {
   loc <- qr_within_fit(y, Xs, group)
   u <- loc$residuals
   up <- (u >= 0) - mean(u >= 0)
@@ -417,13 +465,16 @@ panqr_mmqr <- function(y, Xs, group, tau, se) {
   out <- list(coefficients = coef, q = q, alpha = loc$alpha + loc$cons,
               delta = sc$alpha + sc$cons,
               location = list(coefficients = b,
-                              vcov = qr_within_vcov(loc$Xw, u, group)),
+                              vcov = qr_within_vcov(loc$Xw, u, cluster)),
               scale = list(coefficients = g,
-                           vcov = qr_within_vcov(sc$Xw, sc$residuals, group)))
+                           vcov = qr_within_vcov(sc$Xw, sc$residuals, cluster)))
   if (se) {
     # scale of individual i at the overall regressor means
     si <- au_i[group] - as.vector(sweep(loc$xbar_i, 2, colMeans(Xs))[group, , drop = FALSE] %*% g)
-    out$vcov <- lapply(seq_along(tau), function(j) mmqr_vcov(loc$Xw, us, sigma, si, g, q[j], tau[j]))
+    out$vcov <- lapply(seq_along(tau), function(j) {
+      if (type == "iid") mmqr_vcov(loc$Xw, us, sigma, si, g, q[j], tau[j])
+      else mmqr_vcov_cluster(loc$Xw, us, sigma, si, g, q[j], tau[j], cluster)
+    })
   }
   out
 }
@@ -433,19 +484,13 @@ panqr_mmqr <- function(y, Xs, group, tau, se) {
 # si: scale evaluated at the overall regressor means; g: scale slopes.
 # centered = TRUE uses V = av - 1 as in the paper; FALSE reproduces xtqreg.
 mmqr_vcov <- function(Xw, us, sigma, si, g, q, tau, centered = TRUE) {
-  n <- length(us)
   k <- ncol(Xw)
   Qinv <- solve(crossprod(Xw))
   Pxx <- crossprod(Xw * abs(sigma))
   Px <- colSums(Xw * sigma^2)
-  vp <- (us >= 0) - mean(us >= 0)
-  av <- 2 * us * vp - centered
-  # density of the standardized error at q(tau): Hall-Sheather difference
-  # quotient, as Stata's qreg, vce(iid) on a constant
-  h <- qr_bandwidth_hs(tau, n)
-  while ((tau - h <= 0) || (tau + h >= 1)) h <- h / 2
-  fq <- 2 * h / (qr_sample_quantile(us, tau + h) - qr_sample_quantile(us, tau - h))
-  w <- (tau - (us <= q)) / fq - us - q * av
+  qt <- mmqr_quantile_terms(us, q, tau, centered)
+  av <- qt$av
+  w <- qt$w
   O <- matrix(0, 2 * k + 1, 2 * k + 1)
   i1 <- seq_len(k); i2 <- k + seq_len(k); i3 <- 2 * k + 1
   O[i1, i1] <- mean(us^2) * Pxx
@@ -456,6 +501,42 @@ mmqr_vcov <- function(Xw, us, sigma, si, g, q, tau, centered = TRUE) {
   O[i3, i3] <- sum(w^2) * mean(si^2)
   XI <- cbind(Qinv, q * Qinv, g / sum(si))
   v <- XI %*% O %*% t(XI)
+  dimnames(v) <- list(colnames(Xw), colnames(Xw))
+  v
+}
+
+# Standardized scale term av = 2 U (I(U >= 0) - mean(I(U >= 0))) - 1 and
+# the q(tau) influence term w = (tau - I(U <= q)) / f(q) - U - q av, with
+# the density of the standardized error at q(tau) from the Hall-Sheather
+# difference quotient, as Stata's qreg, vce(iid) on a constant.
+mmqr_quantile_terms <- function(us, q, tau, centered = TRUE) {
+  n <- length(us)
+  vp <- (us >= 0) - mean(us >= 0)
+  av <- 2 * us * vp - centered
+  h <- qr_bandwidth_hs(tau, n)
+  while ((tau - h <= 0) || (tau + h >= 1)) h <- h / 2
+  fq <- 2 * h / (qr_sample_quantile(us, tau + h) - qr_sample_quantile(us, tau - h))
+  list(av = av, w = (tau - (us <= q)) / fq - us - q * av)
+}
+
+# Cluster-robust covariance of the MM-QR slopes b(tau) = b + g q(tau).
+# The influence of observation it on b(tau) adds the three steps of the
+# estimator, with the same terms as the iid formula of mmqr_vcov():
+#   location (within OLS):  Qinv x~_it R_it, with R_it = sigma_it U_it
+#   scale (within OLS):     q Qinv x~_it sigma_it V_it
+#   quantile q(tau):        g s_i w_it / sum(s)
+# These are summed within clusters, psi_g, and V = G / (G - 1) sum_g
+# psi_g psi_g'. With one observation per cluster the middle matrix keeps
+# the observation-level products that mmqr_vcov() replaces by their sample
+# means under independence of U and the regressors.
+mmqr_vcov_cluster <- function(Xw, us, sigma, si, g, q, tau, cluster, centered = TRUE) {
+  Qinv <- solve(crossprod(Xw))
+  qt <- mmqr_quantile_terms(us, q, tau, centered)
+  psi <- (Xw * (sigma * us + q * sigma * qt$av)) %*% Qinv +
+    outer(si * qt$w / sum(si), g)
+  s <- rowsum(psi, cluster)
+  G <- nrow(s)
+  v <- crossprod(s) * (G / (G - 1))
   dimnames(v) <- list(colnames(Xw), colnames(Xw))
   v
 }
@@ -575,7 +656,7 @@ print.panqr <- function(x, digits = max(3, getOption("digits") - 3), ...) {
 #'   error, z value and p-value), the location and scale tables and the
 #'   quantiles `q` of the standardized errors for MM-QR, and the fit
 #'   information (`call`, `model`, `tau`, `nobs`, `n_groups`, `vcov_type`,
-#'   `R`, `dropped`).
+#'   `R`, `cluster`, `n_clusters`, `dropped`).
 #' @family panqr methods
 #' @examples
 #' set.seed(2)
@@ -598,6 +679,7 @@ summary.panqr <- function(object, ...) {
   out <- list(call = object$call, label = qr_label(object), coefficients = tables,
               model = object$model, tau = object$tau, nobs = object$nobs,
               n_groups = object$n_groups, vcov_type = object$vcov_type, R = object$R,
+              cluster = object$cluster, n_clusters = object$n_clusters,
               dropped = object$dropped, q = object$q)
   if (object$model == "mmqr") {
     out$location <- tab(object$location$coefficients, object$location$vcov)
@@ -613,7 +695,11 @@ print.summary.panqr <- function(x, digits = max(3, getOption("digits") - 3), ...
   print(x$call)
   cat("\nEstimator:", x$label, "\n")
   cat("N =", x$nobs, " groups =", x$n_groups, " vcov:", x$vcov_type,
-      if (identical(x$vcov_type, "bootstrap")) paste0("(cluster, boot = ", x$R, ")") else "", "\n")
+      if (identical(x$vcov_type, "bootstrap")) paste0("(cluster, boot = ", x$R, ")")
+      else if (identical(x$vcov_type, "analytic") && !is.null(x$n_clusters))
+        paste0("(cluster by ", if (is.null(x$cluster)) "individual" else x$cluster,
+               ", G = ", x$n_clusters, ")")
+      else "", "\n")
   if (length(x$dropped)) cat("Dropped (time invariant):", paste(x$dropped, collapse = ", "), "\n")
   if (!is.null(x$location)) {
     cat("\nLocation (within regression, cluster-robust):\n")

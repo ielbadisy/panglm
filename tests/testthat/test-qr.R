@@ -168,3 +168,58 @@ test_that("panqr() takes boot and seed; R is a deprecated alias of boot", {
   s3 <- panqr(y ~ x + z, d, index = c("id", "t"), model = "canay", boot = 20)
   expect_identical(vcov(s1), vcov(s3))
 })
+
+test_that("MM-QR analytic covariance is the cluster sandwich of the influence function", {
+  d <- qr_sim(N = 60, TT = 5, seed = 8)
+  taus <- c(0.25, 0.9)
+  m <- panqr(y ~ x + z, d, index = c("id", "t"), tau = taus, model = "mmqr")
+  mi <- panqr(y ~ x + z, d, index = c("id", "t"), tau = taus, model = "mmqr", vcov = "iid")
+  expect_identical(m$vcov_type, "analytic")
+  expect_identical(m$n_clusters, 60L)
+  # hand version from lm() with individual dummies
+  l1 <- lm(y ~ x + z + factor(id), data = d)
+  u <- unname(residuals(l1))
+  au <- 2 * u * ((u >= 0) - mean(u >= 0))
+  l2 <- lm(au ~ x + z + factor(id), data = d)
+  sigma <- unname(fitted(l2))
+  us <- u / sigma
+  g <- coef(l2)[c("x", "z")]
+  Xw <- as.matrix(d[, c("x", "z")]) - apply(d[, c("x", "z")], 2, ave, d$id)
+  si <- sigma - as.vector(sweep(as.matrix(d[, c("x", "z")]), 2,
+                                colMeans(d[, c("x", "z")])) %*% g)
+  Qinv <- solve(crossprod(Xw))
+  n <- nrow(d)
+  for (j in seq_along(taus)) {
+    tau <- taus[j]
+    # q(tau) from the hand residuals: the indicator I(U <= q) at the
+    # quantile itself would flip on a rounding difference
+    sq <- sort(us)
+    q <- sq[ceiling(n * tau - 1e-10)]
+    expect_equal(q, unname(m$q[j]), tolerance = 1e-10)
+    av <- 2 * us * ((us >= 0) - mean(us >= 0)) - 1
+    h <- panglm:::qr_bandwidth_hs(tau, n)
+    while ((tau - h <= 0) || (tau + h >= 1)) h <- h / 2
+    fq <- 2 * h / (sq[ceiling(n * (tau + h) - 1e-10)] - sq[ceiling(n * (tau - h) - 1e-10)])
+    w <- (tau - (us <= q)) / fq - us - q * av
+    psi <- Xw * (u + q * sigma * av)
+    psi <- psi %*% Qinv + outer(si * w / sum(si), g)
+    s <- rowsum(psi, d$id)
+    V <- crossprod(s) * 60 / 59
+    expect_equal(unname(m$vcov[[j]]), unname(V), tolerance = 1e-8)
+  }
+  # the iid formula stays available and differs
+  expect_false(isTRUE(all.equal(m$vcov[[1]], mi$vcov[[1]])))
+  # clustering on the individual column reproduces the default
+  mc <- panqr(y ~ x + z, d, index = c("id", "t"), tau = taus, model = "mmqr", cluster = "id")
+  expect_equal(mc$vcov, m$vcov)
+  d$obs <- seq_len(n)
+  mo <- panqr(y ~ x + z, d, index = c("id", "t"), tau = taus, model = "mmqr", cluster = "obs")
+  expect_identical(mo$n_clusters, n)
+  expect_error(panqr(y ~ x + z, d, index = c("id", "t"), model = "canay", vcov = "iid"),
+               "mmqr")
+  expect_error(panqr(y ~ x + z, d, index = c("id", "t"), model = "mmqr", cluster = "nope"),
+               "column")
+  expect_error(panqr(y ~ x + z, d, index = c("id", "t"), model = "mmqr", cluster = "id",
+                     vcov = "bootstrap", boot = 5), "analytic")
+  expect_output(print(summary(m)), "cluster by individual, G = 60")
+})

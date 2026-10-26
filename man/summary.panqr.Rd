@@ -17,7 +17,7 @@ coefficient table per quantile (\code{coefficients}: estimate, standard
 error, z value and p-value), the location and scale tables and the
 quantiles \code{q} of the standardized errors for MM-QR, and the fit
 information (\code{call}, \code{model}, \code{tau}, \code{nobs}, \code{n_groups}, \code{vcov_type},
-\code{R}, \code{dropped}).
+\code{R}, \code{cluster}, \code{n_clusters}, \code{dropped}).
 }
 \description{
 Summarize a panqr fit

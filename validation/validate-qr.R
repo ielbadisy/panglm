@@ -129,7 +129,7 @@ within_lm <- function(y, X, id) {
 }
 
 check_mmqr <- function(dat, dname, f, xv, taus, loc_fit, ref) {
-  m <- panqr(f, dat, index = idx, tau = taus, model = "mmqr")
+  m <- panqr(f, dat, index = idx, tau = taus, model = "mmqr", vcov = "iid")
   X <- as.matrix(dat[, xv])
   hand <- mmqr_hand(dat[[all.vars(f)[1]]], X, dat$id, taus, loc_fit)
   rl <- function(v) stats::setNames(list(v), ref)

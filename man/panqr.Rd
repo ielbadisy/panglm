@@ -14,7 +14,8 @@ panqr(
   boot = 200,
   na.action = stats::na.omit,
   seed = NULL,
-  R
+  R,
+  cluster = NULL
 )
 }
 \arguments{
@@ -34,8 +35,9 @@ and leave the sample, and \code{lag(x, 0:2)} gives several lags}
 
 \item{model}{\code{"canay"}, \code{"mmqr"} or \code{"pooling"}}
 
-\item{vcov}{\code{"analytic"}, \code{"bootstrap"} or \code{"none"}; the default is
-\code{"bootstrap"} for \code{"canay"} and \code{"analytic"} otherwise}
+\item{vcov}{\code{"analytic"} (cluster-robust), \code{"iid"} (MM-QR only),
+\code{"bootstrap"} or \code{"none"}; the default is \code{"bootstrap"} for \code{"canay"}
+and \code{"analytic"} otherwise}
 
 \item{boot}{number of bootstrap replications for \code{vcov = "bootstrap"}}
 
@@ -46,6 +48,10 @@ number state is restored afterwards. With \code{seed = NULL} (the default)
 the draws come from the global random number stream.}
 
 \item{R}{deprecated; use \code{boot}}
+
+\item{cluster}{optional name of a column of \code{data} to cluster the
+analytic covariance on (\code{vcov = "analytic"} only, including the MM-QR
+location and scale covariances); the default clusters by individual}
 }
 \value{
 an object of class \code{"panqr"}, a list with components
@@ -59,6 +65,7 @@ the constant), for \code{"mmqr"} also \code{location}, \code{scale} (lists with
 \code{coefficients} and \code{vcov}), \code{q} (the quantiles of the standardized
 errors) and \code{delta} (the individual scale effects including the
 constant, so that \verb{alpha_i(tau) = alpha_i + delta_i q(tau)}),
+\code{cluster} and \code{n_clusters} (for the analytic covariances),
 \code{dropped} (time-invariant regressors dropped), \code{n_singletons}
 (individuals observed once, dropped for \code{"canay"} and \code{"mmqr"}), \code{nobs},
 \code{n_groups},
@@ -110,17 +117,36 @@ individuals observed only once (with a message).
 cluster bootstrap) \code{boot} times, repeats every step of the estimator and
 returns the covariance of the replicates. \code{vcov = "analytic"} gives:
 \itemize{
-\item \code{"mmqr"}: the asymptotic covariance of Machado and Santos Silva (2019),
-with the matrix layout of \code{xtqreg} (version 1.5): it combines the
-influence of the location, scale and \code{q(tau)} estimates, with the
-density of the standardized error at \code{q(tau)} estimated by the
-difference quotient \verb{2h / (q(tau + h) - q(tau - h))} (as Stata's
-\verb{qreg, vce(iid)}) and the Hall and Sheather bandwidth \code{h}. The scale
-influence uses the centered \verb{V = 2 U (I(U >= 0) - mean(I(U >= 0))) - 1}
-of the paper (also used by the Stata command \code{mmqreg}); \code{xtqreg} 1.5
-omits the \code{- 1}, which inflates its standard errors away from the
-median (by about 30\% at \code{tau = 0.9} in simulations, where the centered
-version matches the Monte Carlo standard deviation).
+\item \code{"mmqr"}: a cluster-robust (by individual, or by \code{cluster}) sandwich
+built from the influence function of \verb{b(tau) = b + g q(tau)}. The
+influence of observation \code{it} adds the three steps of the estimator:
+the location within regression, \verb{Q^\{-1\} x~_it R_it}; the scale within
+regression, \verb{q(tau) Q^\{-1\} x~_it sigma_it V_it}; and the quantile
+\code{q(tau)}, \verb{g s_i w_it / sum(s)}, with \verb{Q = sum x~ x~'}, \code{s_i} the
+scale of individual \code{i} at the regressor means and
+\verb{w_it = (tau - I(U_it <= q(tau))) / f(q(tau)) - U_it - q(tau) V_it}.
+These are summed within clusters into \code{psi_g}, and
+\verb{V = G / (G - 1) * sum_g psi_g psi_g'} for \code{G} clusters. The density
+of the standardized error at \code{q(tau)} is the difference quotient
+\verb{2h / (q(tau + h) - q(tau - h))} (as Stata's \verb{qreg, vce(iid)}) with the
+Hall and Sheather bandwidth \code{h}. The scale influence uses the centered
+\verb{V = 2 U (I(U >= 0) - mean(I(U >= 0))) - 1} of the paper (also used by
+the Stata command \code{mmqreg}). Unlike the iid formula, it allows the
+errors of an individual to be dependent (serial correlation, or an
+individual component in \code{U}) and the errors to be heteroskedastic.
+}
+
+\code{vcov = "iid"} (MM-QR only) gives the asymptotic covariance of Machado
+and Santos Silva (2019) under independent observations, with the matrix
+layout of \code{xtqreg} (version 1.5) and the same density estimate and
+centered \code{V}; \code{xtqreg} 1.5 omits the \code{- 1} in \code{V}, which inflates its
+standard errors away from the median. This was the analytic covariance
+of \code{"mmqr"} before panglm 1.6.1. It replaces observation-level products
+by their sample means and ignores the dependence within individuals; it
+can be far off with short panels (see the package's validation suite).
+
+The other models with \code{vcov = "analytic"}:
+\itemize{
 \item \code{"canay"}: a cluster-robust (by individual) sandwich built from the
 influence function of the two-step estimator, which corrects the
 quantile regression score \verb{(tau - I(e < 0)) x} for the estimation of
@@ -135,7 +161,8 @@ includes; the slope SEs of the two agree.
 clustered by individual.
 }
 
-The cluster sandwiches carry no finite-sample factor. For \code{"mmqr"} the
+The \code{"canay"} and \code{"pooling"} cluster sandwiches carry no finite-sample
+factor; the \code{"mmqr"} one carries \code{G / (G - 1)}. For \code{"mmqr"} the
 location and scale coefficients are returned with the cluster-robust
 within covariance of the rest of the package
 (\code{G / (G - 1) * (n - 1) / (n - k)}, as \code{plm::vcovHC(type = "sss")}).
@@ -146,9 +173,11 @@ within covariance of the rest of the package
 Checked in the package's validation suite on GitHub: the pooled model
 against \code{quantreg::rq()} and its kernel sandwich; the Canay and MM-QR
 estimators against implementations built from \code{plm::plm()}, \code{stats::lm()}
-and \code{quantreg::rq()}, with the MM-QR covariance checked against the formulas
-of the Stata command \code{xtqreg}; and Monte Carlo checks that the analytic
-standard errors match the sampling standard deviation.
+and \code{quantreg::rq()}, with the MM-QR iid covariance checked against the
+formulas of the Stata command \code{xtqreg}; the MM-QR cluster covariance
+against the cluster bootstrap and by Monte Carlo coverage with serially
+correlated errors; and Monte Carlo checks that the analytic standard
+errors match the sampling standard deviation.
 }
 
 \examples{
