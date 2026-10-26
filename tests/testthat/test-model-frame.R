@@ -166,8 +166,9 @@ test_that("lag(), lead() and diff() in a formula are taken within individuals", 
   pa <- partialeffects(a)
   expect_true(all(is.finite(unlist(pa[vapply(pa, is.numeric, logical(1))]))))
   # a lag beside dynamic = TRUE reaches the wave the dynamic model drops
-  a <- panglm(y ~ lag(x) + z, d, index = c("id", "time"), model = "random", dynamic = TRUE)
-  b <- panglm(y ~ x1 + z, d, index = c("id", "time"), model = "random", dynamic = TRUE)
+  # (sigma_mu2 is truncated at zero on these simulated data, with a warning)
+  a <- suppressWarnings(panglm(y ~ lag(x) + z, d, index = c("id", "time"), model = "random", dynamic = TRUE))
+  b <- suppressWarnings(panglm(y ~ x1 + z, d, index = c("id", "time"), model = "random", dynamic = TRUE))
   expect_equal(unname(coef(a)), unname(coef(b)), tolerance = 1e-8)
 })
 

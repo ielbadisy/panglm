@@ -92,8 +92,15 @@ feasible GLS estimator: with
 $\lambda_i = 1 - \sigma_\varepsilon / (\sigma_\varepsilon^2 + T_i\sigma_\alpha^2)^{1/2}$
 it regresses $y_{it} - \lambda_i \bar y_i$ on
 $x_{it} - \lambda_i \bar x_i$, with variance components from the within
-and between residuals. With weights, or with random slopes, the
-Gaussian model is fitted by maximum likelihood instead.
+and between residuals. In a balanced panel
+$\hat\sigma_\alpha^2 = s_b^2 - \hat\sigma_\varepsilon^2 / T$ with $s_b^2$ the
+residual variance of the between regression. In an unbalanced panel the
+between regression weights each individual by $T_i$ and the variance
+components solve the trace-based moment equations of `plm`
+(`random.method = "swar"`), which reduce to the balanced ones when all
+$T_i$ are equal. A negative $\hat\sigma_\alpha^2$ is set to zero with a
+warning. With weights, or with random slopes, the Gaussian model is
+fitted by maximum likelihood instead.
 
 ## Nonlinear fixed effects
 

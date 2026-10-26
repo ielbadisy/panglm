@@ -6,6 +6,37 @@ test_that("random gaussian matches plm()", {
   expect_equal(unname(coef(f)), unname(coef(p)), tolerance = 1e-6)
 })
 
+test_that("random gaussian matches plm(random.method = 'swar') on an unbalanced panel", {
+  skip_if_missing("plm")
+  data(Grunfeld, package = "plm")
+  set.seed(1)
+  g <- Grunfeld[sort(sample(nrow(Grunfeld), 150)), ]
+  f <- panglm(inv ~ value + capital, data = g, index = c("firm", "year"), model = "random")
+  p <- plm::plm(inv ~ value + capital, data = g, index = c("firm", "year"),
+                model = "random", random.method = "swar")
+  ec <- plm::ercomp(p)
+  expect_equal(unname(coef(f)), unname(coef(p)), tolerance = 1e-8)
+  expect_equal(unname(sqrt(diag(vcov(f)))), unname(sqrt(diag(vcov(p)))), tolerance = 1e-8)
+  expect_equal(c(f$sigma_v2, f$sigma_mu2), unname(ec$sigma2[c("idios", "id")]), tolerance = 1e-8)
+  th <- as.numeric(tapply(ec$theta, plm::index(p)[[1L]], `[`, 1L))
+  expect_equal(f$theta, th, tolerance = 1e-8)
+
+  fe <- panglm(inv ~ value + capital, data = g, index = c("firm", "year"), model = "within")
+  ph <- plm::phtest(plm::plm(inv ~ value + capital, data = g, index = c("firm", "year"), model = "within"), p)
+  expect_equal(panhausman(fe, f)$statistic, unname(ph$statistic), tolerance = 1e-8)
+})
+
+test_that("random gaussian warns when the individual variance is truncated at zero", {
+  set.seed(2)
+  d <- data.frame(id = rep(1:30, each = 4), t = rep(1:4, 30), x = rnorm(120))
+  d$y <- d$x + rnorm(120)
+  d$y <- d$y - ave(d$y, d$id) + d$x * 0 # remove all between variation in y
+  expect_warning(f <- panglm(y ~ x, data = d, index = c("id", "t"), model = "random"),
+                 "negative")
+  expect_identical(f$sigma_mu2, 0)
+  expect_true(all(f$theta == 0))
+})
+
 test_that("random gaussian on a balanced T=2 panel doesn't hit a singular solve", {
   # A deterministic pre/post indicator (identical group mean everywhere) and
   # a time-invariant covariate (exact zero column after within-demeaning)

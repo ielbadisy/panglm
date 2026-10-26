@@ -1029,11 +1029,35 @@ fit_random_gaussian <- function(X, y, group_start, group_size, maxit, tol) {
   sigma_v2 <- sum(fe$residuals^2) / max(1, df_fe)
 
   gm <- group_means_cpp(X, y, group_start, group_size)
-  bw <- stats::lm.fit(gm$Xbar, gm$ybar)
-  df_bw <- G - bw$rank
-  sigma_1_2 <- sum(bw$residuals^2) / max(1, df_bw)
-
-  sigma_mu2 <- max(0, sigma_1_2 - sigma_v2 / mean(Ti))
+  if (length(unique(Ti)) == 1L) {
+    # balanced panel: between regression on the N individual means, and
+    # sigma_mu2 = s2_between - sigma_v2 / T (plm dfcor = 2)
+    bw <- stats::lm.fit(gm$Xbar, gm$ybar)
+    df_bw <- G - bw$rank
+    sigma_1_2 <- sum(bw$residuals^2) / max(1, df_bw)
+    sigma_mu2 <- sigma_1_2 - sigma_v2 / Ti[1L]
+  } else {
+    # unbalanced panel: plm's Swamy-Arora estimator (dfcor = 3), the same
+    # one as paniv(model = "random"). The between regression is run at the
+    # observation level (each individual weighted by T_i), its quadratic
+    # form is q_b = sum_i T_i ebar_i^2, and
+    #   E(q_b) = (N - K - 1) sigma_v2 + (n - tr[(Xb'W Xb)^-1 Xb'W^2 Xb]) sigma_mu2
+    # with W = diag(T_i) and K the number of slopes.
+    bw <- stats::lm.wfit(gm$Xbar, gm$ybar, w = Ti)
+    q_b <- sum(Ti * bw$residuals^2)
+    K <- ncol(X) - has_intercept
+    m_nu <- G - K - 1
+    piv <- bw$qr$pivot[seq_len(bw$rank)]
+    Xb <- gm$Xbar[, piv, drop = FALSE]
+    m_eta <- n - sum(diag(solve(crossprod(Xb * Ti, Xb), crossprod(Xb * Ti^2, Xb))))
+    sigma_mu2 <- (q_b - m_nu * sigma_v2) / m_eta
+  }
+  if (!is.finite(sigma_mu2) || sigma_mu2 < 0) {
+    warning("random effects: the Swamy-Arora estimate of the individual-effect variance ",
+            "is negative (", format(sigma_mu2, digits = 4), ") and is set to 0; the ",
+            "estimator then reduces to pooled least squares", call. = FALSE)
+    sigma_mu2 <- 0
+  }
   theta <- 1 - sqrt(sigma_v2 / (Ti * sigma_mu2 + sigma_v2))
 
   qd <- quasi_demean_cpp(X, y, group_start, group_size, theta)
