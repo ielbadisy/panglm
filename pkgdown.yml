@@ -1,0 +1,14 @@
+pandoc: 3.8.3
+pkgdown: 2.2.1
+pkgdown_sha: ~
+articles:
+  panglm-endogeneity: panglm-endogeneity.html
+  panglm-heterogeneity: panglm-heterogeneity.html
+  panglm-intro: panglm-intro.html
+  panglm-methods: panglm-methods.html
+  panglm-outcomes: panglm-outcomes.html
+  panglm-policy: panglm-policy.html
+last_built: 2026-10-26T00:12Z
+urls:
+  reference: https://ielbadisy.github.io/panglm/reference
+  article: https://ielbadisy.github.io/panglm/articles

@@ -1,0 +1,423 @@
+# Changelog
+
+## panglm 1.6.0
+
+This release collects all changes since 1.1.4, the previous CRAN
+version. Every new estimator is validated against an established
+package; the help page of each model function names them in a
+“Validation” section.
+
+### Deprecations and changed behaviour
+
+- Exported names no longer use underscores. The families are now
+  [`gaussianfamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md),
+  [`poissonfamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md),
+  [`binomialfamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md),
+  [`negbinfamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md),
+  [`gammafamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md),
+  [`betafamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md),
+  [`orderedfamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md)
+  and
+  [`tobitfamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md);
+  [`panglm_hausman()`](https://ielbadisy.github.io/panglm/reference/panglm-deprecated.md),
+  [`panglm_dispersiontest()`](https://ielbadisy.github.io/panglm/reference/panglm-deprecated.md)
+  and
+  [`panglm_hurdle()`](https://ielbadisy.github.io/panglm/reference/panglm-deprecated.md)
+  are now
+  [`panhausman()`](https://ielbadisy.github.io/panglm/reference/panhausman.md),
+  [`pandispersiontest()`](https://ielbadisy.github.io/panglm/reference/pandispersiontest.md)
+  and
+  [`panhurdle()`](https://ielbadisy.github.io/panglm/reference/panhurdle.md).
+  The old names still work and warn once per session; see
+  [`?"panglm-deprecated"`](https://ielbadisy.github.io/panglm/reference/panglm-deprecated.md).
+  Result classes are unchanged.
+- [`panhurdle()`](https://ielbadisy.github.io/panglm/reference/panhurdle.md)
+  takes `family =` instead of `count_family =`, and
+  [`panqr()`](https://ielbadisy.github.io/panglm/reference/panqr.md)
+  takes `boot =` instead of `R =` and gains `seed`. The old arguments
+  still work with a deprecation warning.
+- `predict.panfmm(type = "class")` now returns the modal class label;
+  the class-specific means it returned before are `type = "components"`.
+  A message flags the change once per session.
+
+### New estimators
+
+- `model = "between"`: the between (individual means) estimator for the
+  Gaussian family (plm).
+- `tobitfamily(left, right)`: censored outcomes, pooled or with a random
+  intercept (AER, censReg).
+- [`orderedfamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md):
+  ordered logit and probit, pooled, random intercept, and the
+  fixed-effects ordered logit by “blow-up and cluster” (Baetschmann,
+  Staub and Winkelmann 2015).
+- [`betafamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md):
+  beta regression for outcomes in (0, 1), pooled or with a random
+  intercept (betareg, glmmTMB).
+- [`gammafamily()`](https://ielbadisy.github.io/panglm/reference/panglm-families.md):
+  gamma regression with log link for costs, pooled, fixed effects or
+  random intercept.
+- Two-way fixed-effects logit:
+  `model = "within", family = "binomial", effect = "twoways"`
+  (survival::clogit).
+- Random slopes: `panglm(model = "random", random = ~ time)`, correlated
+  random slopes with an unstructured covariance. Gaussian fits use exact
+  ML with any number of slopes (lme4); Poisson, logit, probit, negative
+  binomial and gamma fits use adaptive Gauss-Hermite quadrature with any
+  number of slopes (glmmTMB, GLMMadaptive).
+- [`paniv()`](https://ielbadisy.github.io/panglm/reference/paniv.md):
+  panel instrumental variables (fixed effects, G2SLS or EC2SLS random
+  effects, pooled 2SLS) and the Hausman-Taylor estimator, with
+  first-stage F statistics and Sargan/Hansen tests (plm).
+- [`pangmm()`](https://ielbadisy.github.io/panglm/reference/pangmm.md):
+  Arellano-Bond difference and Blundell-Bond system GMM, one- or
+  two-step with Windmeijer standard errors, AR and Hansen tests,
+  collapsed instruments and lag limits; it warns when instruments
+  outnumber individuals (plm::pgmm).
+- [`panselect()`](https://ielbadisy.github.io/panglm/reference/panselect.md):
+  the Wooldridge (1995) correction for attrition or death in cohort
+  studies (glm, plm, sampleSelection).
+- [`panqr()`](https://ielbadisy.github.io/panglm/reference/panqr.md):
+  panel quantile regression by Canay (2011), MM-QR (Machado and Santos
+  Silva 2019) or pooling, with a
+  [`plot()`](https://rdrr.io/r/graphics/plot.default.html) method
+  (quantreg).
+- [`panfmm()`](https://ielbadisy.github.io/panglm/reference/panfmm.md)
+  and
+  [`panfmmselect()`](https://ielbadisy.github.io/panglm/reference/panfmmselect.md):
+  latent class GLMs with class membership constant within individual,
+  Poisson, NB2, Gaussian, logit and probit components, weights, offsets
+  and a concomitant model (flexmix).
+- [`twopart()`](https://ielbadisy.github.io/panglm/reference/twopart.md):
+  two-part models for semicontinuous costs, with correlated random
+  intercepts (`correlated = TRUE`).
+- [`did()`](https://ielbadisy.github.io/panglm/reference/did.md) and
+  [`eventstudy()`](https://ielbadisy.github.io/panglm/reference/eventstudy.md):
+  two-way fixed-effects difference-in-differences and event studies for
+  Gaussian, Poisson, negative binomial and binomial (conditional logit)
+  outcomes (fixest, survival::clogit).
+- [`attgt()`](https://ielbadisy.github.io/panglm/reference/attgt.md):
+  Callaway and Sant’Anna (2021) group-time ATTs with aggregations,
+  pre-trend test, weights, extra clustering and a multiplier bootstrap
+  with uniform bands (did).
+- [`etwfe()`](https://ielbadisy.github.io/panglm/reference/etwfe.md):
+  the Wooldridge (2023) extended two-way FE estimator for linear,
+  Poisson and logit outcomes, with weights, `xvar` and `ivar` (etwfe).
+
+### New features
+
+- [`lag()`](https://rdrr.io/r/stats/lag.html), `lead()` and
+  [`diff()`](https://rdrr.io/r/base/diff.html) in the formulas of
+  [`panglm()`](https://ielbadisy.github.io/panglm/reference/panglm.md),
+  [`paniv()`](https://ielbadisy.github.io/panglm/reference/paniv.md),
+  [`panqr()`](https://ielbadisy.github.io/panglm/reference/panqr.md) and
+  [`panfmm()`](https://ielbadisy.github.io/panglm/reference/panfmm.md)
+  are taken within each individual, with `NA` at the start of each panel
+  (plm). Model functions that cannot support them stop with an
+  informative error.
+- `cre = TRUE`: correlated random effects (Mundlak) for pooled and
+  random-effects fits of every family, with a joint test in
+  [`summary()`](https://rdrr.io/r/base/summary.html).
+- `dynamic = TRUE`: lagged and initial outcomes with Mundlak means
+  (Wooldridge 2005 initial conditions).
+- [`partialeffects()`](https://ielbadisy.github.io/panglm/reference/partialeffects.md):
+  average partial effects with delta-method standard errors.
+- Weights: pooled and random-effects fits of every family,
+  [`twopart()`](https://ielbadisy.github.io/panglm/reference/twopart.md),
+  [`panfmm()`](https://ielbadisy.github.io/panglm/reference/panfmm.md),
+  [`attgt()`](https://ielbadisy.github.io/panglm/reference/attgt.md) and
+  [`etwfe()`](https://ielbadisy.github.io/panglm/reference/etwfe.md)
+  accept weights, given as a vector or a column name. `offset` also
+  accepts a column name.
+- Splines:
+  [`jointtest()`](https://ielbadisy.github.io/panglm/reference/jointtest.md),
+  [`lineartest()`](https://ielbadisy.github.io/panglm/reference/lineartest.md),
+  [`effectcurve()`](https://ielbadisy.github.io/panglm/reference/effectcurve.md)
+  with a [`plot()`](https://rdrr.io/r/graphics/plot.default.html)
+  method, and
+  [`model.matrix()`](https://rdrr.io/r/stats/model.matrix.html) that
+  keeps the knots on new data.
+- `panhausman(method = "mundlak")`: the regression-based Hausman test.
+- [`pangmm()`](https://ielbadisy.github.io/panglm/reference/pangmm.md)
+  accepts `vcov = "cluster"`.
+- `tidy()` and `glance()` for every model class, so modelsummary works;
+  `glance()` reports theta for negative binomial fits and an adjusted
+  R-squared that counts absorbed fixed effects (fixest).
+- [`predict()`](https://rdrr.io/r/stats/predict.html) for `pangmm`,
+  `paniv` and `panselect`;
+  [`summary()`](https://rdrr.io/r/base/summary.html),
+  [`vcov()`](https://rdrr.io/r/stats/vcov.html),
+  [`nobs()`](https://rdrr.io/r/stats/nobs.html),
+  [`confint()`](https://rdrr.io/r/stats/confint.html) and
+  [`logLik()`](https://rdrr.io/r/stats/logLik.html) for event studies;
+  [`confint()`](https://rdrr.io/r/stats/confint.html) for `twopart`;
+  full methods for
+  [`panhurdle()`](https://ielbadisy.github.io/panglm/reference/panhurdle.md)
+  fits; one print style across classes.
+- `options(panglm.threads)` caps the parallel threads, which are also
+  capped by `OMP_THREAD_LIMIT` and at 2 under `R CMD check`. OpenMP is
+  no longer enabled.
+
+### Robustness
+
+- Maximum likelihood fits standardize the design internally and warn
+  when the Hessian is not negative definite, standard errors are missing
+  or the gradient is not zero. Badly scaled regressors no longer break
+  beta fits.
+- The random-effects negative binomial warns when its dispersion
+  diverges (no overdispersion beyond the individual effect, so the model
+  reduces to the random-effects Poisson).
+- Random-slope fits warn when the random-effects covariance is singular,
+  for every family.
+- The random-effects Tobit is stable in the far censored tail.
+- The random-effects beta likelihood is about 3 times faster.
+
+### Bug fixes
+
+- Robust and cluster covariances: the pooled negative binomial used the
+  Poisson score, and the two-way fixed-effects Poisson ignored the time
+  effects; both now match sandwich and
+  [`fixest::fepois()`](https://lrberge.github.io/fixest/reference/feglm.html).
+- A fit made with `vcov = "HC1"` or `"cluster"` overwrote its
+  model-based covariance; `vcov(fit, type = "classical")` now returns
+  it.
+- [`panhausman()`](https://ielbadisy.github.io/panglm/reference/panhausman.md)
+  always uses the model-based covariances in the classical contrast.
+- Negative binomial summaries print theta and its standard error instead
+  of “Dispersion parameter: 1”.
+- [`did()`](https://ielbadisy.github.io/panglm/reference/did.md) and
+  [`eventstudy()`](https://ielbadisy.github.io/panglm/reference/eventstudy.md)
+  summaries show the user’s call.
+- `paniv(model = "random")` no longer warns about regressors it keeps.
+- A factor individual index works.
+- The `copd` help page documents all 10 columns.
+
+### Dependencies and documentation
+
+- `data.table` is no longer a dependency.
+- Roxygen markdown is enabled and every help page was reviewed;
+  functions are grouped into families with cross-links.
+- New vignettes: a getting started guide, four task guides (outcomes,
+  endogeneity, policy evaluation, heterogeneity) and a technical
+  reference.
+- A pkgdown site and a rewritten README.
+
+## panglm 1.1.4
+
+CRAN release: 2026-09-22
+
+- Added `\value` documentation to
+  [`confint.panglm()`](https://ielbadisy.github.io/panglm/reference/confint.panglm.md),
+  [`fitted.panglm()`](https://ielbadisy.github.io/panglm/reference/fitted.panglm.md),
+  [`summary.panglm()`](https://ielbadisy.github.io/panglm/reference/summary.panglm.md),
+  and
+  [`vcov.panglm()`](https://ielbadisy.github.io/panglm/reference/vcov.panglm.md),
+  describing the structure and meaning of each return value (CRAN
+  resubmission).
+
+## panglm 1.1.3
+
+- Added method references (Hausman 1978, Chamberlain 1980, Allison and
+  Waterman 2002, Croissant and Millo 2008) to the `DESCRIPTION` as
+  `<doi:...>` links.
+
+## panglm 1.1.2
+
+### Bug fixes
+
+- `model = "random"`, `family = "gaussian"` always reported
+  `logLik`/`AIC`/ `BIC` as `NA`, even though `fit_random_gaussian()`
+  already estimates the Swamy-Arora variance components (`sigma_v2`,
+  `sigma_mu2`) needed to compute a real likelihood - they were simply
+  discarded. Added the closed-form Gaussian random-intercept
+  log-likelihood (Sherman-Morrison identity on
+  `Omega_i = sigma_v2 * I + sigma_mu2 * J`), using the already-
+  estimated coefficients and variance components. Cross-validated: on
+  the bundled `copd` data, `logLik(random)` closely tracks
+  `logLik(pooling)` on the same formula, as expected since
+  random-effects GLS nests pooled OLS as `sigma_mu2 -> 0`.
+- `model = "within"` (one-way and two-way) had the same
+  `loglik = NA_real_` gap. By the Frisch-Waugh-Lovell theorem the
+  demeaned-regression residuals are algebraically identical to the full
+  dummy-variable-regression residuals, so the standard OLS ML Gaussian
+  log-likelihood applies directly - added, using the `npar`
+  (regressors + fixed-effect count + 1 dispersion parameter) that
+  `panglm_parameter_count()` already computed for these branches but
+  previously had no likelihood to pair with.
+
+### New features
+
+- [`glance.panglm()`](https://ielbadisy.github.io/panglm/reference/glance.panglm.md)
+  now reports `r.squared`/`adj.r.squared` (computed from
+  [`fitted.values()`](https://rdrr.io/r/stats/fitted.values.html)/`y`)
+  for every model type; previously not reported at all.
+
+### Bug fixes
+
+- `panglm(model = "random", effect = "individual", family = "gaussian")`
+  printed a raw
+  `solve(): system is singular; attempting approx solution` from
+  Armadillo whenever a covariate was time-invariant (e.g. baseline sex
+  alongside a pre/post indicator) or the panel was balanced with a
+  deterministic time indicator (e.g. any two-wave pre/post design) -
+  both make the intermediate within/between regressions used to estimate
+  the Swamy-Arora variance components exactly rank-deficient. The
+  estimates were already correct (verified against
+  [`lme4::lmer`](https://rdrr.io/pkg/lme4/man/lmer.html)), but the
+  warning bypassed R’s condition system entirely. Switched those two
+  intermediate regressions to
+  [`stats::lm.fit()`](https://rdrr.io/r/stats/lmfit.html), which handles
+  rank deficiency via pivoted QR the same way
+  [`lm()`](https://rdrr.io/r/stats/lm.html) does, with no near-singular
+  solve and no raw stderr output.
+
+## panglm 1.1.0
+
+CRAN submission candidate. Adds a bundled synthetic dataset, `copd` (a
+simulated COPD follow-up panel), and runnable `@examples` to every
+exported function and documented method.
+
+- Added
+  [`plot.panglm()`](https://ielbadisy.github.io/panglm/reference/plot.panglm.md)
+  for coefficient, residual, and fitted-value views, and
+  [`plot.panglm_hurdle()`](https://ielbadisy.github.io/panglm/reference/plot.panglm_hurdle.md)
+  for the two hurdle components.
+- Added zero-truncated NB2 positive-count models to
+  [`panglm_hurdle()`](https://ielbadisy.github.io/panglm/reference/panglm-deprecated.md)
+  through `count_family = "negbin"`.
+- Added HC1 and cluster-robust covariance estimates for one-way
+  conditional binomial fixed-effects models.
+- Reorganized the package vignette as a methodological account of model
+  specification, estimation, inference, diagnostics, and scope.
+- Completed fitted-value and prediction semantics across estimators.
+  Random-effects response predictions integrate over the fitted mixing
+  distribution, fixed-effects predictions include known panel effects,
+  and exact conditional binomial fits expose conditional inclusion
+  probabilities. Fitted values and residuals now preserve the input row
+  order for unsorted panels.
+- Corrected likelihood parameter accounting.
+  [`logLik()`](https://rdrr.io/r/stats/logLik.html) now counts fitted
+  dispersion, shape, variance, and absorbed fixed-effect parameters
+  where they belong to the reported likelihood. Gaussian pooled
+  likelihoods use the maximum-likelihood variance while retaining the
+  unbiased residual variance for covariance estimation. `glance()` now
+  reports AIC, BIC, and the likelihood degrees of freedom.
+- Corrected sandwich inference for exact conditional binomial models.
+  HC1 now operates on independent stratum scores, and custom clusters
+  are required to preserve complete conditioned strata. Custom cluster
+  vectors are now correctly reordered when a panel was supplied out of
+  index order.
+- Revised the fixed-effects NB2 description to state that the
+  dummy-variable estimator remains subject to finite-T
+  incidental-parameter concerns in short panels.
+- Hardened model-frame handling. Factor interactions are retained,
+  unidentified columns are reported and removed before numerical
+  fitting, `na.exclude` restores fitted values and residuals to the
+  input length, and panel indexes are checked for missing or duplicate
+  individual-time keys. Nontrivial weights and nonzero offsets now fail
+  explicitly instead of risking an apparently successful fit that
+  ignores them.
+
+## panglm 0.5.0
+
+First CRAN submission candidate. Consolidates the estimators, inference,
+and zero-inflated-count support added since 0.1.0 (see below); no
+functional changes since the last version bump beyond package-metadata
+and documentation cleanup for submission (`URL`/`BugReports` fields,
+vignette housekeeping).
+
+## panglm 0.1.0
+
+Initial release.
+
+### Estimators
+
+- `model = "pooling"`: gaussian/poisson/binomial GLM via IRLS, and
+  genuine NB2 (negative binomial) via theta-profiled IRLS – matches
+  [`MASS::glm.nb()`](https://rdrr.io/pkg/MASS/man/glm.nb.html) exactly.
+  (`family = "negbin"` previously silently aliased to Poisson at every
+  model level; this is fixed everywhere below.)
+- `model = "within"`: gaussian (exact demeaning, one-way or
+  `effect = "twoways"`), poisson (conditional MLE, one-way or
+  `effect = "twoways"` via outer-IRLS/inner-weighted-FWL – the algorithm
+  behind
+  [`fixest::feglm()`](https://lrberge.github.io/fixest/reference/feglm.html)),
+  negative binomial (Allison & Waterman 2002 unconditional
+  dummy-variable estimator – matches
+  [`fixest::fenegbin()`](https://lrberge.github.io/fixest/reference/femlm.html)
+  exactly; tractable for small-to-moderate N, not intended for very
+  large panels), and binomial (exact conditional logistic regression,
+  Chamberlain 1980 – matches `survival::clogit(method = "exact")`, no
+  `pglm` equivalent). `effect = "twoways"` is available for gaussian,
+  poisson, and negbin (the latter two via outer-IRLS/inner-weighted-FWL,
+  matching
+  [`fixest::fenegbin()`](https://lrberge.github.io/fixest/reference/femlm.html)
+  exactly); not yet for binomial (no general closed-form two-way
+  conditional logit exists).
+- Groups with an all-zero outcome are now dropped (with an informative
+  [`message()`](https://rdrr.io/r/base/message.html)) before fitting the
+  Allison-Waterman FE-NB2 estimator – their dummy-variable intercept is
+  unbounded under the log link, the same boundary case
+  `model = "within", family = "binomial"` already screened for.
+  Previously left in, this could contaminate the shared covariate
+  coefficients via the joint solve, not just the offending group’s own
+  intercept.
+- `model = "random"`: gaussian (Swamy-Arora), poisson (Poisson-Gamma, a
+  single dispersion parameter), negative binomial (a genuinely
+  different, 2-parameter beta-negative-binomial mixture matching
+  `pglm`’s `lnl.negbin.R` exactly – previously aliased to the
+  Poisson-Gamma model), and binomial (Gauss-Hermite quadrature) random
+  effects. The random-effects Poisson fit now seeds from the
+  pooled-Poisson MLE plus a method-of-moments dispersion estimate, and
+  uses Levenberg-Marquardt/ridge damping (with a warning when it
+  engages) instead of erroring on a singular Hessian – verified on
+  heavily zero-inflated, extremely skewed panels that previously
+  crashed.
+
+### Inference
+
+- `vcov(fit, type = "HC1" | "cluster")` for pooled/within models,
+  including `effect = "twoways"` (gaussian) and within negbin
+  (Allison-Waterman): the sandwich correction uses the full
+  covariate+dummy score and bread (all (k+G) parameters), not just the
+  covariate block, since the dummy intercepts are jointly estimated and
+  contribute sampling variability of their own. Random-effects models
+  intentionally keep model-based (information-matrix) SEs only, matching
+  `lme4`/`glmmTMB` convention.
+- [`confint.panglm()`](https://ielbadisy.github.io/panglm/reference/confint.panglm.md)
+  – Wald intervals using whichever vcov the fit currently carries.
+- [`panglm_dispersiontest()`](https://ielbadisy.github.io/panglm/reference/panglm-deprecated.md)
+  – Pearson chi-squared/df overdispersion test for poisson/negbin fits
+  with available `fitted.values`. Observations with a zero or
+  unavailable fitted value (e.g. rows in an all-zero group screened out
+  of a fixed-effects negbin fit) are excluded from the statistic rather
+  than producing a `0/0` = `NaN`; the excluded count is reported as
+  `n_excluded` on the returned object.
+- [`panglm_hausman()`](https://ielbadisy.github.io/panglm/reference/panglm-deprecated.md)
+  for FE-vs-RE specification testing.
+- `tidy()`/`glance()` methods registered against
+  [`generics::tidy`](https://generics.r-lib.org/reference/tidy.html)/`glance`
+  for `broom`/`modelsummary` compatibility.
+
+### Zero-inflated counts
+
+- [`panglm_hurdle()`](https://ielbadisy.github.io/panglm/reference/panglm-deprecated.md):
+  a fixed-effects hurdle model for panels with structural zeros (a
+  pattern that shows up as extreme, family-invariant overdispersion
+  under either `family = "poisson"` or `family = "negbin"` in
+  [`panglm()`](https://ielbadisy.github.io/panglm/reference/panglm.md)).
+  Fits `1(y>0)` via the existing conditional-logit FE estimator, and a
+  zero-truncated Poisson or NB2 FE model (an Allison-Waterman-style
+  dummy-variable estimator, Newton-Raphson with exact Fisher
+  information) on the `y>0` subsample. The truncated-Poisson math (no
+  fixed effects) matches
+  [`pscl::hurdle()`](https://rdrr.io/pkg/pscl/man/hurdle.html)’s count
+  part exactly. Both zero-truncated likelihoods are validated against
+  [`pscl::hurdle()`](https://rdrr.io/pkg/pscl/man/hurdle.html).
+
+### Known limitations
+
+- `effect = "twoways"` not yet available for binomial (no general
+  closed-form two-way conditional logit exists).
+- No between effects.
+- No ordinal/tobit families.
+- Not yet on CRAN.

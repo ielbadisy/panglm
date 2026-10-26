@@ -1,0 +1,429 @@
+# Endogeneity: IV, Hausman-Taylor, GMM and selection
+
+Fixed effects remove confounding by stable individual traits. They do
+not help when a regressor responds to time-varying shocks, when the
+regressor of interest does not vary over time, when the model contains
+the lagged outcome, or when the outcome is missing for reasons related
+to the outcome itself. This vignette covers the four tools `panglm`
+offers for these cases:
+
+| Problem | Example | Tool |
+|----|----|----|
+| Time-varying regressor correlated with the error | insurance chosen after a health shock | [`paniv()`](https://ielbadisy.github.io/panglm/reference/paniv.md), fixed-effects 2SLS |
+| Time-invariant regressor correlated with the individual effect | schooling and frailty | `paniv(model = "hausmantaylor")` |
+| Lagged outcome, state dependence | habit persistence in smoking | [`pangmm()`](https://ielbadisy.github.io/panglm/reference/pangmm.md), Arellano-Bond and Blundell-Bond |
+| Outcome observed only for a selected subsample | questionnaire non-response | [`panselect()`](https://ielbadisy.github.io/panglm/reference/panselect.md), Wooldridge (1995) correction |
+
+The data are simulated with known true values so that the bias of the
+naive estimators is visible. The samples are small to keep the build
+fast; the companion book uses larger panels and more bootstrap
+replicates.
+
+``` r
+
+library(panglm)
+```
+
+## Instrumental variables with fixed effects
+
+Patients buy private insurance after a health shock (`need`) that also
+raises their doctor visits, so insurance is correlated with the
+time-varying error and the within estimator is biased. An employer offer
+of insurance shifts coverage but has no direct effect on visits, so it
+is a valid instrument. The true effect of insurance is 0.6.
+
+``` r
+
+set.seed(1)
+N <- 300; TT <- 4
+d <- data.frame(id = rep(seq_len(N), each = TT), wave = rep(seq_len(TT), N))
+alpha <- rep(rnorm(N), each = TT)      # unobserved frailty
+s0 <- rep(rnorm(N), each = TT)         # family background
+need <- rnorm(N * TT)                  # time-varying health shock
+d$school <- round(12 + 2 * s0 + alpha)
+d$female <- rep(rbinom(N, 1, 0.5), each = TT)
+d$offer <- rbinom(N * TT, 1, plogis(s0))
+d$income <- rnorm(N * TT) + 0.5 * alpha
+d$insured <- as.numeric(d$offer + need + rnorm(N * TT) > 0.5)
+d$visits <- 1 + 0.6 * d$insured + 0.2 * d$income + alpha + need +
+  rnorm(N * TT)
+```
+
+The formula `y ~ regressors | instruments` follows `plm`: exogenous
+regressors appear on both sides, and a regressor absent from the
+instrument list is endogenous.
+
+``` r
+
+coef(panglm(visits ~ insured + income, data = d, index = c("id", "wave"),
+            model = "within"))
+#>   insured    income 
+#> 1.7440674 0.2072374
+fe2sls <- paniv(visits ~ insured + income | offer + income, data = d,
+                index = c("id", "wave"), model = "within", vcov = "cluster")
+summary(fe2sls)
+#> 
+#> Call:
+#> paniv(formula = visits ~ insured + income | offer + income, data = d, 
+#>     index = c("id", "wave"), model = "within", vcov = "cluster")
+#> 
+#> Estimator: fixed-effects 2SLS 
+#> N = 1200  groups = 300  vcov: cluster 
+#> Endogenous: insured 
+#> Excluded instruments: offer 
+#> 
+#> Coefficients:
+#>         Estimate Std. Error z value Pr(>|z|)    
+#> insured   0.9011     0.3470   2.597  0.00942 ** 
+#> income    0.2100     0.0440   4.773 1.82e-06 ***
+#> ---
+#> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+#> 
+#> First stage (excluded instruments):
+#>         partial.R2     F df1 df2   p.value F.robust  p.robust
+#> insured    0.06976 67.34   1 898 7.882e-16    68.02 5.188e-15
+#> Residual df: 898
+```
+
+The within estimator gives 1.74, nearly three times the true effect.
+Fixed-effects 2SLS gives 0.90 with a standard error of 0.35, so the
+confidence interval covers 0.6. The first-stage F statistic (68, also in
+its cluster-robust form) is far above the usual threshold of 10, so the
+instrument is strong. IV estimates are much less precise than the biased
+ones: that is the price of consistency. `model = "random"` gives the
+random-effects 2SLS estimator (G2SLS of Balestra and
+Varadharajan-Krishnakumar 1987, or EC2SLS of Baltagi 1981 with
+`inst.method = "baltagi"`).
+
+## Hausman-Taylor
+
+The effect of a time-invariant regressor such as schooling cannot be
+estimated with fixed effects, and random effects is biased when
+schooling is correlated with the individual effect. The Hausman and
+Taylor (1981) estimator uses the exogenous time-varying regressors
+twice, as their deviations from the individual means and as the means
+themselves, which instrument the endogenous time-invariant regressors.
+It needs at least as many exogenous time-varying regressors as
+endogenous time-invariant ones.
+
+The formula lists all regressors, then the exogenous ones (those
+uncorrelated with the individual effect), as in
+[`plm::pht()`](https://rdrr.io/pkg/plm/man/pht.html). Here `income` and
+`school` are endogenous. True values: offer 0.4, income 0.2, female 0.3,
+school 0.1.
+
+``` r
+
+d$cost <- 2 + 0.4 * d$offer + 0.2 * d$income + 0.3 * d$female +
+  0.1 * d$school + alpha + rnorm(N * TT)
+ht <- paniv(cost ~ offer + income + female + school | offer + female,
+            data = d, index = c("id", "wave"), model = "hausmantaylor")
+summary(ht)
+#> 
+#> Call:
+#> paniv(formula = cost ~ offer + income + female + school | offer + 
+#>     female, data = d, index = c("id", "wave"), model = "hausmantaylor")
+#> 
+#> Estimator: Hausman-Taylor 
+#> N = 1200  groups = 300  vcov: classical 
+#> Exogenous time-varying:   offer 
+#> Endogenous time-varying:  income 
+#> Exogenous time-invariant: female 
+#> Endogenous time-invariant: school 
+#> 
+#> Coefficients:
+#>             Estimate Std. Error z value Pr(>|z|)    
+#> (Intercept)  2.82589    0.61620   4.586 4.52e-06 ***
+#> offer        0.51550    0.07348   7.015 2.30e-12 ***
+#> income       0.23628    0.03175   7.441 1.00e-13 ***
+#> female       0.20763    0.13677   1.518    0.129    
+#> school       0.03022    0.05156   0.586    0.558    
+#> ---
+#> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+#> 
+#> Variance components: idiosyncratic = 0.9913, individual = 1.147
+#> theta: 0.5785 
+#> Residual df: 1195
+coef(panglm(cost ~ offer + income + female + school, data = d,
+            index = c("id", "wave"), model = "random"))
+#> (Intercept)       offer      income      female      school 
+#>  0.06459459  0.31877956  0.37641975  0.21090927  0.26723300
+```
+
+Random effects attributes part of the frailty to schooling (0.27 against
+a true 0.1); Hausman-Taylor removes that bias (0.03, standard error
+0.05). Its estimate is imprecise because the only excluded instrument
+for schooling is the mean of the employer offer. The Hausman-Taylor
+estimate is only as good as the exogeneity assumptions in the second
+part of the formula, which deserve a substantive justification.
+
+## Dynamic panels: difference and system GMM
+
+When last period’s outcome enters the model, as with habit persistence
+in smoking, the lagged outcome is correlated with the individual effect
+(pooled OLS overstates persistence) and, after the within
+transformation, with the demeaned error (fixed effects understates it,
+Nickell 1981). GMM estimators use deeper lags of the outcome as
+instruments: difference GMM (Arellano and Bond 1991) for the model in
+first differences, system GMM (Blundell and Bond 1998) adds the model in
+levels with lagged differences as instruments.
+
+The true persistence is 0.5 and the price effect is -0.3.
+
+``` r
+
+set.seed(1)
+N <- 300; TT <- 7
+g <- data.frame(id = rep(seq_len(N), each = TT), wave = rep(seq_len(TT), N))
+propensity <- rnorm(N)
+g$price <- rnorm(N * TT)
+g$cigs <- NA
+for (i in seq_len(N)) {
+  r <- (i - 1) * TT + seq_len(TT)
+  y <- propensity[i] / 0.5 + rnorm(1)
+  for (t in seq_len(TT)) {
+    y <- 0.5 * y - 0.3 * g$price[r[t]] + propensity[i] + rnorm(1)
+    g$cigs[r[t]] <- y
+  }
+}
+```
+
+The formula follows
+[`plm::pgmm()`](https://rdrr.io/pkg/plm/man/pgmm.html): regressors, then
+GMM-style instruments. `lag(cigs, 2:99)` uses all available lags from
+the second on.
+
+``` r
+
+ab <- pangmm(cigs ~ lag(cigs, 1) + price | lag(cigs, 2:99), data = g,
+             index = c("id", "wave"), model = "twostep")
+summary(ab)
+#> 
+#> Call:
+#> pangmm(formula = cigs ~ lag(cigs, 1) + price | lag(cigs, 2:99), 
+#>     data = g, index = c("id", "wave"), model = "twostep")
+#> 
+#> Estimator: two-way two-step difference GMM (Arellano-Bond) 
+#> N = 300  T = 7  equations used = 1500  instruments = 21  vcov: robust (Windmeijer) 
+#> 
+#> Coefficients:
+#>              Estimate Std. Error z value Pr(>|z|)    
+#> lag(cigs, 1)  0.55025    0.04883  11.268   <2e-16 ***
+#> price        -0.27276    0.03055  -8.927   <2e-16 ***
+#> ---
+#> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+#> 
+#> Arellano-Bond AR(1) test: z = -10.24, p = < 2.2e-16
+#> Arellano-Bond AR(2) test: z = -0.9451, p = 0.3446
+#> Sargan test (not robust): chi2(14) = 7.391, p = 0.9186
+#> Hansen J test (robust): chi2(14) = 6.259, p = 0.9595
+#> Wald test for coefficients: chi2(2) = 194.5, p = < 2.2e-16
+bb <- pangmm(cigs ~ lag(cigs, 1) + price | lag(cigs, 2:99), data = g,
+             index = c("id", "wave"), transformation = "ld",
+             model = "twostep", collapse = TRUE, maxlag = 4)
+summary(bb)
+#> 
+#> Call:
+#> pangmm(formula = cigs ~ lag(cigs, 1) + price | lag(cigs, 2:99), 
+#>     data = g, index = c("id", "wave"), transformation = "ld", 
+#>     model = "twostep", collapse = TRUE, maxlag = 4)
+#> 
+#> Estimator: two-way two-step system GMM (Blundell-Bond) 
+#> N = 300  T = 7  equations used = 3300  instruments = 12  vcov: robust (Windmeijer) 
+#> 
+#> Coefficients:
+#>              Estimate Std. Error z value Pr(>|z|)    
+#> lag(cigs, 1)  0.50920    0.03825  13.313   <2e-16 ***
+#> price        -0.26263    0.02786  -9.428   <2e-16 ***
+#> ---
+#> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+#> 
+#> Arellano-Bond AR(1) test: z = -8.576, p = < 2.2e-16
+#> Arellano-Bond AR(2) test: z = -1.041, p = 0.2978
+#> Sargan test (not robust): chi2(4) = 5.905, p = 0.2064
+#> Hansen J test (robust): chi2(4) = 4.635, p = 0.3269
+#> Wald test for coefficients: chi2(2) = 268.8, p = < 2.2e-16
+```
+
+Both estimates are close to 0.5. The diagnostics to read are the
+Arellano-Bond tests, where AR(1) in the differenced residuals is
+expected and AR(2) must not be rejected (p = 0.34), and the Hansen test
+of the overidentifying restrictions. The two-step standard errors use
+the Windmeijer (2005) correction.
+
+**Finite-sample bias.** GMM is consistent as the number of individuals
+grows, but in moderate samples it can be badly biased, and matching
+another package does not protect against it. Too many instruments
+overfit the endogenous regressor and pull the estimate toward pooled
+OLS, while making the Hansen test look too good (Roodman 2009). When the
+variance of the individual effect is large, the level moments of system
+GMM become weak (Bun and Windmeijer 2010). Practical rules:
+
+- prefer the two-step estimator;
+- use `collapse = TRUE` and a small `maxlag`, so that the instrument
+  count stays well below the number of individuals
+  ([`pangmm()`](https://ielbadisy.github.io/panglm/reference/pangmm.md)
+  warns when it does not; the uncollapsed fit above already uses 21
+  instruments with only 7 waves);
+- treat a Hansen p-value close to 1 (0.96 above) as a warning sign, not
+  as support;
+- check that the persistence estimate lies between the fixed-effects
+  (biased down) and pooled OLS (biased up) estimates (Bond 2002).
+
+[`panglm()`](https://ielbadisy.github.io/panglm/reference/panglm.md)
+does not create panel lags in its formula, so build the lagged outcome
+first for the bounds.
+
+``` r
+
+g$cigs_lag <- ave(g$cigs, g$id, FUN = function(v) c(NA, head(v, -1)))
+gl <- g[!is.na(g$cigs_lag), ]
+ols <- panglm(cigs ~ cigs_lag + price, data = gl, index = c("id", "wave"),
+              model = "pooling")
+fe <- panglm(cigs ~ cigs_lag + price, data = gl, index = c("id", "wave"),
+             model = "within")
+c(fixed_effects = coef(fe)[["cigs_lag"]],
+  difference_gmm = coef(ab)[["lag(cigs, 1)"]],
+  system_gmm = coef(bb)[["lag(cigs, 1)"]],
+  pooled_ols = coef(ols)[["cigs_lag"]])
+#>  fixed_effects difference_gmm     system_gmm     pooled_ols 
+#>      0.2311729      0.5502465      0.5091996      0.8431146
+```
+
+Both GMM estimates fall inside the bounds.
+
+## Sample selection
+
+In a cohort, quality of life is observed only for patients who answer
+the questionnaire. If the health shock that lowers the score also makes
+patients less likely to respond, the respondents are a selected sample
+and fixed effects on them is biased. The correction of Wooldridge (1995)
+fits a probit of response for each wave, with the Mundlak means of the
+selection regressors, and adds the inverse Mills ratios, interacted with
+the wave, to the fixed-effects outcome equation. A variable that affects
+response but not the outcome (here a reminder letter) is needed for
+credible identification.
+
+``` r
+
+set.seed(1)
+N <- 300; TT <- 4
+s <- data.frame(id = rep(seq_len(N), each = TT), wave = rep(seq_len(TT), N))
+alpha <- rep(rnorm(N), each = TT)
+s$treat <- rnorm(N * TT) + 0.5 * alpha
+s$reminder <- rnorm(N * TT)
+v <- rnorm(N * TT)
+u <- 0.7 * v + rnorm(N * TT, sd = 0.7)
+s$respond <- as.numeric(0.3 + 0.5 * s$treat + s$reminder + 0.3 * alpha +
+                          v > 0)
+s$qol <- ifelse(s$respond == 1, 1 + 0.5 * s$treat + alpha + u, NA)
+```
+
+The standard errors come from a panel bootstrap that re-estimates both
+steps; 49 replicates keep this example fast, use at least 499 in
+practice.
+
+``` r
+
+coef(panglm(qol ~ treat, data = s[s$respond == 1, ],
+            index = c("id", "wave"), model = "within"))
+#>     treat 
+#> 0.3537671
+sel <- panselect(respond ~ treat + reminder, qol ~ treat, data = s,
+                 index = c("id", "wave"), model = "within",
+                 boot = 49, seed = 2)
+summary(sel)
+#> 
+#> Call:
+#> panselect(selection = respond ~ treat + reminder, outcome = qol ~ 
+#>     treat, data = s, index = c("id", "wave"), model = "within", 
+#>     boot = 49, seed = 2)
+#> 
+#> Wooldridge (1995) panel selection correction: fixed effects with Mundlak means, inverse Mills ratio by period 
+#> Selection sample: N = 1200  groups = 300 
+#> Outcome sample:   N = 710  groups = 286 
+#> Probits fitted for periods: 1, 2, 3, 4 
+#> 
+#> Outcome equation (vcov: panel bootstrap, 49 replicates):
+#>          Estimate Std. Error z value Pr(>|z|)    
+#> treat     0.45225    0.05037   8.978  < 2e-16 ***
+#> lambda:1  0.98046    0.18266   5.368 7.98e-08 ***
+#> lambda:2  0.76097    0.17850   4.263 2.02e-05 ***
+#> lambda:3  0.80668    0.21728   3.713 0.000205 ***
+#> lambda:4  0.81105    0.17365   4.671 3.00e-06 ***
+#> ---
+#> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+#> 
+#> Test of selection bias (H0: all inverse Mills ratio coefficients are zero):
+#>   cluster-robust Wald chi2(4) = 56.2, p = 1.818e-11
+#>   bootstrap Wald chi2(4) = 44.06, p = 6.232e-09
+#> Residual df: 419
+```
+
+Fixed effects on the respondents gives 0.35 against a true 0.5. The
+corrected estimate is 0.45, and the joint test that all inverse Mills
+ratio coefficients are zero rejects clearly, so selection on the
+time-varying shock matters here. The test uses the cluster-robust
+covariance, which is valid under its null hypothesis; the coefficient
+standard errors use the bootstrap, which accounts for the first step.
+
+## Validated against
+
+Fixed-effects, random-effects and pooled 2SLS reproduce
+[`plm::plm()`](https://rdrr.io/pkg/plm/man/plm.html),
+[`AER::ivreg()`](https://rdrr.io/pkg/AER/man/ivreg.html) and
+[`fixest::feols()`](https://lrberge.github.io/fixest/reference/feols.html);
+Hausman-Taylor reproduces
+[`plm::pht()`](https://rdrr.io/pkg/plm/man/pht.html); difference and
+system GMM, including collapsed instruments, the Windmeijer correction
+and the Arellano-Bond, Sargan and Hansen tests, reproduce
+[`plm::pgmm()`](https://rdrr.io/pkg/plm/man/pgmm.html). No R package
+implements the Wooldridge (1995) panel correction, so
+[`panselect()`](https://ielbadisy.github.io/panglm/reference/panselect.md)
+is validated step by step: the probits against
+[`stats::glm()`](https://rdrr.io/r/stats/glm.html), the outcome equation
+against `plm`, the covariance against `sandwich`, and the one-period
+case against
+[`sampleSelection::heckit()`](https://rdrr.io/pkg/sampleSelection/man/selection.html).
+The scripts are in `tests/testthat` and `validation/`.
+
+## References
+
+Arellano, M., and Bond, S. (1991). Some tests of specification for panel
+data: Monte Carlo evidence and an application to employment equations.
+*Review of Economic Studies*, 58, 277-297.
+
+Balestra, P., and Varadharajan-Krishnakumar, J. (1987). Full information
+estimations of a system of simultaneous equations with error component
+structure. *Econometric Theory*, 3, 223-246.
+
+Baltagi, B. H. (1981). Simultaneous equations with error components.
+*Journal of Econometrics*, 17, 189-200.
+
+Blundell, R., and Bond, S. (1998). Initial conditions and moment
+restrictions in dynamic panel data models. *Journal of Econometrics*,
+87, 115-143.
+
+Bond, S. (2002). Dynamic panel data models: a guide to micro data
+methods and practice. *Portuguese Economic Journal*, 1, 141-162.
+
+Bun, M. J. G., and Windmeijer, F. (2010). The weak instrument problem of
+the system GMM estimator in dynamic panel data models. *The Econometrics
+Journal*, 13, 95-126.
+
+Hausman, J. A., and Taylor, W. E. (1981). Panel data and unobservable
+individual effects. *Econometrica*, 49, 1377-1398.
+
+Nickell, S. (1981). Biases in dynamic models with fixed effects.
+*Econometrica*, 49, 1417-1426.
+
+Roodman, D. (2009). How to do xtabond2: an introduction to difference
+and system GMM in Stata. *Stata Journal*, 9, 86-136.
+
+Windmeijer, F. (2005). A finite sample correction for the variance of
+linear efficient two-step GMM estimators. *Journal of Econometrics*,
+126, 25-51.
+
+Wooldridge, J. M. (1995). Selection corrections for panel data models
+under conditional mean independence assumptions. *Journal of
+Econometrics*, 68, 115-132.

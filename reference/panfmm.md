@@ -1,0 +1,306 @@
+# Latent class (finite mixture) models for panel data
+
+Finite mixture regression in which every individual belongs to one of
+`k` latent classes for all of its observations, the panel latent class
+model of Deb and Trivedi (1997, 2002) and Bago d'Uva (2006). Within
+class `c` the outcome follows a GLM with class-specific coefficients
+`beta_c` (and dispersion), and the individual likelihood is
+`L_i = sum_c pi_ic prod_t f_c(y_it | x_it)`. Class probabilities are
+constant (`pi_c`) or depend on individual-level concomitant variables
+through a multinomial logit. In health economics the classes typically
+separate a large group of low users of care from a smaller group of high
+users with a different response to income, insurance or health status.
+
+## Usage
+
+``` r
+panfmm(
+  formula,
+  data,
+  index,
+  k = 2,
+  family = "poisson",
+  concomitant = NULL,
+  nstart = 10,
+  seed = NULL,
+  vcov = c("classical", "cluster"),
+  maxit = 1000,
+  tol = 1e-06,
+  na.action = stats::na.omit,
+  weights = NULL,
+  offset = NULL
+)
+```
+
+## Arguments
+
+- formula:
+
+  a model formula `y ~ x1 + x2` for the class-specific regressions (the
+  same regressors in every class). It may contain
+  [`offset()`](https://rdrr.io/r/stats/offset.html) terms, e.g.
+  `offset(log(exposure))` for counts over different exposure periods;
+  the offset enters the linear predictor of every class with
+  coefficient 1. `lag(x, k)`, `lead(x, k)` and `diff(x)` are taken
+  within each individual on the grid of sorted distinct time values
+  (needs `index = c(id, time)`); the first waves of each individual get
+  `NA` and leave the sample, and `lag(x, 0:2)` gives several lags
+
+- data:
+
+  a data.frame in long format
+
+- index:
+
+  length-1 or length-2 character vector giving the individual (and time)
+  columns; class membership is constant within individual. Use a row
+  identifier for cross-section data
+
+- k:
+
+  number of latent classes
+
+- family:
+
+  `"poisson"`, `"negbin"` (NB2), `"gaussian"`, `"binomial"` (logit) or
+  `"probit"` (binomial with probit link), or the corresponding panglm
+  family spec, e.g. `binomialfamily("probit")`
+
+- concomitant:
+
+  optional one-sided formula `~ z1 + z2` of individual-level
+  (time-invariant) variables for the class probabilities
+
+- nstart:
+
+  number of EM starts (the first deterministic, the others random)
+
+- seed:
+
+  optional random seed for the random starts; the global random number
+  stream is restored afterwards
+
+- vcov:
+
+  `"classical"` (inverse negative Hessian) or `"cluster"` (sandwich
+  clustered by individual); see
+  [`vcov.panfmm()`](https://ielbadisy.github.io/panglm/reference/vcov.panfmm.md)
+
+- maxit:
+
+  maximum number of EM iterations per start
+
+- tol:
+
+  convergence tolerance on the relative change of the EM log-likelihood
+
+- na.action:
+
+  missing-data action passed to
+  [`stats::model.frame()`](https://rdrr.io/r/stats/model.frame.html)
+
+- weights:
+
+  optional nonnegative individual (sampling) weights: the name of a
+  column of `data` or a numeric vector with one value per row of `data`,
+  constant within individuals; see the Weights section
+
+- offset:
+
+  optional numeric offset (the name of a column of `data` or a vector
+  with one value per row of `data`), added to the linear predictor of
+  every class (in addition to any
+  [`offset()`](https://rdrr.io/r/stats/offset.html) terms of `formula`),
+  as in [`stats::glm()`](https://rdrr.io/r/stats/glm.html)
+
+## Value
+
+an object of class `"panfmm"`, a list with components `coefficients`
+(all parameters, named `class<c>:<term>` and `prior<c>:<term>`), `vcov`,
+`vcov_type`, `classcoef` (a matrix of class-specific regression
+coefficients, one column per class), `sigma` (Gaussian) or `theta` (NB2)
+by class, `prior` (the class probabilities of each individual, one row
+per individual; with no concomitant variables all rows are equal),
+`prior_mean` (their averages), `posterior` (posterior class
+probabilities, one row per individual, rownames the individual
+identifiers), `class` (the modal posterior class), `classmean` (the mean
+outcome of each class, used for the label order), `loglik`, `df`,
+`starts` (log-likelihood of each EM start), `nobs`, `n_groups`,
+`weights` (the individual weights, `NULL` without weights), `offset`
+(the total offset of each observation in panel order, `NULL` without
+offsets), `k`, `family`, `call` and `formula`. Methods: `print`,
+`summary`, `coef`, `vcov`, `confint`, `predict`, `logLik` (hence `AIC`
+and `BIC`, with `n` the number of observations), `nobs`, `tidy` and
+`glance`.
+
+## Estimation
+
+The EM algorithm is run from `nstart` starting partitions of the
+individuals: the first splits them by the quantiles of their mean
+outcome, the others are random. The E step computes the posterior class
+probabilities `tau_ic` of each individual from the whole history
+`y_i1, ..., y_iT`; the M step fits one weighted GLM per class (weights
+`tau_ic` repeated over the individual's observations, iteratively
+reweighted least squares warm-started at the previous iteration's
+coefficients; NB2 by IRLS and a Newton step for `theta`) and the class
+probabilities (sample means of `tau_ic`, or a weighted multinomial logit
+on the concomitant variables). The run with the largest log-likelihood
+is then polished by BFGS and Newton steps on the observed-data
+log-likelihood `sum_i log L_i`, whose numerical Hessian (from analytic
+scores) gives the classical covariance `solve(-H)`. The cluster
+covariance is the sandwich `B (sum_g s_g s_g') B` with `B = solve(-H)`,
+the individual scores `s_i` summed within clusters (the individual by
+default) and the factor `G / (G - 1)`, the convention used in the rest
+of the package for likelihoods whose units are individuals.
+
+## Weights
+
+Class membership is a property of the individual, so `weights` are
+individual (sampling) weights: they must be constant within individuals
+(one weight per individual, repeated over its rows) and `panfmm()` stops
+otherwise. The fit maximizes the weighted pseudo log-likelihood
+`sum_i w_i log L_i`, the convention of flexmix (whose integer weights
+must also be identical within groups). In the EM algorithm the M step
+weights become `w_i tau_ic`, and the class probabilities are weighted
+means of the posteriors. The classical covariance is `solve(-H_w)` from
+the weighted Hessian, which is correct for frequency weights; for
+sampling weights use `vcov = "cluster"`, the sandwich
+`B (sum_g S_g S_g') B` with the weighted individual scores
+`S_i = w_i s_i` summed within clusters. Individuals with zero weight do
+not contribute. With weights the reported `loglik` (hence AIC and BIC)
+is the weighted log-likelihood, and BIC keeps `n` the number of
+observations (flexmix uses the sum of the weights, which differs for
+sampling weights scaled to population totals).
+
+Ancillary parameters are estimated on the log scale: `log(sigma)` for
+the Gaussian family and `log(theta)` for NB2 (variance
+`mu + mu^2 / theta`, i.e. `alpha = 1 / theta`). The class probabilities
+are parameterized by the multinomial logit coefficients of classes
+`2, ..., k` against class 1 (an intercept only when there are no
+concomitant variables), and these are the parameters reported in
+[`coef()`](https://rdrr.io/r/stats/coef.html) and
+[`vcov()`](https://rdrr.io/r/stats/vcov.html); the implied probabilities
+are in `fit$prior`.
+
+## Label switching
+
+Mixture likelihoods are invariant to permutations of the class labels.
+`panfmm()` orders the classes by ascending mean outcome: the mean over
+all observations of the class-specific fitted mean `mu_c(x_it)`, so that
+class 1 is the low-use class and class `k` the high-use class. The
+multinomial logit of the class probabilities uses class 1 as reference.
+
+## Validation
+
+Checked against flexmix in the package's validation suite on GitHub:
+[`flexmix::flexmix()`](https://rdrr.io/pkg/flexmix/man/flexmix.html)
+with the `| id` grouping, started from the same posterior, gives the
+same log-likelihood, class and concomitant coefficients, class
+probabilities, posteriors and BIC, and `flexmix::refit()` the same
+standard errors, for Gaussian, Poisson, NB2 and binomial components;
+flexmix from its own random starts finds no better optimum.
+
+## References
+
+Deb, P. and Trivedi, P. K. (1997). Demand for medical care by the
+elderly: a finite mixture approach. *Journal of Applied Econometrics*,
+12, 313-336.
+
+Deb, P. and Trivedi, P. K. (2002). The structure of demand for health
+care: latent class versus two-part models. *Journal of Health
+Economics*, 21, 601-625.
+[doi:10.1016/S0167-6296(02)00008-5](https://doi.org/10.1016/S0167-6296%2802%2900008-5)
+
+Bago d'Uva, T. (2006). Latent class models for utilisation of health
+care. *Health Economics*, 15, 329-343.
+[doi:10.1002/hec.1112](https://doi.org/10.1002/hec.1112)
+
+Gruen, B. and Leisch, F. (2008). FlexMix version 2: finite mixtures with
+concomitant variables and varying and constant parameters. *Journal of
+Statistical Software*, 28(4).
+[doi:10.18637/jss.v028.i04](https://doi.org/10.18637/jss.v028.i04)
+
+## See also
+
+[`summary.panfmm()`](https://ielbadisy.github.io/panglm/reference/summary.panfmm.md),
+[`vcov.panfmm()`](https://ielbadisy.github.io/panglm/reference/vcov.panfmm.md)
+and
+[`predict.panfmm()`](https://ielbadisy.github.io/panglm/reference/predict.panfmm.md)
+for the fitted model,
+[tidy-methods](https://ielbadisy.github.io/panglm/reference/tidy-methods.md)
+for `tidy()` and `glance()`.
+
+Other panel models:
+[`panfmmselect()`](https://ielbadisy.github.io/panglm/reference/panfmmselect.md),
+[`panglm()`](https://ielbadisy.github.io/panglm/reference/panglm.md),
+[`pangmm()`](https://ielbadisy.github.io/panglm/reference/pangmm.md),
+[`panhurdle()`](https://ielbadisy.github.io/panglm/reference/panhurdle.md),
+[`paniv()`](https://ielbadisy.github.io/panglm/reference/paniv.md),
+[`panqr()`](https://ielbadisy.github.io/panglm/reference/panqr.md),
+[`panselect()`](https://ielbadisy.github.io/panglm/reference/panselect.md),
+[`twopart()`](https://ielbadisy.github.io/panglm/reference/twopart.md)
+
+## Examples
+
+``` r
+# Doctor visits of 400 patients over 4 years: 70% low users and 30%
+# high users with a stronger effect of chronic illness
+set.seed(1)
+N <- 400; TT <- 4
+d <- data.frame(id = rep(seq_len(N), each = TT), year = rep(seq_len(TT), N))
+high <- rep(rbinom(N, 1, 0.3), each = TT)
+d$chronic <- rbinom(N * TT, 1, 0.4)
+d$age <- rep(round(runif(N, 40, 80)), each = TT)
+mu <- exp(ifelse(high == 1, 1.5 + 0.6 * d$chronic, 0 + 0.3 * d$chronic) +
+          0.01 * (d$age - 60))
+d$visits <- rpois(N * TT, mu)
+
+fit <- panfmm(visits ~ chronic + age, data = d, index = c("id", "year"),
+              k = 2, family = "poisson", nstart = 3, seed = 1)
+summary(fit)
+#> 
+#> Call:
+#> panfmm(formula = visits ~ chronic + age, data = d, index = c("id", 
+#>     "year"), k = 2, family = "poisson", nstart = 3, seed = 1)
+#> 
+#> Model: 2-class latent class Poisson model 
+#> N = 1600  groups = 400  vcov: classical 
+#> 
+#> Class 1 (prior 0.719, 288 individuals by modal posterior, mean outcome 1.13):
+#>              Estimate Std. Error z value Pr(>|z|)    
+#> (Intercept) -0.579868   0.150019  -3.865 0.000111 ***
+#> chronic      0.330712   0.055883   5.918 3.26e-09 ***
+#> age          0.009309   0.002390   3.895 9.81e-05 ***
+#> ---
+#> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+#> 
+#> Class 2 (prior 0.281, 112 individuals by modal posterior, mean outcome 6.007):
+#>             Estimate Std. Error z value Pr(>|z|)    
+#> (Intercept) 0.885498   0.107921   8.205 2.30e-16 ***
+#> chronic     0.549704   0.039206  14.021  < 2e-16 ***
+#> age         0.010868   0.001704   6.379 1.79e-10 ***
+#> ---
+#> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+#> 
+#> Class probabilities (multinomial logit, class 1 = reference):
+#>                    Estimate Std. Error z value Pr(>|z|)    
+#> prior2:(Intercept)  -0.9406     0.1118  -8.411   <2e-16 ***
+#> ---
+#> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+#> 
+#> logLik = -2871.674  df = 7  AIC = 5757.349  BIC = 5794.993 
+#> 
+head(fit$posterior)
+#>         class1       class2
+#> 1 9.999999e-01 7.139416e-08
+#> 2 1.000000e+00 5.539822e-10
+#> 3 9.999989e-01 1.058380e-06
+#> 4 5.628315e-10 1.000000e+00
+#> 5 9.998714e-01 1.286244e-04
+#> 6 6.897156e-09 1.000000e+00
+table(predict(fit, type = "class"))
+#> predict.panfmm(type = "class") now returns the modal class label; the class-specific means it returned in panglm 1.5.0 and earlier are type = "components". This message is shown once per session.
+#> 
+#>    1    2 
+#> 1152  448 
+```
