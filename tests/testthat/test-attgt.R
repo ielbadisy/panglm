@@ -169,3 +169,23 @@ test_that("clustered attgt matches did::att_gt(clustervars = )", {
   expect_equal(s$estimates$se, ag$se.egt, tolerance = 1e-6)
   expect_equal(s$overall$se, ag$overall.se, tolerance = 1e-6)
 })
+
+test_that("attgt(), did() and eventstudy() ignore unused levels of a factor index", {
+  set.seed(1)
+  d <- expand.grid(province = 1:40, year = 2012:2019)
+  first <- rep(c(2015, 2017, NA, NA), each = 10)
+  d$adoption <- first[d$province]
+  e <- d$year - d$adoption
+  d$y <- rnorm(40)[d$province] + 0.3 * (d$year - 2012) +
+    ifelse(!is.na(e) & e >= 0, 1, 0) + rnorm(nrow(d))
+  d$province <- factor(d$province)
+  s <- subset(d, as.integer(province) > 5)
+  s2 <- droplevels(s)
+  ix <- c("province", "year")
+  expect_equal(coef(attgt(y ~ 1, data = s, index = ix, treat = "adoption")),
+               coef(attgt(y ~ 1, data = s2, index = ix, treat = "adoption")))
+  expect_equal(coef(did(y ~ 1, data = s, index = ix, treat = "adoption")),
+               coef(did(y ~ 1, data = s2, index = ix, treat = "adoption")))
+  expect_equal(coef(eventstudy(y ~ 1, data = s, index = ix, treat = "adoption")),
+               coef(eventstudy(y ~ 1, data = s2, index = ix, treat = "adoption")))
+})

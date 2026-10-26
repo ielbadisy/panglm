@@ -197,6 +197,11 @@ attgt <- function(formula, data, index, treat, control = c("never", "notyet"),
     stop("'anticipation' must be a non-negative number", call. = FALSE)
   }
   data <- as.data.frame(data)
+  # unused levels of a factor index or cluster (e.g. after subset()) would be
+  # empty individuals or clusters
+  for (v in intersect(c(index, if (is.character(cluster)) cluster), names(data))) {
+    if (is.factor(data[[v]])) data[[v]] <- droplevels(data[[v]])
+  }
   did_timing(data, index, treat)
   wv <- did_weights(weights, data)
   cv <- did_cluster(cluster, data)

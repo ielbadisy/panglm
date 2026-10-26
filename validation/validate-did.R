@@ -5,7 +5,8 @@
 # not-yet-treated controls, the dr, ipw and reg estimators, varying and
 # universal base periods, with and without a covariate; plus a sample
 # without never-treated units, anticipation, an unbalanced panel and a
-# balanced event window.
+# balanced event window, and a subset whose factor individual index keeps
+# unused levels.
 # etwfe() against etwfe::etwfe() and etwfe::emfx() (Wooldridge 2021, 2023):
 # simple, group, calendar and event ATTs for linear, Poisson and logit
 # models, not-yet and never-treated controls, with and without a control.
@@ -115,5 +116,17 @@ add("etwfe gaussian notyet + lpop", "mpdta, unbalanced", "group ATT", s$estimate
     list(etwfe = e$estimate), 1e-8)
 add("etwfe gaussian notyet + lpop", "mpdta, unbalanced", "group SE", s$se,
     list(etwfe = e$std.error), 1e-6)
+
+## factor index with unused levels (a subset of a factor-indexed panel) ----
+sub <- mpdta[mpdta$countyreal %in% sort(unique(mpdta$countyreal))[-(1:100)], ]
+subf <- sub
+subf$countyreal <- factor(subf$countyreal, levels = sort(unique(mpdta$countyreal)))
+ref <- did::att_gt("lemp", tname = "year", idname = "countyreal", gname = "first.treat",
+                   data = sub, bstrap = FALSE, cband = FALSE)
+fit <- attgt(lemp ~ 1, subf, idx, "first.treat")
+add("attgt never dr varying", "mpdta subset, factor id with unused levels", "ATT(g,t)",
+    fit$estimates$estimate, list(did = ref$att), 1e-8)
+add("attgt never dr varying", "mpdta subset, factor id with unused levels", "SE ATT(g,t)",
+    fit$estimates$se, list(did = ref$se), 1e-6)
 
 do.call(vsave, c(out, name = "did"))
