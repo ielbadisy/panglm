@@ -1,44 +1,32 @@
 ## Submission
 
-This is the first submission of `panglm` to CRAN.
+This is an update of panglm from 1.1.4 to 1.6.0. It adds new panel
+estimators (between, Tobit, ordered, beta, gamma, random slopes, panel IV
+and Hausman-Taylor, dynamic GMM, sample selection, quantile regression,
+latent class models, and staggered difference-in-differences), tidy methods
+for every model class, and task-based vignettes. Exported names with
+underscores are deprecated through wrappers that keep working and warn. See
+NEWS.md for details.
 
-`panglm` provides fast estimation of pooled, fixed-effects (within), and
-random-effects generalized linear models for panel data (gaussian,
-poisson, binomial, and negative-binomial families), with a compiled
-(Rcpp/RcppArmadillo/RcppParallel) numerical core. Covers two-way fixed
-effects, exact conditional logistic FE (Chamberlain 1980), a fixed-effects
-hurdle model for structural-zero counts, Hausman specification testing,
-HC1/cluster-robust sandwich variance, and `broom` (`tidy()`/`glance()`)
-compatibility. Every estimator is validated in tests against a reference
-implementation (`plm`, `pglm`, `fixest`, `MASS::glm.nb`, `survival::clogit`,
-`pscl::hurdle`, or `glmmTMB`, as applicable).
+Every estimator is validated against an established package (plm, fixest,
+lme4, glmmTMB, did, etwfe, quantreg, flexmix, censReg, betareg, and others).
 
 ## Test environments
 
-* local: Ubuntu 24.04, R 4.5.1 (via `R CMD check --as-cran`)
-* win-builder: R-devel and R-release
+* local: Ubuntu 24.04, R 4.5.1, `R CMD check --as-cran` on a fresh clone
 
 ## R CMD check results
 
-0 errors | 0 warnings | 3 notes
+0 errors | 0 warnings | 1 note
 
-* This is a new submission.
-* The `Description` field cites the primary method references as `<doi:...>`
-  (Hausman 1978, Chamberlain 1980, Allison and Waterman 2002, Croissant and
-  Millo 2008).
-* NOTE: "unable to verify current time" / future file timestamps. This is a
-  clock artifact of the local check environment (no NTP access); it does not
-  reflect anything in the package.
-* NOTE: compilation used `-mno-omit-leaf-frame-pointer`. This flag is
-  injected by the local Ubuntu R toolchain's system `Makeconf`. The package
-  does not set it in `src/Makevars`; it does not appear on other platforms.
-* The installed size is ~12 Mb, almost entirely the compiled
-  Rcpp/RcppArmadillo/RcppParallel shared object in `libs/`.
+* NOTE: compilation used `-mno-omit-leaf-frame-pointer`. This flag comes
+  from the local Ubuntu R toolchain (`Makeconf`), not from the package's
+  `src/Makevars`.
+
+Parallel code respects `OMP_THREAD_LIMIT` and uses at most 2 threads under
+`R CMD check`; examples, tests and vignettes run with a CPU/elapsed ratio
+close to 1.
 
 ## Downstream dependencies
 
-None (new package).
-
-## Downstream dependencies
-
-None (new package).
+None.
