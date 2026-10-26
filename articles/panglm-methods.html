@@ -326,8 +326,8 @@ standard errors clustered by individual.</p>
 </tr>
 <tr class="even">
 <td>Binomial (logit, probit)</td>
-<td>normal</td>
-<td>Gauss-Hermite quadrature</td>
+<td>normal on the link scale</td>
+<td>adaptive Gauss-Hermite quadrature</td>
 </tr>
 <tr class="odd">
 <td>Gamma, ordered, beta, tobit</td>
@@ -336,10 +336,22 @@ standard errors clustered by individual.</p>
 </tr>
 </tbody>
 </table>
-<p><code>R</code> sets the number of quadrature nodes. Adaptive
-quadrature centres the nodes at each individual’s mode and scales them
-by the curvature there; <code>R = 1</code> is the Laplace approximation.
-Response predictions are marginal over
+<p><code>R</code> sets the number of quadrature nodes (default 21).
+Adaptive quadrature centres the nodes at each individual’s mode and
+scales them by the curvature there, so <code>R = 1</code> is the Laplace
+approximation (the beta model scales by the expected curvature). For the
+binomial and ordered models the gradient is exact, including the
+dependence of the mode and the curvature on the parameters, and the
+default <code>R = 21</code> reproduces
+<code>lme4::glmer(nAGQ = 21)</code> and
+<code>ordinal::clmm(nAGQ = 21)</code> to about 1e-5. A probit model with
+a large random-intercept spread needs more nodes for that accuracy: on
+<code><a href="https://rdrr.io/pkg/pglm/man/UnionWage.html" class="external-link">pglm::UnionWage</a></code>
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>σ</mi><mi>α</mi></msub><mo>=</mo><mn>1.7</mn></mrow><annotation encoding="application/x-tex">\sigma_\alpha = 1.7</annotation></semantics></math>)
+21 nodes leave an error of about 1e-3 in the log-likelihood, and 41 or
+more remove it. <code>R</code> is ignored by the closed-form Gaussian,
+Poisson and negative binomial random-intercept models. Response
+predictions are marginal over
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>α</mi><mi>i</mi></msub><annotation encoding="application/x-tex">\alpha_i</annotation></semantics></math>;
 for the gamma model this includes the lognormal factor
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msubsup><mi>σ</mi><mi>α</mi><mn>2</mn></msubsup><mi>/</mi><mn>2</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\exp(\sigma_\alpha^2/2)</annotation></semantics></math>.

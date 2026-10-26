@@ -441,16 +441,16 @@ Staub and Winkelmann (2015), which is consistent for the slopes.</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Coefficients:</span></span>
 <span><span class="co">#&gt;             Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
-<span><span class="co">#&gt; treatment   -0.70343    0.42438  -1.658 0.097412 .  </span></span>
-<span><span class="co">#&gt; age          0.09461    0.02587   3.657 0.000255 ***</span></span>
-<span><span class="co">#&gt; crp          0.08049    0.06392   1.259 0.207935    </span></span>
-<span><span class="co">#&gt; none|mild    4.31825    1.73659   2.487 0.012896 *  </span></span>
-<span><span class="co">#&gt; mild|severe  7.18106    1.78634   4.020 5.82e-05 ***</span></span>
+<span><span class="co">#&gt; treatment   -0.70419    0.42706  -1.649 0.099165 .  </span></span>
+<span><span class="co">#&gt; age          0.09392    0.02538   3.700 0.000216 ***</span></span>
+<span><span class="co">#&gt; crp          0.07963    0.06376   1.249 0.211707    </span></span>
+<span><span class="co">#&gt; none|mild    4.27286    1.70980   2.499 0.012453 *  </span></span>
+<span><span class="co">#&gt; mild|severe  7.13186    1.75713   4.059 4.93e-05 ***</span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Log-likelihood: -279.4 </span></span>
-<span><span class="co">#&gt; Random-intercept SD: 1.304 </span></span>
+<span><span class="co">#&gt; Log-likelihood: -279.5 </span></span>
+<span><span class="co">#&gt; Random-intercept SD: 1.292 </span></span>
 <span><span class="co">#&gt; Residual df: 294  Iterations: 42</span></span>
 <span><span class="va">fe_ord</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/panglm.html">panglm</a></span><span class="op">(</span><span class="va">severity</span> <span class="op">~</span> <span class="va">crp</span>, data <span class="op">=</span> <span class="va">copd</span>, index <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"visit"</span><span class="op">)</span>,</span>
 <span>                 model <span class="op">=</span> <span class="st">"within"</span>, family <span class="op">=</span> <span class="fu"><a href="../reference/panglm-families.html">orderedfamily</a></span><span class="op">(</span><span class="st">"logit"</span><span class="op">)</span><span class="op">)</span></span>
@@ -467,30 +467,30 @@ predicted probabilities.</p>
 <span><span class="co">#&gt; Delta-method standard errors, vcov: classical </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;  category      term contrast  estimate std.error statistic   p.value  conf.low</span></span>
-<span><span class="co">#&gt;      none treatment    1 - 0  0.086380  0.052900     1.633 1.025e-01 -0.017310</span></span>
-<span><span class="co">#&gt;      mild treatment    1 - 0  0.024090  0.017580     1.370 1.707e-01 -0.010370</span></span>
-<span><span class="co">#&gt;    severe treatment    1 - 0 -0.110500  0.065840    -1.678 9.339e-02 -0.239500</span></span>
-<span><span class="co">#&gt;      none       age    dY/dX -0.011370  0.003034    -3.749 1.774e-04 -0.017320</span></span>
-<span><span class="co">#&gt;      mild       age    dY/dX -0.003488  0.001649    -2.115 3.439e-02 -0.006719</span></span>
-<span><span class="co">#&gt;    severe       age    dY/dX  0.014860  0.003646     4.076 4.583e-05  0.007715</span></span>
-<span><span class="co">#&gt;      none       crp    dY/dX -0.009677  0.007658    -1.264 2.064e-01 -0.024690</span></span>
-<span><span class="co">#&gt;      mild       crp    dY/dX -0.002967  0.002680    -1.107 2.682e-01 -0.008220</span></span>
-<span><span class="co">#&gt;    severe       crp    dY/dX  0.012640  0.009989     1.266 2.056e-01 -0.006933</span></span>
+<span><span class="co">#&gt;      none treatment    1 - 0  0.086690  0.053490     1.621 1.051e-01 -0.018140</span></span>
+<span><span class="co">#&gt;      mild treatment    1 - 0  0.024270  0.017670     1.374 1.695e-01 -0.010360</span></span>
+<span><span class="co">#&gt;    severe treatment    1 - 0 -0.111000  0.066380    -1.671 9.463e-02 -0.241100</span></span>
+<span><span class="co">#&gt;      none       age    dY/dX -0.011320  0.002998    -3.775 1.601e-04 -0.017190</span></span>
+<span><span class="co">#&gt;      mild       age    dY/dX -0.003486  0.001651    -2.112 3.469e-02 -0.006722</span></span>
+<span><span class="co">#&gt;    severe       age    dY/dX  0.014800  0.003596     4.117 3.837e-05  0.007757</span></span>
+<span><span class="co">#&gt;      none       crp    dY/dX -0.009596  0.007671    -1.251 2.109e-01 -0.024630</span></span>
+<span><span class="co">#&gt;      mild       crp    dY/dX -0.002956  0.002674    -1.106 2.689e-01 -0.008196</span></span>
+<span><span class="co">#&gt;    severe       crp    dY/dX  0.012550  0.009992     1.256 2.090e-01 -0.007032</span></span>
 <span><span class="co">#&gt;   conf.high</span></span>
-<span><span class="co">#&gt;   0.1901000</span></span>
-<span><span class="co">#&gt;   0.0585500</span></span>
-<span><span class="co">#&gt;   0.0185800</span></span>
-<span><span class="co">#&gt;  -0.0054280</span></span>
-<span><span class="co">#&gt;  -0.0002564</span></span>
-<span><span class="co">#&gt;   0.0220100</span></span>
-<span><span class="co">#&gt;   0.0053330</span></span>
-<span><span class="co">#&gt;   0.0022850</span></span>
-<span><span class="co">#&gt;   0.0322200</span></span>
+<span><span class="co">#&gt;   0.1915000</span></span>
+<span><span class="co">#&gt;   0.0588900</span></span>
+<span><span class="co">#&gt;   0.0191500</span></span>
+<span><span class="co">#&gt;  -0.0054420</span></span>
+<span><span class="co">#&gt;  -0.0002508</span></span>
+<span><span class="co">#&gt;   0.0218500</span></span>
+<span><span class="co">#&gt;   0.0054380</span></span>
+<span><span class="co">#&gt;   0.0022840</span></span>
+<span><span class="co">#&gt;   0.0321400</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_ord</span>, type <span class="op">=</span> <span class="st">"prob"</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt;           none      mild    severe</span></span>
-<span><span class="co">#&gt; [1,] 0.1674323 0.4769168 0.3556509</span></span>
-<span><span class="co">#&gt; [2,] 0.2260979 0.4956084 0.2782937</span></span>
-<span><span class="co">#&gt; [3,] 0.1843837 0.4848930 0.3307233</span></span></code></pre></div>
+<span><span class="co">#&gt; [1,] 0.1674925 0.4782422 0.3542652</span></span>
+<span><span class="co">#&gt; [2,] 0.2257297 0.4966803 0.2775900</span></span>
+<span><span class="co">#&gt; [3,] 0.1843286 0.4861148 0.3295566</span></span></code></pre></div>
 <p>Active treatment lowers the probability of the “severe” category by
 about 11 percentage points and raises that of “none” by about 9
 (imprecisely estimated); the effects across categories sum to zero.</p>

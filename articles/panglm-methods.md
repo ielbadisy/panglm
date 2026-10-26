@@ -150,17 +150,28 @@ Random-effects models integrate over $`\alpha_i`$:
 | Gaussian | normal | closed form (FGLS or ML) |
 | Poisson | gamma | closed form (negative binomial marginal) |
 | Negative binomial | beta on the NB2 probability | closed form (Hausman, Hall and Griliches 1984) |
-| Binomial (logit, probit) | normal | Gauss-Hermite quadrature |
+| Binomial (logit, probit) | normal on the link scale | adaptive Gauss-Hermite quadrature |
 | Gamma, ordered, beta, tobit | normal on the link scale | adaptive Gauss-Hermite quadrature |
 
-`R` sets the number of quadrature nodes. Adaptive quadrature centres the
-nodes at each individual’s mode and scales them by the curvature there;
-`R = 1` is the Laplace approximation. Response predictions are marginal
-over $`\alpha_i`$; for the gamma model this includes the lognormal
-factor $`\exp(\sigma_\alpha^2/2)`$. Covariances use the observed
-information, and `vcov = "cluster"` gives the sandwich built from the
-individual scores of the integrated likelihood. With weights constant
-within individuals the weighted sum of the individual log-likelihoods is
+`R` sets the number of quadrature nodes (default 21). Adaptive
+quadrature centres the nodes at each individual’s mode and scales them
+by the curvature there, so `R = 1` is the Laplace approximation (the
+beta model scales by the expected curvature). For the binomial and
+ordered models the gradient is exact, including the dependence of the
+mode and the curvature on the parameters, and the default `R = 21`
+reproduces `lme4::glmer(nAGQ = 21)` and `ordinal::clmm(nAGQ = 21)` to
+about 1e-5. A probit model with a large random-intercept spread needs
+more nodes for that accuracy: on
+[`pglm::UnionWage`](https://rdrr.io/pkg/pglm/man/UnionWage.html)
+($`\sigma_\alpha = 1.7`$) 21 nodes leave an error of about 1e-3 in the
+log-likelihood, and 41 or more remove it. `R` is ignored by the
+closed-form Gaussian, Poisson and negative binomial random-intercept
+models. Response predictions are marginal over $`\alpha_i`$; for the
+gamma model this includes the lognormal factor
+$`\exp(\sigma_\alpha^2/2)`$. Covariances use the observed information,
+and `vcov = "cluster"` gives the sandwich built from the individual
+scores of the integrated likelihood. With weights constant within
+individuals the weighted sum of the individual log-likelihoods is
 maximized and the cluster covariance is design based.
 
 **Correlated random effects.** `cre = TRUE` adds the individual means of

@@ -130,8 +130,8 @@ partialeffects(fit)
 #> Delta-method standard errors, vcov: classical 
 #> 
 #>       term contrast estimate std.error statistic   p.value  conf.low conf.high
-#>  treatment    1 - 0 -0.13560  0.063190    -2.146 0.0318600 -0.259400  -0.01176
-#>        age    dY/dX  0.01161  0.003044     3.813 0.0001372  0.005640   0.01757
+#>  treatment    1 - 0 -0.13560  0.063190    -2.146 0.0318600 -0.259500  -0.01176
+#>        age    dY/dX  0.01161  0.003042     3.815 0.0001361  0.005644   0.01757
 #>        crp    dY/dX  0.01713  0.013100     1.308 0.1909000 -0.008539   0.04280
 #> 
 ```

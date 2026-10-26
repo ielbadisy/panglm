@@ -212,12 +212,22 @@ panglm(
 
 - R:
 
-  number of Gauss-Hermite quadrature nodes (random-effects binomial and
-  gamma models only). With random slopes, the number of nodes per
-  dimension of the adaptive product rule. When `R` is not given it is 7
-  for one slope, 5 for two, 3 for three to five and 1 (Laplace) beyond,
-  so that `R^q` stays moderate; a warning is given when `R^q`
-  exceeds 2000. `R = 1` gives the Laplace approximation.
+  number of adaptive Gauss-Hermite quadrature nodes for the
+  random-effects models whose likelihood has no closed form: binomial
+  (logit, probit), gamma, ordered, beta and Tobit. The default `R = 21`
+  reproduces `lme4::glmer(nAGQ = 21)` and `ordinal::clmm(nAGQ = 21)` to
+  about 1e-5 in the coefficients and the log-likelihood (for a probit
+  model with a large random-intercept spread, say `sigma > 1.5`, raise
+  `R` to 41 or more for that accuracy). The nodes are centred at the
+  mode of each individual's integrand and scaled by its curvature, so
+  `R = 1` is the Laplace approximation (with the observed curvature,
+  except for the beta model, which uses the expected one). `R` is
+  ignored by the closed-form random-intercept Gaussian, Poisson and
+  negative binomial models. With random slopes, `R` is the number of
+  nodes per dimension of the adaptive product rule; when it is not given
+  it is 7 for one slope, 5 for two, 3 for three to five and 1 (Laplace)
+  beyond, so that `R^q` stays moderate, and a warning is given when
+  `R^q` exceeds 2000.
 
 - maxit:
 
@@ -400,11 +410,11 @@ summary(fit_cre)
 #> 
 #> Coefficients:
 #>             Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept) -2.72956    1.07818  -2.532 0.011353 *  
-#> treatment   -0.47330    0.22838  -2.072 0.038225 *  
-#> age          0.03989    0.01126   3.541 0.000398 ***
-#> crp          0.05887    0.04543   1.296 0.194953    
-#> mean_crp    -0.12856    0.11532  -1.115 0.264921    
+#> (Intercept) -2.72956    1.07767  -2.533 0.011315 *  
+#> treatment   -0.47330    0.22839  -2.072 0.038231 *  
+#> age          0.03989    0.01126   3.544 0.000394 ***
+#> crp          0.05887    0.04543   1.296 0.194948    
+#> mean_crp    -0.12856    0.11532  -1.115 0.264932    
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> 
@@ -412,7 +422,7 @@ summary(fit_cre)
 #> Dispersion parameter: 1 
 #> Random-intercept SD: 0.2689 
 #> Mundlak test (individual means jointly zero): chi2(1) = 1.243, p = 0.2649
-#> Residual df: 294  Iterations: 43
+#> Residual df: 294  Iterations: 35
 #> 
 
 # patient trajectories: random intercept and random slope of FEV1
@@ -432,7 +442,7 @@ summary(fit_rs)
 #> 
 #> Coefficients:
 #>              Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept)  3.872439   0.414554   9.341  < 2e-16 ***
+#> (Intercept)  3.872439   0.414555   9.341  < 2e-16 ***
 #> visit       -0.004717   0.008262  -0.571  0.56808    
 #> treatment    0.251411   0.110762   2.270  0.02322 *  
 #> age         -0.013627   0.006396  -2.131  0.03312 *  
@@ -448,8 +458,8 @@ summary(fit_rs)
 #> 
 fit_rs$varcomp
 #>              (Intercept)         visit
-#> (Intercept)  0.178115843 -1.253264e-03
-#> visit       -0.001253264  8.818254e-06
+#> (Intercept)  0.178115951 -1.253272e-03
+#> visit       -0.001253272  8.818356e-06
 
 # two-way conditional logit: smoking across survey waves, with year
 # shocks (e.g. a tobacco tax) absorbed by the time effects
@@ -480,7 +490,7 @@ summary(fit_2w)
 #> 
 #> Log-likelihood: -282.3 
 #> Dispersion parameter: 1 
-#> Iterations: 34
+#> Iterations: 35
 #> 
 fit_2w$time_effects
 #>          1          2          3          4          5 

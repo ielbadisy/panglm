@@ -53,7 +53,7 @@ ordinal outcomes such as self-assessed health:
 ordered factor or integer-valued; categories follow the factor levels or
 the sorted values. The intercept is absorbed in the cutpoints `c_j`,
 which are reported after the slopes. `model = "pooling"` and
-`model = "random"` (Gaussian random intercept by Gauss-Hermite
+`model = "random"` (Gaussian random intercept by adaptive Gauss-Hermite
 quadrature) are available for both links, `model = "within"` for the
 logit link only (the "blow-up and cluster" fixed-effects ordered logit
 of Baetschmann, Staub and Winkelmann 2015). The fit has class
