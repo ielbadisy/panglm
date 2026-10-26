@@ -900,7 +900,7 @@ fit_within_binomial <- function(X, y, group_start, group_size, maxit, tol) {
 
   coefs <- as.numeric(opt$par)
   names(coefs) <- colnames(X)
-  vcov <- tryCatch(solve(opt$hessian), error = function(e) matrix(NA_real_, k, k))
+  vcov <- tryCatch(solve(opt$hessian), error = function(e) matrix(NA_real_, ncol(X), ncol(X)))
   bread <- vcov
   dimnames(vcov) <- dimnames(bread) <- list(colnames(X), colnames(X))
 
