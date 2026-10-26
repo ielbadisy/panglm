@@ -432,7 +432,7 @@ summary(fit_rs)
 #> 
 #> Coefficients:
 #>              Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept)  3.872439   0.414555   9.341  < 2e-16 ***
+#> (Intercept)  3.872439   0.414554   9.341  < 2e-16 ***
 #> visit       -0.004717   0.008262  -0.571  0.56808    
 #> treatment    0.251411   0.110762   2.270  0.02322 *  
 #> age         -0.013627   0.006396  -2.131  0.03312 *  
@@ -448,8 +448,8 @@ summary(fit_rs)
 #> 
 fit_rs$varcomp
 #>              (Intercept)         visit
-#> (Intercept)  0.178115951 -1.253272e-03
-#> visit       -0.001253272  8.818356e-06
+#> (Intercept)  0.178115843 -1.253264e-03
+#> visit       -0.001253264  8.818254e-06
 
 # two-way conditional logit: smoking across survey waves, with year
 # shocks (e.g. a tobacco tax) absorbed by the time effects
@@ -480,7 +480,7 @@ summary(fit_2w)
 #> 
 #> Log-likelihood: -282.3 
 #> Dispersion parameter: 1 
-#> Iterations: 35
+#> Iterations: 34
 #> 
 fit_2w$time_effects
 #>          1          2          3          4          5 
