@@ -116,9 +116,10 @@ panglm(
 
   one of `"individual"` or `"twoways"` (individual + time fixed
   effects). `"twoways"` is implemented for `model = "within"` only:
-  `family = "gaussian"` (exact alternating-projections demeaning),
-  `"poisson"` and `"negbin"` (both via outer-IRLS / inner-weighted-FWL,
-  the algorithm behind
+  `family = "gaussian"` (iterative alternating-projections demeaning,
+  iterated until it converges to tolerance, with a warning if the limit
+  of 10,000 sweeps is reached first), `"poisson"` and `"negbin"` (both
+  via outer-IRLS / inner-weighted-FWL, the algorithm behind
   [`fixest::feglm()`](https://lrberge.github.io/fixest/reference/feglm.html)),
   and `"binomial"`, the two-way conditional (Chamberlain) logit: the
   individual effects are conditioned out exactly and the time effects
@@ -148,10 +149,14 @@ panglm(
   design matrix, named `mean_<column>`. Available for
   `model = "pooling"` and `model = "random"` and every family. The
   slopes of the time-varying regressors then have a within
-  interpretation, and the joint test of the mean terms is a robust
-  Hausman-type test (reported by
-  [`summary.panglm()`](https://elbadisyimad.com/panglm/reference/summary.panglm.md)).
-  Defaults to `dynamic`.
+  interpretation, and the joint Wald test of the mean terms is a
+  Hausman-type (Mundlak) test, reported by
+  [`summary.panglm()`](https://elbadisyimad.com/panglm/reference/summary.panglm.md)
+  with the covariance stored on the fit: it is robust to
+  heteroskedasticity and within-individual correlation only when that
+  covariance is (`vcov = "cluster"`, or `"HC1"` for heteroskedasticity
+  alone); with the default classical covariance it assumes the model's
+  error structure. Defaults to `dynamic`.
 
 - dynamic:
 
@@ -320,8 +325,10 @@ GitHub and in the package tests:
 - Tobit: [`AER::tobit()`](https://rdrr.io/pkg/AER/man/tobit.html) and
   censReg; beta:
   [`betareg::betareg()`](https://rdrr.io/pkg/betareg/man/betareg.html)
-  and glmmTMB; gamma: [`stats::glm()`](https://rdrr.io/r/stats/glm.html)
-  and glmmTMB.
+  (pooled), GLMMadaptive at the same number of quadrature points (random
+  intercept, `validation/validate-beta.R`) and glmmTMB (Laplace, close
+  but not identical); gamma:
+  [`stats::glm()`](https://rdrr.io/r/stats/glm.html) and glmmTMB.
 
 ## See also
 

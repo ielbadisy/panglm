@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">panglm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.6.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.6.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -51,6 +51,34 @@
       <small>Source: <a href="https://github.com/ielbadisy/panglm/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.6.1" id="panglm-161">panglm 1.6.1<a class="anchor" aria-label="anchor" href="#panglm-161"></a></h2>
+<p>Correctness release. Every fix is checked against an established package in the validation scripts.</p>
+<div class="section level3">
+<h3 id="changed-behaviour-1-6-1">Changed behaviour<a class="anchor" aria-label="anchor" href="#changed-behaviour-1-6-1"></a></h3>
+<ul><li>Random-intercept binomial (logit, probit) and ordered (logit, probit) models are now integrated by adaptive Gauss-Hermite quadrature centred at each individual’s mode, instead of non-adaptive quadrature. Estimates change, most for large random-effect variances or long panels. At the default <code>R = 21</code> the fits match <code>lme4::glmer(nAGQ = 21)</code> and <code>ordinal::clmm(nAGQ = 21)</code> to about 1e-5; <code>R = 1</code> is now the Laplace approximation (glmmTMB, <code>clmm(nAGQ = 1)</code>).</li>
+<li>
+<code>panqr(model = "mmqr")</code>: the analytic covariance (<code>vcov = "analytic"</code>, the default) is now cluster-robust by individual. The influence functions of the location, scale and quantile steps are summed within each cluster and <code>V = G/(G-1) sum_g psi_g psi_g'</code>, where <code>G</code> is the number of clusters. The formula of Machado and Santos Silva (2019), which assumes independent observations and can badly overstate the standard errors in short panels, is kept as <code>vcov = "iid"</code>. A new <code>cluster</code> argument names another clustering column. Standard errors of existing MM-QR fits change.</li>
+<li>Gaussian random effects on unbalanced panels now use the Swamy-Arora variance components of plm (<code>random.method = "swar"</code>), so estimates on unbalanced panels change and match <code>plm::plm(model = "random")</code>. Balanced fits are unchanged. A negative individual-effect variance is set to zero with a warning.</li>
+<li>The one-way and two-way fixed-effects logit are fitted by Newton-Raphson with the exact analytic Hessian of the conditional likelihood instead of BFGS with a finite-difference Hessian. Coefficients and standard errors match <code><a href="https://rdrr.io/pkg/survival/man/clogit.html" class="external-link">survival::clogit()</a></code> to about 1e-13, and the fit is faster than clogit at N = 10,000 and 50,000.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-1-6-1">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-6-1"></a></h3>
+<ul><li>
+<code><a href="../reference/panglm.html">panglm()</a></code> accepts base R family objects (<code><a href="https://rdrr.io/r/stats/family.html" class="external-link">gaussian()</a></code>, <code><a href="https://rdrr.io/r/stats/family.html" class="external-link">poisson()</a></code>, <code>binomial("logit")</code>, <code>binomial("probit")</code>, <code>Gamma("log")</code>) and maps them onto the panglm families; other stats families stop with a message naming the panglm constructor.</li>
+<li>
+<code><a href="../reference/attgt.html">attgt()</a></code>, <code><a href="../reference/did.html">did()</a></code>, <code><a href="../reference/eventstudy.html">eventstudy()</a></code> and <code><a href="../reference/etwfe.html">etwfe()</a></code> no longer fail when the individual index is a factor with unused levels (e.g. after <code><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset()</a></code>).</li>
+<li>
+<code><a href="../reference/pangmm.html">pangmm()</a></code> drops regressors that are not identified in the transformed equation (for example age in a balanced annual panel) with a warning, instead of stopping with a singular-system error.</li>
+<li>Two-way demeaning (<code>effect = "twoways"</code>) by alternating projections now warns if it reaches the iteration limit before converging.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="documentation-1-6-1">Documentation<a class="anchor" aria-label="anchor" href="#documentation-1-6-1"></a></h3>
+<ul><li>Two-way demeaning is described as iterative, converging to tolerance, rather than exact.</li>
+<li>The <code>cre</code> test is described as a Hausman-type (Mundlak) test that is robust only with <code>vcov = "cluster"</code> (or <code>"HC1"</code> for heteroskedasticity alone).</li>
+<li>The beta family validation is now in <code>validation/validate-beta.R</code> (betareg, GLMMadaptive, glmmTMB and numerical integration).</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.6.0" id="panglm-160">panglm 1.6.0<a class="anchor" aria-label="anchor" href="#panglm-160"></a></h2>
 <p>This release collects all changes since 1.1.4, the previous CRAN version. Every new estimator is validated against an established package; the help page of each model function names them in a “Validation” section.</p>
