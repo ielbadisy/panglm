@@ -46,5 +46,5 @@ fit <- panqr(y ~ x, data = d, index = c("id", "t"), tau = c(0.25, 0.75),
              model = "mmqr")
 vcov(fit, tau = 0.75)
 #>             x
-#> x 0.003559133
+#> x 0.003527145
 ```

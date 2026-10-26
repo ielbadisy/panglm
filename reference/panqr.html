@@ -83,7 +83,8 @@ estimated in one call.</p>
 <span>  boot <span class="op">=</span> <span class="fl">200</span>,</span>
 <span>  na.action <span class="op">=</span> <span class="fu">stats</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/r/stats/na.fail.html" class="external-link">na.omit</a></span>,</span>
 <span>  seed <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  <span class="va">R</span></span>
+<span>  <span class="va">R</span>,</span>
+<span>  cluster <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -118,8 +119,9 @@ and leave the sample, and <code>lag(x, 0:2)</code> gives several lags</p></dd>
 
 
 <dt id="arg-vcov">vcov<a class="anchor" aria-label="anchor" href="#arg-vcov"></a></dt>
-<dd><p><code>"analytic"</code>, <code>"bootstrap"</code> or <code>"none"</code>; the default is
-<code>"bootstrap"</code> for <code>"canay"</code> and <code>"analytic"</code> otherwise</p></dd>
+<dd><p><code>"analytic"</code> (cluster-robust), <code>"iid"</code> (MM-QR only),
+<code>"bootstrap"</code> or <code>"none"</code>; the default is <code>"bootstrap"</code> for <code>"canay"</code>
+and <code>"analytic"</code> otherwise</p></dd>
 
 
 <dt id="arg-boot">boot<a class="anchor" aria-label="anchor" href="#arg-boot"></a></dt>
@@ -139,6 +141,12 @@ the draws come from the global random number stream.</p></dd>
 <dt id="arg-r">R<a class="anchor" aria-label="anchor" href="#arg-r"></a></dt>
 <dd><p>deprecated; use <code>boot</code></p></dd>
 
+
+<dt id="arg-cluster">cluster<a class="anchor" aria-label="anchor" href="#arg-cluster"></a></dt>
+<dd><p>optional name of a column of <code>data</code> to cluster the
+analytic covariance on (<code>vcov = "analytic"</code> only, including the MM-QR
+location and scale covariances); the default clusters by individual</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -153,6 +161,7 @@ the constant), for <code>"mmqr"</code> also <code>location</code>, <code>scale</
 <code>coefficients</code> and <code>vcov</code>), <code>q</code> (the quantiles of the standardized
 errors) and <code>delta</code> (the individual scale effects including the
 constant, so that <code>alpha_i(tau) = alpha_i + delta_i q(tau)</code>),
+<code>cluster</code> and <code>n_clusters</code> (for the analytic covariances),
 <code>dropped</code> (time-invariant regressors dropped), <code>n_singletons</code>
 (individuals observed once, dropped for <code>"canay"</code> and <code>"mmqr"</code>), <code>nobs</code>,
 <code>n_groups</code>,
@@ -194,18 +203,32 @@ individuals observed only once (with a message).</p>
 
 <p><code>vcov = "bootstrap"</code> resamples whole individuals with replacement (a
 cluster bootstrap) <code>boot</code> times, repeats every step of the estimator and
-returns the covariance of the replicates. <code>vcov = "analytic"</code> gives:</p><ul><li><p><code>"mmqr"</code>: the asymptotic covariance of Machado and Santos Silva (2019),
-with the matrix layout of <code>xtqreg</code> (version 1.5): it combines the
-influence of the location, scale and <code>q(tau)</code> estimates, with the
-density of the standardized error at <code>q(tau)</code> estimated by the
-difference quotient <code>2h / (q(tau + h) - q(tau - h))</code> (as Stata's
-<code>qreg, vce(iid)</code>) and the Hall and Sheather bandwidth <code>h</code>. The scale
-influence uses the centered <code>V = 2 U (I(U &gt;= 0) - mean(I(U &gt;= 0))) - 1</code>
-of the paper (also used by the Stata command <code>mmqreg</code>); <code>xtqreg</code> 1.5
-omits the <code>- 1</code>, which inflates its standard errors away from the
-median (by about 30% at <code>tau = 0.9</code> in simulations, where the centered
-version matches the Monte Carlo standard deviation).</p></li>
-<li><p><code>"canay"</code>: a cluster-robust (by individual) sandwich built from the
+returns the covariance of the replicates. <code>vcov = "analytic"</code> gives:</p><ul><li><p><code>"mmqr"</code>: a cluster-robust (by individual, or by <code>cluster</code>) sandwich
+built from the influence function of <code>b(tau) = b + g q(tau)</code>. The
+influence of observation <code>it</code> adds the three steps of the estimator:
+the location within regression, <code>Q^{-1} x~_it R_it</code>; the scale within
+regression, <code>q(tau) Q^{-1} x~_it sigma_it V_it</code>; and the quantile
+<code>q(tau)</code>, <code>g s_i w_it / sum(s)</code>, with <code>Q = sum x~ x~'</code>, <code>s_i</code> the
+scale of individual <code>i</code> at the regressor means and
+<code>w_it = (tau - I(U_it &lt;= q(tau))) / f(q(tau)) - U_it - q(tau) V_it</code>.
+These are summed within clusters into <code>psi_g</code>, and
+<code>V = G / (G - 1) * sum_g psi_g psi_g'</code> for <code>G</code> clusters. The density
+of the standardized error at <code>q(tau)</code> is the difference quotient
+<code>2h / (q(tau + h) - q(tau - h))</code> (as Stata's <code>qreg, vce(iid)</code>) with the
+Hall and Sheather bandwidth <code>h</code>. The scale influence uses the centered
+<code>V = 2 U (I(U &gt;= 0) - mean(I(U &gt;= 0))) - 1</code> of the paper (also used by
+the Stata command <code>mmqreg</code>). Unlike the iid formula, it allows the
+errors of an individual to be dependent (serial correlation, or an
+individual component in <code>U</code>) and the errors to be heteroskedastic.</p></li>
+</ul><p><code>vcov = "iid"</code> (MM-QR only) gives the asymptotic covariance of Machado
+and Santos Silva (2019) under independent observations, with the matrix
+layout of <code>xtqreg</code> (version 1.5) and the same density estimate and
+centered <code>V</code>; <code>xtqreg</code> 1.5 omits the <code>- 1</code> in <code>V</code>, which inflates its
+standard errors away from the median. This was the analytic covariance
+of <code>"mmqr"</code> before panglm 1.6.1. It replaces observation-level products
+by their sample means and ignores the dependence within individuals; it
+can be far off with short panels (see the package's validation suite).</p>
+<p>The other models with <code>vcov = "analytic"</code>:</p><ul><li><p><code>"canay"</code>: a cluster-robust (by individual) sandwich built from the
 influence function of the two-step estimator, which corrects the
 quantile regression score <code>(tau - I(e &lt; 0)) x</code> for the estimation of
 the individual effects and of the within slopes. The conditional
@@ -217,7 +240,8 @@ variation of the mean individual effect that the cluster bootstrap
 includes; the slope SEs of the two agree.</p></li>
 <li><p><code>"pooling"</code>: the same kernel sandwich without the first-step terms,
 clustered by individual.</p></li>
-</ul><p>The cluster sandwiches carry no finite-sample factor. For <code>"mmqr"</code> the
+</ul><p>The <code>"canay"</code> and <code>"pooling"</code> cluster sandwiches carry no finite-sample
+factor; the <code>"mmqr"</code> one carries <code>G / (G - 1)</code>. For <code>"mmqr"</code> the
 location and scale coefficients are returned with the cluster-robust
 within covariance of the rest of the package
 (<code>G / (G - 1) * (n - 1) / (n - k)</code>, as <code>plm::vcovHC(type = "sss")</code>).</p>
@@ -229,9 +253,11 @@ within covariance of the rest of the package
 <p>Checked in the package's validation suite on GitHub: the pooled model
 against <code><a href="https://rdrr.io/pkg/quantreg/man/rq.html" class="external-link">quantreg::rq()</a></code> and its kernel sandwich; the Canay and MM-QR
 estimators against implementations built from <code><a href="https://rdrr.io/pkg/plm/man/plm.html" class="external-link">plm::plm()</a></code>, <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">stats::lm()</a></code>
-and <code><a href="https://rdrr.io/pkg/quantreg/man/rq.html" class="external-link">quantreg::rq()</a></code>, with the MM-QR covariance checked against the formulas
-of the Stata command <code>xtqreg</code>; and Monte Carlo checks that the analytic
-standard errors match the sampling standard deviation.</p>
+and <code><a href="https://rdrr.io/pkg/quantreg/man/rq.html" class="external-link">quantreg::rq()</a></code>, with the MM-QR iid covariance checked against the
+formulas of the Stata command <code>xtqreg</code>; the MM-QR cluster covariance
+against the cluster bootstrap and by Monte Carlo coverage with serially
+correlated errors; and Monte Carlo checks that the analytic standard
+errors match the sampling standard deviation.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>

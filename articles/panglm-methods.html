@@ -651,7 +651,13 @@ estimated by two within regressions and the
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>q</mi><mo stretchy="false" form="prefix">(</mo><mi>τ</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">q(\tau)</annotation></semantics></math>
 of the standardized residuals, so
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>β</mi><mo stretchy="false" form="prefix">(</mo><mi>τ</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mi>β</mi><mo>+</mo><mi>γ</mi><mi>q</mi><mo stretchy="false" form="prefix">(</mo><mi>τ</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\beta(\tau) = \beta + \gamma q(\tau)</annotation></semantics></math>.
-Analytic covariance as in their paper.</li>
+The analytic covariance is cluster-robust by individual: the influence
+functions of the location, scale and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>q</mi><mo stretchy="false" form="prefix">(</mo><mi>τ</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">q(\tau)</annotation></semantics></math>
+steps are summed within each cluster and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo>=</mo><mfrac><mi>G</mi><mrow><mi>G</mi><mo>−</mo><mn>1</mn></mrow></mfrac><msub><mo>∑</mo><mi>g</mi></msub><msub><mi>ψ</mi><mi>g</mi></msub><msubsup><mi>ψ</mi><mi>g</mi><mi>𝖳</mi></msubsup></mrow><annotation encoding="application/x-tex">V = \frac{G}{G-1}\sum_g \psi_g\psi_g^{\mathsf T}</annotation></semantics></math>.
+<code>vcov = "iid"</code> gives the formula of their paper, which
+assumes independent observations.</li>
 <li>
 <code>"pooling"</code>: <code>quantreg</code> regression ignoring
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>α</mi><mi>i</mi></msub><annotation encoding="application/x-tex">\alpha_i</annotation></semantics></math>,

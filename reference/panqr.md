@@ -20,7 +20,8 @@ panqr(
   boot = 200,
   na.action = stats::na.omit,
   seed = NULL,
-  R
+  R,
+  cluster = NULL
 )
 ```
 
@@ -54,8 +55,9 @@ panqr(
 
 - vcov:
 
-  `"analytic"`, `"bootstrap"` or `"none"`; the default is `"bootstrap"`
-  for `"canay"` and `"analytic"` otherwise
+  `"analytic"` (cluster-robust), `"iid"` (MM-QR only), `"bootstrap"` or
+  `"none"`; the default is `"bootstrap"` for `"canay"` and `"analytic"`
+  otherwise
 
 - boot:
 
@@ -76,6 +78,12 @@ panqr(
 
   deprecated; use `boot`
 
+- cluster:
+
+  optional name of a column of `data` to cluster the analytic covariance
+  on (`vcov = "analytic"` only, including the MM-QR location and scale
+  covariances); the default clusters by individual
+
 ## Value
 
 an object of class `"panqr"`, a list with components `coefficients` (a
@@ -88,9 +96,10 @@ outcome, for `"mmqr"` the location effects including the constant), for
 `"mmqr"` also `location`, `scale` (lists with `coefficients` and
 `vcov`), `q` (the quantiles of the standardized errors) and `delta` (the
 individual scale effects including the constant, so that
-`alpha_i(tau) = alpha_i + delta_i q(tau)`), `dropped` (time-invariant
-regressors dropped), `n_singletons` (individuals observed once, dropped
-for `"canay"` and `"mmqr"`), `nobs`, `n_groups`, `call` and `formula`.
+`alpha_i(tau) = alpha_i + delta_i q(tau)`), `cluster` and `n_clusters`
+(for the analytic covariances), `dropped` (time-invariant regressors
+dropped), `n_singletons` (individuals observed once, dropped for
+`"canay"` and `"mmqr"`), `nobs`, `n_groups`, `call` and `formula`.
 Methods: `print`, `summary`, `coef`, `vcov`, `confint`, `nobs`, `plot`,
 `tidy` and `glance`.
 
@@ -135,18 +144,35 @@ individuals observed only once (with a message).
 cluster bootstrap) `boot` times, repeats every step of the estimator and
 returns the covariance of the replicates. `vcov = "analytic"` gives:
 
-- `"mmqr"`: the asymptotic covariance of Machado and Santos Silva
-  (2019), with the matrix layout of `xtqreg` (version 1.5): it combines
-  the influence of the location, scale and `q(tau)` estimates, with the
-  density of the standardized error at `q(tau)` estimated by the
-  difference quotient `2h / (q(tau + h) - q(tau - h))` (as Stata's
-  `qreg, vce(iid)`) and the Hall and Sheather bandwidth `h`. The scale
-  influence uses the centered
-  `V = 2 U (I(U >= 0) - mean(I(U >= 0))) - 1` of the paper (also used by
-  the Stata command `mmqreg`); `xtqreg` 1.5 omits the `- 1`, which
-  inflates its standard errors away from the median (by about 30% at
-  `tau = 0.9` in simulations, where the centered version matches the
-  Monte Carlo standard deviation).
+- `"mmqr"`: a cluster-robust (by individual, or by `cluster`) sandwich
+  built from the influence function of `b(tau) = b + g q(tau)`. The
+  influence of observation `it` adds the three steps of the estimator:
+  the location within regression, `Q^{-1} x~_it R_it`; the scale within
+  regression, `q(tau) Q^{-1} x~_it sigma_it V_it`; and the quantile
+  `q(tau)`, `g s_i w_it / sum(s)`, with `Q = sum x~ x~'`, `s_i` the
+  scale of individual `i` at the regressor means and
+  `w_it = (tau - I(U_it <= q(tau))) / f(q(tau)) - U_it - q(tau) V_it`.
+  These are summed within clusters into `psi_g`, and
+  `V = G / (G - 1) * sum_g psi_g psi_g'` for `G` clusters. The density
+  of the standardized error at `q(tau)` is the difference quotient
+  `2h / (q(tau + h) - q(tau - h))` (as Stata's `qreg, vce(iid)`) with
+  the Hall and Sheather bandwidth `h`. The scale influence uses the
+  centered `V = 2 U (I(U >= 0) - mean(I(U >= 0))) - 1` of the paper
+  (also used by the Stata command `mmqreg`). Unlike the iid formula, it
+  allows the errors of an individual to be dependent (serial
+  correlation, or an individual component in `U`) and the errors to be
+  heteroskedastic.
+
+`vcov = "iid"` (MM-QR only) gives the asymptotic covariance of Machado
+and Santos Silva (2019) under independent observations, with the matrix
+layout of `xtqreg` (version 1.5) and the same density estimate and
+centered `V`; `xtqreg` 1.5 omits the `- 1` in `V`, which inflates its
+standard errors away from the median. This was the analytic covariance
+of `"mmqr"` before panglm 1.6.1. It replaces observation-level products
+by their sample means and ignores the dependence within individuals; it
+can be far off with short panels (see the package's validation suite).
+
+The other models with `vcov = "analytic"`:
 
 - `"canay"`: a cluster-robust (by individual) sandwich built from the
   influence function of the two-step estimator, which corrects the
@@ -162,7 +188,8 @@ returns the covariance of the replicates. `vcov = "analytic"` gives:
 - `"pooling"`: the same kernel sandwich without the first-step terms,
   clustered by individual.
 
-The cluster sandwiches carry no finite-sample factor. For `"mmqr"` the
+The `"canay"` and `"pooling"` cluster sandwiches carry no finite-sample
+factor; the `"mmqr"` one carries `G / (G - 1)`. For `"mmqr"` the
 location and scale coefficients are returned with the cluster-robust
 within covariance of the rest of the package
 (`G / (G - 1) * (n - 1) / (n - k)`, as `plm::vcovHC(type = "sss")`).
@@ -176,9 +203,11 @@ implementations built from
 [`plm::plm()`](https://rdrr.io/pkg/plm/man/plm.html),
 [`stats::lm()`](https://rdrr.io/r/stats/lm.html) and
 [`quantreg::rq()`](https://rdrr.io/pkg/quantreg/man/rq.html), with the
-MM-QR covariance checked against the formulas of the Stata command
-`xtqreg`; and Monte Carlo checks that the analytic standard errors match
-the sampling standard deviation.
+MM-QR iid covariance checked against the formulas of the Stata command
+`xtqreg`; the MM-QR cluster covariance against the cluster bootstrap and
+by Monte Carlo coverage with serially correlated errors; and Monte Carlo
+checks that the analytic standard errors match the sampling standard
+deviation.
 
 ## References
 

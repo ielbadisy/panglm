@@ -186,9 +186,9 @@ likelihood.</p>
 <span><span class="co">#&gt; Residual df: 596  Iterations: 20</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">rs</span><span class="op">$</span><span class="va">ranef</span>, <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   (Intercept)        year</span></span>
-<span><span class="co">#&gt; 1  0.24559343 -0.02712744</span></span>
-<span><span class="co">#&gt; 2 -0.32250432  0.10527656</span></span>
-<span><span class="co">#&gt; 3  0.05620226  0.01557888</span></span></code></pre></div>
+<span><span class="co">#&gt; 1  0.24559341 -0.02712743</span></span>
+<span><span class="co">#&gt; 2 -0.32250424  0.10527653</span></span>
+<span><span class="co">#&gt; 3  0.05620227  0.01557888</span></span></code></pre></div>
 <p>The average decline is 47 mL a year, 17 mL faster in smokers. The SD
 of the patient-specific slopes, 42 mL a year, is as large as the average
 decline itself: some patients barely decline, others lose about 130 mL a
@@ -395,7 +395,7 @@ in the upper tail.</p>
 <span><span class="co">#&gt;     "year"), tau = c(0.1, 0.25, 0.5, 0.75, 0.9), model = "mmqr")</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Estimator: MM-QR fixed-effects quantile regression (Machado and Santos Silva 2019) </span></span>
-<span><span class="co">#&gt; N = 1000  groups = 200  vcov: analytic  </span></span>
+<span><span class="co">#&gt; N = 1000  groups = 200  vcov: analytic (cluster by individual, G = 200) </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Location (within regression, cluster-robust):</span></span>
 <span><span class="co">#&gt;         Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
@@ -413,36 +413,36 @@ in the upper tail.</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Quantile tau = 0.1 (q(tau) = -1.315):</span></span>
 <span><span class="co">#&gt;         Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
-<span><span class="co">#&gt; chronic  0.60055    0.16345   3.674 0.000239 ***</span></span>
-<span><span class="co">#&gt; age      0.01909    0.10693   0.178 0.858344    </span></span>
+<span><span class="co">#&gt; chronic  0.60055    0.03567  16.836   &lt;2e-16 ***</span></span>
+<span><span class="co">#&gt; age      0.01909    0.02073   0.921    0.357    </span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Quantile tau = 0.25 (q(tau) = -0.9075):</span></span>
 <span><span class="co">#&gt;         Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
-<span><span class="co">#&gt; chronic  0.64308    0.13812   4.656 3.22e-06 ***</span></span>
-<span><span class="co">#&gt; age      0.02716    0.09035   0.301    0.764    </span></span>
+<span><span class="co">#&gt; chronic  0.64308    0.03655   17.59   &lt;2e-16 ***</span></span>
+<span><span class="co">#&gt; age      0.02716    0.01926    1.41    0.159    </span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Quantile tau = 0.5 (q(tau) = -0.279):</span></span>
 <span><span class="co">#&gt;         Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
-<span><span class="co">#&gt; chronic  0.70873    0.10204   6.946 3.77e-12 ***</span></span>
-<span><span class="co">#&gt; age      0.03961    0.06657   0.595    0.552    </span></span>
+<span><span class="co">#&gt; chronic  0.70873    0.04510   15.71   &lt;2e-16 ***</span></span>
+<span><span class="co">#&gt; age      0.03961    0.02358    1.68   0.0929 .  </span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Quantile tau = 0.75 (q(tau) = 0.8721):</span></span>
 <span><span class="co">#&gt;         Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
-<span><span class="co">#&gt; chronic  0.82898    0.06477  12.799   &lt;2e-16 ***</span></span>
-<span><span class="co">#&gt; age      0.06242    0.04172   1.496    0.135    </span></span>
+<span><span class="co">#&gt; chronic  0.82898    0.07422  11.169   &lt;2e-16 ***</span></span>
+<span><span class="co">#&gt; age      0.06242    0.04165   1.499    0.134    </span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Quantile tau = 0.9 (q(tau) = 1.864):</span></span>
 <span><span class="co">#&gt;         Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
-<span><span class="co">#&gt; chronic  0.93261    0.09402   9.920   &lt;2e-16 ***</span></span>
-<span><span class="co">#&gt; age      0.08208    0.06100   1.346    0.178    </span></span>
+<span><span class="co">#&gt; chronic  0.93261    0.10374   8.990   &lt;2e-16 ***</span></span>
+<span><span class="co">#&gt; age      0.08208    0.06048   1.357    0.175    </span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span></code></pre></div>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
@@ -452,12 +452,14 @@ in the upper tail.</p>
 and the 90th percentile by about 0.9 (true values 0.71 and 1.19): the
 effect grows across the distribution, as the significant scale
 coefficient indicates. The age effect is small and imprecise at every
-quantile. The warning flags the few observations at which the fitted
-scale is not positive, where the location-scale model is strained. The
-Canay estimator uses a cluster bootstrap for its standard errors (50
-replicates here, use 500 or more); a pooled quantile regression that
-ignores the individual effects is biased when, as here, they are
-correlated with the regressors (0.85 and 1.23 below).</p>
+quantile. The MM-QR standard errors are clustered by individual, so they
+allow the costs of a patient to be correlated across years. The warning
+flags the few observations at which the fitted scale is not positive,
+where the location-scale model is strained. The Canay estimator uses a
+cluster bootstrap for its standard errors (50 replicates here, use 500
+or more); a pooled quantile regression that ignores the individual
+effects is biased when, as here, they are correlated with the regressors
+(0.85 and 1.23 below).</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cn</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/panqr.html">panqr</a></span><span class="op">(</span><span class="va">cost</span> <span class="op">~</span> <span class="va">chronic</span> <span class="op">+</span> <span class="va">age</span>, data <span class="op">=</span> <span class="va">q</span>, index <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"year"</span><span class="op">)</span>,</span>
 <span>            tau <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>, <span class="fl">0.9</span><span class="op">)</span>, model <span class="op">=</span> <span class="st">"canay"</span>, boot <span class="op">=</span> <span class="fl">50</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>

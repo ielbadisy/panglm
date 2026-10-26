@@ -25,7 +25,8 @@ an object of class `"summary.panqr"`: a list with one coefficient table
 per quantile (`coefficients`: estimate, standard error, z value and
 p-value), the location and scale tables and the quantiles `q` of the
 standardized errors for MM-QR, and the fit information (`call`, `model`,
-`tau`, `nobs`, `n_groups`, `vcov_type`, `R`, `dropped`).
+`tau`, `nobs`, `n_groups`, `vcov_type`, `R`, `cluster`, `n_clusters`,
+`dropped`).
 
 ## See also
 
@@ -47,7 +48,7 @@ summary(panqr(y ~ x, data = d, index = c("id", "t"), tau = 0.9, model = "mmqr"))
 #>     model = "mmqr")
 #> 
 #> Estimator: MM-QR fixed-effects quantile regression (Machado and Santos Silva 2019) 
-#> N = 500  groups = 100  vcov: analytic  
+#> N = 500  groups = 100  vcov: analytic (cluster by individual, G = 100) 
 #> 
 #> Location (within regression, cluster-robust):
 #>   Estimate Std. Error z value Pr(>|z|)    
@@ -61,7 +62,7 @@ summary(panqr(y ~ x, data = d, index = c("id", "t"), tau = 0.9, model = "mmqr"))
 #> 
 #> Quantile tau = 0.9 (q(tau) = 1.685):
 #>   Estimate Std. Error z value Pr(>|z|)    
-#> x  0.90597    0.07451   12.16   <2e-16 ***
+#> x  0.90597    0.07482   12.11   <2e-16 ***
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> 

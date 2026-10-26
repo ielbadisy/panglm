@@ -397,8 +397,12 @@ x_{it}^{\mathsf T}\beta(\tau)`$ with location-shift individual effects.
   $`y_{it} = \alpha_i + x_{it}^{\mathsf T}\beta + (\delta_i +
   x_{it}^{\mathsf T}\gamma)U_{it}`$, estimated by two within regressions
   and the $`\tau`$-quantile $`q(\tau)`$ of the standardized residuals,
-  so $`\beta(\tau) = \beta + \gamma q(\tau)`$. Analytic covariance as in
-  their paper.
+  so $`\beta(\tau) = \beta + \gamma q(\tau)`$. The analytic covariance
+  is cluster-robust by individual: the influence functions of the
+  location, scale and $`q(\tau)`$ steps are summed within each cluster
+  and $`V = \frac{G}{G-1}\sum_g \psi_g\psi_g^{\mathsf T}`$.
+  `vcov = "iid"` gives the formula of their paper, which assumes
+  independent observations.
 - `"pooling"`: `quantreg` regression ignoring $`\alpha_i`$, with a
   cluster-robust covariance.
 
