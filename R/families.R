@@ -127,6 +127,15 @@ binomial_response_to_numeric <- function(y) {
 }
 
 resolve_family <- function(family) {
+  # a family generator such as stats::binomial, passed without calling it
+  if (is.function(family)) {
+    family <- tryCatch(family(), error = function(e) NULL)
+    if (!inherits(family, "family")) {
+      stop("family must be a character string or a panglm family spec ",
+           "(see ?`panglm-families`)", call. = FALSE)
+    }
+  }
+  if (inherits(family, "family")) family <- stats_family_to_panglm(family)
   if (is.character(family)) {
     family <- switch(family,
       gaussian = gaussianfamily(),
@@ -148,4 +157,37 @@ resolve_family <- function(family) {
          "(see ?`panglm-families`)", call. = FALSE)
   }
   family
+}
+
+# Map a base R family object (stats::binomial("probit"), stats::poisson(),
+# stats::Gamma("log"), stats::gaussian()) onto the panglm family with the
+# same distribution and link; anything else stops with a pointer to the
+# panglm constructors.
+stats_family_to_panglm <- function(family) {
+  fam <- family$family
+  link <- family$link
+  if (startsWith(fam, "Negative Binomial")) {
+    stop("MASS negative binomial families are not used by panglm; use negbinfamily() ",
+         "(NB2, theta estimated) instead (see ?`panglm-families`)", call. = FALSE)
+  }
+  hint <- switch(fam,
+    binomial = "binomialfamily(\"logit\") or binomialfamily(\"probit\")",
+    poisson = "poissonfamily()", Gamma = "gammafamily()", gaussian = "gaussianfamily()",
+    "one of gaussianfamily(), poissonfamily(), binomialfamily(), negbinfamily(), gammafamily()")
+  ok <- switch(fam,
+    gaussian = link == "identity",
+    poisson = link == "log",
+    binomial = link %in% c("logit", "probit"),
+    Gamma = link == "log",
+    FALSE)
+  if (!ok) {
+    stop(sprintf("the stats family %s(link = \"%s\") is not available in panglm; use %s ",
+                 fam, link, hint),
+         "(see ?`panglm-families`)", call. = FALSE)
+  }
+  switch(fam,
+    gaussian = gaussianfamily(),
+    poisson = poissonfamily(),
+    binomial = binomialfamily(link),
+    Gamma = gammafamily())
 }

@@ -38,7 +38,12 @@
 #'   `"negbin"`, `"gamma"`, `"ologit"`, `"oprobit"`, `"beta"`, `"tobit"`,
 #'   or a family spec from [gaussianfamily()] / [poissonfamily()] /
 #'   [binomialfamily()] / [negbinfamily()] / [gammafamily()] /
-#'   [orderedfamily()] / [betafamily()] / [tobitfamily()]
+#'   [orderedfamily()] / [betafamily()] / [tobitfamily()]. Base R family
+#'   objects with a matching distribution and link are also accepted and
+#'   mapped onto these: `stats::gaussian()`, `stats::poisson()`,
+#'   `stats::binomial("logit")`, `stats::binomial("probit")` and
+#'   `stats::Gamma("log")`; other stats families stop with an error naming
+#'   the panglm constructor to use.
 #' @param weights optional nonnegative observation (prior) weights: the
 #'   name of a column of `data` or a numeric vector with one value per row
 #'   of `data`, e.g. inverse probability weights for attrition.

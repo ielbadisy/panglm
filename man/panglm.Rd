@@ -48,7 +48,12 @@ same, since each individual is one observation of the means regression.}
 \code{"negbin"}, \code{"gamma"}, \code{"ologit"}, \code{"oprobit"}, \code{"beta"}, \code{"tobit"},
 or a family spec from \code{\link[=gaussianfamily]{gaussianfamily()}} / \code{\link[=poissonfamily]{poissonfamily()}} /
 \code{\link[=binomialfamily]{binomialfamily()}} / \code{\link[=negbinfamily]{negbinfamily()}} / \code{\link[=gammafamily]{gammafamily()}} /
-\code{\link[=orderedfamily]{orderedfamily()}} / \code{\link[=betafamily]{betafamily()}} / \code{\link[=tobitfamily]{tobitfamily()}}}
+\code{\link[=orderedfamily]{orderedfamily()}} / \code{\link[=betafamily]{betafamily()}} / \code{\link[=tobitfamily]{tobitfamily()}}. Base R family
+objects with a matching distribution and link are also accepted and
+mapped onto these: \code{stats::gaussian()}, \code{stats::poisson()},
+\code{stats::binomial("logit")}, \code{stats::binomial("probit")} and
+\code{stats::Gamma("log")}; other stats families stop with an error naming
+the panglm constructor to use.}
 
 \item{weights}{optional nonnegative observation (prior) weights: the
 name of a column of \code{data} or a numeric vector with one value per row
