@@ -70,10 +70,30 @@ test_that("within binomial (conditional logit) matches survival::clogit exactly"
                                 index = c("id", "year"), model = "within", family = "binomial"))
   cl <- clogit(union01 ~ wage + exper + rural + strata(id), data = UnionWage, method = "exact")
 
-  expect_equal(unname(coef(f)), unname(coef(cl)), tolerance = 1e-4)
-  expect_equal(unname(sqrt(diag(vcov(f)))), unname(sqrt(diag(vcov(cl)))), tolerance = 1e-4)
+  expect_equal(unname(coef(f)), unname(coef(cl)), tolerance = 1e-8)
+  expect_equal(unname(sqrt(diag(vcov(f)))), unname(sqrt(diag(vcov(cl)))), tolerance = 1e-8)
   expect_equal(f$loglik, unname(cl$loglik[2]), tolerance = 1e-6)
   expect_equal(f$n_used_groups + f$n_dropped_groups, length(unique(UnionWage$id)))
+})
+
+test_that("conditional logit analytic Hessian matches numerical derivatives", {
+  set.seed(11)
+  n <- 60; tt <- 7
+  X <- cbind(rnorm(n * tt), rnorm(n * tt))
+  y <- rbinom(n * tt, 1, 0.6)
+  gs <- as.integer(seq(0, by = tt, length.out = n)); gz <- rep(tt, n)
+  b <- c(0.3, -0.2)
+  h <- conditional_logit_hessian_cpp(b, X, y, gs, gz)
+  g <- conditional_logit_loglik_grad_cpp(b, X, y, gs, gz)
+  expect_equal(h$loglik, g$loglik, tolerance = 1e-12)
+  expect_equal(h$gradient, as.numeric(g$gradient), tolerance = 1e-10)
+  # central differences of the analytic gradient
+  nh <- sapply(seq_along(b), function(j) {
+    e <- replace(numeric(length(b)), j, 1e-5)
+    (as.numeric(conditional_logit_loglik_grad_cpp(b + e, X, y, gs, gz)$gradient) -
+       as.numeric(conditional_logit_loglik_grad_cpp(b - e, X, y, gs, gz)$gradient)) / 2e-5
+  })
+  expect_equal(h$hessian, nh, tolerance = 1e-7)
 })
 
 test_that("within binomial drops all-0/all-1 groups and messages about it", {

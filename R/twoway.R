@@ -313,9 +313,9 @@ recover_twoway_effects <- function(effect_observation, group_size, time,
 #' full (slopes + time dummies) information, and the robust covariances
 #' use the full score and bread (see robust_vcov_within_binomial()).
 #'
-#' The likelihood is maximized by BFGS with the analytic gradient of the
-#' O(sum T_i^2) recursion, then polished by Newton steps on a Hessian
-#' obtained by central differences of the analytic gradient.
+#' The likelihood is maximized by Newton-Raphson with the analytic gradient
+#' and Hessian of the exact conditional likelihood (the recursion of
+#' survival::clogit(method = "exact")).
 #'
 #' @keywords internal
 #' @noRd
@@ -358,44 +358,11 @@ fit_within_twoways_binomial <- function(X, y, group_start, group_size, time, max
   Z <- cbind(X, D[, kept_time, drop = FALSE])
   p <- ncol(Z)
 
-  cache <- new.env(parent = emptyenv())
-  eval_at <- function(beta) {
-    if (is.null(cache$beta) || !identical(cache$beta, beta)) {
-      cache$beta <- beta
-      cache$res <- conditional_logit_loglik_grad_cpp(beta, Z, y, group_start, group_size)
-    }
-    cache$res
-  }
-  objective <- function(beta) -eval_at(beta)$loglik
-  gradient <- function(beta) -as.numeric(eval_at(beta)$gradient)
-  # Hessian of the negative log-likelihood by central differences of the
-  # analytic gradient (truncation error O(h^2), about 1e-10 here)
-  hessian_at <- function(beta) {
-    H <- matrix(0, p, p)
-    for (j in seq_len(p)) {
-      h <- 1e-5 * max(1, abs(beta[j]))
-      up <- beta; up[j] <- up[j] + h
-      dn <- beta; dn[j] <- dn[j] - h
-      H[, j] <- (gradient(up) - gradient(dn)) / (2 * h)
-    }
-    (H + t(H)) / 2
-  }
-
-  opt <- stats::optim(rep(0, p), objective, gradient, method = "BFGS",
-                      control = list(maxit = maxit, reltol = tol))
-  beta <- opt$par
-  newton_steps <- 0L
-  for (step in seq_len(25L)) {
-    H <- hessian_at(beta)
-    delta <- tryCatch(solve(H, gradient(beta)), error = function(e) NULL)
-    if (is.null(delta) || any(!is.finite(delta))) break
-    candidate <- beta - delta
-    if (objective(candidate) > objective(beta) + 1e-12 * (abs(objective(beta)) + 1)) break
-    beta <- candidate
-    newton_steps <- step
-    if (max(abs(delta)) < 1e-10) break
-  }
-  H <- hessian_at(beta)
+  nr <- conditional_logit_newton(Z, y, group_start, group_size, maxit, tol)
+  beta <- nr$beta
+  H <- -nr$hessian
+  opt <- list(value = -nr$loglik, convergence = nr$convergence, counts = c(nr$iterations, NA))
+  newton_steps <- nr$iterations
 
   info <- conditional_logit_loglik_grad_cpp(beta, Z, y, group_start, group_size)
   n_dropped <- length(group_size) - info$n_used_groups
@@ -426,8 +393,8 @@ fit_within_twoways_binomial <- function(X, y, group_start, group_size, time, max
        # full conditional-likelihood design and bread (slopes + time dummies)
        # for the robust covariances
        X_aug = Z, vcov_full_aug = vcov_full,
-       loglik = -objective(beta), dispersion = 1, df.residual = NA_real_,
+       loglik = nr$loglik, dispersion = 1, df.residual = NA_real_,
        npar = p,
        n_used_groups = info$n_used_groups, n_dropped_groups = n_dropped,
-       iterations = opt$counts[[1]] + newton_steps, convergence = opt$convergence)
+       iterations = newton_steps, convergence = opt$convergence)
 }

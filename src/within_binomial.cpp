@@ -144,3 +144,133 @@ List conditional_logit_loglik_grad_cpp(const arma::vec& beta, const arma::mat& X
     Named("n_used_groups") = worker.n_used_groups
   );
 }
+
+namespace {
+
+// Log-likelihood, gradient and Hessian of the conditional logit with respect
+// to beta, by the recursion of exact conditional logistic regression (Gail,
+// Lubin and Rubinstein 1981; survival::clogit(method = "exact")): the
+// elementary symmetric polynomial C(S) of the weights w_t = exp(x_t'beta)
+// and its first and second derivatives in beta are built one observation
+// at a time, C_t(s) = C_{t-1}(s) + w_t C_{t-1}(s - 1), so the derivatives
+// follow from d w_t = w_t x_t. Then ll_i = y'eta - log C(S),
+// grad_i = X'y - C'/C and Hess_i = -(C''/C - C' C'^T / C^2).
+struct ConditionalLogitHessWorker : public Worker {
+  const RMatrix<double> X;
+  const RVector<double> eta;
+  const RVector<double> y;
+  const RVector<int> group_start;
+  const RVector<int> group_size;
+  std::size_t k;
+  double ll;
+  std::vector<double> grad;
+  std::vector<double> hess;
+  int n_used_groups;
+
+  ConditionalLogitHessWorker(const NumericMatrix& X, const NumericVector& eta, const NumericVector& y,
+                             const IntegerVector& group_start, const IntegerVector& group_size)
+    : X(X), eta(eta), y(y), group_start(group_start), group_size(group_size), k(X.ncol()),
+      ll(0.0), grad(X.ncol(), 0.0), hess(X.ncol() * X.ncol(), 0.0), n_used_groups(0) {}
+
+  ConditionalLogitHessWorker(const ConditionalLogitHessWorker& o, Split)
+    : X(o.X), eta(o.eta), y(o.y), group_start(o.group_start), group_size(o.group_size), k(o.k),
+      ll(0.0), grad(o.k, 0.0), hess(o.k * o.k, 0.0), n_used_groups(0) {}
+
+  void operator()(std::size_t begin, std::size_t end) {
+    std::vector<double> A, dA, d2A;
+    for (std::size_t g = begin; g < end; ++g) {
+      int start = group_start[g], T = group_size[g];
+      int S = 0;
+      for (int t = 0; t < T; ++t) S += (int) std::round(y[start + t]);
+      if (S == 0 || S == T) continue;
+      n_used_groups++;
+      // Use the smaller of S and T - S: conditioning on S successes is the
+      // same as conditioning on T - S failures with eta replaced by -eta.
+      bool flip = 2 * S > T;
+      int Sx = flip ? T - S : S;
+      double sgn = flip ? -1.0 : 1.0;
+      double maxeta = -INFINITY;
+      for (int t = 0; t < T; ++t) maxeta = std::max(maxeta, sgn * eta[start + t]);
+      A.assign(Sx + 1, 0.0);
+      dA.assign((Sx + 1) * k, 0.0);
+      d2A.assign((Sx + 1) * k * k, 0.0);
+      A[0] = 1.0;
+      for (int t = 0; t < T; ++t) {
+        double w = std::exp(sgn * eta[start + t] - maxeta);
+        int top = std::min(t + 1, Sx);
+        for (int s = top; s >= 1; --s) {
+          double a = A[s - 1];
+          const double* da = &dA[(s - 1) * k];
+          const double* d2a = &d2A[(s - 1) * k * k];
+          double* dn = &dA[s * k];
+          double* d2n = &d2A[s * k * k];
+          for (std::size_t i = 0; i < k; ++i) {
+            double xi = sgn * X(start + t, i);
+            for (std::size_t j = 0; j <= i; ++j) {
+              double xj = sgn * X(start + t, j);
+              double v = d2a[i * k + j] + xi * da[j] + da[i] * xj + xi * xj * a;
+              d2n[i * k + j] += w * v;
+            }
+          }
+          for (std::size_t i = 0; i < k; ++i) dn[i] += w * (da[i] + sgn * X(start + t, i) * a);
+          A[s] += w * a;
+        }
+      }
+      double C = A[Sx];
+      const double* dC = &dA[Sx * k];
+      const double* d2C = &d2A[Sx * k * k];
+      double lnum = 0.0;
+      for (int t = 0; t < T; ++t) {
+        double yt = flip ? 1.0 - y[start + t] : y[start + t];
+        lnum += yt * sgn * eta[start + t];
+      }
+      ll += lnum - (std::log(C) + Sx * maxeta);
+      for (std::size_t i = 0; i < k; ++i) {
+        double xy = 0.0;
+        for (int t = 0; t < T; ++t) {
+          double yt = flip ? 1.0 - y[start + t] : y[start + t];
+          xy += yt * sgn * X(start + t, i);
+        }
+        // the flip changes the sign of beta's effect: chain rule factor sgn
+        // is already inside the x's, so the gradient in beta is direct
+        grad[i] += xy - dC[i] / C;
+        for (std::size_t j = 0; j <= i; ++j) {
+          double h = -(d2C[i * k + j] / C - dC[i] * dC[j] / (C * C));
+          hess[i * k + j] += h;
+        }
+      }
+    }
+  }
+
+  void join(const ConditionalLogitHessWorker& rhs) {
+    ll += rhs.ll;
+    n_used_groups += rhs.n_used_groups;
+    for (std::size_t j = 0; j < grad.size(); ++j) grad[j] += rhs.grad[j];
+    for (std::size_t j = 0; j < hess.size(); ++j) hess[j] += rhs.hess[j];
+  }
+};
+
+} // namespace
+
+// Conditional logit log-likelihood, gradient and Hessian in beta (exact
+// recursion), parallelized over panel units.
+//
+// [[Rcpp::export]]
+List conditional_logit_hessian_cpp(const arma::vec& beta, const arma::mat& X, const arma::vec& y,
+                                   IntegerVector group_start, IntegerVector group_size) {
+  int n = X.n_rows, k = X.n_cols;
+  arma::vec eta_arma = X * beta;
+  NumericMatrix Xr(n, k);
+  std::copy(X.begin(), X.end(), Xr.begin());
+  NumericVector eta(eta_arma.begin(), eta_arma.end());
+  NumericVector yr(y.begin(), y.end());
+  ConditionalLogitHessWorker worker(Xr, eta, yr, group_start, group_size);
+  parallelReduce(0, group_start.size(), worker, panglm::grain(group_start.size()));
+  NumericMatrix H(k, k);
+  for (int i = 0; i < k; ++i) for (int j = 0; j <= i; ++j) {
+    H(i, j) = worker.hess[i * k + j];
+    H(j, i) = H(i, j);
+  }
+  return List::create(Named("loglik") = worker.ll, Named("gradient") = worker.grad,
+                      Named("hessian") = H, Named("n_used_groups") = worker.n_used_groups);
+}

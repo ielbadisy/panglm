@@ -880,24 +880,9 @@ fit_within_negbin_dummy <- function(X, y, group_start, group_size, maxit, tol) {
 }
 
 fit_within_binomial <- function(X, y, group_start, group_size, maxit, tol) {
-  k <- ncol(X)
-
-  # BFGS calls the objective and gradient separately at (usually) the same
-  # beta; cache the last evaluation so the O(sum T_i^2) DP isn't run twice
-  # per iteration.
-  cache <- new.env(parent = emptyenv())
-  eval_at <- function(beta) {
-    if (is.null(cache$beta) || !identical(cache$beta, beta)) {
-      cache$beta <- beta
-      cache$res <- conditional_logit_loglik_grad_cpp(beta, X, y, group_start, group_size)
-    }
-    cache$res
-  }
-  objective <- function(beta) -eval_at(beta)$loglik
-  gradient <- function(beta) -eval_at(beta)$gradient
-
-  opt <- stats::optim(rep(0, k), objective, gradient, method = "BFGS",
-                       control = list(maxit = maxit, reltol = tol), hessian = TRUE)
+  nr <- conditional_logit_newton(X, y, group_start, group_size, maxit, tol)
+  opt <- list(par = nr$beta, value = -nr$loglik, hessian = -nr$hessian,
+              counts = c(nr$iterations, NA), convergence = nr$convergence)
 
   info <- conditional_logit_loglik_grad_cpp(opt$par, X, y, group_start, group_size)
   n_dropped <- length(group_size) - info$n_used_groups
@@ -921,6 +906,45 @@ fit_within_binomial <- function(X, y, group_start, group_size, maxit, tol) {
        loglik = -opt$value, dispersion = 1, df.residual = NA_real_,
        n_used_groups = info$n_used_groups, n_dropped_groups = n_dropped,
        iterations = opt$counts[[1]], convergence = opt$convergence)
+}
+
+# Newton-Raphson for the conditional (FE) logit with the analytic gradient
+# and Hessian of the exact conditional likelihood (the recursion of
+# survival::clogit(method = "exact")), with step halving. The likelihood is
+# concave in beta, so Newton from zero converges in a handful of steps; the
+# fit stops once the largest Newton step is below 1e-10 (relative), which
+# after quadratic convergence leaves the coefficients at machine precision.
+conditional_logit_newton <- function(X, y, group_start, group_size, maxit, tol,
+                                     beta = rep(0, ncol(X))) {
+  k <- ncol(X)
+  cur <- conditional_logit_hessian_cpp(beta, X, y, group_start, group_size)
+  convergence <- 1L
+  it <- 0L
+  for (it in seq_len(max(maxit, 1L))) {
+    H <- -cur$hessian
+    step <- tryCatch(solve(H, cur$gradient), error = function(e) {
+      tryCatch(qr.solve(H + diag(1e-8 * max(1, max(abs(diag(H)))), k), cur$gradient),
+               error = function(e2) cur$gradient)
+    })
+    h <- 1
+    repeat {
+      cand <- beta + h * step
+      new <- conditional_logit_hessian_cpp(cand, X, y, group_start, group_size)
+      if (is.finite(new$loglik) && new$loglik >= cur$loglik - 1e-12 * (abs(cur$loglik) + 1)) break
+      h <- h / 2
+      if (h < 1e-10) break
+    }
+    if (h < 1e-10) { convergence <- 0L; break }
+    beta <- cand
+    cur <- new
+    if (max(abs(h * step)) <= 1e-10 * (1 + max(abs(beta)))) { convergence <- 0L; break }
+  }
+  if (convergence != 0L) {
+    warning("conditional logit Newton-Raphson did not converge in ", maxit,
+            " iterations", call. = FALSE)
+  }
+  list(beta = as.numeric(beta), loglik = cur$loglik, gradient = cur$gradient,
+       hessian = cur$hessian, iterations = it, convergence = convergence)
 }
 
 fit_random <- function(X, y, family, group_start, group_size, R, maxit, tol) {

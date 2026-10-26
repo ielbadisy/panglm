@@ -49,6 +49,10 @@ conditional_logit_loglik_grad_cpp <- function(beta, X, y, group_start, group_siz
     .Call(`_panglm_conditional_logit_loglik_grad_cpp`, beta, X, y, group_start, group_size)
 }
 
+conditional_logit_hessian_cpp <- function(beta, X, y, group_start, group_size) {
+    .Call(`_panglm_conditional_logit_hessian_cpp`, beta, X, y, group_start, group_size)
+}
+
 within_demean_cpp <- function(X, y, group_start, group_size) {
     .Call(`_panglm_within_demean_cpp`, X, y, group_start, group_size)
 }

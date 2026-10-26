@@ -228,25 +228,43 @@ out$gamma <- rbind(
 )
 
 # ---- conditional logit ------------------------------------------------------
-# panglm maximizes the conditional likelihood with BFGS (reltol = tol on the
-# objective), so with the default tol = 1e-10 the coefficients are accurate
-# to about 1e-5 only; tol = 1e-14 is used here to compare the estimator
-# itself at 1e-6, and the default fit is compared at 1e-4.
-pb <- suppressMessages(panglm(y ~ x1 + x2, sim, idx, model = "within", family = "binomial",
-                              tol = 1e-14))
-pb_default <- suppressMessages(panglm(y ~ x1 + x2, sim, idx, model = "within",
-                                      family = "binomial"))
+# panglm maximizes the conditional likelihood by Newton-Raphson with the
+# analytic gradient and Hessian of the exact recursion (the algorithm of
+# clogit(method = "exact")), so the default fit already matches clogit at
+# its default settings to 1e-8; a tight-tolerance clogit fit is compared too.
+pb <- suppressMessages(panglm(y ~ x1 + x2, sim, idx, model = "within", family = "binomial"))
 cl <- suppressWarnings(clogit(y ~ x1 + x2 + strata(id), sim, method = "exact",
                               control = coxph.control(eps = 1e-12, iter.max = 100)))
+cl_default <- suppressWarnings(clogit(y ~ x1 + x2 + strata(id), sim, method = "exact"))
 out$clogit <- rbind(
-  vcompare("FE logit (conditional)", sname, "coef", coef(pb), list(survival = coef(cl)), tol),
-  vcompare("FE logit (conditional)", sname, "coef_default_tol", coef(pb_default),
-           list(survival = coef(cl)), 1e-4),
+  vcompare("FE logit (conditional)", sname, "coef", coef(pb),
+           list(survival = coef(cl), survival_default = coef(cl_default)), 1e-8),
   vcompare("FE logit (conditional)", sname, "se_classical", se(vcov(pb)),
-           list(survival = se(vcov(cl))), tol),
+           list(survival = se(vcov(cl)), survival_default = se(vcov(cl_default))), 1e-8),
   vcompare("FE logit (conditional)", sname, "logLik", as.numeric(logLik(pb)),
            list(survival = cl$loglik[2]), tol)
 )
+
+# Speed and agreement at scale: N individuals, T = 5, three regressors.
+clogit_scale <- function(N) {
+  set.seed(2)
+  T <- 5
+  id <- rep(seq_len(N), each = T)
+  a <- rnorm(N)[id]
+  d <- data.frame(id = id, t = rep(seq_len(T), N), x1 = rnorm(N * T) + a,
+                  x2 = rnorm(N * T), x3 = rbinom(N * T, 1, 0.4))
+  d$y <- rbinom(N * T, 1, plogis(a + 0.5 * d$x1 - 0.3 * d$x2 + 0.2 * d$x3))
+  tp <- system.time(f <- suppressMessages(panglm(y ~ x1 + x2 + x3, d, c("id", "t"),
+                                                  model = "within", family = "binomial")))[[3]]
+  tc <- system.time(g <- clogit(y ~ x1 + x2 + x3 + strata(id), d, method = "exact"))[[3]]
+  cat(sprintf("conditional logit N = %d, T = 5: panglm %.2fs, clogit %.2fs (ratio %.2f)\n",
+              N, tp, tc, tp / tc))
+  lab <- sprintf("simulated N = %d, T = 5", N)
+  rbind(vcompare("FE logit (conditional)", lab, "coef", coef(f), list(survival = coef(g)), 1e-8),
+        vcompare("FE logit (conditional)", lab, "se_classical", se(vcov(f)),
+                 list(survival = se(vcov(g))), 1e-8))
+}
+out$clogit_scale <- rbind(clogit_scale(10000), clogit_scale(50000))
 
 # Robust covariances: with T = 2 the conditional logit is exactly the logit
 # without intercept of y_i2 on x_i2 - x_i1 among individuals whose outcome
@@ -254,8 +272,7 @@ out$clogit <- rbind(
 # HC1 and cluster factors are then both m / (m - k) for m switchers, which is
 # sandwich's HC1 (and vcovCL type HC1 with one cluster per switcher).
 sim2 <- sim[sim$time <= 2, ]
-p2 <- suppressMessages(panglm(y ~ x1 + x2, sim2, idx, model = "within", family = "binomial",
-                              tol = 1e-14))
+p2 <- suppressMessages(panglm(y ~ x1 + x2, sim2, idx, model = "within", family = "binomial"))
 w1 <- sim2[sim2$time == 1, ]; w2 <- sim2[sim2$time == 2, ]
 stopifnot(identical(w1$id, w2$id))
 fd <- data.frame(y = w2$y, dx1 = w2$x1 - w1$x1, dx2 = w2$x2 - w1$x2)[w1$y != w2$y, ]
