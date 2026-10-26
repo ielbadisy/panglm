@@ -1,0 +1,8 @@
+bibentry(
+  bibtype = "Manual",
+  title = "{panglm}: Generalized Linear Models for Panel Data",
+  author = person("Imad", "El Badisy"),
+  year = "2026",
+  note = paste("R package version", meta$Version),
+  url = "https://elbadisyimad.com/panglm/"
+)
