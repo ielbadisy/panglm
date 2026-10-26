@@ -2,15 +2,24 @@ url: https://elbadisyimad.com/panglm/
 
 template:
   bootstrap: 5
+  light-switch: true
+  bslib:
+    primary: "#0b4f5c"
+    navbar-bg: "#0b4f5c"
+    base_font: {google: "Source Sans 3"}
+    heading_font: {google: "Source Sans 3"}
+    code_font: {google: "JetBrains Mono"}
 
 navbar:
   structure:
     left: [intro, reference, articles, news]
-    right: [search, github]
+    right: [search, github, lightswitch]
 
 home:
   links:
-  - text: Validation suite
+  - text: Validation results
+    href: articles/validation.html
+  - text: Validation scripts
     href: https://github.com/ielbadisy/panglm/tree/main/validation
 
 reference:
@@ -139,6 +148,7 @@ articles:
   navbar: Technical reference
   contents:
   - panglm-methods
+  - articles/validation
 
 news:
   cran_dates: true
