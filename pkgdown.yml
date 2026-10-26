@@ -8,7 +8,8 @@ articles:
   panglm-methods: panglm-methods.html
   panglm-outcomes: panglm-outcomes.html
   panglm-policy: panglm-policy.html
-last_built: 2026-10-26T07:25Z
+  articles/validation: validation.html
+last_built: 2026-10-26T08:14Z
 urls:
   reference: https://elbadisyimad.com/panglm/reference
   article: https://elbadisyimad.com/panglm/articles

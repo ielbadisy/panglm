@@ -20,3 +20,5 @@
 
 - [Technical reference: models, estimators and
   inference](https://elbadisyimad.com/panglm/articles/panglm-methods.md):
+- [Validation against established
+  packages](https://elbadisyimad.com/panglm/articles/validation.md):

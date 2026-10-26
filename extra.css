@@ -1,0 +1,57 @@
+/* Use the full page width, with a small gutter on each side. */
+.container,
+.container-sm,
+.container-md,
+.container-lg,
+.container-xl,
+.container-xxl {
+  max-width: none;
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+
+@media (max-width: 576px) {
+  .container,
+  .container-sm,
+  .container-md,
+  .container-lg,
+  .container-xl,
+  .container-xxl {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+/* pkgdown caps the main column at 50rem; let it take the room the sidebar leaves. */
+.row > main {
+  max-width: none;
+}
+
+/* Drop the 80px left margin pkgdown puts on the sidebar, which would push it
+   below the content once the main column is full width. */
+.row > aside {
+  margin-left: 0;
+}
+
+main table {
+  width: 100%;
+}
+
+.navbar-brand img,
+.logo {
+  max-height: 120px;
+}
+
+/* Dark mode: lighter teal so links stay readable. */
+[data-bs-theme="dark"] {
+  --bs-link-color: #7cc8d3;
+  --bs-link-color-rgb: 124, 200, 211;
+  --bs-link-hover-color: #a9dde5;
+  --bs-link-hover-color-rgb: 169, 221, 229;
+}
+
+/* Version number in the teal navbar. */
+.navbar .nav-text.text-muted,
+.navbar .text-muted {
+  color: rgba(255, 255, 255, 0.75) !important;
+}
