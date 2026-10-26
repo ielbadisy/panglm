@@ -79,8 +79,10 @@ weighting for attrition.
 **Within.** The one-way estimator is least squares on
 $\tilde y_{it} = y_{it} - \bar y_i$ and
 $\tilde x_{it} = x_{it} - \bar x_i$. With `effect = "twoways"`
-alternating projections remove both individual and time means, which
-also handles unbalanced panels.
+alternating projections remove both individual and time means; they
+are iterated until the largest change in a sweep is below tolerance
+(one sweep for a balanced panel), which also handles unbalanced panels,
+and a warning is given if the iteration limit is reached first.
 
 **Between.** Least squares on the individual means,
 $\bar y_i = \bar x_i^{\mathsf T}\beta + \bar u_i$, one row per

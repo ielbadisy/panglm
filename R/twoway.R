@@ -1,10 +1,12 @@
 #' Two-way (individual + time) demeaning via alternating projections
 #'
-#' Iteratively demeans by `id` then by `time` until both group means are
-#' simultaneously ~0 (the standard Gauss-Seidel / method-of-alternating-
-#' projections algorithm for exact two-way fixed-effects demeaning; see
-#' Guimaraes & Portugal 2010). Exact for both balanced and unbalanced
-#' panels. The group-sum reduction and the demeaning step are parallelized
+#' Iteratively demeans by `id` then by `time` (the Gauss-Seidel /
+#' method-of-alternating-projections algorithm for two-way fixed-effects
+#' demeaning; see Guimaraes & Portugal 2010) until the largest change in
+#' one sweep is below `tol`. The iterations converge to the two-way
+#' demeaned values for balanced and unbalanced panels (in one sweep for
+#' balanced ones); a warning is given if `maxit` sweeps are reached
+#' without convergence. The group-sum reduction and the demeaning step are parallelized
 #' across observations in C++ (RcppParallel), the same hot-path treatment
 #' as the rest of the package's estimators.
 #'
@@ -21,8 +23,18 @@ demean_twoway <- function(X, y, group_start, group_size, time, tol = 1e-10, maxi
 
   M <- cbind(y, X)
   dm <- twoway_demean_cpp(M, id_code, time_code, n_id, n_time, maxit, tol)
+  twoway_demean_check(dm, maxit)
 
   list(y = dm$M[, 1], X = dm$M[, -1, drop = FALSE], iterations = dm$iterations, n_time = n_time)
+}
+
+# Warn when the alternating projections stop at the iteration limit.
+twoway_demean_check <- function(dm, maxit) {
+  if (isFALSE(dm$converged)) {
+    warning("two-way demeaning (alternating projections) did not converge in ", maxit,
+            " iterations; the estimates may be inaccurate", call. = FALSE)
+  }
+  invisible(dm)
 }
 
 fit_within_twoways_gaussian <- function(X, y, group_start, group_size, time, maxit, tol) {
@@ -108,6 +120,7 @@ fit_within_twoways_poisson <- function(X, y, group_start, group_size, time, maxi
 
     M <- cbind(z, Xs)
     dm <- twoway_demean_weighted_cpp(M, w, id_code, time_code, n_id, n_time, 10000, tol)
+    twoway_demean_check(dm, 10000)
     demean_iters <- dm$iterations
     z_tilde <- dm$M[, 1]
     X_tilde <- dm$M[, -1, drop = FALSE]
@@ -137,6 +150,7 @@ fit_within_twoways_poisson <- function(X, y, group_start, group_size, time, maxi
   z <- eta + (y - mu) / mu
   M <- cbind(z, Xs)
   dm <- twoway_demean_weighted_cpp(M, w, id_code, time_code, n_id, n_time, 10000, tol)
+  twoway_demean_check(dm, 10000)
   X_tilde <- dm$M[, -1, drop = FALSE]
   XtWX <- crossprod(X_tilde, X_tilde * w)
 
@@ -214,6 +228,7 @@ fit_within_twoways_negbin <- function(X, y, group_start, group_size, time, maxit
 
     M <- cbind(z, Xs)
     dm <- twoway_demean_weighted_cpp(M, w, id_code, time_code, n_id, n_time, 10000, tol)
+    twoway_demean_check(dm, 10000)
     demean_iters <- dm$iterations
     z_tilde <- dm$M[, 1]
     X_tilde <- dm$M[, -1, drop = FALSE]
@@ -250,6 +265,7 @@ fit_within_twoways_negbin <- function(X, y, group_start, group_size, time, maxit
   z <- eta + (y - mu) / mu
   M <- cbind(z, Xs)
   dm <- twoway_demean_weighted_cpp(M, w, id_code, time_code, n_id, n_time, 10000, tol)
+  twoway_demean_check(dm, 10000)
   X_tilde <- dm$M[, -1, drop = FALSE]
   XtWX <- crossprod(X_tilde, X_tilde * w)
 

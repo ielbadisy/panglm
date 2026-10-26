@@ -76,9 +76,10 @@ specified in \code{formula}, are rejected explicitly rather than ignored.}
 
 \item{effect}{one of \code{"individual"} or \code{"twoways"} (individual + time
 fixed effects). \code{"twoways"} is implemented for \code{model = "within"}
-only: \code{family = "gaussian"} (exact alternating-projections
-demeaning), \code{"poisson"} and \code{"negbin"} (both via outer-IRLS /
-inner-weighted-FWL, the algorithm behind \code{fixest::feglm()}), and
+only: \code{family = "gaussian"} (iterative alternating-projections
+demeaning, iterated until it converges to tolerance, with a warning
+if the limit of 10,000 sweeps is reached first), \code{"poisson"} and
+\code{"negbin"} (both via outer-IRLS / inner-weighted-FWL, the algorithm behind \code{fixest::feglm()}), and
 \code{"binomial"}, the two-way conditional (Chamberlain) logit: the
 individual effects are conditioned out exactly and the time effects
 are estimated as time dummies inside the conditional likelihood, as in
@@ -101,8 +102,12 @@ See \code{\link[=vcov.panglm]{vcov.panglm()}} to recompute a different type afte
 are added to the design matrix, named \verb{mean_<column>}. Available for
 \code{model = "pooling"} and \code{model = "random"} and every family. The slopes
 of the time-varying regressors then have a within interpretation, and
-the joint test of the mean terms is a robust Hausman-type test
-(reported by \code{\link[=summary.panglm]{summary.panglm()}}).
+the joint Wald test of the mean terms is a Hausman-type (Mundlak)
+test, reported by \code{\link[=summary.panglm]{summary.panglm()}} with the covariance stored on the
+fit: it is robust to heteroskedasticity and within-individual
+correlation only when that covariance is (\code{vcov = "cluster"}, or
+\code{"HC1"} for heteroskedasticity alone); with the default classical
+covariance it assumes the model's error structure.
 Defaults to \code{dynamic}.}
 
 \item{dynamic}{logical. If \code{TRUE}, fit a dynamic model with the
@@ -231,8 +236,10 @@ and GLMMadaptive (adaptive quadrature with random slopes);
 \item ordered outcomes: \code{MASS::polr()}, \code{ordinal::clm()}, \code{ordinal::clmm()}, and
 a blow-up and cluster fit with \code{survival::clogit()} for the fixed-effects
 ordered logit;
-\item Tobit: \code{AER::tobit()} and censReg; beta: \code{betareg::betareg()} and glmmTMB;
-gamma: \code{stats::glm()} and glmmTMB.
+\item Tobit: \code{AER::tobit()} and censReg; beta: \code{betareg::betareg()} (pooled),
+GLMMadaptive at the same number of quadrature points (random intercept,
+\code{validation/validate-beta.R}) and glmmTMB (Laplace, close but not
+identical); gamma: \code{stats::glm()} and glmmTMB.
 }
 }
 

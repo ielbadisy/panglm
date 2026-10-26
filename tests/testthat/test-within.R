@@ -111,3 +111,20 @@ test_that("fixed-effects probit is rejected instead of fitting a logit", {
   expect_error(panglm(hospitalized ~ crp, data = copd, index = c("id", "visit"),
                       model = "within", family = "probit"), "conditional logit")
 })
+
+test_that("two-way demeaning warns when it stops at the iteration limit", {
+  set.seed(1)
+  d <- expand.grid(t = 1:6, id = 1:40)
+  d <- d[!(d$id %% 3 == 0 & d$t > 4) & !(d$id %% 5 == 0 & d$t == 1), ]
+  x <- matrix(rnorm(nrow(d)), ncol = 1)
+  y <- rnorm(nrow(d))
+  gz <- as.integer(table(d$id))
+  gs <- as.integer(cumsum(c(0L, gz))[seq_along(gz)])
+  expect_warning(panglm:::demean_twoway(x, y, gs, gz, d$t, maxit = 1),
+                 "did not converge")
+  dm <- expect_silent(panglm:::demean_twoway(x, y, gs, gz, d$t))
+  expect_gt(dm$iterations, 1)
+  # the converged values have zero individual and time means
+  expect_lt(max(abs(tapply(dm$y, d$id, mean))), 1e-8)
+  expect_lt(max(abs(tapply(dm$y, d$t, mean))), 1e-8)
+})

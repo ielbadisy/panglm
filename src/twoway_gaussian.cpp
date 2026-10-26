@@ -130,7 +130,9 @@ void demean_by_weighted(NumericMatrix& M, const NumericVector& w, const IntegerV
 } // namespace
 
 // Two-way (individual + time) demeaning via alternating projections
-// (Gauss-Seidel), parallelized across observations for both the group-sum
+// (Gauss-Seidel), iterated until the largest change in one sweep is below
+// `tol` or `maxit` sweeps are reached (`converged` reports which),
+// parallelized across observations for both the group-sum
 // reduction and the demeaning step. `id_code`/`time_code` are 0-based
 // integer group codes, one per row (need not be contiguous/sorted).
 //
@@ -142,6 +144,7 @@ List twoway_demean_cpp(NumericMatrix M, IntegerVector id_code, IntegerVector tim
   NumericMatrix prev(n, p);
 
   int iter = 0;
+  bool converged = false;
   for (iter = 0; iter < maxit; ++iter) {
     std::copy(cur.begin(), cur.end(), prev.begin());
     demean_by(cur, id_code, n_id);
@@ -149,10 +152,11 @@ List twoway_demean_cpp(NumericMatrix M, IntegerVector id_code, IntegerVector tim
 
     double maxdiff = 0.0;
     for (int i = 0; i < n * p; ++i) maxdiff = std::max(maxdiff, std::fabs(cur[i] - prev[i]));
-    if (maxdiff < tol) { iter++; break; }
+    if (maxdiff < tol) { iter++; converged = true; break; }
   }
 
-  return List::create(Named("M") = cur, Named("iterations") = iter);
+  return List::create(Named("M") = cur, Named("iterations") = iter,
+                      Named("converged") = converged);
 }
 
 // Weighted two-way demeaning: the same alternating-projections algorithm,
@@ -169,6 +173,7 @@ List twoway_demean_weighted_cpp(NumericMatrix M, NumericVector w,
   NumericMatrix prev(n, p);
 
   int iter = 0;
+  bool converged = false;
   for (iter = 0; iter < maxit; ++iter) {
     std::copy(cur.begin(), cur.end(), prev.begin());
     demean_by_weighted(cur, w, id_code, n_id);
@@ -176,8 +181,9 @@ List twoway_demean_weighted_cpp(NumericMatrix M, NumericVector w,
 
     double maxdiff = 0.0;
     for (int i = 0; i < n * p; ++i) maxdiff = std::max(maxdiff, std::fabs(cur[i] - prev[i]));
-    if (maxdiff < tol) { iter++; break; }
+    if (maxdiff < tol) { iter++; converged = true; break; }
   }
 
-  return List::create(Named("M") = cur, Named("iterations") = iter);
+  return List::create(Named("M") = cur, Named("iterations") = iter,
+                      Named("converged") = converged);
 }
