@@ -26,7 +26,8 @@ panglm(
 \arguments{
 \item{formula}{a model formula, e.g. \code{y ~ x1 + x2}.
 \code{lag(x, k)}, \code{lead(x, k)} and \code{diff(x)} are taken within each
-individual on the grid of sorted distinct time values (needs
+individual on the grid of sorted distinct time values (see
+"Lags and differences" in \code{\link[=panglm]{panglm()}}; needs
 \code{index = c(id, time)}); the first waves of each individual get \code{NA}
 and leave the sample, and \code{lag(x, 0:2)} gives several lags}
 
@@ -180,6 +181,23 @@ Fast pooled, fixed-effects ("within") and random-effects panel GLMs,
 backed by an Rcpp/RcppArmadillo/RcppParallel numerical core. See the
 package vignette for the estimators currently implemented per family.
 }
+\section{Lags and differences}{
+
+Inside the formula, \code{lag(x, k)}, \code{lead(x, k)} and
+\code{diff(x, lag, differences)} are taken within each individual, never
+across individuals. Shifts step through the sorted distinct values of
+the time index, so \code{lag(x, 1)} is the value at the previous observed
+wave. With gaps in the time index this differs from plm: for waves
+coded 2010, 2012, 2014, \code{lag(x, 1)} at 2012 is the 2010 value in
+panglm, while \code{plm::lag()} (which shifts by the numeric time value)
+gives \code{NA}. To obtain plm's behaviour, keep a row for every period,
+with \code{NA} outcomes for the missing waves. \code{\link[=pangmm]{pangmm()}} uses the same rule.
+The first \code{k} waves of each individual get \code{NA} and leave the
+estimation sample. \code{diff()} follows base R's \code{diff(x, lag, differences)};
+plm's third argument of \code{diff()} is \code{shift}, not \code{differences}.
+The same rule applies in \code{\link[=paniv]{paniv()}}, \code{\link[=panqr]{panqr()}} and \code{\link[=panfmm]{panfmm()}}.
+}
+
 \section{Validation}{
 
 Each estimator is checked against an established implementation of the same

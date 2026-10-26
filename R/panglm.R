@@ -6,9 +6,24 @@
 #'
 #' @param formula a model formula, e.g. `y ~ x1 + x2`.
 #'   `lag(x, k)`, `lead(x, k)` and `diff(x)` are taken within each
-#'   individual on the grid of sorted distinct time values (needs
+#'   individual on the grid of sorted distinct time values (see
+#'   "Lags and differences" in [panglm()]; needs
 #'   `index = c(id, time)`); the first waves of each individual get `NA`
 #'   and leave the sample, and `lag(x, 0:2)` gives several lags
+#' @section Lags and differences:
+#' Inside the formula, `lag(x, k)`, `lead(x, k)` and
+#' `diff(x, lag, differences)` are taken within each individual, never
+#' across individuals. Shifts step through the sorted distinct values of
+#' the time index, so `lag(x, 1)` is the value at the previous observed
+#' wave. With gaps in the time index this differs from plm: for waves
+#' coded 2010, 2012, 2014, `lag(x, 1)` at 2012 is the 2010 value in
+#' panglm, while `plm::lag()` (which shifts by the numeric time value)
+#' gives `NA`. To obtain plm's behaviour, keep a row for every period,
+#' with `NA` outcomes for the missing waves. [pangmm()] uses the same rule.
+#' The first `k` waves of each individual get `NA` and leave the
+#' estimation sample. `diff()` follows base R's `diff(x, lag, differences)`;
+#' plm's third argument of `diff()` is `shift`, not `differences`.
+#' The same rule applies in [paniv()], [panqr()] and [panfmm()].
 #' @param data a data.frame containing the variables in `formula` and `index`
 #' @param index length-1 or length-2 character vector identifying the
 #'   individual (and optionally time) columns, e.g. `c("id", "time")`

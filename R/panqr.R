@@ -69,7 +69,8 @@
 #'
 #' @param formula a formula `y ~ regressors`.
 #'   `lag(x, k)`, `lead(x, k)` and `diff(x)` are taken within each
-#'   individual on the grid of sorted distinct time values (needs
+#'   individual on the grid of sorted distinct time values (see
+#'   "Lags and differences" in [panglm()]; needs
 #'   `index = c(id, time)`); the first waves of each individual get `NA`
 #'   and leave the sample, and `lag(x, 0:2)` gives several lags
 #' @param data a data.frame in long format
