@@ -1,3 +1,62 @@
+# panglm 1.6.1
+
+Correctness release. Every fix is checked against an established package
+in the validation scripts.
+
+## Changed behaviour
+
+* Random-intercept binomial (logit, probit) and ordered (logit, probit)
+  models are now integrated by adaptive Gauss-Hermite quadrature centred
+  at each individual's mode, instead of non-adaptive quadrature.
+  Estimates change, most for large random-effect variances or long
+  panels. At the default `R = 21` the fits match
+  `lme4::glmer(nAGQ = 21)` and `ordinal::clmm(nAGQ = 21)` to about 1e-5;
+  `R = 1` is now the Laplace approximation (glmmTMB, `clmm(nAGQ = 1)`).
+* `panqr(model = "mmqr")`: the analytic covariance (`vcov = "analytic"`,
+  the default) is now cluster-robust by individual. The influence
+  functions of the location, scale and quantile steps are summed within
+  each cluster and `V = G/(G-1) sum_g psi_g psi_g'`, where `G` is the
+  number of clusters. The formula of Machado and Santos Silva (2019),
+  which assumes independent observations and can badly overstate the
+  standard errors in short panels, is kept as `vcov = "iid"`. A new
+  `cluster` argument names another clustering column. Standard errors
+  of existing MM-QR fits change.
+* Gaussian random effects on unbalanced panels now use the Swamy-Arora
+  variance components of plm (`random.method = "swar"`), so estimates on
+  unbalanced panels change and match `plm::plm(model = "random")`.
+  Balanced fits are unchanged. A negative individual-effect variance is
+  set to zero with a warning.
+* The one-way and two-way fixed-effects logit are fitted by
+  Newton-Raphson with the exact analytic Hessian of the conditional
+  likelihood instead of BFGS with a finite-difference Hessian.
+  Coefficients and standard errors match `survival::clogit()` to about
+  1e-13, and the fit is faster than clogit at N = 10,000 and 50,000.
+
+## Bug fixes
+
+* `panglm()` accepts base R family objects (`gaussian()`, `poisson()`,
+  `binomial("logit")`, `binomial("probit")`, `Gamma("log")`) and maps
+  them onto the panglm families; other stats families stop with a
+  message naming the panglm constructor.
+* `attgt()`, `did()`, `eventstudy()` and `etwfe()` no longer fail when
+  the individual index is a factor with unused levels (e.g. after
+  `subset()`).
+* `pangmm()` drops regressors that are not identified in the transformed
+  equation (for example age in a balanced annual panel) with a warning,
+  instead of stopping with a singular-system error.
+* Two-way demeaning (`effect = "twoways"`) by alternating projections
+  now warns if it reaches the iteration limit before converging.
+
+## Documentation
+
+* Two-way demeaning is described as iterative, converging to tolerance,
+  rather than exact.
+* The `cre` test is described as a Hausman-type (Mundlak) test that is
+  robust only with `vcov = "cluster"` (or `"HC1"` for
+  heteroskedasticity alone).
+* The beta family validation is now in `validation/validate-beta.R`
+  (betareg, GLMMadaptive, glmmTMB and numerical integration).
+
 # panglm 1.6.0
 
 This release collects all changes since 1.1.4, the previous CRAN version.
