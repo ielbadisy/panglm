@@ -79,42 +79,6 @@ ordered_contrib_pooled <- function(X, y, J, lf) {
   }
 }
 
-ordered_contrib_random <- function(X, y, J, lf, group, gh) {
-  k <- ncol(X)
-  G <- max(group)
-  R <- length(gh$nodes)
-  log_w <- log(gh$weights)
-  function(theta, score) {
-    cp <- theta[k + seq_len(J - 1L)]
-    cuts <- ordered_cuts(cp)
-    sigma <- exp(theta[k + J])
-    eta <- as.numeric(X %*% theta[seq_len(k)])
-    shifts <- sqrt(2) * sigma * gh$nodes
-    L <- matrix(0, G, R)
-    for (q in seq_len(R)) {
-      L[, q] <- log_w[q] + rowsum(ordered_pieces(eta + shifts[q], y, cuts, lf, FALSE)$logP,
-                                  group)[, 1]
-    }
-    top <- apply(L, 1, max)
-    ll <- top + log(rowSums(exp(L - top)))
-    out <- list(ll = ll)
-    if (score) {
-      post <- exp(L - ll)
-      geta <- 0; gcut <- 0; gsig <- 0
-      for (q in seq_len(R)) {
-        pc <- ordered_pieces(eta + shifts[q], y, cuts, lf, TRUE)
-        pq <- post[group, q]
-        geta <- geta + pq * pc$deta
-        gcut <- gcut + pq * pc$dcut
-        gsig <- gsig + pq * pc$deta * shifts[q]
-      }
-      out$score <- rowsum(cbind(geta * X, gcut %*% ordered_cut_jacobian(cp), gsig), group)
-      dimnames(out$score) <- NULL
-    }
-    out
-  }
-}
-
 #' Fit an ordered model; called by panglm()
 #'
 #' @keywords internal
@@ -144,15 +108,15 @@ fit_ordered <- function(X, y, levels, link, model, group_start, group_size, weig
     unit_weights <- w_obs
     sigma <- NULL
   } else {
-    gh <- gauss_hermite_quadrature(R)
     unit_weights <- if (is.null(weights)) rep(1, length(group_size)) else
       individual_weights(weights, group_size)
     inflate <- sqrt(1 + 1 / lf$var)
     p_beta <- pooled$theta[seq_len(k)] * inflate
     p_cut <- pooled$theta[k + seq_len(J - 1L)]
     p_cut <- c(p_cut[1] * inflate, p_cut[-1] + log(inflate))
-    res <- ml_optimize(c(p_beta, p_cut, 0), ordered_contrib_random(X, y, J, lf, group, gh),
-                       unit_weights, maxit, tol)
+    contrib <- agq_contrib(agq_kind(link, ordered = TRUE), X, y, group_start, group_size,
+                           R, m = J - 1L)
+    res <- ml_optimize(c(p_beta, p_cut, 0), contrib, unit_weights, maxit, tol)
     sigma <- exp(res$theta[k + J])
   }
 
@@ -172,7 +136,7 @@ fit_ordered <- function(X, y, levels, link, model, group_start, group_size, weig
 
   eta <- as.numeric(X %*% beta)
   probs <- if (is.null(sigma)) ordered_probabilities(eta, cuts, lf) else
-    ordered_marginal_probabilities(eta, cuts, lf, sigma, gauss_hermite_quadrature(R))
+    ordered_marginal_probabilities(eta, cuts, lf, sigma, marginal_quadrature(R))
   colnames(probs) <- levels
 
   n_pos <- sum(w_obs > 0)
@@ -291,7 +255,7 @@ ordered_predictor <- function(object, category = NULL, cre_means = NULL) {
   lf <- ordered_link(object$link)
   k <- length(object$beta_names)
   J <- length(object$ordered_levels)
-  gh <- if (object$model == "random") gauss_hermite_quadrature(object$quadrature_nodes)
+  gh <- if (object$model == "random") marginal_quadrature(object$quadrature_nodes)
   shim <- ordered_shim(object)
   function(theta, data) {
     X <- panglm_design(shim, data, cre_means)
@@ -343,7 +307,7 @@ predict.panordered <- function(object, newdata = NULL, type = c("prob", "class",
     lf <- ordered_link(object$link)
     probs <- if (object$model == "random") {
       ordered_marginal_probabilities(eta, object$cutpoints, lf, object$sigma,
-                                     gauss_hermite_quadrature(object$quadrature_nodes))
+                                     marginal_quadrature(object$quadrature_nodes))
     } else {
       ordered_probabilities(eta, object$cutpoints, lf)
     }

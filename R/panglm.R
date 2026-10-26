@@ -136,12 +136,22 @@
 #'   and the other families are not supported with random slopes;
 #'   `cre = TRUE` is. Response predictions and [partialeffects()] are
 #'   population averages over the random effects.
-#' @param R number of Gauss-Hermite quadrature nodes (random-effects
-#'   binomial and gamma models only). With random slopes, the number of
-#'   nodes per dimension of the adaptive product rule. When `R` is not
+#' @param R number of adaptive Gauss-Hermite quadrature nodes for the
+#'   random-effects models whose likelihood has no closed form: binomial
+#'   (logit, probit), gamma, ordered, beta and Tobit. The default `R = 21`
+#'   reproduces `lme4::glmer(nAGQ = 21)` and `ordinal::clmm(nAGQ = 21)` to
+#'   about 1e-5 in the coefficients and the log-likelihood (for a probit
+#'   model with a large random-intercept spread, say `sigma > 1.5`, raise
+#'   `R` to 41 or more for that accuracy). The nodes are
+#'   centred at the mode of each individual's integrand and scaled by its
+#'   curvature, so `R = 1` is the Laplace approximation (with the observed
+#'   curvature, except for the beta model, which uses the expected one).
+#'   `R` is ignored by the closed-form random-intercept Gaussian, Poisson
+#'   and negative binomial models. With random slopes, `R` is the number of
+#'   nodes per dimension of the adaptive product rule; when it is not
 #'   given it is 7 for one slope, 5 for two, 3 for three to five and 1
-#'   (Laplace) beyond, so that `R^q` stays moderate; a warning is given
-#'   when `R^q` exceeds 2000. `R = 1` gives the Laplace approximation.
+#'   (Laplace) beyond, so that `R^q` stays moderate, and a warning is given
+#'   when `R^q` exceeds 2000.
 #' @param maxit maximum IRLS/Newton iterations
 #' @param tol convergence tolerance
 #' @return an object of class `"panglm"` (with the additional class
@@ -1109,55 +1119,30 @@ fit_random_gaussian <- function(X, y, group_start, group_size, maxit, tol) {
 }
 
 fit_random_binomial <- function(X, y, family, group_start, group_size, R, maxit, tol) {
-  gh <- gauss_hermite_quadrature(R)
   k <- ncol(X)
-
   start <- irls_fit_cpp(X, y, 2L, family$link_id, maxit, tol)
   theta0 <- c(as.numeric(start$coefficients), log(0.5))
+  contrib <- agq_contrib(agq_kind(family), X, y, group_start, group_size, R)
+  res <- ml_optimize(theta0, contrib, rep(1, length(group_size)), maxit, tol,
+                     scaling = ml_design_scaling(X, k + 1L),
+                     what = "the random-effects binomial fit")
 
-  # BFGS calls the objective and gradient separately at (usually) the same
-  # theta; cache the last quadrature evaluation to avoid running it twice.
-  cache <- new.env(parent = emptyenv())
-  eval_at <- function(theta) {
-    if (is.null(cache$theta) || !identical(cache$theta, theta)) {
-      cache$theta <- theta
-      beta <- theta[seq_len(k)]
-      sigma <- exp(theta[k + 1])
-      cache$res <- random_binomial_loglik_grad_cpp(beta, sigma, X, y, group_start, group_size,
-                                                     gh$nodes, gh$weights, family$link_id)
-      cache$sigma <- sigma
-    }
-    cache
-  }
-  objective <- function(theta) -eval_at(theta)$res$loglik
-  gradient <- function(theta) {
-    c <- eval_at(theta)
-    g <- c$res$gradient
-    g[k + 1] <- g[k + 1] * c$sigma # chain rule: d/d(log sigma) = d/dsigma * sigma
-    -g
-  }
-
-  opt <- stats::optim(theta0, objective, gradient, method = "BFGS",
-                       control = list(maxit = maxit, reltol = tol),
-                       hessian = TRUE)
-
-  coefs <- opt$par[seq_len(k)]
+  coefs <- res$theta[seq_len(k)]
   names(coefs) <- colnames(X)
-  sigma <- exp(opt$par[k + 1])
-  vcov_full <- tryCatch(solve(opt$hessian), error = function(e) matrix(NA_real_, k + 1, k + 1))
-  vcov <- vcov_full[seq_len(k), seq_len(k), drop = FALSE]
+  sigma <- exp(res$theta[k + 1L])
+  vcov <- res$vcov[seq_len(k), seq_len(k), drop = FALSE]
   dimnames(vcov) <- list(colnames(X), colnames(X))
 
   eta <- as.numeric(X %*% coefs)
-  fitted <- random_binomial_marginal_mean(eta, sigma, family, gh)
+  fitted <- random_binomial_marginal_mean(eta, sigma, family, R)
   list(coefficients = coefs, vcov = vcov, fitted.values = fitted,
-       loglik = -opt$value, sigma = sigma, dispersion = 1,
+       loglik = res$loglik, sigma = sigma, dispersion = 1,
        quadrature_nodes = R,
-       df.residual = nrow(X) - k - 1, iterations = opt$counts[[1]], convergence = opt$convergence)
+       df.residual = nrow(X) - k - 1, iterations = res$iterations, convergence = res$convergence)
 }
 
 random_binomial_marginal_mean <- function(eta, sigma, family, quadrature = 21L) {
-  gh <- if (is.list(quadrature)) quadrature else gauss_hermite_quadrature(quadrature)
+  gh <- if (is.list(quadrature)) quadrature else marginal_quadrature(quadrature)
   shifts <- sqrt(2) * sigma * gh$nodes
   as.numeric(linkinv_r(outer(eta, shifts, "+"), family$link_id) %*% gh$weights)
 }

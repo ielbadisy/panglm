@@ -38,23 +38,8 @@ random_contrib <- function(family, X, y, group, R = 21L) {
       }
     },
     binomial = {
-      gh <- gauss_hermite_quadrature(R)
-      logcdf <- if (family$link == "logit") {
-        function(z) stats::plogis(z, log.p = TRUE)
-      } else {
-        function(z) stats::pnorm(z, log.p = TRUE)
-      }
-      sgn <- 2 * y - 1
-      function(theta, score) {
-        eta <- as.numeric(X %*% theta[seq_len(k)])
-        sigma <- exp(theta[k + 1L])
-        L <- vapply(seq_along(gh$nodes), function(q) {
-          log(gh$weights[q]) +
-            as.numeric(rowsum(logcdf(sgn * (eta + sqrt(2) * sigma * gh$nodes[q])), group))
-        }, numeric(length(Ti)))
-        if (!is.matrix(L)) L <- matrix(L, nrow = length(Ti))
-        list(ll = log_row_sum_exp(L))
-      }
+      size <- tabulate(group)
+      agq_contrib(agq_kind(family), X, y, c(0L, cumsum(size)[-length(size)]), size, R)
     },
     gamma = random_gamma_contrib(X, y, group, R),
     gaussian = {
@@ -70,6 +55,60 @@ random_contrib <- function(family, X, y, group, R = 21L) {
     stop("no individual likelihood for family '", family$family, "'", call. = FALSE)
   )
 }
+
+#' Adaptive Gauss-Hermite contributions of a random-intercept model
+#'
+#' Binomial (logit, probit) and ordered (logit, probit) random-intercept
+#' likelihoods by adaptive Gauss-Hermite quadrature with `R` nodes centred
+#' at each individual's mode and scaled by the observed curvature there
+#' (`R = 1` is the Laplace approximation), computed in C++
+#' (`random_agq_cpp()`), with the exact gradient of the approximation.
+#' `theta = (beta, cutpoint parameters, log sigma)`; with `m > 0`
+#' cutpoint parameters they are the first cutpoint and the log increments
+#' (`ordered_cuts()`), and `y` holds the category codes `1, ..., m + 1`.
+#'
+#' @keywords internal
+#' @noRd
+agq_contrib <- function(kind, X, y, group_start, group_size, R, m = 0L) {
+  k <- ncol(X)
+  gh <- gauss_hermite_quadrature(R)
+  X <- unname(as.matrix(X)); storage.mode(X) <- "double"
+  y <- as.numeric(y)
+  group_start <- as.integer(group_start); group_size <- as.integer(group_size)
+  function(theta, score) {
+    cp <- theta[k + seq_len(m)]
+    cuts <- if (m) ordered_cuts(cp) else numeric(0)
+    if (m > 1L && any(diff(cuts) <= 0)) stop("cutpoints are not increasing", call. = FALSE)
+    res <- random_agq_cpp(theta[seq_len(k)], cuts, exp(theta[k + m + 1L]), X, y,
+                          group_start, group_size, gh$nodes, gh$weights, kind)
+    out <- list(ll = res$ll)
+    if (score) {
+      sc <- res$score
+      if (m) sc[, k + seq_len(m)] <- sc[, k + seq_len(m), drop = FALSE] %*% ordered_cut_jacobian(cp)
+      out$score <- sc
+    }
+    out
+  }
+}
+
+agq_kind <- function(family, ordered = FALSE) {
+  link <- if (is.list(family)) family$link else family
+  base <- if (ordered) 2L else 0L
+  base + switch(link, logit = 0L, probit = 1L,
+                stop("adaptive quadrature needs a logit or probit link", call. = FALSE))
+}
+
+#' Quadrature rule for population-averaged (marginal) means
+#'
+#' The marginal mean integrates a smooth function of the random intercept
+#' against its normal density, which non-adaptive Gauss-Hermite handles
+#' well with enough nodes; at least 21 are used whatever the number of
+#' adaptive nodes of the fit (with `R = 1` the fit is a Laplace fit, but
+#' the marginal mean still has to average over the intercept).
+#'
+#' @keywords internal
+#' @noRd
+marginal_quadrature <- function(R) gauss_hermite_quadrature(max(as.integer(R), 21L))
 
 log_row_sum_exp <- function(L) {
   top <- apply(L, 1, max)

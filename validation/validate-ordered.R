@@ -13,8 +13,10 @@
 #   is rebuilt from clogit's information and per-individual scores, with
 #   panglm's small-sample factor G / (G - 1).
 # - Random-intercept ordered logit and probit: ordinal::clmm with adaptive
-#   Gauss-Hermite quadrature (nAGQ = 41) against panglm's quadrature with
-#   R = 41 nodes. Both approximate the same integrated likelihood to far
+#   Gauss-Hermite quadrature (nAGQ = 41) against panglm's adaptive
+#   Gauss-Hermite quadrature with R = 41 nodes (validate-random.R also
+#   compares the default R = 21 and the Laplace fit R = 1 on
+#   lme4::schizophrenia). Both approximate the same integrated likelihood to far
 #   below 1e-8 at this size, so the remaining difference is clmm's
 #   optimizer tolerance (its fit is pushed with rel.tol = 1e-14); compared
 #   at 1e-5. clmm's standard errors come from a finite-difference Hessian.

@@ -80,17 +80,36 @@ test_that("random poisson (Poisson-Gamma) recovers known dispersion and matches 
   expect_equal(f$dispersion_param, 5, tolerance = 0.5) # recovers true Gamma shape = 5
 })
 
-test_that("random binomial (Gauss-Hermite quadrature) matches pglm()", {
+test_that("random binomial (adaptive Gauss-Hermite quadrature) matches lme4::glmer(nAGQ = 21)", {
+  skip_on_cran()
   skip_if_missing("pglm")
-  skip_if_missing("maxLik")
-  suppressMessages({ library(pglm) })
+  skip_if_missing("lme4")
   data(UnionWage, package = "pglm")
   f <- panglm(union ~ wage + exper + rural, data = UnionWage, index = c("id", "year"),
-              model = "random", family = "binomial", R = 15)
-  p <- pglm(union ~ wage + exper + rural, UnionWage, index = c("id", "year"),
-            family = binomial("logit"), model = "random", method = "bfgs",
-            print.level = 0, R = 15)
-  expect_equal(unname(coef(f)), unname(coef(p)[1:4]), tolerance = 1e-3)
-  expect_equal(f$sigma, unname(tail(coef(p), 1)), tolerance = 1e-2)
-  expect_equal(f$loglik, as.numeric(logLik(p)), tolerance = 1e-3)
+              model = "random", family = "binomial", R = 21)
+  g <- lme4::glmer(union ~ wage + exper + rural + (1 | id), data = UnionWage,
+                   family = binomial, nAGQ = 21,
+                   control = lme4::glmerControl(optimizer = "bobyqa"))
+  expect_equal(unname(coef(f)[1:4]), unname(lme4::fixef(g)), tolerance = 1e-5)
+  expect_equal(f$sigma, sqrt(lme4::VarCorr(g)$id[1]), tolerance = 1e-5)
+  expect_equal(f$loglik, as.numeric(logLik(g)), tolerance = 1e-7)
+})
+
+test_that("random binomial with R = 1 is the Laplace approximation of glmmTMB", {
+  skip_on_cran()
+  skip_if_missing("pglm")
+  skip_if_missing("glmmTMB")
+  data(UnionWage, package = "pglm")
+  for (lk in c("logit", "probit")) {
+    f <- panglm(union ~ wage + exper + rural, data = UnionWage, index = c("id", "year"),
+                model = "random", family = binomialfamily(lk), R = 1)
+    t <- glmmTMB::glmmTMB(union ~ wage + exper + rural + (1 | id), data = UnionWage,
+                          family = binomial(lk))
+    expect_equal(unname(coef(f)[1:4]), unname(glmmTMB::fixef(t)$cond), tolerance = 1e-5)
+    expect_equal(f$sigma, unname(attr(glmmTMB::VarCorr(t)$cond$id, "stddev")),
+                 tolerance = 1e-5)
+    expect_equal(f$loglik, as.numeric(logLik(t)), tolerance = 1e-8)
+    expect_equal(unname(sqrt(diag(vcov(f)))[1:4]), unname(sqrt(diag(vcov(t)$cond))),
+                 tolerance = 1e-4)
+  }
 })

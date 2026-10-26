@@ -9,6 +9,10 @@ negbin_irls_fit_cpp <- function(X, y, maxit = 100L, tol = 1e-10, weights = NULL)
     .Call(`_panglm_negbin_irls_fit_cpp`, X, y, maxit, tol, weights)
 }
 
+random_agq_cpp <- function(beta, cuts, sigma, X, y, group_start, group_size, nodes, weights, kind) {
+    .Call(`_panglm_random_agq_cpp`, beta, cuts, sigma, X, y, group_start, group_size, nodes, weights, kind)
+}
+
 random_binomial_loglik_grad_cpp <- function(beta, sigma, X, y, group_start, group_size, nodes, weights, link_id) {
     .Call(`_panglm_random_binomial_loglik_grad_cpp`, beta, sigma, X, y, group_start, group_size, nodes, weights, link_id)
 }

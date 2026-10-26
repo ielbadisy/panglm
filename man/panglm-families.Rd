@@ -53,8 +53,8 @@ for ordinal outcomes such as self-assessed health:
 ordered factor or integer-valued; categories follow the factor levels
 or the sorted values. The intercept is absorbed in the cutpoints \code{c_j},
 which are reported after the slopes. \code{model = "pooling"} and
-\code{model = "random"} (Gaussian random intercept by Gauss-Hermite
-quadrature) are available for both links, \code{model = "within"} for the
+\code{model = "random"} (Gaussian random intercept by adaptive
+Gauss-Hermite quadrature) are available for both links, \code{model = "within"} for the
 logit link only (the "blow-up and cluster" fixed-effects ordered logit
 of Baetschmann, Staub and Winkelmann 2015). The fit has class
 \code{c("panordered", "panglm")}; see \code{\link[=predict.panordered]{predict.panordered()}}.

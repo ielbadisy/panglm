@@ -155,12 +155,22 @@ and the other families are not supported with random slopes;
 \code{cre = TRUE} is. Response predictions and \code{\link[=partialeffects]{partialeffects()}} are
 population averages over the random effects.}
 
-\item{R}{number of Gauss-Hermite quadrature nodes (random-effects
-binomial and gamma models only). With random slopes, the number of
-nodes per dimension of the adaptive product rule. When \code{R} is not
+\item{R}{number of adaptive Gauss-Hermite quadrature nodes for the
+random-effects models whose likelihood has no closed form: binomial
+(logit, probit), gamma, ordered, beta and Tobit. The default \code{R = 21}
+reproduces \code{lme4::glmer(nAGQ = 21)} and \code{ordinal::clmm(nAGQ = 21)} to
+about 1e-5 in the coefficients and the log-likelihood (for a probit
+model with a large random-intercept spread, say \code{sigma > 1.5}, raise
+\code{R} to 41 or more for that accuracy). The nodes are
+centred at the mode of each individual's integrand and scaled by its
+curvature, so \code{R = 1} is the Laplace approximation (with the observed
+curvature, except for the beta model, which uses the expected one).
+\code{R} is ignored by the closed-form random-intercept Gaussian, Poisson
+and negative binomial models. With random slopes, \code{R} is the number of
+nodes per dimension of the adaptive product rule; when it is not
 given it is 7 for one slope, 5 for two, 3 for three to five and 1
-(Laplace) beyond, so that \code{R^q} stays moderate; a warning is given
-when \code{R^q} exceeds 2000. \code{R = 1} gives the Laplace approximation.}
+(Laplace) beyond, so that \code{R^q} stays moderate, and a warning is given
+when \code{R^q} exceeds 2000.}
 
 \item{maxit}{maximum IRLS/Newton iterations}
 

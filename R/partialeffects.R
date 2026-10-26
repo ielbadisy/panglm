@@ -124,7 +124,7 @@ panglm_mean_function <- function(object) {
     },
     binomial = ,
     beta = {
-      gh <- gauss_hermite_quadrature(object$quadrature_nodes %||% 21L)
+      gh <- marginal_quadrature(object$quadrature_nodes %||% 21L)
       function(eta) random_binomial_marginal_mean(eta, object$sigma, family, gh)
     },
     gamma = {

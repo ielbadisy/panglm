@@ -40,6 +40,22 @@ test_that("random-effects ordered logit matches ordinal::clmm", {
                tolerance = 1e-3)
 })
 
+test_that("random-effects ordered models with R = 1 match the Laplace fit of ordinal::clmm", {
+  skip_on_cran()
+  skip_if_not_installed("ordinal")
+  d <- make_ordered_data()
+  dd <- transform(d, id = factor(id))
+  for (lk in c("logit", "probit")) {
+    r <- panglm(y ~ x1 + z, d, c("id", "t"), model = "random", family = orderedfamily(lk), R = 1)
+    # clmm's inner Laplace mode search warns on a few individuals at this
+    # tight tolerance; its fit is still the reference optimum
+    cm <- suppressWarnings(ordinal::clmm(y ~ x1 + z + (1 | id), data = dd, link = lk, nAGQ = 1,
+                                         control = ordinal::clmm.control(gradTol = 1e-10)))
+    expect_equal(unname(coef(r)), unname(c(cm$beta, cm$alpha)), tolerance = 1e-4)
+    expect_equal(as.numeric(logLik(r)), as.numeric(logLik(cm)), tolerance = 1e-7)
+  }
+})
+
 test_that("random-effects ordered predictions, weights and cluster vcov", {
   d <- make_ordered_data(G = 150)
   r <- panglm(y ~ x1 + z, d, c("id", "t"), model = "random", family = "oprobit")
