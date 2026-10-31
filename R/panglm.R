@@ -366,7 +366,18 @@ panglm <- function(formula, data, index,
   # lag(), lead() and diff() are taken within individuals on all rows
   mf <- panel_model_frame(formula, frame_data, index, na.action = na.action,
                           rows = frame_rows)
-  model_rows <- match(rownames(mf), rownames(data))
+  # Rows of data used by the model frame. Without lag()/lead()/diff() calls
+  # or dynamic = TRUE the model frame keeps the rows of data in order, less
+  # those dropped by na.action, so the positions follow from the na.action
+  # attribute; matching the row names is the general (slower) route.
+  dropped_rows <- attr(mf, "na.action")
+  model_rows <- if (!dynamic && !panel_calls &&
+                    nrow(mf) + length(dropped_rows) == nrow(data)) {
+    all_rows <- seq_len(nrow(data))
+    if (length(dropped_rows)) all_rows[-as.integer(dropped_rows)] else all_rows
+  } else {
+    match(rownames(mf), rownames(data))
+  }
   if (anyNA(model_rows)) stop("could not align model-frame rows with data", call. = FALSE)
 
   used_weights <- NULL
@@ -427,7 +438,8 @@ panglm <- function(formula, data, index,
   xlevels <- stats::.getXlevels(terms_object, mf)
   contrasts <- attr(X_full, "contrasts")
 
-  panel_cols <- data[model_rows, index, drop = FALSE]
+  all_data_rows <- length(model_rows) == nrow(data) && !is.unsorted(model_rows)
+  panel_cols <- if (all_data_rows) data[index] else data[model_rows, index, drop = FALSE]
   if (anyNA(panel_cols)) stop("panel index columns must not contain missing values", call. = FALSE)
   panel <- build_panel_index(cbind(panel_cols, .panglm_row = seq_len(nrow(mf))), index)
   ord <- panel$data$.panglm_row
@@ -458,11 +470,18 @@ panglm <- function(formula, data, index,
   }
 
   candidate_X <- if (model %in% c("pooling", "random", "between")) X_full else X_noint
+  # The two-way Gaussian fit demeans y and X once; the same demeaned X serves
+  # the estimability check, instead of a second demeaning of X alone.
+  twoway_dm <- if (!is_ordered && model == "within" && effect == "twoways" &&
+                   family$family == "gaussian" && !is.null(time_id) && ncol(X_noint)) {
+    demean_twoway(X_noint, y, group_start, group_size, time_id, tol = tol)
+  }
   estimable <- if (is_ordered && model != "within") {
     setdiff(panglm_estimable_columns(cbind(`(Intercept)` = 1, candidate_X), model, effect,
                                      group_start, group_size, time_id), 1L) - 1L
   } else {
-    panglm_estimable_columns(candidate_X, model, effect, group_start, group_size, time_id)
+    panglm_estimable_columns(candidate_X, model, effect, group_start, group_size, time_id,
+                             transformed = twoway_dm$X)
   }
   if (!length(estimable)) stop("the model contains no estimable covariates", call. = FALSE)
   aliased <- setdiff(colnames(candidate_X), colnames(candidate_X)[estimable])
@@ -470,10 +489,11 @@ panglm <- function(formula, data, index,
     warning("rank-deficient model matrix: dropping unidentified column(s): ",
             paste(aliased, collapse = ", "), call. = FALSE)
   }
+  # the copies are skipped when every column is kept
   if (model %in% c("pooling", "random", "between")) {
-    X_full <- X_full[, estimable, drop = FALSE]
+    if (length(estimable) < ncol(X_full)) X_full <- X_full[, estimable, drop = FALSE]
   } else {
-    X_noint <- X_noint[, estimable, drop = FALSE]
+    if (length(estimable) < ncol(X_noint)) X_noint <- X_noint[, estimable, drop = FALSE]
   }
 
   fit <- if (is_ordered) {
@@ -487,7 +507,8 @@ panglm <- function(formula, data, index,
     pooling = fit_pooled(X_full, y, family, maxit, tol, prior_weights),
     between = fit_between(X_full, y, group_start, group_size),
     within  = if (effect == "twoways" && family$family == "gaussian") {
-      fit_within_twoways_gaussian(X_noint, y, group_start, group_size, time_id, maxit, tol)
+      fit_within_twoways_gaussian(X_noint, y, group_start, group_size, time_id, maxit, tol,
+                                  dm = twoway_dm)
     } else if (effect == "twoways" && family$family == "poisson") {
       fit_within_twoways_poisson(X_noint, y, group_start, group_size, time_id, maxit, tol)
     } else if (effect == "twoways" && family$family == "negbin") {
@@ -520,7 +541,11 @@ panglm <- function(formula, data, index,
     fit$Z <- Z_random
     rownames(fit$ranef) <- as.character(panel$group_id)
   }
-  fit$data <- data[model_rows[ord], data_vars, drop = FALSE]
+  fit$data <- if (all_data_rows && !is.unsorted(ord)) {
+    data[data_vars]
+  } else {
+    data[model_rows[ord], data_vars, drop = FALSE]
+  }
   if (panel_calls) {
     fit$panel_history <- frame_data[, intersect(data_vars, names(frame_data)), drop = FALSE]
   }
@@ -588,9 +613,11 @@ panglm <- function(formula, data, index,
   fit
 }
 
-panglm_estimable_columns <- function(X, model, effect, group_start, group_size, time) {
+panglm_estimable_columns <- function(X, model, effect, group_start, group_size, time,
+                                     transformed = NULL) {
   if (!ncol(X)) stop("the model contains no estimable covariates", call. = FALSE)
-  transformed <- if (model == "between") {
+  # transformed: X already transformed by the caller (two-way demeaning)
+  if (is.null(transformed)) transformed <- if (model == "between") {
     group_means_cpp(X, rep(0, nrow(X)), group_start, group_size)$Xbar
   } else if (model != "within") {
     X
@@ -1190,7 +1217,7 @@ dynamic_panel_data <- function(formula, data, index, weights, offset) {
          call. = FALSE)
   }
   id <- data[[index[1]]]
-  if (anyDuplicated(data.frame(id, time))) {
+  if (panel_pairs_duplicated(id, time)) {
     stop("dynamic = TRUE needs one row per individual and time period", call. = FALSE)
   }
   y <- data[[yname]]
