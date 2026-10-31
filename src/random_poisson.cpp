@@ -146,8 +146,11 @@ List random_poisson_fit_cpp(const arma::mat& X, const arma::vec& y,
   double max_damping = 0.0;
 
   int iter = 0;
+  // The gradient and Hessian of the accepted point are carried into the
+  // next Newton step, so each step costs one evaluation (plus any
+  // step-halvings) instead of re-evaluating the point just accepted.
+  eval(theta.subvec(0, k - 1), theta[k], grad, hess, ll);
   for (iter = 0; iter < maxit; ++iter) {
-    eval(theta.subvec(0, k - 1), theta[k], grad, hess, ll);
     arma::vec step;
     double damping = damped_solve(-hess, -grad, step); // Newton step on -hess (neg-definite -> pos-definite)
     max_damping = std::max(max_damping, damping);
@@ -168,11 +171,13 @@ List random_poisson_fit_cpp(const arma::mat& X, const arma::vec& y,
 
     bool converged = std::fabs(ll_new - ll) < tol * (std::fabs(ll) + 1.0);
     theta = theta_new;
+    grad = g2;
+    hess = h2;
+    ll = ll_new;
     ll_old = ll_new;
     if (converged) { iter++; break; }
   }
 
-  eval(theta.subvec(0, k - 1), theta[k], grad, hess, ll_old); // Hessian at converged theta
   arma::mat vcov;
   double vcov_damping = damped_inv_sympd(-hess, vcov); // hess is negative-definite (concave loglik)
   max_damping = std::max(max_damping, vcov_damping);
