@@ -11,21 +11,24 @@ namespace panglm {
 // within group g, lXi(g, :) = colSum(lit * X) within group g. Groups are
 // contiguous row ranges [group_start[g], group_start[g] + group_size[g]).
 // Parallelized over groups (panel units).
+// The worker reads and writes plain column-major buffers, so the inputs and
+// outputs are used in place without copies to and from R matrices.
 struct GroupAggWorker : public RcppParallel::Worker {
-  const RcppParallel::RMatrix<double> X;
-  const RcppParallel::RVector<double> lit;
-  const RcppParallel::RVector<int> group_start;
-  const RcppParallel::RVector<int> group_size;
-  RcppParallel::RVector<double> Li;
-  RcppParallel::RMatrix<double> lXi;
+  const double* X;
+  const double* lit;
+  const int* group_start;
+  const int* group_size;
+  double* Li;
+  double* lXi;
+  std::size_t n, G, ncol;
 
-  GroupAggWorker(const Rcpp::NumericMatrix& X, const Rcpp::NumericVector& lit,
-                 const Rcpp::IntegerVector& group_start, const Rcpp::IntegerVector& group_size,
-                 Rcpp::NumericVector& Li, Rcpp::NumericMatrix& lXi)
-    : X(X), lit(lit), group_start(group_start), group_size(group_size), Li(Li), lXi(lXi) {}
+  GroupAggWorker(const double* X, const double* lit, const int* group_start,
+                 const int* group_size, double* Li, double* lXi,
+                 std::size_t n, std::size_t G, std::size_t ncol)
+    : X(X), lit(lit), group_start(group_start), group_size(group_size), Li(Li),
+      lXi(lXi), n(n), G(G), ncol(ncol) {}
 
   void operator()(std::size_t begin, std::size_t end) {
-    std::size_t ncol = X.ncol();
     for (std::size_t g = begin; g < end; ++g) {
       int start = group_start[g];
       int size  = group_size[g];
@@ -33,34 +36,25 @@ struct GroupAggWorker : public RcppParallel::Worker {
       for (int t = 0; t < size; ++t) s += lit[start + t];
       Li[g] = s;
       for (std::size_t j = 0; j < ncol; ++j) {
+        const double* xj = X + j * n;
         double sj = 0.0;
-        for (int t = 0; t < size; ++t) sj += lit[start + t] * X(start + t, j);
-        lXi(g, j) = sj;
+        for (int t = 0; t < size; ++t) sj += lit[start + t] * xj[start + t];
+        lXi[g + j * G] = sj;
       }
     }
   }
 };
 
 inline void compute_group_agg(const arma::mat& X, const arma::vec& lit,
-                               const Rcpp::IntegerVector& group_start,
-                               const Rcpp::IntegerVector& group_size,
-                               arma::vec& Li, arma::mat& lXi) {
-  int n = X.n_rows, k = X.n_cols, G = group_start.size();
-  Rcpp::NumericMatrix Xr(n, k);
-  for (int i = 0; i < n; ++i) for (int j = 0; j < k; ++j) Xr(i, j) = X(i, j);
-  Rcpp::NumericVector litr(lit.begin(), lit.end());
-  Rcpp::NumericVector Li_r(G);
-  Rcpp::NumericMatrix lXi_r(G, k);
-
-  GroupAggWorker worker(Xr, litr, group_start, group_size, Li_r, lXi_r);
-  RcppParallel::parallelFor(0, G, worker, panglm::grain(G));
-
+                              const Rcpp::IntegerVector& group_start,
+                              const Rcpp::IntegerVector& group_size,
+                              arma::vec& Li, arma::mat& lXi) {
+  std::size_t n = X.n_rows, k = X.n_cols, G = group_start.size();
   Li.set_size(G);
   lXi.set_size(G, k);
-  for (int g = 0; g < G; ++g) {
-    Li[g] = Li_r[g];
-    for (int j = 0; j < k; ++j) lXi(g, j) = lXi_r(g, j);
-  }
+  GroupAggWorker worker(X.memptr(), lit.memptr(), group_start.begin(), group_size.begin(),
+                        Li.memptr(), lXi.memptr(), n, G, k);
+  RcppParallel::parallelFor(0, G, worker, panglm::grain(G));
 }
 
 } // namespace panglm
