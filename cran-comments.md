@@ -8,8 +8,8 @@ for every model class, and task-based vignettes. Exported names with
 underscores are deprecated through wrappers that keep working and warn. See
 NEWS.md for details.
 
-Every estimator is validated against an established package (plm, fixest,
-lme4, glmmTMB, did, etwfe, quantreg, flexmix, censReg, betareg, and others).
+Every estimator is covered by unit tests and by validation scripts kept in
+the GitHub repository.
 
 ## Test environments
 
