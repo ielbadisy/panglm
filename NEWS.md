@@ -1,3 +1,43 @@
+# panglm 1.6.2
+
+Speed release for large panels. Estimates are unchanged: the
+optimizations either reproduce the previous computations exactly or
+change results only at the level of floating-point rounding, and the
+tests and validation scripts pass unchanged.
+
+## Performance
+
+* Two-way demeaning computes the group means in one pass over the data
+  instead of a parallel reduction that allocated one accumulator per
+  thread. The two-way Gaussian fit demeans the outcome and the
+  regressors once and reuses the result for the check of which columns
+  are identified.
+* The fixed-effects Poisson and random-effects Poisson and negative
+  binomial Newton-Raphson fitters reuse the gradient and Hessian of the
+  accepted step instead of evaluating the same point twice.
+* Random-effects negative binomial: the gamma, digamma and trigamma
+  differences of the likelihood are computed by their finite-sum
+  recurrences for counts up to 50, skipped for zero counts, and spread
+  over threads. A fit on 250,000 observations is about seven times
+  faster.
+* `pangmm()`: the individual sums of the GMM moments and the
+  Windmeijer correction use block sums and two matrix products instead
+  of one grouped sum per regressor.
+* The check for duplicated (individual, time) pairs in `panglm()`,
+  `pangmm()`, `attgt()` and `predict()` compares neighbouring sorted
+  rows instead of pasting every row into a string.
+* `attgt()` and `did()`: the checks that weights, clusters and the
+  treatment timing are constant within individuals no longer call R once
+  per individual.
+
+## Bug fixes
+
+* `attgt()`: when the individual index is a factor, individuals whose
+  rows had all been removed earlier (for example for missing values) were
+  also counted among the individuals dropped to balance the panel
+  (warning message and `dropped$unbalanced`). Only individuals still
+  present are counted now. Estimates are unaffected.
+
 # panglm 1.6.1
 
 Correctness release. Every fix is covered by the tests and the
