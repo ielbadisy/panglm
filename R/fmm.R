@@ -136,13 +136,8 @@
 #'   the fitted model, [tidy-methods] for `tidy()` and `glance()`.
 #' @family panel models
 #' @section Validation:
-#' Checked against flexmix in the package's validation suite on GitHub:
-#' `flexmix::flexmix()` with the `| id` grouping, started from the same
-#' posterior, gives the same log-likelihood, class and concomitant
-#' coefficients, class probabilities, posteriors and BIC, and
-#' `flexmix::refit()` the same standard errors, for Gaussian, Poisson, NB2 and
-#' binomial components; flexmix from its own random starts finds no better
-#' optimum.
+#' Numerical accuracy is checked in the package tests and in the validation
+#' suite; see the validation article on the package website.
 #' @examples
 #' # Doctor visits of 400 patients over 4 years: 70% low users and 30%
 #' # high users with a stronger effect of chronic illness
@@ -1055,8 +1050,8 @@ print.summary.panfmm <- function(x, digits = max(3, getOption("digits") - 3), ..
 #'   attribute `"fits"`
 #' @family panel models
 #' @section Validation:
-#' Each fit is a [panfmm()] fit, whose log-likelihood and BIC are checked
-#' against flexmix in the package's validation suite on GitHub.
+#' Numerical accuracy is checked in the package tests and in the validation
+#' suite; see the validation article on the package website.
 #' @examples
 #' set.seed(3)
 #' d <- data.frame(id = rep(1:150, each = 3), t = rep(1:3, 150), x = rnorm(450))

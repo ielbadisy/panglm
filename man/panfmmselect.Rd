@@ -34,8 +34,8 @@ with \code{NA}.
 }
 \section{Validation}{
 
-Each fit is a \code{\link[=panfmm]{panfmm()}} fit, whose log-likelihood and BIC are checked
-against flexmix in the package's validation suite on GitHub.
+Numerical accuracy is checked in the package tests and in the validation
+suite; see the validation article on the package website.
 }
 
 \examples{
