@@ -43,8 +43,8 @@ panel index columns.
 }
 \section{Validation}{
 
-Checked against \code{predict()} of \code{plm::plm()} instrumental-variable fits and
-\code{AER::ivreg()} in the package's validation suite on GitHub.
+Numerical accuracy is checked in the package tests and in the validation
+suite; see the validation article on the package website.
 }
 
 \examples{

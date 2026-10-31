@@ -48,8 +48,8 @@ required lag is unavailable.
 }
 \section{Validation}{
 
-Checked against the transformed equations stored by \code{plm::pgmm()} in the
-package's validation suite on GitHub.
+Numerical accuracy is checked in the package tests and in the validation
+suite; see the validation article on the package website.
 }
 
 \examples{

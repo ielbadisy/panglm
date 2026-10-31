@@ -57,9 +57,8 @@ conditional and selection types.
 }
 \section{Validation}{
 
-On one period, checked against \code{predict()} of
-\code{sampleSelection::selection(method = "2step")} in the package's validation
-suite on GitHub.
+Numerical accuracy is checked in the package tests and in the validation
+suite; see the validation article on the package website.
 }
 
 \examples{
