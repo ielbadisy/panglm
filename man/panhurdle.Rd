@@ -69,9 +69,8 @@ carries zero weight.
 }
 \section{Validation}{
 
-The zero part is the conditional logit of \code{\link[=panglm]{panglm()}}, checked against
-\code{survival::clogit()}. The zero-truncated Poisson and NB2 count parts are
-checked against the count part of \code{pscl::hurdle()} in the package tests.
+Numerical accuracy is checked in the package tests and in the validation
+suite; see the validation article on the package website.
 }
 
 \examples{
