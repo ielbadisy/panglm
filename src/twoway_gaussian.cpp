@@ -6,43 +6,13 @@ using namespace RcppParallel;
 
 namespace {
 
-// Parallel group-sum reduction: for each of n_groups groups (indexed by a
-// 0-based code, one per row), accumulate the column sums of M and the
-// group counts. Standard RcppParallel reduce pattern - each split keeps
-// its own local accumulator, combined via join().
-struct GroupSumWorker : public Worker {
-  const RMatrix<double> M;
-  const RVector<int> code;
-  std::size_t n_groups, p;
-  std::vector<double> sums;
-  std::vector<int> counts;
+// Group means are accumulated in one serial pass. A parallel reduction would
+// give every thread its own n_groups x p accumulator and merge them, which
+// costs far more than the pass itself when there are many groups (one per
+// individual). The pass is O(n p) and memory bound; the demeaning step that
+// follows runs in parallel across observations.
 
-  GroupSumWorker(const NumericMatrix& M, const IntegerVector& code, std::size_t n_groups)
-    : M(M), code(code), n_groups(n_groups), p(M.ncol()),
-      sums(n_groups * M.ncol(), 0.0), counts(n_groups, 0) {}
-
-  GroupSumWorker(const GroupSumWorker& other, Split)
-    : M(other.M), code(other.code), n_groups(other.n_groups), p(other.p),
-      sums(other.n_groups * other.p, 0.0), counts(other.n_groups, 0) {}
-
-  void operator()(std::size_t begin, std::size_t end) {
-    for (std::size_t i = begin; i < end; ++i) {
-      int g = code[i];
-      counts[g]++;
-      for (std::size_t j = 0; j < p; ++j) sums[g * p + j] += M(i, j);
-    }
-  }
-
-  void join(const GroupSumWorker& rhs) {
-    for (std::size_t g = 0; g < n_groups; ++g) {
-      counts[g] += rhs.counts[g];
-      for (std::size_t j = 0; j < p; ++j) sums[g * p + j] += rhs.sums[g * p + j];
-    }
-  }
-};
-
-// Parallel elementwise demeaning: row i -= group_mean(code[i], .). The
-// natural per-observation parallelism once group means are known.
+// Parallel elementwise demeaning: row i -= group_mean(code[i], .).
 struct DemeanApplyWorker : public Worker {
   RMatrix<double> M;
   const RVector<int> code;
@@ -53,78 +23,54 @@ struct DemeanApplyWorker : public Worker {
     : M(M), code(code), means(means), p(M.ncol()) {}
 
   void operator()(std::size_t begin, std::size_t end) {
-    for (std::size_t i = begin; i < end; ++i) {
-      int g = code[i];
-      for (std::size_t j = 0; j < p; ++j) M(i, j) -= means[g * p + j];
+    for (std::size_t j = 0; j < p; ++j) {
+      RMatrix<double>::Column col = M.column(j);
+      for (std::size_t i = begin; i < end; ++i) col[i] -= means[(std::size_t) code[i] * p + j];
     }
   }
 };
 
 void demean_by(NumericMatrix& M, const IntegerVector& code, int n_groups) {
-  GroupSumWorker worker(M, code, n_groups);
-  parallelReduce(0, M.nrow(), worker, panglm::grain(M.nrow()));
-
-  std::vector<double> means(worker.sums.size());
-  std::size_t p = M.ncol();
+  const std::size_t n = M.nrow(), p = M.ncol();
+  std::vector<double> means((std::size_t) n_groups * p, 0.0);
+  std::vector<int> counts(n_groups, 0);
+  const int* cd = code.begin();
+  for (std::size_t i = 0; i < n; ++i) counts[cd[i]]++;
+  for (std::size_t j = 0; j < p; ++j) {
+    const double* col = &M[j * n];
+    for (std::size_t i = 0; i < n; ++i) means[(std::size_t) cd[i] * p + j] += col[i];
+  }
   for (int g = 0; g < n_groups; ++g) {
-    double cnt = std::max(worker.counts[g], 1);
-    for (std::size_t j = 0; j < p; ++j) means[g * p + j] = worker.sums[g * p + j] / cnt;
+    double cnt = std::max(counts[g], 1);
+    for (std::size_t j = 0; j < p; ++j) means[(std::size_t) g * p + j] /= cnt;
   }
 
   DemeanApplyWorker applier(M, code, means);
-  parallelFor(0, M.nrow(), applier, panglm::grain(M.nrow()));
+  parallelFor(0, n, applier, panglm::grain(n));
 }
 
 // Weighted analogue: group_mean = sum(w_i * M_i) / sum(w_i). Used by the
 // IRLS-nested weighted two-way demeaning that non-gaussian twoways models
-// (currently poisson) need -- the IRLS weight changes every outer
-// iteration, so this is re-run from scratch each time rather than reusing
-// state across iterations.
-struct GroupSumWorkerW : public Worker {
-  const RMatrix<double> M;
-  const RVector<double> w;
-  const RVector<int> code;
-  std::size_t n_groups, p;
-  std::vector<double> sums;
-  std::vector<double> wsums;
-
-  GroupSumWorkerW(const NumericMatrix& M, const NumericVector& w, const IntegerVector& code, std::size_t n_groups)
-    : M(M), w(w), code(code), n_groups(n_groups), p(M.ncol()),
-      sums(n_groups * M.ncol(), 0.0), wsums(n_groups, 0.0) {}
-
-  GroupSumWorkerW(const GroupSumWorkerW& other, Split)
-    : M(other.M), w(other.w), code(other.code), n_groups(other.n_groups), p(other.p),
-      sums(other.n_groups * other.p, 0.0), wsums(other.n_groups, 0.0) {}
-
-  void operator()(std::size_t begin, std::size_t end) {
-    for (std::size_t i = begin; i < end; ++i) {
-      int g = code[i];
-      wsums[g] += w[i];
-      for (std::size_t j = 0; j < p; ++j) sums[g * p + j] += w[i] * M(i, j);
-    }
-  }
-
-  void join(const GroupSumWorkerW& rhs) {
-    for (std::size_t g = 0; g < n_groups; ++g) {
-      wsums[g] += rhs.wsums[g];
-      for (std::size_t j = 0; j < p; ++j) sums[g * p + j] += rhs.sums[g * p + j];
-    }
-  }
-};
-
+// (currently poisson) need; the IRLS weight changes every outer iteration,
+// so this is re-run from scratch each time.
 void demean_by_weighted(NumericMatrix& M, const NumericVector& w, const IntegerVector& code, int n_groups) {
-  GroupSumWorkerW worker(M, w, code, n_groups);
-  parallelReduce(0, M.nrow(), worker, panglm::grain(M.nrow()));
-
-  std::vector<double> means(worker.sums.size());
-  std::size_t p = M.ncol();
+  const std::size_t n = M.nrow(), p = M.ncol();
+  std::vector<double> means((std::size_t) n_groups * p, 0.0);
+  std::vector<double> wsums(n_groups, 0.0);
+  const int* cd = code.begin();
+  const double* wp = w.begin();
+  for (std::size_t i = 0; i < n; ++i) wsums[cd[i]] += wp[i];
+  for (std::size_t j = 0; j < p; ++j) {
+    const double* col = &M[j * n];
+    for (std::size_t i = 0; i < n; ++i) means[(std::size_t) cd[i] * p + j] += wp[i] * col[i];
+  }
   for (int g = 0; g < n_groups; ++g) {
-    double wg = std::max(worker.wsums[g], 1e-12);
-    for (std::size_t j = 0; j < p; ++j) means[g * p + j] = worker.sums[g * p + j] / wg;
+    double wg = std::max(wsums[g], 1e-12);
+    for (std::size_t j = 0; j < p; ++j) means[(std::size_t) g * p + j] /= wg;
   }
 
   DemeanApplyWorker applier(M, code, means);
-  parallelFor(0, M.nrow(), applier, panglm::grain(M.nrow()));
+  parallelFor(0, n, applier, panglm::grain(n));
 }
 
 } // namespace
