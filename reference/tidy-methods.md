@@ -188,15 +188,8 @@ pre-trend test of
 
 ## Validation
 
-Estimates and standard errors are checked against the reference fits of
-each model ([`plm::plm()`](https://rdrr.io/pkg/plm/man/plm.html),
-[`plm::pgmm()`](https://rdrr.io/pkg/plm/man/pgmm.html),
-[`quantreg::rq()`](https://rdrr.io/pkg/quantreg/man/rq.html),
-[`did::att_gt()`](https://bcallaway11.github.io/did/reference/att_gt.html)
-and
-[`etwfe::emfx()`](http://grantmcdermott.com/etwfe/reference/emfx.md)) in
-the package's validation suite on GitHub, and the intervals against
-[`confint()`](https://rdrr.io/r/stats/confint.html) of the same fit.
+Numerical accuracy is checked in the package tests and in the validation
+suite; see the validation article on the package website.
 
 ## See also
 

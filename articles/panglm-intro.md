@@ -366,18 +366,6 @@ plot(fit_fe, which = "residuals")
 ![Residuals against fitted values of the fixed-effects
 model](panglm-intro_files/figure-html/plot-resid-1.png)
 
-## Validated against
-
-The pooled, within, between and random-effects Gaussian estimators
-reproduce [`plm::plm()`](https://rdrr.io/pkg/plm/man/plm.html); cluster
-and HC1 covariances reproduce
-[`plm::vcovHC()`](https://zeileis.codeberg.page/sandwich/reference/vcovHC.html)
-and `sandwich`; pooled GLMs reproduce
-[`stats::glm()`](https://rdrr.io/r/stats/glm.html); random-intercept
-GLMs reproduce `lme4` and `glmmTMB`; average partial effects reproduce
-`marginaleffects`. The scripts are in the package source
-(`tests/testthat` and `validation/`).
-
 ## References
 
 Cameron, A. C., and Miller, D. L. (2015). A practitioner’s guide to

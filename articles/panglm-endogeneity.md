@@ -367,26 +367,6 @@ time-varying shock matters here. The test uses the cluster-robust
 covariance, which is valid under its null hypothesis; the coefficient
 standard errors use the bootstrap, which accounts for the first step.
 
-## Validated against
-
-Fixed-effects, random-effects and pooled 2SLS reproduce
-[`plm::plm()`](https://rdrr.io/pkg/plm/man/plm.html),
-[`AER::ivreg()`](https://rdrr.io/pkg/AER/man/ivreg.html) and
-[`fixest::feols()`](https://lrberge.github.io/fixest/reference/feols.html);
-Hausman-Taylor reproduces
-[`plm::pht()`](https://rdrr.io/pkg/plm/man/pht.html); difference and
-system GMM, including collapsed instruments, the Windmeijer correction
-and the Arellano-Bond, Sargan and Hansen tests, reproduce
-[`plm::pgmm()`](https://rdrr.io/pkg/plm/man/pgmm.html). No R package
-implements the Wooldridge (1995) panel correction, so
-[`panselect()`](https://elbadisyimad.com/panglm/reference/panselect.md)
-is validated step by step: the probits against
-[`stats::glm()`](https://rdrr.io/r/stats/glm.html), the outcome equation
-against `plm`, the covariance against `sandwich`, and the one-period
-case against
-[`sampleSelection::heckit()`](https://rdrr.io/pkg/sampleSelection/man/selection.html).
-The scripts are in `tests/testthat` and `validation/`.
-
 ## References
 
 Arellano, M., and Bond, S. (1991). Some tests of specification for panel

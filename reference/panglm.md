@@ -285,50 +285,8 @@ follows base R's `diff(x, lag, differences)`; plm's third argument of
 
 ## Validation
 
-Each estimator is checked against an established implementation of the
-same model, on the same data, in the package's validation suite on
-GitHub and in the package tests:
-
-- pooled models: [`stats::lm()`](https://rdrr.io/r/stats/lm.html),
-  [`stats::glm()`](https://rdrr.io/r/stats/glm.html),
-  [`MASS::glm.nb()`](https://rdrr.io/pkg/MASS/man/glm.nb.html),
-  [`plm::plm()`](https://rdrr.io/pkg/plm/man/plm.html) and fixest, with
-  `sandwich` robust and cluster covariances;
-
-- fixed effects: [`plm::plm()`](https://rdrr.io/pkg/plm/man/plm.html),
-  [`fixest::feols()`](https://lrberge.github.io/fixest/reference/feols.html),
-  [`fixest::fepois()`](https://lrberge.github.io/fixest/reference/feglm.html),
-  [`fixest::fenegbin()`](https://lrberge.github.io/fixest/reference/femlm.html),
-  [`pglm::pglm()`](https://rdrr.io/pkg/pglm/man/pglm.html),
-  [`glm()`](https://rdrr.io/r/stats/glm.html) with individual dummies,
-  and
-  [`survival::clogit()`](https://rdrr.io/pkg/survival/man/clogit.html)
-  for the conditional and two-way logit;
-
-- between estimator: `plm::plm(model = "between")`;
-
-- random effects: [`plm::plm()`](https://rdrr.io/pkg/plm/man/plm.html)
-  and [`pglm::pglm()`](https://rdrr.io/pkg/pglm/man/pglm.html) (random
-  intercept), [`lme4::lmer()`](https://rdrr.io/pkg/lme4/man/lmer.html),
-  [`lme4::glmer()`](https://rdrr.io/pkg/lme4/man/glmer.html) and glmmTMB
-  (random intercept and slopes), and GLMMadaptive (adaptive quadrature
-  with random slopes);
-
-- ordered outcomes:
-  [`MASS::polr()`](https://rdrr.io/pkg/MASS/man/polr.html),
-  [`ordinal::clm()`](https://rdrr.io/pkg/ordinal/man/clm.html),
-  [`ordinal::clmm()`](https://rdrr.io/pkg/ordinal/man/clmm.html), and a
-  blow-up and cluster fit with
-  [`survival::clogit()`](https://rdrr.io/pkg/survival/man/clogit.html)
-  for the fixed-effects ordered logit;
-
-- Tobit: [`AER::tobit()`](https://rdrr.io/pkg/AER/man/tobit.html) and
-  censReg; beta:
-  [`betareg::betareg()`](https://rdrr.io/pkg/betareg/man/betareg.html)
-  (pooled), GLMMadaptive at the same number of quadrature points (random
-  intercept, `validation/validate-beta.R`) and glmmTMB (Laplace, close
-  but not identical); gamma:
-  [`stats::glm()`](https://rdrr.io/r/stats/glm.html) and glmmTMB.
+Numerical accuracy is checked in the package tests and in the validation
+suite; see the validation article on the package website.
 
 ## See also
 
@@ -468,12 +426,12 @@ summary(fit_rs)
 #> Dispersion parameter: 0.04087 
 #> Random effects (SD): (Intercept) 0.42204, visit 0.00297 
 #> Random-effects correlation: visit ~ (Intercept) -1 
-#> Residual df: 295  Iterations: 19
+#> Residual df: 295  Iterations: 18
 #> 
 fit_rs$varcomp
 #>              (Intercept)         visit
-#> (Intercept)  0.178115843 -1.253264e-03
-#> visit       -0.001253264  8.818254e-06
+#> (Intercept)  0.178115898 -1.253281e-03
+#> visit       -0.001253281  8.818484e-06
 
 # two-way conditional logit: smoking across survey waves, with year
 # shocks (e.g. a tobacco tax) absorbed by the time effects

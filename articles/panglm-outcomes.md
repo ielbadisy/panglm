@@ -449,26 +449,6 @@ the observations sit at 1. Use
 [`partialeffects()`](https://elbadisyimad.com/panglm/reference/partialeffects.md)
 for effects on the observed, censored outcome.
 
-## Validated against
-
-Fixed-effects Poisson reproduces `pglm` and
-[`fixest::fepois()`](https://lrberge.github.io/fixest/reference/feglm.html);
-negative binomial fits reproduce
-[`MASS::glm.nb()`](https://rdrr.io/pkg/MASS/man/glm.nb.html) and `pglm`;
-random-effects Poisson and negative binomial reproduce `pglm`; the
-hurdle count part reproduces
-[`pscl::hurdle()`](https://rdrr.io/pkg/pscl/man/hurdle.html) on the same
-data; the two-part gamma part reproduces
-[`stats::glm()`](https://rdrr.io/r/stats/glm.html) and `MASS`; beta
-models reproduce `betareg` and `glmmTMB`; ordered models reproduce
-[`MASS::polr()`](https://rdrr.io/pkg/MASS/man/polr.html),
-[`ordinal::clmm()`](https://rdrr.io/pkg/ordinal/man/clmm.html) and, for
-the fixed-effects logit,
-[`survival::clogit()`](https://rdrr.io/pkg/survival/man/clogit.html);
-tobit models reproduce
-[`AER::tobit()`](https://rdrr.io/pkg/AER/man/tobit.html) and `censReg`.
-The scripts are in `tests/testthat` and `validation/`.
-
 ## References
 
 Baetschmann, G., Staub, K. E., and Winkelmann, R. (2015). Consistent

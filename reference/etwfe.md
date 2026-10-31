@@ -194,15 +194,8 @@ row per distinct value, so summarise a binary or discrete version of it.
 
 ## Validation
 
-Checked against
-[`etwfe::etwfe()`](http://grantmcdermott.com/etwfe/reference/etwfe.md)
-and [`etwfe::emfx()`](http://grantmcdermott.com/etwfe/reference/emfx.md)
-on
-[`did::mpdta`](https://bcallaway11.github.io/did/reference/mpdta.html)
-in the package's validation suite on GitHub: simple, group, calendar and
-event ATTs and their standard errors for the linear, Poisson and logit
-models, both control groups, with and without controls, sampling
-weights, `xvar` and `ivar`.
+Numerical accuracy is checked in the package tests and in the validation
+suite; see the validation article on the package website.
 
 ## References
 

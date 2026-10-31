@@ -334,27 +334,6 @@ summary(etp)
 The scheme adds about 0.9 admissions per province-year, with similar
 effects in rural and urban provinces.
 
-## Validated against
-
-[`did()`](https://elbadisyimad.com/panglm/reference/did.md) and
-[`eventstudy()`](https://elbadisyimad.com/panglm/reference/eventstudy.md)
-reproduce
-[`fixest::feols()`](https://lrberge.github.io/fixest/reference/feols.html)
-and, for the conditional logit,
-[`survival::clogit()`](https://rdrr.io/pkg/survival/man/clogit.html);
-[`attgt()`](https://elbadisyimad.com/panglm/reference/attgt.md),
-including the aggregations, weights, clustering and the multiplier
-bootstrap, reproduces
-[`did::att_gt()`](https://bcallaway11.github.io/did/reference/att_gt.html)
-and
-[`did::aggte()`](https://bcallaway11.github.io/did/reference/aggte.html);
-[`etwfe()`](https://elbadisyimad.com/panglm/reference/etwfe.md)
-reproduces
-[`etwfe::etwfe()`](http://grantmcdermott.com/etwfe/reference/etwfe.md)
-and
-[`etwfe::emfx()`](http://grantmcdermott.com/etwfe/reference/emfx.md).
-The scripts are in `tests/testthat` and `validation/`.
-
 ## References
 
 Callaway, B., and Sant’Anna, P. H. C. (2021). Difference-in-differences

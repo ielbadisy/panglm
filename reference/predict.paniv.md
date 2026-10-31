@@ -56,11 +56,8 @@ index columns.
 
 ## Validation
 
-Checked against [`predict()`](https://rdrr.io/r/stats/predict.html) of
-[`plm::plm()`](https://rdrr.io/pkg/plm/man/plm.html)
-instrumental-variable fits and
-[`AER::ivreg()`](https://rdrr.io/pkg/AER/man/ivreg.html) in the
-package's validation suite on GitHub.
+Numerical accuracy is checked in the package tests and in the validation
+suite; see the validation article on the package website.
 
 ## See also
 

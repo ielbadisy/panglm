@@ -84,12 +84,8 @@ intercepts are conditioned out and the mean is not identified.
 
 ## Validation
 
-Checked against
-[`marginaleffects::avg_slopes()`](https://rdrr.io/pkg/marginaleffects/man/slopes.html)
-(pooled probit) and analytic values (linear and fixed-effects Poisson)
-in the package tests, and against hand computations for the Tobit and
-the population-averaged random-slope models in the package's validation
-suite on GitHub.
+Numerical accuracy is checked in the package tests and in the validation
+suite; see the validation article on the package website.
 
 ## References
 

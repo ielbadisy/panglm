@@ -113,12 +113,8 @@ reference event time.
 
 ## Validation
 
-Checked against fixest in the package tests, and, for the binary
-version, against
-[`survival::clogit()`](https://rdrr.io/pkg/survival/man/clogit.html)
-with event-time dummies coded by hand (coefficients, standard errors and
-the pre-trend Wald statistic) in the package's validation suite on
-GitHub.
+Numerical accuracy is checked in the package tests and in the validation
+suite; see the validation article on the package website.
 
 ## References
 

@@ -540,17 +540,6 @@ values.</p>
 <p><img src="panglm-intro_files/figure-html/plot-resid-1.png" class="r-plt" alt="Residuals against fitted values of the fixed-effects model" width="576"></p>
 </div>
 <div class="section level2">
-<h2 id="validated-against">Validated against<a class="anchor" aria-label="anchor" href="#validated-against"></a>
-</h2>
-<p>The pooled, within, between and random-effects Gaussian estimators
-reproduce <code><a href="https://rdrr.io/pkg/plm/man/plm.html" class="external-link">plm::plm()</a></code>; cluster and HC1 covariances reproduce
-<code><a href="https://zeileis.codeberg.page/sandwich/reference/vcovHC.html" class="external-link">plm::vcovHC()</a></code> and <code>sandwich</code>; pooled GLMs
-reproduce <code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">stats::glm()</a></code>; random-intercept GLMs reproduce
-<code>lme4</code> and <code>glmmTMB</code>; average partial effects
-reproduce <code>marginaleffects</code>. The scripts are in the package
-source (<code>tests/testthat</code> and <code>validation/</code>).</p>
-</div>
-<div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
 </h2>
 <p>Cameron, A. C., and Miller, D. L. (2015). A practitioner’s guide to

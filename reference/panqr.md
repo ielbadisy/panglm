@@ -196,18 +196,8 @@ within covariance of the rest of the package
 
 ## Validation
 
-Checked in the package's validation suite on GitHub: the pooled model
-against [`quantreg::rq()`](https://rdrr.io/pkg/quantreg/man/rq.html) and
-its kernel sandwich; the Canay and MM-QR estimators against
-implementations built from
-[`plm::plm()`](https://rdrr.io/pkg/plm/man/plm.html),
-[`stats::lm()`](https://rdrr.io/r/stats/lm.html) and
-[`quantreg::rq()`](https://rdrr.io/pkg/quantreg/man/rq.html), with the
-MM-QR iid covariance checked against the formulas of the Stata command
-`xtqreg`; the MM-QR cluster covariance against the cluster bootstrap and
-by Monte Carlo coverage with serially correlated errors; and Monte Carlo
-checks that the analytic standard errors match the sampling standard
-deviation.
+Numerical accuracy is checked in the package tests and in the validation
+suite; see the validation article on the package website.
 
 ## References
 

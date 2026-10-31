@@ -144,9 +144,8 @@ carries zero weight.</p>
     <h2 id="validation">Validation<a class="anchor" aria-label="anchor" href="#validation"></a></h2>
 
 
-<p>The zero part is the conditional logit of <code><a href="panglm.html">panglm()</a></code>, checked against
-<code><a href="https://rdrr.io/pkg/survival/man/clogit.html" class="external-link">survival::clogit()</a></code>. The zero-truncated Poisson and NB2 count parts are
-checked against the count part of <code><a href="https://rdrr.io/pkg/pscl/man/hurdle.html" class="external-link">pscl::hurdle()</a></code> in the package tests.</p>
+<p>Numerical accuracy is checked in the package tests and in the validation
+suite; see the validation article on the package website.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

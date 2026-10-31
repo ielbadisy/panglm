@@ -88,14 +88,8 @@ carries zero weight.
 
 ## Validation
 
-The zero part is the conditional logit of
-[`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md),
-checked against
-[`survival::clogit()`](https://rdrr.io/pkg/survival/man/clogit.html).
-The zero-truncated Poisson and NB2 count parts are checked against the
-count part of
-[`pscl::hurdle()`](https://rdrr.io/pkg/pscl/man/hurdle.html) in the
-package tests.
+Numerical accuracy is checked in the package tests and in the validation
+suite; see the validation article on the package website.
 
 ## See also
 

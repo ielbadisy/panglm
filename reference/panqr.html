@@ -250,14 +250,8 @@ within covariance of the rest of the package
     <h2 id="validation">Validation<a class="anchor" aria-label="anchor" href="#validation"></a></h2>
 
 
-<p>Checked in the package's validation suite on GitHub: the pooled model
-against <code><a href="https://rdrr.io/pkg/quantreg/man/rq.html" class="external-link">quantreg::rq()</a></code> and its kernel sandwich; the Canay and MM-QR
-estimators against implementations built from <code><a href="https://rdrr.io/pkg/plm/man/plm.html" class="external-link">plm::plm()</a></code>, <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">stats::lm()</a></code>
-and <code><a href="https://rdrr.io/pkg/quantreg/man/rq.html" class="external-link">quantreg::rq()</a></code>, with the MM-QR iid covariance checked against the
-formulas of the Stata command <code>xtqreg</code>; the MM-QR cluster covariance
-against the cluster bootstrap and by Monte Carlo coverage with serially
-correlated errors; and Monte Carlo checks that the analytic standard
-errors match the sampling standard deviation.</p>
+<p>Numerical accuracy is checked in the package tests and in the validation
+suite; see the validation article on the package website.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>

@@ -1,8 +1,7 @@
 # Technical reference: models, estimators and inference
 
 This vignette is the technical reference of `panglm`. It states the
-models, the estimating equations and the covariance estimators, lists
-the established implementations each estimator is validated against, and
+models, the estimating equations and the covariance estimators, and
 defines the scope of the package. Worked examples are in the task
 vignettes:
 
@@ -536,30 +535,10 @@ unit’s success total, and new-data probabilities are not identified.
 
 ## Computational validation
 
-The test suite (`tests/testthat`) and the scripts in `validation/`
-compare each estimator with an established implementation of the same
-model:
-
-| Estimator | Reference implementation |
-|----|----|
-| Pooled GLMs, pooled NB2 | [`stats::glm()`](https://rdrr.io/r/stats/glm.html), [`MASS::glm.nb()`](https://rdrr.io/pkg/MASS/man/glm.nb.html) |
-| Gaussian pooled, within, between, random; HC1 and cluster covariances | [`plm::plm()`](https://rdrr.io/pkg/plm/man/plm.html), [`plm::vcovHC()`](https://zeileis.codeberg.page/sandwich/reference/vcovHC.html), `sandwich` |
-| Fixed-effects Poisson and NB2, two-way counts | `fixest`, `pglm` |
-| Conditional logit, fixed-effects ordered logit | [`survival::clogit()`](https://rdrr.io/pkg/survival/man/clogit.html) |
-| Random-effects Poisson, NB, binomial | `pglm`, `lme4` |
-| Random-effects gamma, beta, ordered | `glmmTMB`, `betareg`, [`ordinal::clmm()`](https://rdrr.io/pkg/ordinal/man/clmm.html), [`MASS::polr()`](https://rdrr.io/pkg/MASS/man/polr.html) |
-| Tobit | [`AER::tobit()`](https://rdrr.io/pkg/AER/man/tobit.html), `censReg` |
-| Hurdle count part | [`pscl::hurdle()`](https://rdrr.io/pkg/pscl/man/hurdle.html) |
-| Random slopes | [`lme4::lmer()`](https://rdrr.io/pkg/lme4/man/lmer.html), [`lme4::glmer()`](https://rdrr.io/pkg/lme4/man/glmer.html), `glmmTMB`, `GLMMadaptive` |
-| IV, Hausman-Taylor | [`plm::plm()`](https://rdrr.io/pkg/plm/man/plm.html), [`plm::pht()`](https://rdrr.io/pkg/plm/man/pht.html), [`AER::ivreg()`](https://rdrr.io/pkg/AER/man/ivreg.html), [`fixest::feols()`](https://lrberge.github.io/fixest/reference/feols.html) |
-| Difference and system GMM | [`plm::pgmm()`](https://rdrr.io/pkg/plm/man/pgmm.html) |
-| Selection | [`stats::glm()`](https://rdrr.io/r/stats/glm.html), `plm`, `sandwich`, [`sampleSelection::heckit()`](https://rdrr.io/pkg/sampleSelection/man/selection.html) (one period) |
-| TWFE DiD and event study | [`fixest::feols()`](https://lrberge.github.io/fixest/reference/feols.html), [`survival::clogit()`](https://rdrr.io/pkg/survival/man/clogit.html) |
-| Group-time ATT and aggregations | [`did::att_gt()`](https://bcallaway11.github.io/did/reference/att_gt.html), [`did::aggte()`](https://bcallaway11.github.io/did/reference/aggte.html) |
-| Extended TWFE | [`etwfe::etwfe()`](http://grantmcdermott.com/etwfe/reference/etwfe.md), [`etwfe::emfx()`](http://grantmcdermott.com/etwfe/reference/emfx.md) |
-| Finite mixtures | `flexmix` |
-| Quantile regression | [`quantreg::rq()`](https://rdrr.io/pkg/quantreg/man/rq.html); MM-QR moment conditions as Stata `xtqreg` |
-| Average partial effects | `marginaleffects` |
+The test suite (`tests/testthat`) and the scripts in `validation/` check
+the numerical accuracy of every estimator. The [validation
+article](https://elbadisyimad.com/panglm/articles/validation.html)
+summarises the checks and their tolerances.
 
 ## Model scope
 

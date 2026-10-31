@@ -315,25 +315,9 @@ The same rule applies in <code><a href="paniv.html">paniv()</a></code>, <code><a
     <h2 id="validation">Validation<a class="anchor" aria-label="anchor" href="#validation"></a></h2>
 
 
-<p>Each estimator is checked against an established implementation of the same
-model, on the same data, in the package's validation suite on GitHub and in
-the package tests:</p><ul><li><p>pooled models: <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">stats::lm()</a></code>, <code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">stats::glm()</a></code>, <code><a href="https://rdrr.io/pkg/MASS/man/glm.nb.html" class="external-link">MASS::glm.nb()</a></code>,
-<code><a href="https://rdrr.io/pkg/plm/man/plm.html" class="external-link">plm::plm()</a></code> and fixest, with <code>sandwich</code> robust and cluster covariances;</p></li>
-<li><p>fixed effects: <code><a href="https://rdrr.io/pkg/plm/man/plm.html" class="external-link">plm::plm()</a></code>, <code><a href="https://lrberge.github.io/fixest/reference/feols.html" class="external-link">fixest::feols()</a></code>, <code><a href="https://lrberge.github.io/fixest/reference/feglm.html" class="external-link">fixest::fepois()</a></code>,
-<code><a href="https://lrberge.github.io/fixest/reference/femlm.html" class="external-link">fixest::fenegbin()</a></code>, <code><a href="https://rdrr.io/pkg/pglm/man/pglm.html" class="external-link">pglm::pglm()</a></code>, <code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm()</a></code> with individual dummies, and
-<code><a href="https://rdrr.io/pkg/survival/man/clogit.html" class="external-link">survival::clogit()</a></code> for the conditional and two-way logit;</p></li>
-<li><p>between estimator: <code>plm::plm(model = "between")</code>;</p></li>
-<li><p>random effects: <code><a href="https://rdrr.io/pkg/plm/man/plm.html" class="external-link">plm::plm()</a></code> and <code><a href="https://rdrr.io/pkg/pglm/man/pglm.html" class="external-link">pglm::pglm()</a></code> (random intercept),
-<code><a href="https://rdrr.io/pkg/lme4/man/lmer.html" class="external-link">lme4::lmer()</a></code>, <code><a href="https://rdrr.io/pkg/lme4/man/glmer.html" class="external-link">lme4::glmer()</a></code> and glmmTMB (random intercept and slopes),
-and GLMMadaptive (adaptive quadrature with random slopes);</p></li>
-<li><p>ordered outcomes: <code><a href="https://rdrr.io/pkg/MASS/man/polr.html" class="external-link">MASS::polr()</a></code>, <code><a href="https://rdrr.io/pkg/ordinal/man/clm.html" class="external-link">ordinal::clm()</a></code>, <code><a href="https://rdrr.io/pkg/ordinal/man/clmm.html" class="external-link">ordinal::clmm()</a></code>, and
-a blow-up and cluster fit with <code><a href="https://rdrr.io/pkg/survival/man/clogit.html" class="external-link">survival::clogit()</a></code> for the fixed-effects
-ordered logit;</p></li>
-<li><p>Tobit: <code><a href="https://rdrr.io/pkg/AER/man/tobit.html" class="external-link">AER::tobit()</a></code> and censReg; beta: <code><a href="https://rdrr.io/pkg/betareg/man/betareg.html" class="external-link">betareg::betareg()</a></code> (pooled),
-GLMMadaptive at the same number of quadrature points (random intercept,
-<code>validation/validate-beta.R</code>) and glmmTMB (Laplace, close but not
-identical); gamma: <code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">stats::glm()</a></code> and glmmTMB.</p></li>
-</ul></div>
+<p>Numerical accuracy is checked in the package tests and in the validation
+suite; see the validation article on the package website.</p>
+    </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><a href="panglm-families.html">panglm-families</a> for the outcome families, <code><a href="summary.panglm.html">summary.panglm()</a></code>,
@@ -464,12 +448,12 @@ model, <a href="tidy-methods.html">tidy-methods</a> for <code>tidy()</code> and 
 <span class="r-out co"><span class="r-pr">#&gt;</span> Dispersion parameter: 0.04087 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Random effects (SD): (Intercept) 0.42204, visit 0.00297 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Random-effects correlation: visit ~ (Intercept) -1 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Residual df: 295  Iterations: 19</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Residual df: 295  Iterations: 18</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span><span class="va">fit_rs</span><span class="op">$</span><span class="va">varcomp</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>              (Intercept)         visit</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)  0.178115843 -1.253264e-03</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> visit       -0.001253264  8.818254e-06</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)  0.178115898 -1.253281e-03</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> visit       -0.001253281  8.818484e-06</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># two-way conditional logit: smoking across survey waves, with year</span></span></span>
 <span class="r-in"><span><span class="co"># shocks (e.g. a tobacco tax) absorbed by the time effects</span></span></span>

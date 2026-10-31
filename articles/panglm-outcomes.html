@@ -539,23 +539,6 @@ the observations sit at 1. Use <code><a href="../reference/partialeffects.html">
 on the observed, censored outcome.</p>
 </div>
 <div class="section level2">
-<h2 id="validated-against">Validated against<a class="anchor" aria-label="anchor" href="#validated-against"></a>
-</h2>
-<p>Fixed-effects Poisson reproduces <code>pglm</code> and
-<code><a href="https://lrberge.github.io/fixest/reference/feglm.html" class="external-link">fixest::fepois()</a></code>; negative binomial fits reproduce
-<code><a href="https://rdrr.io/pkg/MASS/man/glm.nb.html" class="external-link">MASS::glm.nb()</a></code> and <code>pglm</code>; random-effects
-Poisson and negative binomial reproduce <code>pglm</code>; the hurdle
-count part reproduces <code><a href="https://rdrr.io/pkg/pscl/man/hurdle.html" class="external-link">pscl::hurdle()</a></code> on the same data; the
-two-part gamma part reproduces <code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">stats::glm()</a></code> and
-<code>MASS</code>; beta models reproduce <code>betareg</code> and
-<code>glmmTMB</code>; ordered models reproduce
-<code><a href="https://rdrr.io/pkg/MASS/man/polr.html" class="external-link">MASS::polr()</a></code>, <code><a href="https://rdrr.io/pkg/ordinal/man/clmm.html" class="external-link">ordinal::clmm()</a></code> and, for the
-fixed-effects logit, <code><a href="https://rdrr.io/pkg/survival/man/clogit.html" class="external-link">survival::clogit()</a></code>; tobit models
-reproduce <code><a href="https://rdrr.io/pkg/AER/man/tobit.html" class="external-link">AER::tobit()</a></code> and <code>censReg</code>. The
-scripts are in <code>tests/testthat</code> and
-<code>validation/</code>.</p>
-</div>
-<div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
 </h2>
 <p>Baetschmann, G., Staub, K. E., and Winkelmann, R. (2015). Consistent

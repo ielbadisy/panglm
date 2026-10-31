@@ -148,19 +148,10 @@ covariance is reported as well.
 
 ## Validation
 
-No R package implements this panel estimator, so the package's
-validation suite on GitHub checks it step by step: the period probits
-against [`stats::glm()`](https://rdrr.io/r/stats/glm.html), the second
-step against [`plm::plm()`](https://rdrr.io/pkg/plm/man/plm.html) and
-[`stats::lm()`](https://rdrr.io/r/stats/lm.html) with cluster
-covariances from
-[`plm::vcovHC()`](https://zeileis.codeberg.page/sandwich/reference/vcovHC.html)
-and
-[`sandwich::vcovCL()`](https://zeileis.codeberg.page/sandwich/reference/vcovCL.html),
-the one-period case against the two-step
-[`sampleSelection::heckit()`](https://rdrr.io/pkg/sampleSelection/man/selection.html)
-on the Mroz (1987) data, and the recovery of the true coefficients in
-simulations with selection on the idiosyncratic error.
+No other R package implements this panel estimator. Each step, and the
+recovery of the true coefficients in simulations with selection on the
+idiosyncratic error, are checked in the package tests and in the
+validation suite; see the validation article on the package website.
 
 ## References
 

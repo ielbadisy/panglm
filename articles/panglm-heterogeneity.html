@@ -183,11 +183,11 @@ likelihood.</p>
 <span><span class="co">#&gt; Dispersion parameter: 0.009865 </span></span>
 <span><span class="co">#&gt; Random effects (SD): (Intercept) 0.37649, year 0.04157 </span></span>
 <span><span class="co">#&gt; Random-effects correlation: year ~ (Intercept) -0.1251 </span></span>
-<span><span class="co">#&gt; Residual df: 596  Iterations: 20</span></span>
+<span><span class="co">#&gt; Residual df: 596  Iterations: 16</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">rs</span><span class="op">$</span><span class="va">ranef</span>, <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   (Intercept)        year</span></span>
-<span><span class="co">#&gt; 1  0.24559341 -0.02712743</span></span>
-<span><span class="co">#&gt; 2 -0.32250424  0.10527653</span></span>
+<span><span class="co">#&gt; 1  0.24559340 -0.02712743</span></span>
+<span><span class="co">#&gt; 2 -0.32250423  0.10527653</span></span>
 <span><span class="co">#&gt; 3  0.05620227  0.01557888</span></span></code></pre></div>
 <p>The average decline is 47 mL a year, 17 mL faster in smokers. The SD
 of the patient-specific slopes, 42 mL a year, is as large as the average
@@ -474,19 +474,6 @@ effects is biased when, as here, they are correlated with the regressors
 <span><span class="co">#&gt; (Intercept) 3.700606276 5.375277300</span></span>
 <span><span class="co">#&gt; chronic     0.853254880 1.226367729</span></span>
 <span><span class="co">#&gt; age         0.003935281 0.007903501</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="validated-against">Validated against<a class="anchor" aria-label="anchor" href="#validated-against"></a>
-</h2>
-<p>Gaussian random slopes reproduce <code><a href="https://rdrr.io/pkg/lme4/man/lmer.html" class="external-link">lme4::lmer()</a></code>; Poisson,
-negative binomial, gamma and binomial random slopes reproduce
-<code><a href="https://rdrr.io/pkg/lme4/man/glmer.html" class="external-link">lme4::glmer()</a></code>, <code>glmmTMB</code> and
-<code>GLMMadaptive</code>; <code><a href="../reference/panfmm.html">panfmm()</a></code> reproduces
-<code>flexmix</code> (including concomitant models);
-<code><a href="../reference/panqr.html">panqr()</a></code> reproduces <code><a href="https://rdrr.io/pkg/quantreg/man/rq.html" class="external-link">quantreg::rq()</a></code> for the
-pooled and Canay estimators and a direct implementation of the MM-QR
-moment conditions, as in Stata’s <code>xtqreg</code>. The scripts are in
-<code>tests/testthat</code> and <code>validation/</code>.</p>
 </div>
 <div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>

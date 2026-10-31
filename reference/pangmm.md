@@ -214,14 +214,8 @@ pooled OLS (upward biased) estimates (Bond 2002).
 
 ## Validation
 
-Checked against [`plm::pgmm()`](https://rdrr.io/pkg/plm/man/pgmm.html)
-and its `vcovHC()`, `mtest()`, `sargan()` and `pwaldtest()` methods
-(difference and system GMM, one and two steps, with the Windmeijer
-correction), and [`predict()`](https://rdrr.io/r/stats/predict.html)
-against the transformed equations stored by
-[`plm::pgmm()`](https://rdrr.io/pkg/plm/man/pgmm.html), on
-[`plm::EmplUK`](https://rdrr.io/pkg/plm/man/EmplUK.html) and a simulated
-unbalanced panel, in the package's validation suite on GitHub.
+Numerical accuracy is checked in the package tests and in the validation
+suite; see the validation article on the package website.
 
 ## References
 

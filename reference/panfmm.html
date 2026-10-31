@@ -270,13 +270,8 @@ multinomial logit of the class probabilities uses class 1 as reference.</p>
     <h2 id="validation">Validation<a class="anchor" aria-label="anchor" href="#validation"></a></h2>
 
 
-<p>Checked against flexmix in the package's validation suite on GitHub:
-<code><a href="https://rdrr.io/pkg/flexmix/man/flexmix.html" class="external-link">flexmix::flexmix()</a></code> with the <code>| id</code> grouping, started from the same
-posterior, gives the same log-likelihood, class and concomitant
-coefficients, class probabilities, posteriors and BIC, and
-<code>flexmix::refit()</code> the same standard errors, for Gaussian, Poisson, NB2 and
-binomial components; flexmix from its own random starts finds no better
-optimum.</p>
+<p>Numerical accuracy is checked in the package tests and in the validation
+suite; see the validation article on the package website.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>

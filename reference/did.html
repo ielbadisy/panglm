@@ -158,11 +158,8 @@ absorbed by the individual effects and dropped.</p>
     <h2 id="validation">Validation<a class="anchor" aria-label="anchor" href="#validation"></a></h2>
 
 
-<p>The linear and count versions are two-way fixed-effects <code><a href="panglm.html">panglm()</a></code> fits,
-checked against fixest in the package tests. The binary version, the two-way
-conditional logit, is checked against <code><a href="https://rdrr.io/pkg/survival/man/clogit.html" class="external-link">survival::clogit()</a></code> (coefficients,
-classical and cluster-robust standard errors) and, with two periods, against
-<code><a href="https://lrberge.github.io/fixest/reference/feglm.html" class="external-link">fixest::feglm()</a></code>, in the package's validation suite on GitHub.</p>
+<p>Numerical accuracy is checked in the package tests and in the validation
+suite; see the validation article on the package website.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>

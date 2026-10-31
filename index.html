@@ -85,7 +85,7 @@
 </div>
 <!-- badges: start -->
 
-<p>panglm fits regression models for panel data (pooled, fixed effects, random effects and the estimators built on them) for the outcomes and designs of applied health econometrics, with every estimator checked against an established reference implementation.</p>
+<p>panglm fits regression models for panel data (pooled, fixed effects, random effects and the estimators built on them) for the outcomes and designs of applied health econometrics, from one formula interface and one set of post-estimation tools (robust and cluster covariances, partial effects, specification tests, prediction and tidy output).</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
@@ -102,46 +102,34 @@
 </h2>
 <table class="table">
 <colgroup>
-<col width="39%">
-<col width="22%">
-<col width="38%">
+<col width="62%">
+<col width="37%">
 </colgroup>
 <thead><tr>
 <th>Task</th>
 <th>Function</th>
-<th>Validated against</th>
 </tr></thead>
 <tbody>
 <tr>
 <td>Continuous, binary, count, ordered, positive, bounded and censored outcomes (pooled, within, between, random effects)</td>
 <td><code><a href="reference/panglm.html">panglm()</a></code></td>
-<td>
-<code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">stats::glm()</a></code>, plm, pglm, fixest, <code><a href="https://rdrr.io/pkg/survival/man/clogit.html" class="external-link">survival::clogit()</a></code>, <code><a href="https://rdrr.io/pkg/MASS/man/polr.html" class="external-link">MASS::polr()</a></code>, ordinal, <code><a href="https://rdrr.io/pkg/AER/man/tobit.html" class="external-link">AER::tobit()</a></code>, betareg, glmmTMB</td>
 </tr>
 <tr>
 <td>Random slopes</td>
 <td><code>panglm(model = "random", random = ~ x)</code></td>
-<td>lme4, glmmTMB, GLMMadaptive</td>
 </tr>
 <tr>
 <td>Costs with zeros (two-part model)</td>
 <td><code><a href="reference/twopart.html">twopart()</a></code></td>
-<td>
-<code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">stats::glm()</a></code>, numerical integration</td>
 </tr>
 <tr>
 <td>Counts with structural zeros</td>
 <td><code><a href="reference/panhurdle.html">panhurdle()</a></code></td>
-<td>
-<code><a href="https://rdrr.io/pkg/pscl/man/hurdle.html" class="external-link">pscl::hurdle()</a></code>, <code><a href="https://rdrr.io/pkg/survival/man/clogit.html" class="external-link">survival::clogit()</a></code>
-</td>
 </tr>
 <tr>
 <td>Difference-in-differences and event studies</td>
 <td>
 <code><a href="reference/did.html">did()</a></code>, <code><a href="reference/eventstudy.html">eventstudy()</a></code>
-</td>
-<td>fixest, <code><a href="https://rdrr.io/pkg/survival/man/clogit.html" class="external-link">survival::clogit()</a></code>
 </td>
 </tr>
 <tr>
@@ -149,49 +137,38 @@
 <td>
 <code><a href="reference/attgt.html">attgt()</a></code>, <code><a href="reference/etwfe.html">etwfe()</a></code>
 </td>
-<td>
-<code><a href="https://bcallaway11.github.io/did/reference/att_gt.html" class="external-link">did::att_gt()</a></code>, <code><a href="http://grantmcdermott.com/etwfe/reference/etwfe.html" class="external-link">etwfe::etwfe()</a></code>
-</td>
 </tr>
 <tr>
 <td>Instrumental variables and Hausman-Taylor</td>
 <td><code><a href="reference/paniv.html">paniv()</a></code></td>
-<td>
-<code><a href="https://rdrr.io/pkg/plm/man/plm.html" class="external-link">plm::plm()</a></code>, <code><a href="https://rdrr.io/pkg/plm/man/pht.html" class="external-link">plm::pht()</a></code>, <code><a href="https://rdrr.io/pkg/AER/man/ivreg.html" class="external-link">AER::ivreg()</a></code>, fixest</td>
 </tr>
 <tr>
 <td>Dynamic panels (difference and system GMM)</td>
 <td><code><a href="reference/pangmm.html">pangmm()</a></code></td>
-<td><code><a href="https://rdrr.io/pkg/plm/man/pgmm.html" class="external-link">plm::pgmm()</a></code></td>
 </tr>
 <tr>
 <td>Sample selection</td>
 <td><code><a href="reference/panselect.html">panselect()</a></code></td>
-<td>
-<code><a href="https://rdrr.io/pkg/sampleSelection/man/selection.html" class="external-link">sampleSelection::heckit()</a></code>, plm</td>
 </tr>
 <tr>
 <td>Quantile regression</td>
 <td><code><a href="reference/panqr.html">panqr()</a></code></td>
-<td><code><a href="https://rdrr.io/pkg/quantreg/man/rq.html" class="external-link">quantreg::rq()</a></code></td>
 </tr>
 <tr>
 <td>Latent classes</td>
 <td>
 <code><a href="reference/panfmm.html">panfmm()</a></code>, <code><a href="reference/panfmmselect.html">panfmmselect()</a></code>
 </td>
-<td>flexmix</td>
 </tr>
 <tr>
 <td>Specification tests</td>
 <td>
 <code><a href="reference/panhausman.html">panhausman()</a></code>, <code><a href="reference/pandispersiontest.html">pandispersiontest()</a></code>, <code><a href="reference/jointtest.html">jointtest()</a></code>, <code><a href="reference/lineartest.html">lineartest()</a></code>
 </td>
-<td><code><a href="https://rdrr.io/pkg/plm/man/phtest.html" class="external-link">plm::phtest()</a></code></td>
 </tr>
 </tbody>
 </table>
-<p>Each help page has a Validation section, and the comparisons themselves are in the <a href="https://github.com/ielbadisy/panglm/tree/main/validation" class="external-link">validation suite</a>.</p>
+<p>Numerical accuracy is documented in the <a href="https://elbadisyimad.com/panglm/articles/validation.html">validation article</a>.</p>
 </div>
 <div class="section level2">
 <h2 id="example">Example<a class="anchor" aria-label="anchor" href="#example"></a>

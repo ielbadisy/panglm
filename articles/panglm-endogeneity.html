@@ -451,23 +451,6 @@ standard errors use the bootstrap, which accounts for the first
 step.</p>
 </div>
 <div class="section level2">
-<h2 id="validated-against">Validated against<a class="anchor" aria-label="anchor" href="#validated-against"></a>
-</h2>
-<p>Fixed-effects, random-effects and pooled 2SLS reproduce
-<code><a href="https://rdrr.io/pkg/plm/man/plm.html" class="external-link">plm::plm()</a></code>, <code><a href="https://rdrr.io/pkg/AER/man/ivreg.html" class="external-link">AER::ivreg()</a></code> and
-<code><a href="https://lrberge.github.io/fixest/reference/feols.html" class="external-link">fixest::feols()</a></code>; Hausman-Taylor reproduces
-<code><a href="https://rdrr.io/pkg/plm/man/pht.html" class="external-link">plm::pht()</a></code>; difference and system GMM, including collapsed
-instruments, the Windmeijer correction and the Arellano-Bond, Sargan and
-Hansen tests, reproduce <code><a href="https://rdrr.io/pkg/plm/man/pgmm.html" class="external-link">plm::pgmm()</a></code>. No R package
-implements the Wooldridge (1995) panel correction, so
-<code><a href="../reference/panselect.html">panselect()</a></code> is validated step by step: the probits against
-<code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">stats::glm()</a></code>, the outcome equation against
-<code>plm</code>, the covariance against <code>sandwich</code>, and the
-one-period case against <code><a href="https://rdrr.io/pkg/sampleSelection/man/selection.html" class="external-link">sampleSelection::heckit()</a></code>. The
-scripts are in <code>tests/testthat</code> and
-<code>validation/</code>.</p>
-</div>
-<div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
 </h2>
 <p>Arellano, M., and Bond, S. (1991). Some tests of specification for

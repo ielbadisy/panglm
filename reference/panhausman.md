@@ -70,12 +70,8 @@ otherwise chi-square(k). Gaussian family only.
 
 ## Validation
 
-The classical test is checked against
-[`plm::phtest()`](https://rdrr.io/pkg/plm/man/phtest.html) in the
-package tests. The Mundlak test is the Wald test on the individual means
-of the correlated random effects fit of
-[`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md), whose
-pooled and random versions are checked to reproduce the within slope.
+Numerical accuracy is checked in the package tests and in the validation
+suite; see the validation article on the package website.
 
 ## See also
 

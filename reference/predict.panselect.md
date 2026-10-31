@@ -70,10 +70,8 @@ conditional and selection types.
 
 ## Validation
 
-On one period, checked against
-[`predict()`](https://rdrr.io/r/stats/predict.html) of
-`sampleSelection::selection(method = "2step")` in the package's
-validation suite on GitHub.
+Numerical accuracy is checked in the package tests and in the validation
+suite; see the validation article on the package website.
 
 ## See also
 

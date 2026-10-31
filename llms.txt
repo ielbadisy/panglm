@@ -2,8 +2,9 @@
 
 panglm fits regression models for panel data (pooled, fixed effects,
 random effects and the estimators built on them) for the outcomes and
-designs of applied health econometrics, with every estimator checked
-against an established reference implementation.
+designs of applied health econometrics, from one formula interface and
+one set of post-estimation tools (robust and cluster covariances,
+partial effects, specification tests, prediction and tidy output).
 
 ## Installation
 
@@ -19,24 +20,23 @@ remotes::install_github("ielbadisy/panglm")
 
 ## What it fits
 
-| Task | Function | Validated against |
-|----|----|----|
-| Continuous, binary, count, ordered, positive, bounded and censored outcomes (pooled, within, between, random effects) | [`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md) | [`stats::glm()`](https://rdrr.io/r/stats/glm.html), plm, pglm, fixest, [`survival::clogit()`](https://rdrr.io/pkg/survival/man/clogit.html), [`MASS::polr()`](https://rdrr.io/pkg/MASS/man/polr.html), ordinal, [`AER::tobit()`](https://rdrr.io/pkg/AER/man/tobit.html), betareg, glmmTMB |
-| Random slopes | `panglm(model = "random", random = ~ x)` | lme4, glmmTMB, GLMMadaptive |
-| Costs with zeros (two-part model) | [`twopart()`](https://elbadisyimad.com/panglm/reference/twopart.md) | [`stats::glm()`](https://rdrr.io/r/stats/glm.html), numerical integration |
-| Counts with structural zeros | [`panhurdle()`](https://elbadisyimad.com/panglm/reference/panhurdle.md) | [`pscl::hurdle()`](https://rdrr.io/pkg/pscl/man/hurdle.html), [`survival::clogit()`](https://rdrr.io/pkg/survival/man/clogit.html) |
-| Difference-in-differences and event studies | [`did()`](https://elbadisyimad.com/panglm/reference/did.md), [`eventstudy()`](https://elbadisyimad.com/panglm/reference/eventstudy.md) | fixest, [`survival::clogit()`](https://rdrr.io/pkg/survival/man/clogit.html) |
-| Staggered adoption | [`attgt()`](https://elbadisyimad.com/panglm/reference/attgt.md), [`etwfe()`](https://elbadisyimad.com/panglm/reference/etwfe.md) | [`did::att_gt()`](https://bcallaway11.github.io/did/reference/att_gt.html), [`etwfe::etwfe()`](http://grantmcdermott.com/etwfe/reference/etwfe.md) |
-| Instrumental variables and Hausman-Taylor | [`paniv()`](https://elbadisyimad.com/panglm/reference/paniv.md) | [`plm::plm()`](https://rdrr.io/pkg/plm/man/plm.html), [`plm::pht()`](https://rdrr.io/pkg/plm/man/pht.html), [`AER::ivreg()`](https://rdrr.io/pkg/AER/man/ivreg.html), fixest |
-| Dynamic panels (difference and system GMM) | [`pangmm()`](https://elbadisyimad.com/panglm/reference/pangmm.md) | [`plm::pgmm()`](https://rdrr.io/pkg/plm/man/pgmm.html) |
-| Sample selection | [`panselect()`](https://elbadisyimad.com/panglm/reference/panselect.md) | [`sampleSelection::heckit()`](https://rdrr.io/pkg/sampleSelection/man/selection.html), plm |
-| Quantile regression | [`panqr()`](https://elbadisyimad.com/panglm/reference/panqr.md) | [`quantreg::rq()`](https://rdrr.io/pkg/quantreg/man/rq.html) |
-| Latent classes | [`panfmm()`](https://elbadisyimad.com/panglm/reference/panfmm.md), [`panfmmselect()`](https://elbadisyimad.com/panglm/reference/panfmmselect.md) | flexmix |
-| Specification tests | [`panhausman()`](https://elbadisyimad.com/panglm/reference/panhausman.md), [`pandispersiontest()`](https://elbadisyimad.com/panglm/reference/pandispersiontest.md), [`jointtest()`](https://elbadisyimad.com/panglm/reference/jointtest.md), [`lineartest()`](https://elbadisyimad.com/panglm/reference/lineartest.md) | [`plm::phtest()`](https://rdrr.io/pkg/plm/man/phtest.html) |
+| Task | Function |
+|----|----|
+| Continuous, binary, count, ordered, positive, bounded and censored outcomes (pooled, within, between, random effects) | [`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md) |
+| Random slopes | `panglm(model = "random", random = ~ x)` |
+| Costs with zeros (two-part model) | [`twopart()`](https://elbadisyimad.com/panglm/reference/twopart.md) |
+| Counts with structural zeros | [`panhurdle()`](https://elbadisyimad.com/panglm/reference/panhurdle.md) |
+| Difference-in-differences and event studies | [`did()`](https://elbadisyimad.com/panglm/reference/did.md), [`eventstudy()`](https://elbadisyimad.com/panglm/reference/eventstudy.md) |
+| Staggered adoption | [`attgt()`](https://elbadisyimad.com/panglm/reference/attgt.md), [`etwfe()`](https://elbadisyimad.com/panglm/reference/etwfe.md) |
+| Instrumental variables and Hausman-Taylor | [`paniv()`](https://elbadisyimad.com/panglm/reference/paniv.md) |
+| Dynamic panels (difference and system GMM) | [`pangmm()`](https://elbadisyimad.com/panglm/reference/pangmm.md) |
+| Sample selection | [`panselect()`](https://elbadisyimad.com/panglm/reference/panselect.md) |
+| Quantile regression | [`panqr()`](https://elbadisyimad.com/panglm/reference/panqr.md) |
+| Latent classes | [`panfmm()`](https://elbadisyimad.com/panglm/reference/panfmm.md), [`panfmmselect()`](https://elbadisyimad.com/panglm/reference/panfmmselect.md) |
+| Specification tests | [`panhausman()`](https://elbadisyimad.com/panglm/reference/panhausman.md), [`pandispersiontest()`](https://elbadisyimad.com/panglm/reference/pandispersiontest.md), [`jointtest()`](https://elbadisyimad.com/panglm/reference/jointtest.md), [`lineartest()`](https://elbadisyimad.com/panglm/reference/lineartest.md) |
 
-Each help page has a Validation section, and the comparisons themselves
-are in the [validation
-suite](https://github.com/ielbadisy/panglm/tree/main/validation).
+Numerical accuracy is documented in the [validation
+article](https://elbadisyimad.com/panglm/articles/validation.html).
 
 ## Example
 

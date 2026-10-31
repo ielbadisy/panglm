@@ -160,18 +160,8 @@ the null.
 
 ## Validation
 
-Checked in the package's validation suite on GitHub: the within, random
-and pooled 2SLS estimators against
-[`plm::plm()`](https://rdrr.io/pkg/plm/man/plm.html) (same
-`inst.method`), [`AER::ivreg()`](https://rdrr.io/pkg/AER/man/ivreg.html)
-and
-[`fixest::feols()`](https://lrberge.github.io/fixest/reference/feols.html)
-on [`plm::Crime`](https://rdrr.io/pkg/plm/man/Crime.html), balanced and
-unbalanced; the Hausman-Taylor estimator against
-[`plm::pht()`](https://rdrr.io/pkg/plm/man/pht.html) and
-`plm::plm(random.method = "ht")` on
-[`plm::Wages`](https://rdrr.io/pkg/plm/man/Wages.html) (Baltagi 2013,
-Table 7.4).
+Numerical accuracy is checked in the package tests and in the validation
+suite; see the validation article on the package website.
 
 ## References
 

@@ -212,18 +212,8 @@ standard errors.
 
 ## Validation
 
-Checked against
-[`did::att_gt()`](https://bcallaway11.github.io/did/reference/att_gt.html)
-and
-[`did::aggte()`](https://bcallaway11.github.io/did/reference/aggte.html)
-on
-[`did::mpdta`](https://bcallaway11.github.io/did/reference/mpdta.html)
-in the package's validation suite on GitHub: `ATT(g, t)`, analytic and
-clustered standard errors, the pre-trend test and the four aggregations,
-for the `"dr"`, `"ipw"` and `"reg"` estimators, both control groups,
-both base periods, sampling weights, anticipation and unbalanced panels;
-the multiplier bootstrap standard errors and uniform bands against those
-of did with the same number of draws.
+Numerical accuracy is checked in the package tests and in the validation
+suite; see the validation article on the package website.
 
 ## References
 

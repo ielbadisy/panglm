@@ -53,7 +53,7 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.6.1" id="panglm-161">panglm 1.6.1<a class="anchor" aria-label="anchor" href="#panglm-161"></a></h2>
-<p>Correctness release. Every fix is checked against an established package in the validation scripts.</p>
+<p>Correctness release. Every fix is covered by the tests and the validation scripts.</p>
 <div class="section level3">
 <h3 id="changed-behaviour-1-6-1">Changed behaviour<a class="anchor" aria-label="anchor" href="#changed-behaviour-1-6-1"></a></h3>
 <ul><li>Random-intercept binomial (logit, probit) and ordered (logit, probit) models are now integrated by adaptive Gauss-Hermite quadrature centred at each individual’s mode, instead of non-adaptive quadrature. Estimates change, most for large random-effect variances or long panels. At the default <code>R = 21</code> the fits match <code>lme4::glmer(nAGQ = 21)</code> and <code>ordinal::clmm(nAGQ = 21)</code> to about 1e-5; <code>R = 1</code> is now the Laplace approximation (glmmTMB, <code>clmm(nAGQ = 1)</code>).</li>
@@ -77,11 +77,12 @@
 <ul><li>Two-way demeaning is described as iterative, converging to tolerance, rather than exact.</li>
 <li>The <code>cre</code> test is described as a Hausman-type (Mundlak) test that is robust only with <code>vcov = "cluster"</code> (or <code>"HC1"</code> for heteroskedasticity alone).</li>
 <li>The beta family validation is now in <code>validation/validate-beta.R</code> (betareg, GLMMadaptive, glmmTMB and numerical integration).</li>
+<li>The README, vignettes and help pages describe what each function fits rather than listing the packages it is checked against; the checks are summarised in the validation article on the package website.</li>
 </ul></div>
 </div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.6.0" id="panglm-160">panglm 1.6.0<a class="anchor" aria-label="anchor" href="#panglm-160"></a></h2>
-<p>This release collects all changes since 1.1.4, the previous CRAN version. Every new estimator is validated against an established package; the help page of each model function names them in a “Validation” section.</p>
+<p>This release collects all changes since 1.1.4, the previous CRAN version. Every new estimator is covered by the tests and the validation scripts; the validation article on the package website summarises the checks.</p>
 <div class="section level3">
 <h3 id="deprecations-and-changed-behaviour-1-6-0">Deprecations and changed behaviour<a class="anchor" aria-label="anchor" href="#deprecations-and-changed-behaviour-1-6-0"></a></h3>
 <ul><li>Exported names no longer use underscores. The families are now <code><a href="../reference/panglm-families.html">gaussianfamily()</a></code>, <code><a href="../reference/panglm-families.html">poissonfamily()</a></code>, <code><a href="../reference/panglm-families.html">binomialfamily()</a></code>, <code><a href="../reference/panglm-families.html">negbinfamily()</a></code>, <code><a href="../reference/panglm-families.html">gammafamily()</a></code>, <code><a href="../reference/panglm-families.html">betafamily()</a></code>, <code><a href="../reference/panglm-families.html">orderedfamily()</a></code> and <code><a href="../reference/panglm-families.html">tobitfamily()</a></code>; <code><a href="../reference/panglm-deprecated.html">panglm_hausman()</a></code>, <code><a href="../reference/panglm-deprecated.html">panglm_dispersiontest()</a></code> and <code><a href="../reference/panglm-deprecated.html">panglm_hurdle()</a></code> are now <code><a href="../reference/panhausman.html">panhausman()</a></code>, <code><a href="../reference/pandispersiontest.html">pandispersiontest()</a></code> and <code><a href="../reference/panhurdle.html">panhurdle()</a></code>. The old names still work and warn once per session; see <code><a href="../reference/panglm-deprecated.html">?"panglm-deprecated"</a></code>. Result classes are unchanged.</li>

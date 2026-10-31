@@ -91,9 +91,8 @@
     
 <p>This vignette is the technical reference of <code>panglm</code>. It
 states the models, the estimating equations and the covariance
-estimators, lists the established implementations each estimator is
-validated against, and defines the scope of the package. Worked examples
-are in the task vignettes:</p>
+estimators, and defines the scope of the package. Worked examples are in
+the task vignettes:</p>
 <table class="table">
 <colgroup>
 <col width="50%">
@@ -802,124 +801,9 @@ identified.</p>
 <h2 id="computational-validation">Computational validation<a class="anchor" aria-label="anchor" href="#computational-validation"></a>
 </h2>
 <p>The test suite (<code>tests/testthat</code>) and the scripts in
-<code>validation/</code> compare each estimator with an established
-implementation of the same model:</p>
-<table class="table">
-<colgroup>
-<col width="50%">
-<col width="50%">
-</colgroup>
-<thead><tr class="header">
-<th>Estimator</th>
-<th>Reference implementation</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td>Pooled GLMs, pooled NB2</td>
-<td>
-<code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">stats::glm()</a></code>, <code><a href="https://rdrr.io/pkg/MASS/man/glm.nb.html" class="external-link">MASS::glm.nb()</a></code>
-</td>
-</tr>
-<tr class="even">
-<td>Gaussian pooled, within, between, random; HC1 and cluster
-covariances</td>
-<td>
-<code><a href="https://rdrr.io/pkg/plm/man/plm.html" class="external-link">plm::plm()</a></code>, <code><a href="https://zeileis.codeberg.page/sandwich/reference/vcovHC.html" class="external-link">plm::vcovHC()</a></code>,
-<code>sandwich</code>
-</td>
-</tr>
-<tr class="odd">
-<td>Fixed-effects Poisson and NB2, two-way counts</td>
-<td>
-<code>fixest</code>, <code>pglm</code>
-</td>
-</tr>
-<tr class="even">
-<td>Conditional logit, fixed-effects ordered logit</td>
-<td><code><a href="https://rdrr.io/pkg/survival/man/clogit.html" class="external-link">survival::clogit()</a></code></td>
-</tr>
-<tr class="odd">
-<td>Random-effects Poisson, NB, binomial</td>
-<td>
-<code>pglm</code>, <code>lme4</code>
-</td>
-</tr>
-<tr class="even">
-<td>Random-effects gamma, beta, ordered</td>
-<td>
-<code>glmmTMB</code>, <code>betareg</code>,
-<code><a href="https://rdrr.io/pkg/ordinal/man/clmm.html" class="external-link">ordinal::clmm()</a></code>, <code><a href="https://rdrr.io/pkg/MASS/man/polr.html" class="external-link">MASS::polr()</a></code>
-</td>
-</tr>
-<tr class="odd">
-<td>Tobit</td>
-<td>
-<code><a href="https://rdrr.io/pkg/AER/man/tobit.html" class="external-link">AER::tobit()</a></code>, <code>censReg</code>
-</td>
-</tr>
-<tr class="even">
-<td>Hurdle count part</td>
-<td><code><a href="https://rdrr.io/pkg/pscl/man/hurdle.html" class="external-link">pscl::hurdle()</a></code></td>
-</tr>
-<tr class="odd">
-<td>Random slopes</td>
-<td>
-<code><a href="https://rdrr.io/pkg/lme4/man/lmer.html" class="external-link">lme4::lmer()</a></code>, <code><a href="https://rdrr.io/pkg/lme4/man/glmer.html" class="external-link">lme4::glmer()</a></code>,
-<code>glmmTMB</code>, <code>GLMMadaptive</code>
-</td>
-</tr>
-<tr class="even">
-<td>IV, Hausman-Taylor</td>
-<td>
-<code><a href="https://rdrr.io/pkg/plm/man/plm.html" class="external-link">plm::plm()</a></code>, <code><a href="https://rdrr.io/pkg/plm/man/pht.html" class="external-link">plm::pht()</a></code>,
-<code><a href="https://rdrr.io/pkg/AER/man/ivreg.html" class="external-link">AER::ivreg()</a></code>, <code><a href="https://lrberge.github.io/fixest/reference/feols.html" class="external-link">fixest::feols()</a></code>
-</td>
-</tr>
-<tr class="odd">
-<td>Difference and system GMM</td>
-<td><code><a href="https://rdrr.io/pkg/plm/man/pgmm.html" class="external-link">plm::pgmm()</a></code></td>
-</tr>
-<tr class="even">
-<td>Selection</td>
-<td>
-<code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">stats::glm()</a></code>, <code>plm</code>, <code>sandwich</code>,
-<code><a href="https://rdrr.io/pkg/sampleSelection/man/selection.html" class="external-link">sampleSelection::heckit()</a></code> (one period)</td>
-</tr>
-<tr class="odd">
-<td>TWFE DiD and event study</td>
-<td>
-<code><a href="https://lrberge.github.io/fixest/reference/feols.html" class="external-link">fixest::feols()</a></code>, <code><a href="https://rdrr.io/pkg/survival/man/clogit.html" class="external-link">survival::clogit()</a></code>
-</td>
-</tr>
-<tr class="even">
-<td>Group-time ATT and aggregations</td>
-<td>
-<code><a href="https://bcallaway11.github.io/did/reference/att_gt.html" class="external-link">did::att_gt()</a></code>, <code><a href="https://bcallaway11.github.io/did/reference/aggte.html" class="external-link">did::aggte()</a></code>
-</td>
-</tr>
-<tr class="odd">
-<td>Extended TWFE</td>
-<td>
-<code><a href="http://grantmcdermott.com/etwfe/reference/etwfe.html" class="external-link">etwfe::etwfe()</a></code>, <code><a href="http://grantmcdermott.com/etwfe/reference/emfx.html" class="external-link">etwfe::emfx()</a></code>
-</td>
-</tr>
-<tr class="even">
-<td>Finite mixtures</td>
-<td><code>flexmix</code></td>
-</tr>
-<tr class="odd">
-<td>Quantile regression</td>
-<td>
-<code><a href="https://rdrr.io/pkg/quantreg/man/rq.html" class="external-link">quantreg::rq()</a></code>; MM-QR moment conditions as Stata
-<code>xtqreg</code>
-</td>
-</tr>
-<tr class="even">
-<td>Average partial effects</td>
-<td><code>marginaleffects</code></td>
-</tr>
-</tbody>
-</table>
+<code>validation/</code> check the numerical accuracy of every
+estimator. The <a href="https://elbadisyimad.com/panglm/articles/validation.html">validation
+article</a> summarises the checks and their tolerances.</p>
 </div>
 <div class="section level2">
 <h2 id="model-scope">Model scope<a class="anchor" aria-label="anchor" href="#model-scope"></a>

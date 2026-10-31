@@ -75,11 +75,11 @@ summary(rs)
 #> Dispersion parameter: 0.009865 
 #> Random effects (SD): (Intercept) 0.37649, year 0.04157 
 #> Random-effects correlation: year ~ (Intercept) -0.1251 
-#> Residual df: 596  Iterations: 20
+#> Residual df: 596  Iterations: 16
 head(rs$ranef, 3)
 #>   (Intercept)        year
-#> 1  0.24559341 -0.02712743
-#> 2 -0.32250424  0.10527653
+#> 1  0.24559340 -0.02712743
+#> 2 -0.32250423  0.10527653
 #> 3  0.05620227  0.01557888
 ```
 
@@ -399,21 +399,6 @@ coef(panqr(cost ~ chronic + age, data = q, index = c("id", "year"),
 #> chronic     0.853254880 1.226367729
 #> age         0.003935281 0.007903501
 ```
-
-## Validated against
-
-Gaussian random slopes reproduce
-[`lme4::lmer()`](https://rdrr.io/pkg/lme4/man/lmer.html); Poisson,
-negative binomial, gamma and binomial random slopes reproduce
-[`lme4::glmer()`](https://rdrr.io/pkg/lme4/man/glmer.html), `glmmTMB`
-and `GLMMadaptive`;
-[`panfmm()`](https://elbadisyimad.com/panglm/reference/panfmm.md)
-reproduces `flexmix` (including concomitant models);
-[`panqr()`](https://elbadisyimad.com/panglm/reference/panqr.md)
-reproduces [`quantreg::rq()`](https://rdrr.io/pkg/quantreg/man/rq.html)
-for the pooled and Canay estimators and a direct implementation of the
-MM-QR moment conditions, as in Stata’s `xtqreg`. The scripts are in
-`tests/testthat` and `validation/`.
 
 ## References
 
