@@ -23,9 +23,11 @@ build_panel_index <- function(data, index) {
   } else {
     order(df[[id_col]])
   }
-  df <- df[ord, , drop = FALSE]
+  # data that are already sorted (the common case) are not copied
+  if (is.unsorted(ord)) df <- df[ord, , drop = FALSE]
 
-  if (!is.null(time_col) && anyDuplicated(df[, c(id_col, time_col), drop = FALSE])) {
+  if (!is.null(time_col) &&
+      panel_pairs_duplicated(df[[id_col]], df[[time_col]], sorted = TRUE)) {
     stop("each individual-time index pair must identify a unique observation",
          call. = FALSE)
   }
@@ -43,6 +45,39 @@ build_panel_index <- function(data, index) {
   list(data = df, order = ord, group_start = group_start,
        group_size = group_size, group_id = group_values,
        n_groups = length(group_size))
+}
+
+#' Does any (id, time) pair occur more than once?
+#'
+#' Sorts by (id, time) unless `sorted = TRUE`, so that equal pairs are
+#' adjacent, then compares neighbouring rows. Missing values compare equal
+#' to each other, as in anyDuplicated(). This replaces
+#' anyDuplicated(data.frame(id, time)), which pastes every row into a string
+#' and dominated the run time of large panels.
+#'
+#' @param id,time vectors of the same length
+#' @param sorted are the pairs already sorted by (id, time)?
+#' @keywords internal
+#' @noRd
+panel_pairs_duplicated <- function(id, time, sorted = FALSE) {
+  n <- length(id)
+  if (n < 2L) return(FALSE)
+  if (!sorted) {
+    o <- order(id, time)
+    id <- id[o]
+    time <- time[o]
+  }
+  # rows i and i + 1 equal? (NA equal to NA)
+  same <- function(a, b) {
+    eq <- a == b
+    miss <- is.na(eq)
+    if (any(miss)) eq[miss] <- is.na(a[miss]) & is.na(b[miss])
+    eq
+  }
+  # equal neighbouring times are rare in a sorted panel, so the ids are
+  # compared only there
+  tie <- which(same(time[-1L], time[-n]))
+  length(tie) > 0L && any(same(id[tie + 1L], id[tie]))
 }
 
 #' 0-based dense rank of a vector (ties get the same rank, ranks are
