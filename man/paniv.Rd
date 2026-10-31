@@ -142,11 +142,8 @@ null.
 
 \section{Validation}{
 
-Checked in the package's validation suite on GitHub: the within, random and
-pooled 2SLS estimators against \code{plm::plm()} (same \code{inst.method}),
-\code{AER::ivreg()} and \code{fixest::feols()} on \code{plm::Crime}, balanced and
-unbalanced; the Hausman-Taylor estimator against \code{plm::pht()} and
-\code{plm::plm(random.method = "ht")} on \code{plm::Wages} (Baltagi 2013, Table 7.4).
+Numerical accuracy is checked in the package tests and in the validation
+suite; see the validation article on the package website.
 }
 
 \examples{

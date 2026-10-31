@@ -119,11 +119,8 @@
 #' @seealso [summary.paniv()], [vcov.paniv()] and [predict.paniv()] for the
 #'   fitted model, [tidy-methods] for `tidy()` and `glance()`.
 #' @section Validation:
-#' Checked in the package's validation suite on GitHub: the within, random and
-#' pooled 2SLS estimators against `plm::plm()` (same `inst.method`),
-#' `AER::ivreg()` and `fixest::feols()` on `plm::Crime`, balanced and
-#' unbalanced; the Hausman-Taylor estimator against `plm::pht()` and
-#' `plm::plm(random.method = "ht")` on `plm::Wages` (Baltagi 2013, Table 7.4).
+#' Numerical accuracy is checked in the package tests and in the validation
+#' suite; see the validation article on the package website.
 #' @examples
 #' # Simulated panel of 500 patients over 4 waves. Private insurance is
 #' # endogenous for doctor visits (a time-varying health shock drives both)
