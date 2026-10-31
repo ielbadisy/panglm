@@ -426,12 +426,12 @@ summary(fit_rs)
 #> Dispersion parameter: 0.04087 
 #> Random effects (SD): (Intercept) 0.42204, visit 0.00297 
 #> Random-effects correlation: visit ~ (Intercept) -1 
-#> Residual df: 295  Iterations: 18
+#> Residual df: 295  Iterations: 17
 #> 
 fit_rs$varcomp
 #>              (Intercept)         visit
-#> (Intercept)  0.178115898 -1.253281e-03
-#> visit       -0.001253281  8.818484e-06
+#> (Intercept)  0.178115914 -1.253284e-03
+#> visit       -0.001253284  8.818537e-06
 
 # two-way conditional logit: smoking across survey waves, with year
 # shocks (e.g. a tobacco tax) absorbed by the time effects

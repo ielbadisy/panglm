@@ -64,6 +64,11 @@
 <li>The check for duplicated (individual, time) pairs in <code><a href="../reference/panglm.html">panglm()</a></code>, <code><a href="../reference/pangmm.html">pangmm()</a></code>, <code><a href="../reference/attgt.html">attgt()</a></code> and <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code> compares neighbouring sorted rows instead of pasting every row into a string.</li>
 <li>
 <code><a href="../reference/attgt.html">attgt()</a></code> and <code><a href="../reference/did.html">did()</a></code>: the checks that weights, clusters and the treatment timing are constant within individuals no longer call R once per individual.</li>
+<li>
+<code><a href="../reference/attgt.html">attgt()</a></code> drops the row names of the outcome and design before subsetting them, and fits the propensity score with a compiled logistic IRLS that follows <code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm.fit()</a></code> step by step. Unusual fits (nearly collinear design, no convergence, fitted probabilities of 0 or 1) still go through <code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm.fit()</a></code>. On 50,000 individuals the <code>"dr"</code> and <code>"ipw"</code> estimators are about twice as fast.</li>
+<li>Gaussian fits with the identity link are computed by one weighted least squares solve instead of running the IRLS loop to convergence.</li>
+<li>
+<code><a href="../reference/panglm.html">panglm()</a></code> no longer copies the outcome and design when the data are already sorted by individual and time.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="bug-fixes-1-6-2">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-6-2"></a></h3>

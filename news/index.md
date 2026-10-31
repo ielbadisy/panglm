@@ -36,6 +36,19 @@ tests and validation scripts pass unchanged.
   [`did()`](https://elbadisyimad.com/panglm/reference/did.md): the
   checks that weights, clusters and the treatment timing are constant
   within individuals no longer call R once per individual.
+- [`attgt()`](https://elbadisyimad.com/panglm/reference/attgt.md) drops
+  the row names of the outcome and design before subsetting them, and
+  fits the propensity score with a compiled logistic IRLS that follows
+  [`glm.fit()`](https://rdrr.io/r/stats/glm.html) step by step. Unusual
+  fits (nearly collinear design, no convergence, fitted probabilities of
+  0 or 1) still go through
+  [`glm.fit()`](https://rdrr.io/r/stats/glm.html). On 50,000 individuals
+  the `"dr"` and `"ipw"` estimators are about twice as fast.
+- Gaussian fits with the identity link are computed by one weighted
+  least squares solve instead of running the IRLS loop to convergence.
+- [`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md) no
+  longer copies the outcome and design when the data are already sorted
+  by individual and time.
 
 ### Bug fixes
 
