@@ -193,11 +193,8 @@ estimates (Bond 2002).
 
 \section{Validation}{
 
-Checked against \code{plm::pgmm()} and its \code{vcovHC()}, \code{mtest()}, \code{sargan()} and
-\code{pwaldtest()} methods (difference and system GMM, one and two steps, with
-the Windmeijer correction), and \code{predict()} against the transformed
-equations stored by \code{plm::pgmm()}, on \code{plm::EmplUK} and a simulated
-unbalanced panel, in the package's validation suite on GitHub.
+Numerical accuracy is checked in the package tests and in the validation
+suite; see the validation article on the package website.
 }
 
 \examples{
