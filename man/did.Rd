@@ -63,11 +63,8 @@ absorbed by the individual effects and dropped.
 }
 \section{Validation}{
 
-The linear and count versions are two-way fixed-effects \code{\link[=panglm]{panglm()}} fits,
-checked against fixest in the package tests. The binary version, the two-way
-conditional logit, is checked against \code{survival::clogit()} (coefficients,
-classical and cluster-robust standard errors) and, with two periods, against
-\code{fixest::feglm()}, in the package's validation suite on GitHub.
+Numerical accuracy is checked in the package tests and in the validation
+suite; see the validation article on the package website.
 }
 
 \examples{
