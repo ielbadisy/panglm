@@ -286,7 +286,7 @@ pangmm <- function(formula, data, index,
   utm <- sort(unique(tm))
   ii <- match(id, uid)
   tt <- match(tm, utm)
-  if (anyDuplicated(cbind(ii, tt))) {
+  if (anyDuplicated((ii - 1) * length(utm) + tt)) {
     stop("each individual-time index pair must identify a unique observation", call. = FALSE)
   }
   N <- length(uid)
@@ -505,7 +505,8 @@ pangmm <- function(formula, data, index,
     formula = formula
   )
   e <- if (model == "onestep") fit$e1 else fit$e2
-  out$residuals <- split(e, group)
+  out$residuals <- split(e, structure(group, levels = as.character(seq_len(N)),
+                                     class = "factor"))
   names(out$residuals) <- as.character(uid)
 
   # Sargan (one-step, homoskedastic) and Hansen J (two-step) statistics
@@ -696,7 +697,7 @@ gmm_estimate <- function(y, X, W, H, group, R, model) {
   b1 <- as.numeric(M1 %*% crossprod(S1iZX, Zy))
   names(b1) <- colnames(X)
   e1 <- as.numeric(y - X %*% b1)
-  Q1 <- rowsum(W * e1, group, reorder = FALSE)
+  Q1 <- gmm_blocksum(W * e1, R)
   S2 <- crossprod(Q1)
   S2i <- gmm_inverse(S2, "second-step")
   S2iZX <- S2i %*% ZX
@@ -716,11 +717,14 @@ gmm_estimate <- function(y, X, W, H, group, R, model) {
     # Windmeijer (2005) correction
     We <- crossprod(W, e2)
     S2iWe <- S2i %*% We
-    D <- vapply(seq_len(ncol(X)), function(j) {
-      Pk <- rowsum(W * X[, j], group, reorder = FALSE)
-      dS <- -(crossprod(Pk, Q1) + crossprod(Q1, Pk))
-      as.numeric(-V2 %*% crossprod(S2iZX, dS %*% S2iWe))
-    }, numeric(ncol(X)))
+    # Column j of D is -V2 S2iZX' dS_j S2i W'e2 with dS_j = -(P_j'Q1 + Q1'P_j)
+    # and P_j the individual sums of W * X[, j]. dS_j v is formed for all j
+    # at once, without the L x L matrices dS_j: P_j'(Q1 v) = W'(X[, j] * Q1 v)
+    # and P_j v = individual sums of X[, j] * (W v).
+    v <- as.numeric(S2iWe)
+    a <- rep(as.numeric(Q1 %*% v), each = R)
+    dSv <- -(crossprod(W, X * a) + crossprod(Q1, gmm_blocksum(X * as.numeric(W %*% v), R)))
+    D <- -V2 %*% crossprod(S2iZX, dSv)
     D <- matrix(D, ncol(X))
     Vw <- V2 + D %*% V2 + V2 %*% t(D) + D %*% V1r %*% t(D)
     Vw <- (Vw + t(Vw)) / 2
@@ -732,13 +736,26 @@ gmm_estimate <- function(y, X, W, H, group, R, model) {
   out
 }
 
+#' Sums of the R consecutive rows of each individual (N x ncol(M))
+#'
+#' @keywords internal
+#' @noRd
+gmm_blocksum <- function(M, R) {
+  if (!is.matrix(M)) M <- as.matrix(M)
+  if (storage.mode(M) != "double") storage.mode(M) <- "double"
+  out <- gmm_blocksum_cpp(M, as.integer(R))
+  colnames(out) <- colnames(M)
+  out
+}
+
 #' Arellano-Bond test of order `ord` (formula of plm::mtest())
 #'
 #' @keywords internal
 #' @noRd
 gmm_artest <- function(e, X, W, group, rowtype, m, R, N, ord, A, B, vv) {
   isd <- rowtype == "d"
-  ed <- ifelse(isd, e, 0)
+  ed <- e
+  ed[!isd] <- 0
   # lag the differenced residuals within individual
   E <- matrix(ed, nrow = R)
   El <- matrix(0, R, N)
@@ -748,7 +765,7 @@ gmm_artest <- function(e, X, W, group, rowtype, m, R, N, ord, A, B, vv) {
   num <- sum(s)
   EVE <- sum(s^2)
   EX <- crossprod(el, X)
-  ZVE <- crossprod(rowsum(W * ed, group, reorder = FALSE), s)
+  ZVE <- crossprod(gmm_blocksum(W * ed, R), s)
   ZX <- crossprod(W, X)
   denom <- EVE - 2 * EX %*% B %*% t(ZX) %*% A %*% ZVE + EX %*% vv %*% t(EX)
   # the variance estimate can be negative in small samples; the test is then
