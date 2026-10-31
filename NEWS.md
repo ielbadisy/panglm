@@ -1,7 +1,7 @@
 # panglm 1.6.1
 
-Correctness release. Every fix is checked against an established package
-in the validation scripts.
+Correctness release. Every fix is covered by the tests and the
+validation scripts.
 
 ## Changed behaviour
 
@@ -56,12 +56,15 @@ in the validation scripts.
   heteroskedasticity alone).
 * The beta family validation is now in `validation/validate-beta.R`
   (betareg, GLMMadaptive, glmmTMB and numerical integration).
+* The README, vignettes and help pages describe what each function fits
+  rather than listing the packages it is checked against; the checks are
+  summarised in the validation article on the package website.
 
 # panglm 1.6.0
 
 This release collects all changes since 1.1.4, the previous CRAN version.
-Every new estimator is validated against an established package; the help
-page of each model function names them in a "Validation" section.
+Every new estimator is covered by the tests and the validation scripts;
+the validation article on the package website summarises the checks.
 
 ## Deprecations and changed behaviour
 
