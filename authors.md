@@ -10,12 +10,12 @@ Source:
 [`inst/CITATION`](https://github.com/ielbadisy/panglm/blob/main/inst/CITATION)
 
 El Badisy I (2026). *panglm: Generalized Linear Models for Panel Data*.
-R package version 1.6.1, <https://elbadisyimad.com/panglm/>.
+R package version 1.6.2, <https://elbadisyimad.com/panglm/>.
 
     @Manual{,
       title = {{panglm}: Generalized Linear Models for Panel Data},
       author = {Imad {El Badisy}},
       year = {2026},
-      note = {R package version 1.6.1},
+      note = {R package version 1.6.2},
       url = {https://elbadisyimad.com/panglm/},
     }

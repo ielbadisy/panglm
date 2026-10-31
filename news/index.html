@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">panglm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.6.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.6.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -51,6 +51,26 @@
       <small>Source: <a href="https://github.com/ielbadisy/panglm/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.6.2" id="panglm-162">panglm 1.6.2<a class="anchor" aria-label="anchor" href="#panglm-162"></a></h2>
+<p>Speed release for large panels. Estimates are unchanged: the optimizations either reproduce the previous computations exactly or change results only at the level of floating-point rounding, and the tests and validation scripts pass unchanged.</p>
+<div class="section level3">
+<h3 id="performance-1-6-2">Performance<a class="anchor" aria-label="anchor" href="#performance-1-6-2"></a></h3>
+<ul><li>Two-way demeaning computes the group means in one pass over the data instead of a parallel reduction that allocated one accumulator per thread. The two-way Gaussian fit demeans the outcome and the regressors once and reuses the result for the check of which columns are identified.</li>
+<li>The fixed-effects Poisson and random-effects Poisson and negative binomial Newton-Raphson fitters reuse the gradient and Hessian of the accepted step instead of evaluating the same point twice.</li>
+<li>Random-effects negative binomial: the gamma, digamma and trigamma differences of the likelihood are computed by their finite-sum recurrences for counts up to 50, skipped for zero counts, and spread over threads. A fit on 250,000 observations is about seven times faster.</li>
+<li>
+<code><a href="../reference/pangmm.html">pangmm()</a></code>: the individual sums of the GMM moments and the Windmeijer correction use block sums and two matrix products instead of one grouped sum per regressor.</li>
+<li>The check for duplicated (individual, time) pairs in <code><a href="../reference/panglm.html">panglm()</a></code>, <code><a href="../reference/pangmm.html">pangmm()</a></code>, <code><a href="../reference/attgt.html">attgt()</a></code> and <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code> compares neighbouring sorted rows instead of pasting every row into a string.</li>
+<li>
+<code><a href="../reference/attgt.html">attgt()</a></code> and <code><a href="../reference/did.html">did()</a></code>: the checks that weights, clusters and the treatment timing are constant within individuals no longer call R once per individual.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-1-6-2">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-6-2"></a></h3>
+<ul><li>
+<code><a href="../reference/attgt.html">attgt()</a></code>: when the individual index is a factor, individuals whose rows had all been removed earlier (for example for missing values) were also counted among the individuals dropped to balance the panel (warning message and <code>dropped$unbalanced</code>). Only individuals still present are counted now. Estimates are unaffected.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.6.1" id="panglm-161">panglm 1.6.1<a class="anchor" aria-label="anchor" href="#panglm-161"></a></h2>
 <p>Correctness release. Every fix is covered by the tests and the validation scripts.</p>
