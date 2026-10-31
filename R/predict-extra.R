@@ -336,7 +336,7 @@ predict.pangmm <- function(object, newdata, type = c("level", "difference"), ...
   utm <- sort(unique(tm))
   ii <- match(id, uid)
   tt <- match(tm, utm)
-  if (anyDuplicated(cbind(ii, tt))) {
+  if (anyDuplicated((ii - 1) * length(utm) + tt)) {
     stop("each individual-time index pair must identify a unique observation", call. = FALSE)
   }
   N <- length(uid)
