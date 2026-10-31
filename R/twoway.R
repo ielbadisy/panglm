@@ -12,20 +12,22 @@
 #'
 #' @keywords internal
 #' @noRd
-demean_twoway <- function(X, y, group_start, group_size, time, tol = 1e-10, maxit = 10000) {
+demean_twoway <- function(X, y, group_start, group_size, time, tol = 1e-10, maxit = 10000,
+                          time_code = NULL) {
   # id groups are already contiguous/sorted (from build_panel_index), so no
   # factor()/match() is needed to derive their codes; only the time
   # dimension needs a grouping pass, done via dense_rank0().
   n_id <- length(group_size)
   id_code <- rep.int(seq_len(n_id) - 1L, group_size)
-  time_code <- dense_rank0(time)
+  if (is.null(time_code)) time_code <- dense_rank0(time)
   n_time <- max(time_code) + 1L
 
   M <- cbind(y, X)
   dm <- twoway_demean_cpp(M, id_code, time_code, n_id, n_time, maxit, tol)
   twoway_demean_check(dm, maxit)
 
-  list(y = dm$M[, 1], X = dm$M[, -1, drop = FALSE], iterations = dm$iterations, n_time = n_time)
+  list(y = dm$M[, 1], X = dm$M[, -1, drop = FALSE], iterations = dm$iterations, n_time = n_time,
+       time_code = time_code)
 }
 
 # Warn when the alternating projections stop at the iteration limit.
@@ -37,10 +39,17 @@ twoway_demean_check <- function(dm, maxit) {
   invisible(dm)
 }
 
-fit_within_twoways_gaussian <- function(X, y, group_start, group_size, time, maxit, tol) {
+fit_within_twoways_gaussian <- function(X, y, group_start, group_size, time, maxit, tol,
+                                        dm = NULL) {
   if (is.null(time)) stop("effect = 'twoways' requires a two-element index = c(id, time)", call. = FALSE)
 
-  dm <- demean_twoway(X, y, group_start, group_size, time, tol = tol)
+  # dm: the demeaned y and X, when panglm() already computed them for the
+  # estimability check (its X columns are matched by name)
+  if (is.null(dm)) {
+    dm <- demean_twoway(X, y, group_start, group_size, time, tol = tol)
+  } else if (!identical(colnames(dm$X), colnames(X))) {
+    dm$X <- dm$X[, colnames(X), drop = FALSE]
+  }
   res <- irls_fit_cpp(dm$X, dm$y, 0L, 0L, maxit, tol)
 
   n <- nrow(X); k <- ncol(X)
@@ -57,7 +66,7 @@ fit_within_twoways_gaussian <- function(X, y, group_start, group_size, time, max
   names(coefs) <- colnames(X)
   dimnames(vcov) <- dimnames(bread) <- list(colnames(X), colnames(X))
   effects <- recover_twoway_effects(
-    y - as.numeric(X %*% coefs), group_size, time, tol = tol
+    y - as.numeric(X %*% coefs), group_size, time, tol = tol, time_code = dm$time_code
   )
   fitted <- as.numeric(X %*% coefs) + effects$observation_effect
 
@@ -162,7 +171,7 @@ fit_within_twoways_poisson <- function(X, y, group_start, group_size, time, maxi
 
   df_resid <- n - k - (n_id - 1) - (n_time - 1) - 1
   effects <- recover_twoway_effects(
-    eta - as.numeric(Xs %*% beta), group_size, time, tol = tol
+    eta - as.numeric(Xs %*% beta), group_size, time, tol = tol, time_code = time_code
   )
 
   list(coefficients = coefs, vcov = vcov, bread = vcov, fitted.values = exp(eta),
@@ -277,7 +286,7 @@ fit_within_twoways_negbin <- function(X, y, group_start, group_size, time, maxit
 
   df_resid <- n - k - (n_id - 1) - (n_time - 1) - 1
   effects <- recover_twoway_effects(
-    eta - as.numeric(Xs %*% beta), group_size, time, tol = tol
+    eta - as.numeric(Xs %*% beta), group_size, time, tol = tol, time_code = time_code
   )
 
   list(coefficients = coefs, vcov = vcov, bread = vcov, fitted.values = exp(eta),
@@ -289,19 +298,23 @@ fit_within_twoways_negbin <- function(X, y, group_start, group_size, time, maxit
 }
 
 recover_twoway_effects <- function(effect_observation, group_size, time,
-                                   tol = 1e-10, maxit = 10000L) {
-  id <- rep.int(seq_along(group_size), group_size)
-  time_code <- match(time, sort(unique(time)))
+                                   tol = 1e-10, maxit = 10000L, time_code = NULL) {
+  # time_code: 0-based dense rank of time, when the caller already has it
+  if (is.null(time_code)) time_code <- dense_rank0(time)
   n_id <- length(group_size)
-  n_time <- max(time_code)
+  n_time <- max(time_code) + 1L
+  id0 <- rep.int(seq_len(n_id) - 1L, group_size)
+  id <- id0 + 1L
+  tc <- time_code + 1L
+  time_size <- as.numeric(tabulate(tc, nbins = n_time))
   alpha <- numeric(n_id)
   gamma <- numeric(n_time)
 
+  # the group sums add the observations in the same order as rowsum()
   for (iteration in seq_len(maxit)) {
-    alpha_new <- as.numeric(rowsum(effect_observation - gamma[time_code], id)) /
-      group_size
-    gamma_new <- as.numeric(rowsum(effect_observation - alpha_new[id], time_code)) /
-      as.numeric(tabulate(time_code, nbins = n_time))
+    alpha_new <- code_sum_cpp(effect_observation - gamma[tc], id0, n_id) / group_size
+    gamma_new <- code_sum_cpp(effect_observation - alpha_new[id], time_code, n_time) /
+      time_size
     shift <- mean(gamma_new)
     gamma_new <- gamma_new - shift
     alpha_new <- alpha_new + shift
@@ -314,7 +327,7 @@ recover_twoway_effects <- function(effect_observation, group_size, time,
   list(
     individual = alpha,
     time = gamma,
-    observation_effect = alpha[id] + gamma[time_code]
+    observation_effect = alpha[id] + gamma[tc]
   )
 }
 
