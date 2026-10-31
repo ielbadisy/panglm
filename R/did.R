@@ -19,9 +19,36 @@ did_timing <- function(data, index, treat) {
   # unused levels of a factor index (e.g. after subset()) are empty groups
   id <- data[[index[1]]]
   if (is.factor(id)) id <- droplevels(id)
-  same <- tapply(first, id, function(v) length(unique(v)) == 1L)
-  if (!all(same)) stop("'", treat, "' must be constant within individuals", call. = FALSE)
+  if (varies_within(first, id)) stop("'", treat, "' must be constant within individuals", call. = FALSE)
   list(time = time, first = first, rel = time - first, ever = !is.na(first))
+}
+
+#' Does `x` take more than one value within some individual?
+#'
+#' Vectorized replacement for tapply(x, id, function(v) length(unique(v)) > 1):
+#' sorts by individual and compares neighbouring rows, so it costs one sort
+#' instead of one R function call per individual. Missing values compare
+#' equal to each other and differ from any other value; rows with a missing
+#' id are ignored, as in tapply().
+#'
+#' @keywords internal
+#' @noRd
+varies_within <- function(x, id) {
+  keep <- !is.na(id)
+  x <- x[keep]
+  id <- id[keep]
+  n <- length(x)
+  if (n < 2L) return(FALSE)
+  o <- order(id)
+  x <- x[o]
+  id <- id[o]
+  same_id <- id[-1L] == id[-n]
+  a <- x[-1L]
+  b <- x[-n]
+  differ <- a != b
+  miss <- is.na(differ)
+  if (any(miss)) differ[miss] <- xor(is.na(a[miss]), is.na(b[miss]))
+  any(same_id & differ)
 }
 
 #' Two-way fixed-effects difference-in-differences
