@@ -217,15 +217,6 @@ summary(etp)
 The scheme adds about 0.9 admissions per province-year, with similar
 effects in rural and urban provinces.
 
-## Validated against
-
-`did()` and `eventstudy()` reproduce `fixest::feols()` and, for the
-conditional logit, `survival::clogit()`; `attgt()`, including the
-aggregations, weights, clustering and the multiplier bootstrap,
-reproduces `did::att_gt()` and `did::aggte()`; `etwfe()` reproduces
-`etwfe::etwfe()` and `etwfe::emfx()`. The scripts are in
-`tests/testthat` and `validation/`.
-
 ## References
 
 Callaway, B., and Sant'Anna, P. H. C. (2021). Difference-in-differences
