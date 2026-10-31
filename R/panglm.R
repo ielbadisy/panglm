@@ -444,8 +444,15 @@ panglm <- function(formula, data, index,
   panel <- build_panel_index(cbind(panel_cols, .panglm_row = seq_len(nrow(mf))), index)
   ord <- panel$data$.panglm_row
 
-  y <- y[ord]
-  X_full <- X_full[ord, , drop = FALSE]
+  if (is.unsorted(ord)) {
+    y <- y[ord]
+    X_full <- X_full[ord, , drop = FALSE]
+  } else {
+    # rows already in panel order: no copy, but drop the attributes that
+    # the subset would have dropped
+    attr(X_full, "assign") <- NULL
+    attr(X_full, "contrasts") <- NULL
+  }
   if (slopes) stop_panel_calls(random, what = "the 'random' formula")
   Z_random <- if (slopes) slopes_z(random, data[model_rows[ord], , drop = FALSE]) else NULL
   prior_weights <- if (is.null(used_weights)) NULL else used_weights[ord]
