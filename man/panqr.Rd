@@ -170,14 +170,8 @@ within covariance of the rest of the package
 
 \section{Validation}{
 
-Checked in the package's validation suite on GitHub: the pooled model
-against \code{quantreg::rq()} and its kernel sandwich; the Canay and MM-QR
-estimators against implementations built from \code{plm::plm()}, \code{stats::lm()}
-and \code{quantreg::rq()}, with the MM-QR iid covariance checked against the
-formulas of the Stata command \code{xtqreg}; the MM-QR cluster covariance
-against the cluster bootstrap and by Monte Carlo coverage with serially
-correlated errors; and Monte Carlo checks that the analytic standard
-errors match the sampling standard deviation.
+Numerical accuracy is checked in the package tests and in the validation
+suite; see the validation article on the package website.
 }
 
 \examples{
