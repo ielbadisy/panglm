@@ -13,6 +13,10 @@ irls_fit_cpp <- function(X, y, family_id, link_id, maxit = 100L, tol = 1e-10, we
     .Call(`_panglm_irls_fit_cpp`, X, y, family_id, link_id, maxit, tol, weights)
 }
 
+logit_irls_cpp <- function(X, y, w, epsilon, maxit) {
+    .Call(`_panglm_logit_irls_cpp`, X, y, w, epsilon, maxit)
+}
+
 negbin_irls_fit_cpp <- function(X, y, maxit = 100L, tol = 1e-10, weights = NULL) {
     .Call(`_panglm_negbin_irls_fit_cpp`, X, y, maxit, tol, weights)
 }

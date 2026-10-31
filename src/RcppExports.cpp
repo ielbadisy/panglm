@@ -53,6 +53,21 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// logit_irls_cpp
+Rcpp::List logit_irls_cpp(const arma::mat& X, const arma::vec& y, const arma::vec& w, double epsilon, int maxit);
+RcppExport SEXP _panglm_logit_irls_cpp(SEXP XSEXP, SEXP ySEXP, SEXP wSEXP, SEXP epsilonSEXP, SEXP maxitSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type w(wSEXP);
+    Rcpp::traits::input_parameter< double >::type epsilon(epsilonSEXP);
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    rcpp_result_gen = Rcpp::wrap(logit_irls_cpp(X, y, w, epsilon, maxit));
+    return rcpp_result_gen;
+END_RCPP
+}
 // negbin_irls_fit_cpp
 List negbin_irls_fit_cpp(const arma::mat& X, const arma::vec& y, int maxit, double tol, Rcpp::Nullable<Rcpp::NumericVector> weights);
 RcppExport SEXP _panglm_negbin_irls_fit_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP weightsSEXP) {
@@ -280,6 +295,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_panglm_code_sum_cpp", (DL_FUNC) &_panglm_code_sum_cpp, 3},
     {"_panglm_gmm_blocksum_cpp", (DL_FUNC) &_panglm_gmm_blocksum_cpp, 2},
     {"_panglm_irls_fit_cpp", (DL_FUNC) &_panglm_irls_fit_cpp, 7},
+    {"_panglm_logit_irls_cpp", (DL_FUNC) &_panglm_logit_irls_cpp, 5},
     {"_panglm_negbin_irls_fit_cpp", (DL_FUNC) &_panglm_negbin_irls_fit_cpp, 5},
     {"_panglm_random_agq_cpp", (DL_FUNC) &_panglm_random_agq_cpp, 10},
     {"_panglm_random_binomial_loglik_grad_cpp", (DL_FUNC) &_panglm_random_binomial_loglik_grad_cpp, 9},

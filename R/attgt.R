@@ -451,8 +451,7 @@ attgt_2x2 <- function(dy, D, X, method, w = NULL, trim = 0.995) {
     lin_or <- (w * (1 - D) * (dy - fitted) * X) %*% solve(XpX)
   }
   if (need_ps) {
-    ps_fit <- suppressWarnings(stats::glm.fit(X, D, weights = w, family = stats::binomial(),
-                                              control = list(epsilon = 1e-14, maxit = 100)))
+    ps_fit <- attgt_logit(X, D, w)
     if (anyNA(ps_fit$coefficients)) stop("propensity score design is singular", call. = FALSE)
     if (!ps_fit$converged) warning("propensity score estimation did not converge", call. = FALSE)
     ps <- pmin(as.numeric(ps_fit$fitted.values), 1 - 1e-6)
@@ -493,6 +492,24 @@ attgt_2x2 <- function(dy, D, X, method, w = NULL, trim = 0.995) {
   inf1 <- (w1 * r - w1 * eta1 - as.numeric(lin_or %*% M1)) / m1
   inf0 <- (w0 * r - w0 * eta0 + as.numeric(lin_ps %*% M2) - as.numeric(lin_or %*% M3)) / m0
   list(att = eta1 - eta0, inf = inf1 - inf0)
+}
+
+#' Propensity score fit for attgt_2x2()
+#'
+#' Logistic regression as stats::glm.fit(family = binomial(), epsilon =
+#' 1e-14, maxit = 100), computed by logit_irls_cpp(), which repeats the
+#' glm.fit iterations in C++. Unusual fits (nearly collinear design, no
+#' convergence, non-finite values, fitted probabilities numerically 0 or 1)
+#' are left to glm.fit itself.
+#'
+#' @keywords internal
+#' @noRd
+attgt_logit <- function(X, D, w) {
+  if (storage.mode(X) != "double") storage.mode(X) <- "double"
+  fit <- logit_irls_cpp(X, as.numeric(D), as.numeric(w), 1e-14, 100L)
+  if (isTRUE(fit$ok)) return(fit)
+  suppressWarnings(stats::glm.fit(X, D, weights = w, family = stats::binomial(),
+                                  control = list(epsilon = 1e-14, maxit = 100)))
 }
 
 #' Aggregate group-time average treatment effects
