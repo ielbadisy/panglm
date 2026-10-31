@@ -11,6 +11,31 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// code_sum_cpp
+NumericVector code_sum_cpp(const NumericVector& v, const IntegerVector& code, int n_codes);
+RcppExport SEXP _panglm_code_sum_cpp(SEXP vSEXP, SEXP codeSEXP, SEXP n_codesSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector& >::type v(vSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type code(codeSEXP);
+    Rcpp::traits::input_parameter< int >::type n_codes(n_codesSEXP);
+    rcpp_result_gen = Rcpp::wrap(code_sum_cpp(v, code, n_codes));
+    return rcpp_result_gen;
+END_RCPP
+}
+// gmm_blocksum_cpp
+NumericMatrix gmm_blocksum_cpp(const NumericMatrix& M, int R);
+RcppExport SEXP _panglm_gmm_blocksum_cpp(SEXP MSEXP, SEXP RSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type M(MSEXP);
+    Rcpp::traits::input_parameter< int >::type R(RSEXP);
+    rcpp_result_gen = Rcpp::wrap(gmm_blocksum_cpp(M, R));
+    return rcpp_result_gen;
+END_RCPP
+}
 // irls_fit_cpp
 List irls_fit_cpp(const arma::mat& X, const arma::vec& y, int family_id, int link_id, int maxit, double tol, Rcpp::Nullable<Rcpp::NumericVector> weights);
 RcppExport SEXP _panglm_irls_fit_cpp(SEXP XSEXP, SEXP ySEXP, SEXP family_idSEXP, SEXP link_idSEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP weightsSEXP) {
@@ -252,6 +277,8 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_panglm_code_sum_cpp", (DL_FUNC) &_panglm_code_sum_cpp, 3},
+    {"_panglm_gmm_blocksum_cpp", (DL_FUNC) &_panglm_gmm_blocksum_cpp, 2},
     {"_panglm_irls_fit_cpp", (DL_FUNC) &_panglm_irls_fit_cpp, 7},
     {"_panglm_negbin_irls_fit_cpp", (DL_FUNC) &_panglm_negbin_irls_fit_cpp, 5},
     {"_panglm_random_agq_cpp", (DL_FUNC) &_panglm_random_agq_cpp, 10},
