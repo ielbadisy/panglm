@@ -29,6 +29,16 @@ tests and validation scripts pass unchanged.
 * `attgt()` and `did()`: the checks that weights, clusters and the
   treatment timing are constant within individuals no longer call R once
   per individual.
+* `attgt()` drops the row names of the outcome and design before
+  subsetting them, and fits the propensity score with a compiled
+  logistic IRLS that follows `glm.fit()` step by step. Unusual fits
+  (nearly collinear design, no convergence, fitted probabilities of 0
+  or 1) still go through `glm.fit()`. On 50,000 individuals the
+  `"dr"` and `"ipw"` estimators are about twice as fast.
+* Gaussian fits with the identity link are computed by one weighted
+  least squares solve instead of running the IRLS loop to convergence.
+* `panglm()` no longer copies the outcome and design when the data are
+  already sorted by individual and time.
 
 ## Bug fixes
 
