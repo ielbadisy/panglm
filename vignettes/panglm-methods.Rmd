@@ -13,9 +13,8 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>",
 ```
 
 This vignette is the technical reference of `panglm`. It states the
-models, the estimating equations and the covariance estimators, lists
-the established implementations each estimator is validated against,
-and defines the scope of the package. Worked examples are in the task
+models, the estimating equations and the covariance estimators, and
+defines the scope of the package. Worked examples are in the task
 vignettes:
 
 | Topic | Vignette |
@@ -502,29 +501,9 @@ new-data probabilities are not identified.
 ## Computational validation
 
 The test suite (`tests/testthat`) and the scripts in `validation/`
-compare each estimator with an established implementation of the same
-model:
-
-| Estimator | Reference implementation |
-|---|---|
-| Pooled GLMs, pooled NB2 | `stats::glm()`, `MASS::glm.nb()` |
-| Gaussian pooled, within, between, random; HC1 and cluster covariances | `plm::plm()`, `plm::vcovHC()`, `sandwich` |
-| Fixed-effects Poisson and NB2, two-way counts | `fixest`, `pglm` |
-| Conditional logit, fixed-effects ordered logit | `survival::clogit()` |
-| Random-effects Poisson, NB, binomial | `pglm`, `lme4` |
-| Random-effects gamma, beta, ordered | `glmmTMB`, `betareg`, `ordinal::clmm()`, `MASS::polr()` |
-| Tobit | `AER::tobit()`, `censReg` |
-| Hurdle count part | `pscl::hurdle()` |
-| Random slopes | `lme4::lmer()`, `lme4::glmer()`, `glmmTMB`, `GLMMadaptive` |
-| IV, Hausman-Taylor | `plm::plm()`, `plm::pht()`, `AER::ivreg()`, `fixest::feols()` |
-| Difference and system GMM | `plm::pgmm()` |
-| Selection | `stats::glm()`, `plm`, `sandwich`, `sampleSelection::heckit()` (one period) |
-| TWFE DiD and event study | `fixest::feols()`, `survival::clogit()` |
-| Group-time ATT and aggregations | `did::att_gt()`, `did::aggte()` |
-| Extended TWFE | `etwfe::etwfe()`, `etwfe::emfx()` |
-| Finite mixtures | `flexmix` |
-| Quantile regression | `quantreg::rq()`; MM-QR moment conditions as Stata `xtqreg` |
-| Average partial effects | `marginaleffects` |
+check the numerical accuracy of every estimator. The
+[validation article](https://elbadisyimad.com/panglm/articles/validation.html)
+summarises the checks and their tolerances.
 
 ## Model scope
 
