@@ -235,15 +235,6 @@ plot(fit_cre, which = "coefficients")
 plot(fit_fe, which = "residuals")
 ```
 
-## Validated against
-
-The pooled, within, between and random-effects Gaussian estimators
-reproduce `plm::plm()`; cluster and HC1 covariances reproduce
-`plm::vcovHC()` and `sandwich`; pooled GLMs reproduce `stats::glm()`;
-random-intercept GLMs reproduce `lme4` and `glmmTMB`; average partial
-effects reproduce `marginaleffects`. The scripts are in the package
-source (`tests/testthat` and `validation/`).
-
 ## References
 
 Cameron, A. C., and Miller, D. L. (2015). A practitioner's guide to
