@@ -322,8 +322,9 @@ attgt_prepare <- function(formula, data, index, treat, control, anticipation, wv
   y <- stats::model.response(mf)
   if (!is.numeric(y) && !is.logical(y)) stop("the outcome must be numeric", call. = FALSE)
   X <- stats::model.matrix(rhs, mf)
-  fin <- is.finite(as.numeric(y)) & rowSums(!is.finite(X)) == 0 &
-    is.finite(data[[index[2]]][ok])
+  # the row-wise check of X is needed only when some value is not finite
+  x_fin <- if (all(is.finite(X))) TRUE else rowSums(!is.finite(X)) == 0
+  fin <- is.finite(as.numeric(y)) & x_fin & is.finite(data[[index[2]]][ok])
   ok[ok] <- fin
   dropped <- list(rows = sum(!ok))
   if (!all(ok)) {
@@ -337,7 +338,7 @@ attgt_prepare <- function(formula, data, index, treat, control, anticipation, wv
   first[is.na(first) | !is.finite(first) | first == 0] <- 0
   y <- as.numeric(y[fin])
   X <- X[fin, , drop = FALSE]
-  if (anyDuplicated(data.frame(id, time))) {
+  if (panel_pairs_duplicated(id, time)) {
     stop("each individual must be observed at most once per period", call. = FALSE)
   }
   tlist <- sort(unique(time))
@@ -370,21 +371,20 @@ attgt_prepare <- function(formula, data, index, treat, control, anticipation, wv
   X <- X[keep, , drop = FALSE]
   tlist <- sort(unique(time))
   nT <- length(tlist)
-  counts <- table(id)
-  full <- names(counts)[counts == nT]
-  bal <- as.character(id) %in% full
+  code <- match(id, unique(id))
+  counts <- tabulate(code)
+  bal <- counts[code] == nT
   if (!all(bal)) {
-    warning(length(counts) - length(full), " individuals are not observed in every period ",
+    warning(sum(counts != nT), " individuals are not observed in every period ",
             "and are dropped to balance the panel", call. = FALSE)
-    dropped$unbalanced <- length(counts) - length(full)
+    dropped$unbalanced <- sum(counts != nT)
   }
   id <- id[bal]; time <- time[bal]; first <- first[bal]; y <- y[bal]; wt <- wt[bal]; cl <- cl[bal]
   X <- X[bal, , drop = FALSE]
   if (!length(id)) stop("no individuals left after balancing the panel", call. = FALSE)
   if (!is.null(wv)) did_constant(wt, id, "weights")
   if (!is.null(cv)) {
-    clid <- tapply(as.character(cl), id, function(x) length(unique(x)))
-    if (any(clid > 1L)) stop("'cluster' must be constant within individuals", call. = FALSE)
+    if (varies_within(as.character(cl), id)) stop("'cluster' must be constant within individuals", call. = FALSE)
   }
   ids <- sort(unique(id))
   n <- length(ids)
@@ -457,34 +457,37 @@ attgt_2x2 <- function(dy, D, X, method, w = NULL, trim = 0.995) {
     H <- crossprod(X, w * ps * (1 - ps) * X)
     lin_ps <- (w * (D - ps) * X) %*% (chol2inv(chol(H)) * n)
   }
+  # mean(w1) and mean(w0) are computed once (two-pass means of length n)
   if (method == "reg") {
     w1 <- w * D
-    eta1 <- mean(w1 * dy) / mean(w1)
-    eta0 <- mean(w1 * fitted) / mean(w1)
+    m1 <- mean(w1)
+    eta1 <- mean(w1 * dy) / m1
+    eta0 <- mean(w1 * fitted) / m1
     M1 <- colSums(w1 * X) / n
-    inf1 <- (w1 * dy - w1 * eta1) / mean(w1)
-    inf0 <- (w1 * fitted - w1 * eta0 + as.numeric(lin_or %*% M1)) / mean(w1)
+    inf1 <- (w1 * dy - w1 * eta1) / m1
+    inf0 <- (w1 * fitted - w1 * eta0 + as.numeric(lin_or %*% M1)) / m1
     return(list(att = eta1 - eta0, inf = inf1 - inf0))
   }
   w1 <- trimmed * w * D
   w0 <- trimmed * w * ps * (1 - D) / (1 - ps)
+  m1 <- mean(w1)
+  m0 <- mean(w0)
   if (method == "ipw") {
-    eta1 <- mean(w1 * dy) / mean(w1)
-    eta0 <- mean(w0 * dy) / mean(w0)
+    eta1 <- mean(w1 * dy) / m1
+    eta0 <- mean(w0 * dy) / m0
     M2 <- colSums(w0 * (dy - eta0) * X) / n
-    inf1 <- (w1 * dy - w1 * eta1) / mean(w1)
-    inf0 <- (w0 * dy - w0 * eta0 + as.numeric(lin_ps %*% M2)) / mean(w0)
+    inf1 <- (w1 * dy - w1 * eta1) / m1
+    inf0 <- (w0 * dy - w0 * eta0 + as.numeric(lin_ps %*% M2)) / m0
     return(list(att = eta1 - eta0, inf = inf1 - inf0))
   }
   r <- dy - fitted
-  eta1 <- mean(w1 * r) / mean(w1)
-  eta0 <- mean(w0 * r) / mean(w0)
+  eta1 <- mean(w1 * r) / m1
+  eta0 <- mean(w0 * r) / m0
   M1 <- colSums(w1 * X) / n
   M2 <- colSums(w0 * (r - eta0) * X) / n
   M3 <- colSums(w0 * X) / n
-  inf1 <- (w1 * r - w1 * eta1 - as.numeric(lin_or %*% M1)) / mean(w1)
-  inf0 <- (w0 * r - w0 * eta0 + as.numeric(lin_ps %*% M2) - as.numeric(lin_or %*% M3)) /
-    mean(w0)
+  inf1 <- (w1 * r - w1 * eta1 - as.numeric(lin_or %*% M1)) / m1
+  inf0 <- (w0 * r - w0 * eta0 + as.numeric(lin_ps %*% M2) - as.numeric(lin_or %*% M3)) / m0
   list(att = eta1 - eta0, inf = inf1 - inf0)
 }
 
@@ -831,8 +834,15 @@ did_weights <- function(weights, data) {
 #' @keywords internal
 #' @noRd
 did_constant <- function(v, id, what) {
-  rng <- tapply(v, id, function(x) max(x) - min(x))
-  if (any(rng > sqrt(.Machine$double.eps) * pmax(1, tapply(abs(v), id, max)))) {
+  # per-individual minimum and maximum from one sort instead of one R call
+  # per individual
+  o <- order(id, v)
+  vs <- v[o]
+  is <- id[o]
+  lo <- vs[!duplicated(is)]
+  hi <- vs[!duplicated(is, fromLast = TRUE)]
+  rng <- hi - lo
+  if (any(rng > sqrt(.Machine$double.eps) * pmax(1, abs(lo), abs(hi)))) {
     stop("'", what, "' must be constant within individuals", call. = FALSE)
   }
   invisible(TRUE)
