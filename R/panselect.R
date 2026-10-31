@@ -104,13 +104,10 @@
 #' @seealso [summary.panselect()], [vcov.panselect()] and [predict.panselect()]
 #'   for the fitted model, [tidy-methods] for `tidy()` and `glance()`.
 #' @section Validation:
-#' No R package implements this panel estimator, so the package's validation
-#' suite on GitHub checks it step by step: the period probits against
-#' `stats::glm()`, the second step against `plm::plm()` and `stats::lm()` with
-#' cluster covariances from `plm::vcovHC()` and `sandwich::vcovCL()`, the
-#' one-period case against the two-step `sampleSelection::heckit()` on the Mroz
-#' (1987) data, and the recovery of the true coefficients in simulations with
-#' selection on the idiosyncratic error.
+#' No other R package implements this panel estimator. Each step, and the
+#' recovery of the true coefficients in simulations with selection on the
+#' idiosyncratic error, are checked in the package tests and in the
+#' validation suite; see the validation article on the package website.
 #' @examples
 #' # Simulated cohort of 300 patients followed over 4 waves. A quality of
 #' # life score is observed only for patients who answer the questionnaire;

@@ -130,13 +130,10 @@ covariance is reported as well.
 
 \section{Validation}{
 
-No R package implements this panel estimator, so the package's validation
-suite on GitHub checks it step by step: the period probits against
-\code{stats::glm()}, the second step against \code{plm::plm()} and \code{stats::lm()} with
-cluster covariances from \code{plm::vcovHC()} and \code{sandwich::vcovCL()}, the
-one-period case against the two-step \code{sampleSelection::heckit()} on the Mroz
-(1987) data, and the recovery of the true coefficients in simulations with
-selection on the idiosyncratic error.
+No other R package implements this panel estimator. Each step, and the
+recovery of the true coefficients in simulations with selection on the
+idiosyncratic error, are checked in the package tests and in the
+validation suite; see the validation article on the package website.
 }
 
 \examples{
