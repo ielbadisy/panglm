@@ -322,6 +322,10 @@ attgt_prepare <- function(formula, data, index, treat, control, anticipation, wv
   y <- stats::model.response(mf)
   if (!is.numeric(y) && !is.logical(y)) stop("the outcome must be numeric", call. = FALSE)
   X <- stats::model.matrix(rhs, mf)
+  # row names are not used below; dropping them avoids building one string
+  # per row when y and X are subset
+  names(y) <- NULL
+  rownames(X) <- NULL
   # the row-wise check of X is needed only when some value is not finite
   x_fin <- if (all(is.finite(X))) TRUE else rowSums(!is.finite(X)) == 0
   fin <- is.finite(as.numeric(y)) & x_fin & is.finite(data[[index[2]]][ok])
