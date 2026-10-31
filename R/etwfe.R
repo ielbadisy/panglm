@@ -133,11 +133,8 @@
 #'   26, C31-C66. \doi{10.1093/ectj/utad016}
 #' @family policy evaluation
 #' @section Validation:
-#' Checked against `etwfe::etwfe()` and `etwfe::emfx()` on `did::mpdta` in the
-#' package's validation suite on GitHub: simple, group, calendar and event ATTs
-#' and their standard errors for the linear, Poisson and logit models, both
-#' control groups, with and without controls, sampling weights, `xvar` and
-#' `ivar`.
+#' Numerical accuracy is checked in the package tests and in the validation
+#' suite; see the validation article on the package website.
 #' @examples
 #' # Staggered rollout of a health insurance scheme by region (for example
 #' # RAMED, then AMO, in Morocco): regions join in 2016, 2018 or 2020, the

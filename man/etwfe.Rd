@@ -162,11 +162,8 @@ row per distinct value, so summarise a binary or discrete version of it.
 
 \section{Validation}{
 
-Checked against \code{etwfe::etwfe()} and \code{etwfe::emfx()} on \code{did::mpdta} in the
-package's validation suite on GitHub: simple, group, calendar and event ATTs
-and their standard errors for the linear, Poisson and logit models, both
-control groups, with and without controls, sampling weights, \code{xvar} and
-\code{ivar}.
+Numerical accuracy is checked in the package tests and in the validation
+suite; see the validation article on the package website.
 }
 
 \examples{
