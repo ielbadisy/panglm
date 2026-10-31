@@ -58,10 +58,8 @@ Gaussian family only.
 }
 \section{Validation}{
 
-The classical test is checked against \code{plm::phtest()} in the package tests.
-The Mundlak test is the Wald test on the individual means of the correlated
-random effects fit of \code{\link[=panglm]{panglm()}}, whose pooled and random versions are
-checked to reproduce the within slope.
+Numerical accuracy is checked in the package tests and in the validation
+suite; see the validation article on the package website.
 }
 
 \examples{
