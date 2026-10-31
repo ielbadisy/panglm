@@ -34,6 +34,32 @@ List irls_fit_cpp(const arma::mat& X, const arma::vec& y,
     if ((int) prior.n_elem != n) stop("weights must have one value per row of X");
   }
   double n_pos = (double) arma::accu(prior > 0.0);
+
+  // Gaussian with identity link: the IRLS weights are the prior weights and
+  // the working response is y, so the loop below reaches the weighted least
+  // squares solution at its first step. It is computed directly here.
+  // Iterations are reported as 2, as glm() does for this model.
+  if (family == GAUSSIAN && link == IDENTITY) {
+    arma::vec sw = arma::sqrt(prior);
+    arma::mat Xw = X.each_col() % sw;
+    arma::mat XtWX_inv = arma::inv_sympd(Xw.t() * Xw + 1e-12 * arma::eye(k, k));
+    arma::vec beta = XtWX_inv * (Xw.t() * (y % sw));
+    arma::vec mu = X * beta;
+    arma::vec resid = y - mu;
+    double rss = arma::dot(prior % resid, resid);
+    double slogw = 0.0;
+    for (int i = 0; i < n; ++i) if (prior[i] > 0.0) slogw += std::log(prior[i]);
+    double loglik = -0.5 * n_pos * (std::log(2.0 * M_PI * rss / n_pos) + 1.0) + 0.5 * slogw;
+    return List::create(
+      Named("coefficients") = beta,
+      Named("vcov_unscaled") = XtWX_inv,
+      Named("fitted.values") = mu,
+      Named("loglik") = loglik,
+      Named("dispersion") = rss / std::max(1.0, n_pos - k),
+      Named("iterations") = 2
+    );
+  }
+
   arma::vec beta = arma::zeros<arma::vec>(k);
 
   // sane starting values
