@@ -25,6 +25,7 @@ List within_poisson_fit_cpp(const arma::mat& X, const arma::vec& y,
   for (int i = 0; i < n; ++i) Yi[(int)group_id[i]] += y[i];
 
   arma::vec beta = arma::zeros<arma::vec>(k);
+  const double lgy = arma::sum(arma::lgamma(y + 1.0)); // constant in beta
 
   auto eval = [&](const arma::vec& b, arma::vec& grad, arma::mat& hess, double& ll) {
     arma::vec eta = X * b;
@@ -52,15 +53,18 @@ List within_poisson_fit_cpp(const arma::mat& X, const arma::vec& y,
 
     hess = H1 + H2;
 
-    double lnA = arma::sum(y % eta) - arma::sum(arma::lgamma(y + 1.0));
+    double lnA = arma::sum(y % eta) - lgy;
     double lnB = arma::sum(arma::lgamma(Yi + 1.0) - arma::log(Li) % Yi);
     ll = lnA + lnB;
   };
 
   arma::vec grad; arma::mat hess; double ll, ll_old = -arma::datum::inf;
   int iter = 0;
+  // The gradient and Hessian of the accepted point are carried into the
+  // next Newton step, so each step costs one evaluation (plus any
+  // step-halvings) instead of re-evaluating the point just accepted.
+  eval(beta, grad, hess, ll);
   for (iter = 0; iter < maxit; ++iter) {
-    eval(beta, grad, hess, ll);
     arma::vec step = arma::solve(hess, grad, arma::solve_opts::likely_sympd);
 
     double lambda = 1.0;
@@ -77,11 +81,13 @@ List within_poisson_fit_cpp(const arma::mat& X, const arma::vec& y,
 
     bool converged = std::fabs(ll_new - ll) < tol * (std::fabs(ll) + 1.0);
     beta = beta_new;
+    grad = g2;
+    hess = h2;
+    ll = ll_new;
     ll_old = ll_new;
     if (converged) { iter++; break; }
   }
 
-  eval(beta, grad, hess, ll_old); // Hessian at the converged beta, for the vcov below
   arma::mat vcov = arma::inv_sympd(-hess); // hess is negative-definite (concave loglik)
 
   return List::create(
