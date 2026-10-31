@@ -22,8 +22,9 @@ options(width = 90)
 
 panglm fits regression models for panel data (pooled, fixed effects,
 random effects and the estimators built on them) for the outcomes and
-designs of applied health econometrics, with every estimator checked
-against an established reference implementation.
+designs of applied health econometrics, from one formula interface and
+one set of post-estimation tools (robust and cluster covariances,
+partial effects, specification tests, prediction and tidy output).
 
 ## Installation
 
@@ -38,23 +39,23 @@ remotes::install_github("ielbadisy/panglm")
 
 ## What it fits
 
-| Task | Function | Validated against |
-|---|---|---|
-| Continuous, binary, count, ordered, positive, bounded and censored outcomes (pooled, within, between, random effects) | `panglm()` | `stats::glm()`, plm, pglm, fixest, `survival::clogit()`, `MASS::polr()`, ordinal, `AER::tobit()`, betareg, glmmTMB |
-| Random slopes | `panglm(model = "random", random = ~ x)` | lme4, glmmTMB, GLMMadaptive |
-| Costs with zeros (two-part model) | `twopart()` | `stats::glm()`, numerical integration |
-| Counts with structural zeros | `panhurdle()` | `pscl::hurdle()`, `survival::clogit()` |
-| Difference-in-differences and event studies | `did()`, `eventstudy()` | fixest, `survival::clogit()` |
-| Staggered adoption | `attgt()`, `etwfe()` | `did::att_gt()`, `etwfe::etwfe()` |
-| Instrumental variables and Hausman-Taylor | `paniv()` | `plm::plm()`, `plm::pht()`, `AER::ivreg()`, fixest |
-| Dynamic panels (difference and system GMM) | `pangmm()` | `plm::pgmm()` |
-| Sample selection | `panselect()` | `sampleSelection::heckit()`, plm |
-| Quantile regression | `panqr()` | `quantreg::rq()` |
-| Latent classes | `panfmm()`, `panfmmselect()` | flexmix |
-| Specification tests | `panhausman()`, `pandispersiontest()`, `jointtest()`, `lineartest()` | `plm::phtest()` |
+| Task | Function |
+|---|---|
+| Continuous, binary, count, ordered, positive, bounded and censored outcomes (pooled, within, between, random effects) | `panglm()` |
+| Random slopes | `panglm(model = "random", random = ~ x)` |
+| Costs with zeros (two-part model) | `twopart()` |
+| Counts with structural zeros | `panhurdle()` |
+| Difference-in-differences and event studies | `did()`, `eventstudy()` |
+| Staggered adoption | `attgt()`, `etwfe()` |
+| Instrumental variables and Hausman-Taylor | `paniv()` |
+| Dynamic panels (difference and system GMM) | `pangmm()` |
+| Sample selection | `panselect()` |
+| Quantile regression | `panqr()` |
+| Latent classes | `panfmm()`, `panfmmselect()` |
+| Specification tests | `panhausman()`, `pandispersiontest()`, `jointtest()`, `lineartest()` |
 
-Each help page has a Validation section, and the comparisons themselves
-are in the [validation suite](https://github.com/ielbadisy/panglm/tree/main/validation).
+Numerical accuracy is documented in the
+[validation article](https://elbadisyimad.com/panglm/articles/validation.html).
 
 ## Example
 
