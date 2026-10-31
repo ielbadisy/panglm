@@ -266,18 +266,6 @@ slopes are attenuated by the ceiling, by about 40% here, since 43% of
 the observations sit at 1. Use `partialeffects()` for effects on the
 observed, censored outcome.
 
-## Validated against
-
-Fixed-effects Poisson reproduces `pglm` and `fixest::fepois()`;
-negative binomial fits reproduce `MASS::glm.nb()` and `pglm`;
-random-effects Poisson and negative binomial reproduce `pglm`; the
-hurdle count part reproduces `pscl::hurdle()` on the same data; the
-two-part gamma part reproduces `stats::glm()` and `MASS`; beta models
-reproduce `betareg` and `glmmTMB`; ordered models reproduce
-`MASS::polr()`, `ordinal::clmm()` and, for the fixed-effects logit,
-`survival::clogit()`; tobit models reproduce `AER::tobit()` and
-`censReg`. The scripts are in `tests/testthat` and `validation/`.
-
 ## References
 
 Baetschmann, G., Staub, K. E., and Winkelmann, R. (2015). Consistent
