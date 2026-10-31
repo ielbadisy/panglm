@@ -45,10 +45,8 @@
 #' @family panglm methods
 #' @seealso [effectcurve()] for the effect of a spline term across its range.
 #' @section Validation:
-#' Checked against `marginaleffects::avg_slopes()` (pooled probit) and analytic
-#' values (linear and fixed-effects Poisson) in the package tests, and against
-#' hand computations for the Tobit and the population-averaged random-slope
-#' models in the package's validation suite on GitHub.
+#' Numerical accuracy is checked in the package tests and in the validation
+#' suite; see the validation article on the package website.
 #' @examples
 #' data(copd)
 #' fit <- panglm(hospitalized ~ treatment + age + crp, data = copd,
