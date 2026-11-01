@@ -72,7 +72,7 @@
 #'
 #'   Van Ourti, T. (2004). Measuring horizontal inequity in Belgian health
 #'   care using a Gaussian random effects two part count data model.
-#'   *Health Economics*, 13, 705-724. \doi{10.1002/hec.869}
+#'   *Health Economics*, 13, 705-724. \doi{10.1002/hec.920}
 #' @family panel models
 #' @seealso [predict.twopart()], [confint.twopart()] and [partialeffects()] for
 #'   the fitted model, [tidy-methods] for `tidy()` and `glance()`.
