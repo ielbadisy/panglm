@@ -12,6 +12,10 @@
 #' contrast variance `V_fe - V_re` relies on the random-effects estimator
 #' being efficient under the null, which holds only for model-based
 #' covariances and independent, homoskedastic idiosyncratic errors.
+#' In finite samples `V_fe - V_re` need not be positive definite and the
+#' statistic can then be negative. The signed value is returned, with
+#' `p.value = NA` and a warning (`plm::phtest()` reports its absolute value
+#' instead); the regression-based `method = "mundlak"` has no such problem.
 #'
 #' `method = "mundlak"` is the regression-based (correlated random effects)
 #' version of the same test (Mundlak 1978; Wooldridge 2010, section 10.7.3),
@@ -31,7 +35,8 @@
 #'   `"cluster"` (default), `"HC1"`, `"classical"`
 #' @return a list with class `"panglm_hausman"`: `statistic`, `parameter`
 #'   (df; two values for an F reference), `p.value`, `method`,
-#'   `distribution` (`"chisq"` or `"F"`), and the compared coefficient
+#'   `distribution` (`"chisq"` or `"F"`), `pos_def` (`"classical"` only:
+#'   whether `V_fe - V_re` is positive definite), and the compared coefficient
 #'   vectors (`coef_fe`, `coef_re` for `"classical"`; `coef_mean` for
 #'   `"mundlak"`)
 #' @family tests
@@ -78,10 +83,24 @@ panhausman <- function(fe, re = NULL, method = c("classical", "mundlak"), data =
 
   stat <- as.numeric(t(diff) %*% V_diff_inv %*% diff)
   df <- length(common)
-  pval <- stats::pchisq(stat, df, lower.tail = FALSE)
+  ev <- eigen((V_diff + t(V_diff)) / 2, symmetric = TRUE, only.values = TRUE)$values
+  pos_def <- all(ev > max(abs(ev)) * sqrt(.Machine$double.eps))
+  if (stat < 0) {
+    pval <- NA_real_
+    warning("V_fe - V_re is not positive definite and the Hausman statistic is ",
+            "negative, so no p-value is reported; use method = \"mundlak\"",
+            call. = FALSE)
+  } else {
+    pval <- stats::pchisq(stat, df, lower.tail = FALSE)
+    if (!pos_def) {
+      warning("V_fe - V_re is not positive definite, so the chi-square reference ",
+              "is unreliable; consider method = \"mundlak\"", call. = FALSE)
+    }
+  }
 
   out <- list(statistic = stat, parameter = df, p.value = pval, method = "classical",
-              distribution = "chisq", coef_fe = b_fe, coef_re = b_re, common = common)
+              distribution = "chisq", coef_fe = b_fe, coef_re = b_re, common = common,
+              pos_def = pos_def)
   class(out) <- "panglm_hausman"
   out
 }
@@ -142,18 +161,21 @@ MASS_ginv <- function(x) {
 #' @export
 print.panglm_hausman <- function(x, digits = max(3, getOption("digits") - 3), ...) {
   if (identical(x$method, "mundlak")) {
-    cat("\n\tMundlak specification test (fixed vs. random effects), vcov:", x$vcov_type, "\n\n")
+    cat("\n\tMundlak specification test (fixed vs. random effects), vcov: ", x$vcov_type, "\n\n", sep = "")
   } else {
     cat("\n\tHausman specification test (fixed vs. random effects)\n\n")
   }
   if (identical(x$distribution, "F")) {
-    cat("F =", format(x$statistic, digits = digits),
-        ", df =", paste(x$parameter, collapse = ", "),
-        ", p-value =", format.pval(x$p.value, digits = digits), "\n")
+    cat("F = ", format(x$statistic, digits = digits),
+        ", df = ", paste(x$parameter, collapse = ", "),
+        ", p-value = ", format.pval(x$p.value, digits = digits), "\n", sep = "")
   } else {
-    cat("chisq =", format(x$statistic, digits = digits),
-        ", df =", x$parameter,
-        ", p-value =", format.pval(x$p.value, digits = digits), "\n")
+    cat("chisq = ", format(x$statistic, digits = digits),
+        ", df = ", x$parameter,
+        ", p-value = ", format.pval(x$p.value, digits = digits), "\n", sep = "")
+    if (isFALSE(x$pos_def)) {
+      cat("note: V_fe - V_re is not positive definite; prefer method = \"mundlak\"\n")
+    }
   }
   cat("alternative hypothesis: one model is inconsistent\n\n")
   invisible(x)

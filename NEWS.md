@@ -91,6 +91,14 @@ panels ship with the package. Estimates are unchanged.
 * New vignette `vignette("panglm-datasets")`.
 * Lazy-loaded data are compressed with xz.
 
+## Bug fixes
+
+* `panhausman(method = "classical")` no longer reports p = 1 when
+  `V_fe - V_re` is not positive definite and the statistic is negative:
+  the signed statistic is kept, the p-value is `NA` and a warning points
+  to `method = "mundlak"`. The print method drops the stray space before
+  commas.
+
 # panglm 1.6.2
 
 Speed release for large panels. Estimates are unchanged: the

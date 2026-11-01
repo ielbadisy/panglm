@@ -28,7 +28,8 @@ required for \code{method = "classical"}, ignored for \code{"mundlak"}}
 \value{
 a list with class \code{"panglm_hausman"}: \code{statistic}, \code{parameter}
 (df; two values for an F reference), \code{p.value}, \code{method},
-\code{distribution} (\code{"chisq"} or \code{"F"}), and the compared coefficient
+\code{distribution} (\code{"chisq"} or \code{"F"}), \code{pos_def} (\code{"classical"} only:
+whether \code{V_fe - V_re} is positive definite), and the compared coefficient
 vectors (\code{coef_fe}, \code{coef_re} for \code{"classical"}; \code{coef_mean} for
 \code{"mundlak"})
 }
@@ -46,6 +47,10 @@ dropped), with a chi-square reference. It always uses the model-based
 contrast variance \code{V_fe - V_re} relies on the random-effects estimator
 being efficient under the null, which holds only for model-based
 covariances and independent, homoskedastic idiosyncratic errors.
+In finite samples \code{V_fe - V_re} need not be positive definite and the
+statistic can then be negative. The signed value is returned, with
+\code{p.value = NA} and a warning (\code{plm::phtest()} reports its absolute value
+instead); the regression-based \code{method = "mundlak"} has no such problem.
 
 \code{method = "mundlak"} is the regression-based (correlated random effects)
 version of the same test (Mundlak 1978; Wooldridge 2010, section 10.7.3),

@@ -113,3 +113,17 @@ test_that("random binomial with R = 1 is the Laplace approximation of glmmTMB", 
                  tolerance = 1e-4)
   }
 })
+
+test_that("panhausman flags a contrast that is not positive definite", {
+  data(cigar)
+  ix <- c("state", "year")
+  fe <- panglm(lnc ~ lnp + lnpn + lny, data = cigar, index = ix, model = "within")
+  re <- panglm(lnc ~ lnp + lnpn + lny, data = cigar, index = ix, model = "random")
+  expect_warning(h <- panhausman(fe, re), "not positive definite")
+  ## same quadratic form as plm::phtest(), which reports abs(): 64.215
+  expect_equal(h$statistic, -64.215, tolerance = 1e-4)
+  expect_true(is.na(h$p.value))
+  expect_false(h$pos_def)
+  out <- capture.output(print(h))
+  expect_true(any(grepl("^chisq = -64.2[0-9]*, df = 3, p-value = NA$", out)))
+})
