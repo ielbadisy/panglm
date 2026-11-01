@@ -177,3 +177,42 @@ test_that("the reference period is marked only where the estimate is exactly zer
   te <- panglm:::etwfe_plottab(summary(ew, type = "event"))
   expect_equal(te$level[te$ref], -1)
 })
+
+test_that("attgt heat maps show the ATT(g, t) table and flag pre-treatment cells", {
+  d <- did_plot_panel(3)
+  fit <- attgt(y ~ 1, d, index = c("id", "t"), treat = "first")
+  pdf(tempfile(fileext = ".pdf")); on.exit(dev.off())
+  hm <- expect_invisible(plot(fit, type = "heatmap"))
+  est <- fit$estimates
+  expect_equal(hm$estimate, est$estimate[is.finite(est$estimate)])
+  expect_identical(hm$pre, hm$time < hm$group)
+  expect_true(any(hm$pre) && any(!hm$pre))
+  hw <- plot(fit, type = "heatmap", cells = TRUE, digits = 1, min_e = 3, max_e = 6,
+             ylim = c(-1, 1), main = "m")
+  expect_true(all(hw$time >= 3 & hw$time <= 6))
+  expect_error(plot(fit, type = "heatmap", cells = NA), "cells")
+  expect_error(plot(fit, type = "heatmap", min_e = 5, max_e = 2), "min_e")
+})
+
+test_that("etwfe heat maps aggregate back to the event-study estimates", {
+  d <- did_plot_panel(4)
+  fit <- etwfe(y ~ 1, d, index = c("id", "t"), treat = "first", control = "never")
+  pdf(tempfile(fileext = ".pdf")); on.exit(dev.off())
+  hm <- expect_invisible(plot(fit, type = "heatmap", cells = TRUE))
+  # one row per cohort and period, the reference cell g - 1 at zero
+  expect_equal(nrow(hm), 2 * 8)
+  expect_equal(hm$estimate[hm$time == hm$group - 1], c(0, 0))
+  expect_identical(hm$pre, hm$time < hm$group)
+  # cell-size weighted means of ATT(g, t) reproduce the event aggregation
+  rows <- fit$rows
+  n <- table(paste(rows$group, rows$time)[is.finite(rows$group)])
+  hm$n <- as.numeric(n[paste(hm$group, hm$time)])
+  ev <- summary(fit, type = "event")$estimates
+  agg <- sapply(split(hm, hm$event), function(z) sum(z$n * z$estimate) / sum(z$n))
+  expect_equal(unname(agg[as.character(ev$level)]), ev$estimate, tolerance = 1e-10)
+  # with the not-yet-treated control there are no pre-treatment cells
+  fn <- etwfe(y ~ 1, d, index = c("id", "t"), treat = "first", control = "notyet")
+  hn <- plot(fn, type = "heatmap")
+  expect_false(any(hn$pre))
+  expect_equal(nrow(hn), (8 - 4 + 1) + (8 - 6 + 1))
+})

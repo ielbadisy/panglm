@@ -777,6 +777,14 @@ nobs.panglm_attgt <- function(object, ...) object$n
 #' The uniform bands of a `cband = TRUE` fit are simultaneous over all
 #' `ATT(g, t)`.
 #'
+#' With `type = "heatmap"`, the `ATT(g, t)` are shown as a cohort (rows,
+#' earliest adopters at the top) by calendar period (columns) heat map,
+#' on a blue-white-red scale centred at zero with a colour bar.
+#' Pre-treatment cells are hatched, a thick black edge marks the adoption
+#' of each cohort and grey cells have no estimate. With `cells = TRUE` the
+#' estimates are printed in the cells, in bold with a star when the
+#' pointwise confidence interval excludes zero.
+#'
 #' @section Styles:
 #' `style = "classic"` (the default) is the textbook dynamic
 #' difference-in-differences figure: filled points with capped whiskers,
@@ -800,15 +808,18 @@ nobs.panglm_attgt <- function(object, ...) object$n
 #'
 #' @param x a `"panglm_attgt"` fit from [attgt()], or its summary
 #' @param type what to plot (for a fit): `"dynamic"` (event study),
-#'   `"group"`, `"calendar"` or `"gt"` (the group-time effects, one panel
-#'   per cohort)
+#'   `"group"`, `"calendar"`, `"gt"` (the group-time effects, one panel
+#'   per cohort) or `"heatmap"` (the group-time effects as a cohort by
+#'   period heat map)
 #' @param min_e,max_e event window (event time for `"dynamic"`, calendar
-#'   time for `"gt"`)
+#'   time for `"gt"` and `"heatmap"`)
 #' @param ncol number of panel columns for `type = "gt"` (default: about
 #'   the square root of the number of cohorts)
 #' @param xlab,ylab,main axis labels and title
-#' @param ylim y-axis limits
-#' @param legend logical: add a compact legend of the symbols
+#' @param ylim y-axis limits; for the heat map, the limits of the colour
+#'   scale (default: symmetric around zero)
+#' @param legend logical: add a compact legend of the symbols (the heat map
+#'   always has its colour bar)
 #' @param style `"classic"` (default), `"points"` or `"line"` (see
 #'   Styles); for the event-time, cohort and calendar plots
 #' @param ref event time of the reference period, marked when its estimate
@@ -822,10 +833,13 @@ nobs.panglm_attgt <- function(object, ...) object$n
 #'   `NULL` suppresses it
 #' @param caps logical: draw caps on the confidence-interval whiskers; the
 #'   default (`NULL`) draws them for `style = "classic"` only
+#' @param cells logical: print the estimates in the cells of the heat map
+#' @param digits number of decimals of the printed estimates
 #' @param ... passed to [summary.panglm_attgt()] (`balance_e`, `level`) and
 #'   then to [graphics::plot()]
-#' @return the plotted summary, invisibly; for `type = "gt"`, the plotted
-#'   rows of the `estimates` of the fit
+#' @return the plotted summary, invisibly; for `type = "gt"` and
+#'   `"heatmap"`, the plotted rows of the `estimates` of the fit (with a
+#'   logical column `pre` for the heat map)
 #' @family attgt methods
 #' @examples
 #' set.seed(2)
@@ -838,20 +852,33 @@ nobs.panglm_attgt <- function(object, ...) object$n
 #' plot(fit, min_e = -2, max_e = 2, legend = TRUE)
 #' plot(fit, type = "gt")
 #' plot(fit, type = "group")
+#' plot(fit, type = "heatmap", cells = TRUE)
 #' plot(fit, style = "points", legend = TRUE)
 #' plot(fit, style = "line")
 #' # with a universal base period, event time -1 is the reference (zero)
 #' fu <- attgt(y ~ 1, d, index = c("id", "t"), treat = "first", base = "universal")
 #' plot(fu, min_e = -3, max_e = 3)
 #' @export
-plot.panglm_attgt <- function(x, type = c("dynamic", "group", "calendar", "gt"),
+plot.panglm_attgt <- function(x, type = c("dynamic", "group", "calendar", "gt", "heatmap"),
                               min_e = -Inf, max_e = Inf, ncol = NULL, xlab = NULL,
                               ylab = "Estimated ATT", main = NULL, ylim = NULL, legend = FALSE,
                               style = c("classic", "points", "line"), ref = -1, onset = NULL,
-                              onset_label = NA, caps = NULL, ...) {
+                              onset_label = NA, caps = NULL, cells = FALSE, digits = 2,
+                              ...) {
   type <- match.arg(type)
   style <- match.arg(style)
   did_check_window(min_e, max_e)
+  if (type == "heatmap") {
+    est <- x$estimates
+    est <- est[est$time >= min_e & est$time <= max_e, , drop = FALSE]
+    sizes <- vapply(x$groups, function(g) sum(x$units$group == g), numeric(1))
+    names(sizes) <- as.character(x$groups)
+    if (missing(ylab)) ylab <- "Treatment cohort"
+    out <- did_heatmap(est, sizes = sizes, cells = cells, digits = digits,
+                       xlab = if (is.null(xlab)) "Period" else xlab, ylab = ylab,
+                       main = main, zlim = ylim, title = "ATT(g, t)", ...)
+    return(invisible(out))
+  }
   if (type == "gt") {
     return(attgt_plotgt(x, min_e = min_e, max_e = max_e, ncol = ncol, xlab = xlab,
                         ylab = ylab, main = main, ylim = ylim, legend = legend, ...))

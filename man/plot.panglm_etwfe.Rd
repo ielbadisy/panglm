@@ -7,7 +7,7 @@
 \usage{
 \method{plot}{panglm_etwfe}(
   x,
-  type = c("event", "group", "calendar"),
+  type = c("event", "group", "calendar", "heatmap"),
   min_e = -Inf,
   max_e = Inf,
   xlab = NULL,
@@ -20,6 +20,8 @@
   onset = NULL,
   onset_label = NA,
   caps = NULL,
+  cells = FALSE,
+  digits = 2,
   ...
 )
 
@@ -44,10 +46,11 @@
 \arguments{
 \item{x}{a \code{"panglm_etwfe"} fit from \code{\link[=etwfe]{etwfe()}}, or its summary}
 
-\item{type}{aggregation to plot (for a fit): \code{"event"}, \code{"group"} or
-\code{"calendar"}}
+\item{type}{aggregation to plot (for a fit): \code{"event"}, \code{"group"},
+\code{"calendar"} or \code{"heatmap"} (cohort by period heat map of ATT(g, t))}
 
-\item{min_e, max_e}{event window to plot (event-time plots only)}
+\item{min_e, max_e}{event window to plot (event time for the event-time
+plot, calendar time for the heat map)}
 
 \item{xlab, ylab, main}{axis labels and title}
 
@@ -74,10 +77,15 @@ otherwise}
 \item{caps}{logical: draw caps on the confidence-interval whiskers; the
 default (\code{NULL}) draws them for \code{style = "classic"} only}
 
+\item{cells}{logical: print the estimates in the cells of the heat map}
+
+\item{digits}{number of decimals of the printed estimates}
+
 \item{...}{passed to \code{\link[graphics:plot.default]{graphics::plot()}}}
 }
 \value{
-the plotted summary, invisibly
+the plotted summary, invisibly; for the heat map, the table of
+ATT(g, t) with a logical column \code{pre} (pre-treatment cell)
 }
 \description{
 Plots the event-study aggregation of an \code{\link[=etwfe]{etwfe()}} fit (or the cohort or
@@ -85,6 +93,11 @@ calendar aggregation) with pointwise confidence intervals, in the
 styles of \code{\link[=plot.panglm_attgt]{plot.panglm_attgt()}} (see its Styles section). The reference
 period (event time \code{-1} with \code{control = "never"}) is drawn as an open
 symbol at zero.
+}
+\details{
+\code{type = "heatmap"} draws the cohort-by-period effects ATT(g, t) on the
+response scale as a heat map, as for \code{\link[=plot.panglm_attgt]{plot.panglm_attgt()}}; with
+\code{control = "never"} the reference cell \code{g - 1} of each cohort is zero.
 }
 \examples{
 set.seed(2)
@@ -97,6 +110,7 @@ plot(fit)
 plot(fit, min_e = -3, max_e = 3, legend = TRUE)
 plot(fit, style = "points", legend = TRUE)
 plot(fit, style = "line")
+plot(fit, type = "heatmap", cells = TRUE)
 }
 \seealso{
 Other etwfe methods: 

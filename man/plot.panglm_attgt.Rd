@@ -7,7 +7,7 @@
 \usage{
 \method{plot}{panglm_attgt}(
   x,
-  type = c("dynamic", "group", "calendar", "gt"),
+  type = c("dynamic", "group", "calendar", "gt", "heatmap"),
   min_e = -Inf,
   max_e = Inf,
   ncol = NULL,
@@ -21,6 +21,8 @@
   onset = NULL,
   onset_label = NA,
   caps = NULL,
+  cells = FALSE,
+  digits = 2,
   ...
 )
 
@@ -46,20 +48,23 @@
 \item{x}{a \code{"panglm_attgt"} fit from \code{\link[=attgt]{attgt()}}, or its summary}
 
 \item{type}{what to plot (for a fit): \code{"dynamic"} (event study),
-\code{"group"}, \code{"calendar"} or \code{"gt"} (the group-time effects, one panel
-per cohort)}
+\code{"group"}, \code{"calendar"}, \code{"gt"} (the group-time effects, one panel
+per cohort) or \code{"heatmap"} (the group-time effects as a cohort by
+period heat map)}
 
 \item{min_e, max_e}{event window (event time for \code{"dynamic"}, calendar
-time for \code{"gt"})}
+time for \code{"gt"} and \code{"heatmap"})}
 
 \item{ncol}{number of panel columns for \code{type = "gt"} (default: about
 the square root of the number of cohorts)}
 
 \item{xlab, ylab, main}{axis labels and title}
 
-\item{ylim}{y-axis limits}
+\item{ylim}{y-axis limits; for the heat map, the limits of the colour
+scale (default: symmetric around zero)}
 
-\item{legend}{logical: add a compact legend of the symbols}
+\item{legend}{logical: add a compact legend of the symbols (the heat map
+always has its colour bar)}
 
 \item{style}{\code{"classic"} (default), \code{"points"} or \code{"line"} (see
 Styles); for the event-time, cohort and calendar plots}
@@ -79,12 +84,17 @@ otherwise}
 \item{caps}{logical: draw caps on the confidence-interval whiskers; the
 default (\code{NULL}) draws them for \code{style = "classic"} only}
 
+\item{cells}{logical: print the estimates in the cells of the heat map}
+
+\item{digits}{number of decimals of the printed estimates}
+
 \item{...}{passed to \code{\link[=summary.panglm_attgt]{summary.panglm_attgt()}} (\code{balance_e}, \code{level}) and
 then to \code{\link[graphics:plot.default]{graphics::plot()}}}
 }
 \value{
-the plotted summary, invisibly; for \code{type = "gt"}, the plotted
-rows of the \code{estimates} of the fit
+the plotted summary, invisibly; for \code{type = "gt"} and
+\code{"heatmap"}, the plotted rows of the \code{estimates} of the fit (with a
+logical column \code{pre} for the heat map)
 }
 \description{
 Plots the dynamic aggregation of \code{\link[=attgt]{attgt()}} (\code{ATT(e)} by event time), the
@@ -101,6 +111,14 @@ With \code{type = "gt"}, one small panel per treatment cohort shows
 title, a dashed line at adoption and a common y axis (as \code{did::ggdid()}).
 The uniform bands of a \code{cband = TRUE} fit are simultaneous over all
 \code{ATT(g, t)}.
+
+With \code{type = "heatmap"}, the \code{ATT(g, t)} are shown as a cohort (rows,
+earliest adopters at the top) by calendar period (columns) heat map,
+on a blue-white-red scale centred at zero with a colour bar.
+Pre-treatment cells are hatched, a thick black edge marks the adoption
+of each cohort and grey cells have no estimate. With \code{cells = TRUE} the
+estimates are printed in the cells, in bold with a star when the
+pointwise confidence interval excludes zero.
 }
 \section{Styles}{
 
@@ -136,6 +154,7 @@ plot(fit)
 plot(fit, min_e = -2, max_e = 2, legend = TRUE)
 plot(fit, type = "gt")
 plot(fit, type = "group")
+plot(fit, type = "heatmap", cells = TRUE)
 plot(fit, style = "points", legend = TRUE)
 plot(fit, style = "line")
 # with a universal base period, event time -1 is the reference (zero)

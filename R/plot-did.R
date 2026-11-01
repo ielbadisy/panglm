@@ -576,3 +576,137 @@ etwfe_plottab <- function(x, min_e = -Inf, max_e = Inf, ref = NULL) {
   if (x$type != "event") return(tab)
   did_refmark(tab, if (is.null(ref)) -1 else ref)
 }
+
+#' Diverging blue-white-red colours
+#'
+#' @keywords internal
+#' @noRd
+did_diverging <- function(n = 101L) {
+  grDevices::colorRampPalette(c("#2166AC", "#92C5DE", "#F7F7F7", "#F4A582", "#B2182B"))(n)
+}
+
+#' Vertical colour bar in the right margin of the current plot
+#'
+#' @keywords internal
+#' @noRd
+did_colorbar <- function(pal, zlim, title = NULL, frac = c(0.25, 1)) {
+  usr <- graphics::par("usr")
+  xw <- graphics::grconvertX(c(0, 0.18), "inches", "user")
+  xw <- diff(xw)
+  x0 <- usr[2] + diff(graphics::grconvertX(c(0, 0.15), "inches", "user"))
+  yb <- usr[3] + frac[1] * (usr[4] - usr[3])
+  yt <- usr[3] + frac[2] * (usr[4] - usr[3])
+  n <- length(pal)
+  yy <- seq(yb, yt, length.out = n + 1L)
+  graphics::rect(x0, yy[-(n + 1L)], x0 + xw, yy[-1L], col = pal, border = NA, xpd = NA)
+  graphics::rect(x0, yb, x0 + xw, yt, border = "grey40", xpd = NA)
+  at <- pretty(zlim, n = 5)
+  at <- at[at >= zlim[1] & at <= zlim[2]]
+  ya <- yb + (at - zlim[1]) / diff(zlim) * (yt - yb)
+  graphics::segments(x0 + xw, ya, x0 + 1.3 * xw, ya, xpd = NA)
+  graphics::text(x0 + 1.5 * xw, ya, format(at), adj = 0, cex = 0.7, xpd = NA)
+  if (!is.null(title)) {
+    graphics::text(x0, yt + 0.6 * graphics::strheight("M", cex = 0.75), title, adj = c(0, 0),
+                   cex = 0.75, xpd = NA)
+  }
+  invisible(c(x0 = x0, xw = xw))
+}
+
+#' Cohort by period heat map of ATT(g, t)
+#'
+#' @param est data frame with `group`, `time`, `estimate`, `lower`, `upper`
+#' @param sizes named cohort sizes (names are the cohorts), or NULL
+#' @return `est` with `pre`, invisibly
+#' @keywords internal
+#' @noRd
+did_heatmap <- function(est, sizes = NULL, cells = FALSE, digits = 2, xlab = "Period",
+                        ylab = "Treatment cohort", main = NULL, zlim = NULL, legend = TRUE,
+                        title = "ATT", ...) {
+  for (a in c("cells", "legend")) {
+    v <- get(a)
+    if (!is.logical(v) || length(v) != 1L || is.na(v)) {
+      stop("'", a, "' must be TRUE or FALSE", call. = FALSE)
+    }
+  }
+  est <- est[is.finite(est$estimate), , drop = FALSE]
+  if (!nrow(est)) stop("no ATT(g, t) to plot", call. = FALSE)
+  groups <- sort(unique(est$group))
+  periods <- sort(unique(est$time))
+  ng <- length(groups)
+  np <- length(periods)
+  est$pre <- est$time < est$group
+  if (is.null(zlim)) zlim <- c(-1, 1) * max(abs(est$estimate))
+  if (zlim[1] == zlim[2]) zlim <- zlim + c(-1, 1)
+  pal <- did_diverging(101L)
+  z <- matrix(NA_real_, np, ng)
+  ci <- match(est$time, periods)
+  ri <- ng + 1L - match(est$group, groups)
+  z[cbind(ci, ri)] <- pmin(pmax(est$estimate, zlim[1]), zlim[2])
+  rlab <- format(groups)
+  if (!is.null(sizes)) rlab <- paste0(rlab, " (n = ", sizes[as.character(groups)], ")")
+  op <- graphics::par(no.readonly = TRUE)
+  on.exit(graphics::par(op))
+  csi <- graphics::par("csi")
+  lab_w <- max(graphics::strwidth(rlab, units = "inches", cex = 0.8))
+  key_w <- if (legend) {
+    max(graphics::strwidth(c(format(pretty(zlim)), "Pre-treatment", title), units = "inches",
+                           cex = 0.75)) + 0.5
+  } else 0
+  graphics::par(mar = c(4, lab_w / csi + 2.6, if (is.null(main)) 1.5 else 3,
+                        key_w / csi + 1))
+  graphics::plot.new()
+  graphics::plot.window(xlim = c(0.5, np + 0.5), ylim = c(0.5, ng + 0.5), xaxs = "i",
+                        yaxs = "i")
+  graphics::rect(0.5, 0.5, np + 0.5, ng + 0.5, col = "grey88", border = NA)
+  graphics::image(seq_len(np), seq_len(ng), z, col = pal,
+                  breaks = seq(zlim[1], zlim[2], length.out = length(pal) + 1L), add = TRUE,
+                  ...)
+  if (any(est$pre)) {
+    p <- est$pre
+    graphics::rect(ci[p] - 0.5, ri[p] - 0.5, ci[p] + 0.5, ri[p] + 0.5, density = 10,
+                   angle = 45, col = "grey45", border = NA, lwd = 0.6)
+  }
+  graphics::abline(h = seq_len(ng - 1L) + 0.5, v = seq_len(np - 1L) + 0.5, col = "white",
+                   lwd = 1)
+  # adoption: a black edge before the first treated period of each cohort
+  for (j in seq_along(groups)) {
+    x0 <- sum(periods < groups[j]) + 0.5
+    r <- ng + 1L - j
+    if (x0 > 0.5 && x0 < np + 0.5) {
+      graphics::segments(x0, r - 0.5, x0, r + 0.5, lwd = 2.5)
+    }
+  }
+  if (cells) {
+    sig <- is.finite(est$lower) & is.finite(est$upper) & (est$lower > 0 | est$upper < 0)
+    lab <- paste0(formatC(est$estimate, format = "f", digits = digits), ifelse(sig, "*", ""))
+    dark <- abs(est$estimate) > 0.6 * max(abs(zlim))
+    cex <- min(0.75, 0.9 * graphics::par("pin")[1] / np /
+                 max(graphics::strwidth(lab, units = "inches", cex = 1)))
+    graphics::text(ci, ri, lab, cex = cex, font = ifelse(sig, 2, 1),
+                   col = ifelse(dark, "white", "black"))
+  }
+  graphics::box()
+  at <- seq_len(np)
+  if (np > 20L) at <- at[periods %in% pretty(periods)]
+  graphics::axis(1, at = at, labels = periods[at], cex.axis = 0.8)
+  graphics::axis(2, at = ng + 1L - seq_len(ng), labels = rlab, las = 1, cex.axis = 0.8,
+                 tick = FALSE, line = -0.5)
+  graphics::title(xlab = xlab, line = 2.4)
+  graphics::mtext(ylab, side = 2, line = lab_w / csi + 1.2)
+  if (!is.null(main)) graphics::title(main = main)
+  if (legend) {
+    bar <- did_colorbar(pal, zlim, title = title, frac = c(if (any(est$pre)) 0.3 else 0, 0.9))
+    if (any(est$pre)) {
+      usr <- graphics::par("usr")
+      h <- 0.08 * (usr[4] - usr[3])
+      yb <- usr[3] + 0.05 * (usr[4] - usr[3])
+      graphics::rect(bar["x0"], yb, bar["x0"] + bar["xw"], yb + h, col = "white",
+                     border = "grey40", xpd = NA)
+      graphics::rect(bar["x0"], yb, bar["x0"] + bar["xw"], yb + h, density = 10, angle = 45,
+                     col = "grey45", border = NA, xpd = NA, lwd = 0.6)
+      graphics::text(bar["x0"] + 1.5 * bar["xw"], yb + h / 2, "Pre-treatment", adj = 0,
+                     cex = 0.7, xpd = NA)
+    }
+  }
+  invisible(est)
+}
