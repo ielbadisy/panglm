@@ -92,6 +92,7 @@ Inference for Econometric Models}, Cambridge University Press.
 \code{\link[=effectcurve]{effectcurve()}} for the effect of a spline term across its range.
 
 Other panglm methods: 
+\code{\link{coefplot}()},
 \code{\link{confint.panglm}()},
 \code{\link{effectcurve}()},
 \code{\link{fitted.panglm}()},

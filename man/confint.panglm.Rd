@@ -34,6 +34,7 @@ confint(fit)
 }
 \seealso{
 Other panglm methods: 
+\code{\link{coefplot}()},
 \code{\link{effectcurve}()},
 \code{\link{fitted.panglm}()},
 \code{\link{glance.panglm}()},

@@ -35,6 +35,7 @@ predict(fit, newdata = copd[1:3, ], type = "class")
 }
 \seealso{
 Other panglm methods: 
+\code{\link{coefplot}()},
 \code{\link{confint.panglm}()},
 \code{\link{effectcurve}()},
 \code{\link{fitted.panglm}()},

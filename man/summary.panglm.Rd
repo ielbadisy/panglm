@@ -45,6 +45,7 @@ summary(fit)
 }
 \seealso{
 Other panglm methods: 
+\code{\link{coefplot}()},
 \code{\link{confint.panglm}()},
 \code{\link{effectcurve}()},
 \code{\link{fitted.panglm}()},

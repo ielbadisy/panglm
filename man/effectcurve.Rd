@@ -53,6 +53,7 @@ plot(curve_crp)
 }
 \seealso{
 Other panglm methods: 
+\code{\link{coefplot}()},
 \code{\link{confint.panglm}()},
 \code{\link{fitted.panglm}()},
 \code{\link{glance.panglm}()},

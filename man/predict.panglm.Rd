@@ -49,6 +49,7 @@ predict(fit, newdata = copd[1:4, ], type = "response")
 }
 \seealso{
 Other panglm methods: 
+\code{\link{coefplot}()},
 \code{\link{confint.panglm}()},
 \code{\link{effectcurve}()},
 \code{\link{fitted.panglm}()},
