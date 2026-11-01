@@ -346,7 +346,7 @@ treatmentplot <- function(data, index, treat, labels = NULL,
                   numeric(1))
   out <- data.frame(cohort = cohorts, n = sizes)
   coh_lab <- paste0(ifelse(is.na(cohorts), "Never", format(cohorts)), " (n = ", sizes, ")")
-  op <- graphics::par(no.readonly = TRUE)
+  op <- savepar()
   on.exit(graphics::par(op))
   lab_w <- if (labels) max(graphics::strwidth(format(uid), units = "inches", cex = 0.6)) else 0
   coh_w <- max(graphics::strwidth(coh_lab, units = "inches", cex = 0.8))
@@ -644,7 +644,7 @@ did_heatmap <- function(est, sizes = NULL, cells = FALSE, digits = 2, xlab = "Pe
   z[cbind(ci, ri)] <- pmin(pmax(est$estimate, zlim[1]), zlim[2])
   rlab <- format(groups)
   if (!is.null(sizes)) rlab <- paste0(rlab, " (n = ", sizes[as.character(groups)], ")")
-  op <- graphics::par(no.readonly = TRUE)
+  op <- savepar()
   on.exit(graphics::par(op))
   csi <- graphics::par("csi")
   lab_w <- max(graphics::strwidth(rlab, units = "inches", cex = 0.8))

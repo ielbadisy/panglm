@@ -256,7 +256,7 @@ twopart_outcome_density <- function(object) {
   implied[!is.finite(implied)] <- NA
   top <- max(c(observed, implied), na.rm = TRUE) * 1.12
 
-  op <- graphics::par(no.readonly = TRUE)
+  op <- savepar()
   on.exit(graphics::par(op), add = TRUE)
   if (has_mass) {
     mar <- graphics::par("mar")

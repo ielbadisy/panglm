@@ -513,3 +513,12 @@ plot.panglm_hurdle <- function(x, which = c("both", "zero", "count", "correlatio
   )
   .panglm_dotwhisker(tab, main = main, xlab = xlab, ...)
 }
+
+# Graphics settings to restore after a single-panel plot. The layout
+# parameters are left out, so that the plot fills the next panel of a
+# par(mfrow = ...) grid and does not reset it.
+savepar <- function() {
+  op <- graphics::par(no.readonly = TRUE)
+  op[setdiff(names(op), c("fig", "fin", "mfcol", "mfg", "mfrow", "new", "oma",
+                          "omd", "omi", "pin", "plt", "usr"))]
+}

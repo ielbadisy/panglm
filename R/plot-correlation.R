@@ -42,7 +42,7 @@
   labs <- rownames(R)
 
   pal <- grDevices::colorRampPalette(c("#2166AC", "#F7F7F7", "#B2182B"))(101)
-  op <- graphics::par(no.readonly = TRUE)
+  op <- savepar()
   on.exit(graphics::par(op), add = TRUE)
   lab_cex <- if (k > 25) 0.6 else if (k > 12) 0.75 else 0.85
   lab_w <- max(graphics::strwidth(labs, units = "inches", cex = lab_cex))

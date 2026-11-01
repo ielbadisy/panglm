@@ -154,7 +154,7 @@ panelplot <- function(data, index, value = NULL, treat = NULL, labels = NULL, co
   out$n_periods <- tabulate(r, n)
   out$n_missing <- tabulate(r[miss], n)
 
-  op <- graphics::par(no.readonly = TRUE)
+  op <- savepar()
   on.exit(graphics::par(op))
   csi <- graphics::par("csi")
   lab_w <- if (labels) max(graphics::strwidth(format(uid), units = "inches", cex = 0.6)) else 0
