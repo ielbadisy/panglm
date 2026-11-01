@@ -113,6 +113,113 @@ did_drawes <- function(tab, event = TRUE, xlab = NULL, ylab = NULL, main = NULL,
   invisible(tab)
 }
 
+#' Plot the treatment timing of a staggered design
+#'
+#' Draws one row per individual and one column per period, sorted by
+#' treatment cohort (earliest adopters at the top, never-treated units at
+#' the bottom), with treated cells shaded. The right axis gives each cohort
+#' and its size. With many individuals the unit labels are dropped and the
+#' tiles are drawn as a raster, so the plot stays readable for thousands of
+#' units. Periods in which a unit is not observed are left blank.
+#'
+#' @param data a data frame in long format
+#' @param index `c(individual, time)`: column names, the time numeric
+#' @param treat name of the column with the first treated period, as in
+#'   [attgt()] and [etwfe()] (`0`, `NA` or `Inf` for never-treated units)
+#' @param labels logical: show the individual labels on the left axis. The
+#'   default shows them for at most 60 individuals.
+#' @param col colours of the treated, not-yet-treated and never-treated
+#'   cells
+#' @param legend logical: add a legend below the plot
+#' @param xlab,ylab,main axis labels and title
+#' @param ... passed to [graphics::image()]
+#' @return a data frame with one row per cohort (`cohort`, `n`; `NA` for
+#'   the never treated), invisibly
+#' @family policy evaluation
+#' @examples
+#' d <- expand.grid(id = 1:30, year = 2010:2019)
+#' d$first <- rep(c(2013, 2015, 2017, 0, 0, 0), each = 5)[d$id]
+#' treatmentplot(d, index = c("id", "year"), treat = "first")
+#' @export
+treatmentplot <- function(data, index, treat, labels = NULL,
+                          col = c("#08519C", "#C6DBEF", "grey88"), legend = TRUE,
+                          xlab = "Period", ylab = NULL, main = NULL, ...) {
+  data <- as.data.frame(data)
+  timing <- did_timing(data, index, treat)
+  if (length(col) != 3L) stop("'col' must give three colours", call. = FALSE)
+  id <- data[[index[1]]]
+  ok <- !is.na(id) & is.finite(timing$time)
+  id <- id[ok]
+  time <- timing$time[ok]
+  first <- timing$first[ok]
+  uid <- unique(id)
+  uid <- uid[order(uid)]
+  ufirst <- first[match(uid, id)]
+  ord <- order(is.na(ufirst), ufirst, seq_along(uid))
+  uid <- uid[ord]
+  ufirst <- ufirst[ord]
+  n <- length(uid)
+  if (is.null(labels)) labels <- n <= 60L
+  periods <- sort(unique(time))
+  # code 1 treated, 2 not yet treated, 3 never treated; NA not observed
+  z <- matrix(NA_real_, length(periods), n)
+  r <- match(id, uid)
+  code <- ifelse(is.na(first), 3, ifelse(time >= first, 1, 2))
+  z[cbind(match(time, periods), n + 1L - r)] <- code
+  cohorts <- unique(ufirst)
+  sizes <- vapply(cohorts, function(g) sum(if (is.na(g)) is.na(ufirst) else ufirst %in% g),
+                  numeric(1))
+  out <- data.frame(cohort = cohorts, n = sizes)
+  coh_lab <- paste0(ifelse(is.na(cohorts), "Never", format(cohorts)), " (n = ", sizes, ")")
+  op <- graphics::par(no.readonly = TRUE)
+  on.exit(graphics::par(op))
+  lab_w <- if (labels) max(graphics::strwidth(format(uid), units = "inches", cex = 0.6)) else 0
+  coh_w <- max(graphics::strwidth(coh_lab, units = "inches", cex = 0.8))
+  csi <- graphics::par("csi")
+  graphics::par(mar = c(if (legend) 5.8 else 4, lab_w / csi + if (labels) 1.5 else 1.5,
+                        if (is.null(main)) 1 else 3, coh_w / csi + 1))
+  graphics::image(seq_along(periods), seq_len(n), z, col = col, breaks = c(0.5, 1.5, 2.5, 3.5),
+                  xlab = "", ylab = "", main = main, axes = FALSE, useRaster = n > 500L,
+                  ...)
+  graphics::title(xlab = xlab, line = 2.2)
+  graphics::box()
+  at <- unique(round(pretty(seq_along(periods), n = min(length(periods), 12L))))
+  at <- at[at >= 1 & at <= length(periods)]
+  if (length(periods) <= 25L) at <- seq_along(periods)
+  graphics::axis(1, at = at, labels = periods[at], cex.axis = 0.8)
+  if (labels) {
+    graphics::axis(2, at = n + 1L - seq_len(n), labels = format(uid), las = 1, cex.axis = 0.6,
+                   tick = FALSE, line = -0.6)
+  }
+  if (!is.null(ylab)) graphics::mtext(ylab, side = 2, line = lab_w / csi + 0.5)
+  ends <- cumsum(sizes)
+  mid <- n + 1 - (ends - (sizes - 1) / 2)
+  if (length(ends) > 1L) {
+    graphics::abline(h = n + 0.5 - ends[-length(ends)], col = "white", lwd = 1.5)
+  }
+  # cohort labels on the right, pushed apart when small cohorts sit close
+  usr <- graphics::par("usr")
+  h <- 1.3 * graphics::strheight("M", cex = 0.8)
+  k <- length(mid)
+  if (k > 1L) for (i in 2:k) mid[i] <- min(mid[i], mid[i - 1L] - h)
+  mid[k] <- max(mid[k], usr[3] + h / 2)
+  if (k > 1L) for (i in (k - 1L):1) mid[i] <- max(mid[i], mid[i + 1L] + h)
+  graphics::text(usr[2] + graphics::strwidth("m", cex = 0.8), mid, coh_lab, adj = 0,
+                 cex = 0.8, xpd = NA)
+  if (legend) {
+    graphics::par(xpd = NA)
+    graphics::legend(x = mean(graphics::par("usr")[1:2]),
+                     y = graphics::grconvertY(graphics::grconvertY(0, "npc", "inches") -
+                                                4.2 * csi, "inches", "user"),
+                     legend = c("Treated", "Not yet treated", "Never treated"),
+                     fill = col, border = NA, horiz = TRUE, bty = "n", cex = 0.8,
+                     xjust = 0.5, yjust = 0.5,
+                     text.width = did_textwidth(c("Treated", "Not yet treated", "Never treated"),
+                                                0.8))
+  }
+  invisible(out)
+}
+
 #' Event-study table of an eventstudy() fit
 #'
 #' @keywords internal

@@ -103,6 +103,7 @@ model.
 Other policy evaluation: 
 \code{\link{attgt}()},
 \code{\link{etwfe}()},
-\code{\link{eventstudy}()}
+\code{\link{eventstudy}()},
+\code{\link{treatmentplot}()}
 }
 \concept{policy evaluation}

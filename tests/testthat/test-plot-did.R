@@ -61,3 +61,21 @@ test_that("etwfe and eventstudy plots share the drawer and take an event window"
   expect_equal(ptab$level[ptab$ref], es$ref)
   expect_error(plot(es, min_e = 5), "window")
 })
+
+test_that("treatmentplot shows cohorts and scales to many units", {
+  d <- did_plot_panel(5, N = 30)
+  d$first[is.na(d$first)] <- 0
+  pdf(tempfile(fileext = ".pdf")); on.exit(dev.off())
+  out <- expect_invisible(treatmentplot(d, index = c("id", "t"), treat = "first"))
+  expect_equal(out$cohort, c(4, 6, NA))
+  expect_equal(out$n, c(10, 10, 10))
+  expect_no_error(treatmentplot(d[-(1:5), ], c("id", "t"), "first", legend = FALSE,
+                                labels = FALSE, main = "unbalanced", ylab = "Unit"))
+  set.seed(1)
+  big <- expand.grid(id = 1:2000, t = 1:10)
+  big$first <- sample(c(3, 5, 8, NA), 2000, TRUE)[big$id]
+  expect_no_error(treatmentplot(big, c("id", "t"), "first"))
+  expect_error(treatmentplot(d, c("id", "t"), "first", col = "red"), "three")
+  d$first <- as.character(d$first)
+  expect_error(treatmentplot(d, c("id", "t"), "first"), "numeric")
+})
