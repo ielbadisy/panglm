@@ -65,10 +65,26 @@
 #'   `log(y)`, the implied one `exp(s) f(exp(s))`, and point masses at zero
 #'   sit left of the axis. Count families are refused in favour of
 #'   `which = "rootogram"`.
+#' * `"effects"`: distribution of the estimated individual effects.
+#'   Fixed-effects fits: histogram and kernel density (blue) of [fixef()].
+#'   Random-effects fits: histogram and kernel density of the posterior
+#'   means [ranef()], with the assumed distribution of the random effect
+#'   (dashed orange): `N(0, sigma_u^2)` for the normal random intercepts,
+#'   the log-gamma density of `log(nu)` for the Poisson-gamma model and the
+#'   logistic-beta density of `log(delta)` for the Hausman-Hall-Griliches
+#'   negative binomial model. Empirical Bayes predictions are shrunk towards
+#'   their mean, so the histogram is narrower than the assumed density; the
+#'   subtitle compares the standard deviation of the predictions with the
+#'   model one. A histogram much narrower than the curve signals little
+#'   information per individual, not misspecification; marked skewness or
+#'   several modes do suggest a non-normal effect distribution. With random
+#'   slopes there is one panel per effect, then the intercept plotted
+#'   against each slope with the 95% contour of the estimated normal
+#'   distribution.
 #'
 #' @param x a fitted `"panglm"` object
 #' @param which one of `"coefficients"`, `"residuals"`, `"fitted"`, `"qq"`,
-#'   `"calibration"`, `"rootogram"` or `"density"`
+#'   `"calibration"`, `"rootogram"`, `"density"` or `"effects"`
 #' @param level confidence level for coefficient and calibration intervals
 #' @param parm names or positions of the terms of the coefficient plot; by
 #'   default every term except `"(Intercept)"`
@@ -77,13 +93,14 @@
 #' @param bins number of quantile bins of the calibration plot
 #' @param max largest count of the rootogram; by default the 99th
 #'   percentile of the outcome
-#' @param bw bandwidth of the observed kernel density of the `"density"`
-#'   view, passed to [stats::density()]
+#' @param bw bandwidth of the kernel densities of the `"density"` and
+#'   `"effects"` views, passed to [stats::density()]
 #' @param main optional plot title
 #' @param xlab optional horizontal-axis label
 #' @param ... additional arguments passed to [graphics::plot.default()]
 #' @return `x`, invisibly
 #' @family panglm methods
+#' @seealso [fixef()] and [ranef()] for the individual effects.
 #' @examples
 #' data(copd)
 #' fit <- panglm(fev1 ~ crp + age + treatment, data = copd,
@@ -109,9 +126,15 @@
 #'                    index = c("id", "visit"), model = "pooling",
 #'                    family = tobitfamily(left = 1.5))
 #' plot(censored, which = "density")
+#'
+#' plot(fit, which = "effects")
+#' hosp <- panglm(hospitalized ~ crp + treatment, data = copd,
+#'                index = c("id", "visit"), model = "random",
+#'                family = "binomial")
+#' plot(hosp, which = "effects")
 #' @export
 plot.panglm <- function(x, which = c("coefficients", "residuals", "fitted", "qq",
-                                     "calibration", "rootogram", "density"),
+                                     "calibration", "rootogram", "density", "effects"),
                         level = 0.95, parm = NULL, type = c("pearson", "response"),
                         bins = 10, max = NULL, bw = "nrd0", main = NULL, xlab = NULL, ...) {
   which <- match.arg(which)
@@ -124,6 +147,10 @@ plot.panglm <- function(x, which = c("coefficients", "residuals", "fitted", "qq"
     )
     .panglm_dotwhisker(tab, main = main %||% "Coefficient estimates",
                        xlab = xlab %||% "Estimate", ...)
+    return(invisible(x))
+  }
+  if (which == "effects") {
+    .panglm_plot_effects(x, bw, main, xlab, ...)
     return(invisible(x))
   }
   if (is.null(x$fitted.values) || is.null(x$y)) {

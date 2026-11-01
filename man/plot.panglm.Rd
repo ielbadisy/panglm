@@ -7,7 +7,7 @@
 \method{plot}{panglm}(
   x,
   which = c("coefficients", "residuals", "fitted", "qq", "calibration", "rootogram",
-    "density"),
+    "density", "effects"),
   level = 0.95,
   parm = NULL,
   type = c("pearson", "response"),
@@ -23,7 +23,7 @@
 \item{x}{a fitted \code{"panglm"} object}
 
 \item{which}{one of \code{"coefficients"}, \code{"residuals"}, \code{"fitted"}, \code{"qq"},
-\code{"calibration"}, \code{"rootogram"} or \code{"density"}}
+\code{"calibration"}, \code{"rootogram"}, \code{"density"} or \code{"effects"}}
 
 \item{level}{confidence level for coefficient and calibration intervals}
 
@@ -38,8 +38,8 @@ or \code{"response"}}
 \item{max}{largest count of the rootogram; by default the 99th
 percentile of the outcome}
 
-\item{bw}{bandwidth of the observed kernel density of the \code{"density"}
-view, passed to \code{\link[stats:density]{stats::density()}}}
+\item{bw}{bandwidth of the kernel densities of the \code{"density"} and
+\code{"effects"} views, passed to \code{\link[stats:density]{stats::density()}}}
 
 \item{main}{optional plot title}
 
@@ -118,6 +118,22 @@ it, \code{log = ""} turns it off): both curves are then densities of
 \code{log(y)}, the implied one \verb{exp(s) f(exp(s))}, and point masses at zero
 sit left of the axis. Count families are refused in favour of
 \code{which = "rootogram"}.
+\item \code{"effects"}: distribution of the estimated individual effects.
+Fixed-effects fits: histogram and kernel density (blue) of \code{\link[=fixef]{fixef()}}.
+Random-effects fits: histogram and kernel density of the posterior
+means \code{\link[=ranef]{ranef()}}, with the assumed distribution of the random effect
+(dashed orange): \code{N(0, sigma_u^2)} for the normal random intercepts,
+the log-gamma density of \code{log(nu)} for the Poisson-gamma model and the
+logistic-beta density of \code{log(delta)} for the Hausman-Hall-Griliches
+negative binomial model. Empirical Bayes predictions are shrunk towards
+their mean, so the histogram is narrower than the assumed density; the
+subtitle compares the standard deviation of the predictions with the
+model one. A histogram much narrower than the curve signals little
+information per individual, not misspecification; marked skewness or
+several modes do suggest a non-normal effect distribution. With random
+slopes there is one panel per effect, then the intercept plotted
+against each slope with the 95\% contour of the estimated normal
+distribution.
 }
 }
 \examples{
@@ -145,8 +161,16 @@ censored <- panglm(pmax(fev1, 1.5) ~ crp + treatment, data = copd,
                    index = c("id", "visit"), model = "pooling",
                    family = tobitfamily(left = 1.5))
 plot(censored, which = "density")
+
+plot(fit, which = "effects")
+hosp <- panglm(hospitalized ~ crp + treatment, data = copd,
+               index = c("id", "visit"), model = "random",
+               family = "binomial")
+plot(hosp, which = "effects")
 }
 \seealso{
+\code{\link[=fixef]{fixef()}} and \code{\link[=ranef]{ranef()}} for the individual effects.
+
 Other panglm methods: 
 \code{\link{coefplot}()},
 \code{\link{confint.panglm}()},
