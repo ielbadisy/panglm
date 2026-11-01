@@ -1,8 +1,9 @@
 # panglm 1.7.0
 
-Plotting release: every fitted object has a plot method, and the
-diagnostics, marginal effects and difference-in-differences results can
-be drawn directly with base graphics. Estimates are unchanged.
+Plotting and teaching release: every fitted object has a plot method,
+the diagnostics, marginal effects and difference-in-differences results
+can be drawn directly with base graphics, and five real health economics
+panels ship with the package. Estimates are unchanged.
 
 ## Diagnostics and coefficients
 
@@ -21,6 +22,22 @@ be drawn directly with base graphics. Estimates are unchanged.
 * New plot methods for `twopart()`, `panfmm()` (coefficients by class and
   the posterior class probabilities), `pangmm()`, `paniv()` and
   `panselect()` fits; `plot.panglm_hurdle()` gains `parm`.
+* `plot.panglm()` gains `which = "density"`: the observed kernel density
+  against the model-implied density, with the point masses of Tobit
+  censoring and two-part zeros; also for `twopart()` fits.
+* `plot.panglm()` gains `which = "effects"`: the distribution of the
+  estimated individual effects against the assumed mixing distribution,
+  with an intercept-slope scatter for random slopes.
+* `which = "correlation"` draws the correlation matrix of the estimates
+  as a heat map, for `panglm()`, `twopart()`, `panfmm()` and
+  `panhurdle()` fits.
+
+## Individual effects
+
+* New `fixef()` returns the estimated fixed effects of within fits, and
+  `ranef()` the posterior means or modes of the random effects of random
+  fits, for random intercepts in every family and for random slopes.
+  The methods also register on the `nlme` generics.
 
 ## Marginal effects
 
@@ -34,16 +51,45 @@ be drawn directly with base graphics. Estimates are unchanged.
 ## Difference-in-differences
 
 * `attgt()`, `etwfe()` and `eventstudy()` plots share one event-study
-  layout: hollow points before treatment, the reference period marked,
-  and uniform confidence bands drawn as visible bars behind the
+  layout, with uniform confidence bands drawn as visible bars behind the
   pointwise intervals. All three take `min_e`, `max_e`, `ylim`, `main`
-  and `legend`. The `eventstudy()` plot now marks treatment onset at
-  -0.5.
+  and `legend`.
+* Event-study plots and `eventplot()` gain `style = c("classic",
+  "points", "line")`. The default classic style draws the estimates with
+  capped intervals, the reference period as an open circle at zero and a
+  dashed line labelled "Intervention" at event time 0; `"line"` joins
+  the estimates over a shaded band. The arguments `ref`, `onset`,
+  `onset_label` and `caps` control the markers.
+* `plot(<attgt>)` and `plot(<etwfe>)` gain `type = "heatmap"`: the
+  ATT(g, t) estimates by cohort and period on a diverging scale, with
+  pre-treatment cells hatched and, with `cells = TRUE`, the estimates
+  printed.
 * `plot(<attgt>, type = "gt")` draws the group-time effects, one panel
   per cohort.
 * New `treatmentplot()` shows the treatment timing of a staggered design.
 * New `eventplot()` compares event studies from several estimators on
-  one axis.
+  one axis. Legends wrap into columns when the panel is narrow.
+* New `trendplot()` draws the raw mean outcome by adoption cohort, by
+  treated versus never treated, or on the event-time axis, with
+  cluster-robust bands.
+* New `panelplot()` draws a unit by period heat map of a panel: the
+  observation pattern, a numeric or categorical variable, and units
+  sorted by adoption cohort.
+
+## Data
+
+* `copd` gains clinics, staggered adoption of a care programme, annual
+  costs with structural zeros, a medication adherence proportion and an
+  ordered symptom score, all simulated with known parameters.
+* New real panels for teaching: `docvisits` (German health care demand,
+  Riphahn, Wambach and Million 2003), `meps` (two-year Medical
+  Expenditure Panel Survey spending), `medicaid` (US states, Affordable
+  Care Act Medicaid expansion and uninsurance, 2009-2019), `healthspend`
+  (countries, health expenditure from the World Development Indicators)
+  and `cigar` (US states, cigarette demand, Baltagi). Each help page
+  states the source, the licence and the questions the data can teach.
+* New vignette `vignette("panglm-datasets")`.
+* Lazy-loaded data are compressed with xz.
 
 # panglm 1.6.2
 
