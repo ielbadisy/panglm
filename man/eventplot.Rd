@@ -16,7 +16,12 @@ eventplot(
   xlab = "Event time",
   ylab = "Estimate",
   main = NULL,
-  ylim = NULL
+  ylim = NULL,
+  style = c("classic", "points", "line"),
+  ref = NULL,
+  onset = NULL,
+  onset_label = NA,
+  caps = NULL
 )
 }
 \arguments{
@@ -37,6 +42,25 @@ fits; the hollow version of each symbol is used before treatment}
 \item{legend}{logical: add a legend}
 
 \item{xlab, ylab, main, ylim}{axis labels, title and y-axis limits}
+
+\item{style}{\code{"classic"} (default), \code{"points"} or \code{"line"} (see
+Styles); for the event-time, cohort and calendar plots}
+
+\item{ref}{event time of the reference period, marked when the estimate
+of a fit is exactly zero there; the default (\code{NULL}) uses the omitted
+period of each fit (\code{-1}, or the \code{ref} of an \code{\link[=eventstudy]{eventstudy()}} fit)}
+
+\item{onset}{position of the dashed treatment-onset line on the event
+time axis: \code{NULL} gives \code{0} for \code{style = "classic"} and \code{-0.5}
+(between the last pre-treatment and the first treated period)
+otherwise}
+
+\item{onset_label}{text written above the onset line; the default
+(\code{NA}) is "Intervention" for \code{style = "classic"} and none otherwise,
+\code{NULL} suppresses it}
+
+\item{caps}{logical: draw caps on the confidence-interval whiskers; the
+default (\code{NULL}) draws them for \code{style = "classic"} only}
 }
 \value{
 a data frame of the plotted estimates (\code{model}, \code{event},
@@ -47,9 +71,18 @@ Draws the event-time effects of several fits on one axis, offset
 horizontally, with pointwise confidence intervals and a legend: for
 example the two-way fixed-effects event study of \code{\link[=eventstudy]{eventstudy()}}, the
 Callaway and Sant'Anna estimator of \code{\link[=attgt]{attgt()}} and the extended two-way
-fixed-effects estimator of \code{\link[=etwfe]{etwfe()}}. Points are hollow before
-treatment and filled after. Uniform bands are not drawn here; use the
-\code{plot()} method of a single fit for them.
+fixed-effects estimator of \code{\link[=etwfe]{etwfe()}}. Uniform bands are not drawn
+here; use the \code{plot()} method of a single fit for them.
+}
+\details{
+The styles are those of \code{\link[=plot.panglm_attgt]{plot.panglm_attgt()}}. With \code{style = "classic"}
+(the default) the points are filled, the whiskers capped, each
+reference period is a hollow symbol at zero and the dashed onset line is
+at event time \code{0}, labelled "Intervention". With \code{style = "points"} the
+points are hollow before treatment and filled after, and the onset line
+is at \code{-0.5}. With \code{style = "line"} each fit is a coloured line with its
+pointwise intervals as a semi-transparent band (the fits are not
+offset).
 }
 \examples{
 set.seed(2)
@@ -62,6 +95,8 @@ es <- eventstudy(y ~ 1, d, index = c("id", "t"), treat = "first",
 cs <- attgt(y ~ 1, d, index = c("id", "t"), treat = "first")
 ew <- etwfe(y ~ 1, d, index = c("id", "t"), treat = "first", control = "never")
 eventplot(TWFE = es, CS = cs, ETWFE = ew, min_e = -3, max_e = 3)
+eventplot(TWFE = es, ETWFE = ew, min_e = -3, max_e = 3, style = "points")
+eventplot(TWFE = es, CS = cs, min_e = -3, max_e = 3, style = "line")
 }
 \seealso{
 Other policy evaluation: 

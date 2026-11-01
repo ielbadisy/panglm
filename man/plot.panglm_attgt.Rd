@@ -12,10 +12,15 @@
   max_e = Inf,
   ncol = NULL,
   xlab = NULL,
-  ylab = "ATT",
+  ylab = "Estimated ATT",
   main = NULL,
   ylim = NULL,
   legend = FALSE,
+  style = c("classic", "points", "line"),
+  ref = -1,
+  onset = NULL,
+  onset_label = NA,
+  caps = NULL,
   ...
 )
 
@@ -25,10 +30,15 @@
   min_e = -Inf,
   max_e = Inf,
   xlab = NULL,
-  ylab = "ATT",
+  ylab = "Estimated ATT",
   main = NULL,
   ylim = NULL,
   legend = FALSE,
+  style = c("classic", "points", "line"),
+  ref = -1,
+  onset = NULL,
+  onset_label = NA,
+  caps = NULL,
   ...
 )
 }
@@ -51,6 +61,24 @@ the square root of the number of cohorts)}
 
 \item{legend}{logical: add a compact legend of the symbols}
 
+\item{style}{\code{"classic"} (default), \code{"points"} or \code{"line"} (see
+Styles); for the event-time, cohort and calendar plots}
+
+\item{ref}{event time of the reference period, marked when its estimate
+is exactly zero (see Styles); \code{NULL} marks none}
+
+\item{onset}{position of the dashed treatment-onset line on the event
+time axis: \code{NULL} gives \code{0} for \code{style = "classic"} and \code{-0.5}
+(between the last pre-treatment and the first treated period)
+otherwise}
+
+\item{onset_label}{text written above the onset line; the default
+(\code{NA}) is "Intervention" for \code{style = "classic"} and none otherwise,
+\code{NULL} suppresses it}
+
+\item{caps}{logical: draw caps on the confidence-interval whiskers; the
+default (\code{NULL}) draws them for \code{style = "classic"} only}
+
 \item{...}{passed to \code{\link[=summary.panglm_attgt]{summary.panglm_attgt()}} (\code{balance_e}, \code{level}) and
 then to \code{\link[graphics:plot.default]{graphics::plot()}}}
 }
@@ -61,11 +89,11 @@ rows of the \code{estimates} of the fit
 \description{
 Plots the dynamic aggregation of \code{\link[=attgt]{attgt()}} (\code{ATT(e)} by event time), the
 cohort or calendar aggregation, or the group-time effects \code{ATT(g, t)}
-themselves. Points are hollow before treatment and filled after, with
-pointwise confidence intervals as black segments and a dashed line at
-treatment onset. When the fit has uniform confidence bands
-(\code{cband = TRUE}), they are drawn as light grey bars behind the pointwise
-intervals.
+themselves. The default style (\code{"classic"}) draws filled points with
+capped pointwise confidence intervals, a solid line at zero and, for
+event time, a dashed line at treatment onset labelled "Intervention".
+When the fit has uniform confidence bands (\code{cband = TRUE}), they are
+drawn as light grey bars behind the pointwise intervals.
 }
 \details{
 With \code{type = "gt"}, one small panel per treatment cohort shows
@@ -74,6 +102,29 @@ title, a dashed line at adoption and a common y axis (as \code{did::ggdid()}).
 The uniform bands of a \code{cband = TRUE} fit are simultaneous over all
 \code{ATT(g, t)}.
 }
+\section{Styles}{
+
+\code{style = "classic"} (the default) is the textbook dynamic
+difference-in-differences figure: filled points with capped whiskers,
+the reference period as an open circle at zero without a whisker, a
+solid line at zero and a dashed vertical line at event time \code{0}
+labelled "Intervention" above the plot. \code{style = "points"} draws hollow
+points before treatment and filled points after, an open diamond at the
+reference period, uncapped intervals, a dotted zero line and the onset
+line at \code{-0.5}, between the last pre-treatment and the first treated
+period. \code{style = "line"} joins
+the estimates by a line and shades the pointwise confidence intervals
+(and, lighter, the uniform bands), with the onset line at \code{-0.5}. The
+cohort panels of \code{type = "gt"} always use the \code{"points"} look.
+
+The reference period is the event time \code{ref} when its estimate is
+exactly zero, that is when it is omitted or normalized. With
+\code{base = "universal"} in \code{\link[=attgt]{attgt()}} the effect at event time \code{-1} is
+normalized to zero and drawn as the reference. With the default
+\code{base = "varying"} no period is omitted (each pre-treatment estimate is
+a short difference), so no reference period is drawn.
+}
+
 \examples{
 set.seed(2)
 d <- expand.grid(id = 1:150, t = 1:8)
@@ -85,6 +136,11 @@ plot(fit)
 plot(fit, min_e = -2, max_e = 2, legend = TRUE)
 plot(fit, type = "gt")
 plot(fit, type = "group")
+plot(fit, style = "points", legend = TRUE)
+plot(fit, style = "line")
+# with a universal base period, event time -1 is the reference (zero)
+fu <- attgt(y ~ 1, d, index = c("id", "t"), treat = "first", base = "universal")
+plot(fu, min_e = -3, max_e = 3)
 }
 \seealso{
 Other attgt methods: 

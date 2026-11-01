@@ -88,26 +88,120 @@ did_check_window <- function(min_e, max_e) {
   invisible(TRUE)
 }
 
+#' Resolve the style arguments of the event-study plots
+#'
+#' `onset = NULL` puts the treatment-onset line at `0` for
+#' `style = "classic"` and at `-0.5` otherwise; `onset_label = NA` labels it
+#' "Intervention" for `"classic"` only; `caps = NULL` draws whisker caps for
+#' `"classic"` only.
+#'
+#' @keywords internal
+#' @noRd
+did_style <- function(style, onset = NULL, onset_label = NA, caps = NULL) {
+  style <- match.arg(style, c("points", "line", "classic"))
+  classic <- style == "classic"
+  if (is.null(onset)) onset <- if (classic) 0 else -0.5
+  if (!is.numeric(onset) || length(onset) != 1L || !is.finite(onset)) {
+    stop("'onset' must be a number", call. = FALSE)
+  }
+  if (length(onset_label) == 1L && is.na(onset_label)) {
+    onset_label <- if (classic) "Intervention" else NULL
+  }
+  if (!is.null(onset_label) && (!is.character(onset_label) || length(onset_label) != 1L)) {
+    stop("'onset_label' must be a character string or NULL", call. = FALSE)
+  }
+  if (identical(onset_label, "")) onset_label <- NULL
+  if (is.null(caps)) caps <- classic
+  if (!is.logical(caps) || length(caps) != 1L || is.na(caps)) {
+    stop("'caps' must be TRUE or FALSE", call. = FALSE)
+  }
+  list(style = style, onset = onset, onset_label = onset_label, caps = caps)
+}
+
+#' Mark the reference (normalized) period of an event-study table
+#'
+#' A row is the reference when its level is in `ref` and its estimate is
+#' exactly zero: an omitted or normalized period. Without such a row (for
+#' example `attgt()` with `base = "varying"`), nothing is marked.
+#'
+#' @keywords internal
+#' @noRd
+did_refmark <- function(tab, ref) {
+  if (!is.null(ref) && (!is.numeric(ref) || anyNA(ref))) {
+    stop("'ref' must be numeric event times or NULL", call. = FALSE)
+  }
+  tab$ref <- tab$level %in% ref & is.finite(tab$estimate) & tab$estimate == 0
+  tab
+}
+
+#' Shaded polygons through consecutive finite points
+#'
+#' @keywords internal
+#' @noRd
+did_ribbon <- function(x, lo, hi, col) {
+  ok <- is.finite(x) & is.finite(lo) & is.finite(hi)
+  run <- cumsum(!ok)
+  for (r in unique(run[ok])) {
+    s <- ok & run == r
+    did_polygon(x[s], lo[s], hi[s], col)
+  }
+}
+
+#' Vertical intervals, with caps when asked
+#'
+#' @keywords internal
+#' @noRd
+did_whiskers <- function(x, lo, hi, caps = FALSE, col = "black", lwd = 1.5) {
+  if (!length(x)) return(invisible(NULL))
+  graphics::segments(x, lo, x, hi, col = col, lwd = lwd)
+  if (caps) {
+    w <- 0.045 * graphics::par("cex")
+    w <- graphics::grconvertX(w, "inches", "user") - graphics::grconvertX(0, "inches", "user")
+    graphics::segments(x - w, lo, x + w, lo, col = col, lwd = lwd)
+    graphics::segments(x - w, hi, x + w, hi, col = col, lwd = lwd)
+  }
+  invisible(NULL)
+}
+
+#' Vertical treatment-onset line with an optional label above the plot
+#'
+#' @keywords internal
+#' @noRd
+did_onset <- function(st) {
+  graphics::abline(v = st$onset, lty = 2, col = "grey40")
+  if (!is.null(st$onset_label)) {
+    graphics::mtext(st$onset_label, side = 3, at = st$onset, line = 0.15, cex = 0.8,
+                    col = "grey30")
+  }
+}
+
 #' Shared drawer for event-study and aggregated DiD plots
 #'
-#' One style for [plot.panglm_attgt()], [plot.panglm_etwfe()] and
-#' [plot.panglm_eventstudy()]: hollow points before treatment, filled
-#' points after, an open diamond at the omitted reference period, black
-#' pointwise intervals, uniform bands as light grey bars behind them, a
-#' horizontal zero line and, for event time, a dashed line at treatment
-#' onset.
+#' One look for [plot.panglm_attgt()], [plot.panglm_etwfe()] and
+#' [plot.panglm_eventstudy()], in three styles. `"points"`: hollow points
+#' before treatment, filled points after, an open diamond at the omitted
+#' reference period, black pointwise intervals, uniform bands as light
+#' grey bars behind them, a dotted zero line and a dashed line at treatment
+#' onset (`-0.5`). `"line"`: the estimates joined by a line, the pointwise
+#' intervals as a shaded polygon and uniform bands as a lighter one.
+#' `"classic"`: filled points with capped whiskers, an open circle at the
+#' reference period, a solid zero line and a dashed line at the onset (`0`)
+#' labelled "Intervention".
 #'
 #' @param tab a table from did_plottab()
 #' @param event logical: the levels are event times
 #' @param xaxis logical: draw the x axis at the levels
+#' @param style,onset,onset_label,caps see did_style()
 #' @return `tab`, invisibly, with attribute `band` (were uniform bands drawn?)
 #' @keywords internal
 #' @noRd
 did_drawes <- function(tab, event = TRUE, xlab = NULL, ylab = NULL, main = NULL,
-                       ylim = NULL, legend = FALSE, level = 0.95, xaxis = TRUE, ...) {
+                       ylim = NULL, legend = FALSE, level = 0.95, xaxis = TRUE,
+                       style = "points", onset = NULL, onset_label = NA, caps = NULL, ...) {
   if (!is.logical(legend) || length(legend) != 1L || is.na(legend)) {
     stop("'legend' must be TRUE or FALSE", call. = FALSE)
   }
+  st <- did_style(style, onset, onset_label, caps)
   ok <- is.finite(tab$estimate)
   if (!any(ok)) stop("no finite estimate to plot", call. = FALSE)
   x <- tab$level
@@ -123,10 +217,29 @@ did_drawes <- function(tab, event = TRUE, xlab = NULL, ylab = NULL, main = NULL,
   pre <- event & x < 0 & !ref
   if (legend) {
     pct <- paste0(format(100 * level), "% ")
-    lab <- c(if (event && any(pre)) "Pre-treatment", if (event) "Post-treatment" else "Estimate",
-             if (any(ref)) "Reference", paste0(pct, "pointwise CI"),
-             if (band) paste0(pct, "uniform band"))
-    lay <- did_leglayout(lab, 0.75, x.intersp = 0.6)
+    leg <- switch(st$style,
+      points = list(
+        lab = c(if (event && any(pre)) "Pre-treatment",
+                if (event) "Post-treatment" else "Estimate",
+                if (any(ref)) "Reference", paste0(pct, "pointwise CI"),
+                if (band) paste0(pct, "uniform band")),
+        pch = c(if (event && any(pre)) 21, 19, if (any(ref)) 23, NA, if (band) 15),
+        lty = c(if (event && any(pre)) 0, 0, if (any(ref)) 0, 1, if (band) 0)),
+      classic = list(
+        lab = c(paste0("Estimate (", pct, "CI)"), if (any(ref)) "Reference period",
+                if (band) paste0(pct, "uniform band")),
+        pch = c(19, if (any(ref)) 1, if (band) 15),
+        lty = c(1, if (any(ref)) 0, if (band) 0)),
+      line = list(
+        lab = c("Estimate", paste0(pct, "pointwise CI"), if (band) paste0(pct, "uniform band")),
+        pch = c(NA, 15, if (band) 15),
+        lty = c(1, 0, if (band) 0)))
+    leg$col <- switch(st$style,
+      line = c("black", grDevices::adjustcolor("grey30", 0.35),
+               if (band) grDevices::adjustcolor("grey30", 0.15)),
+      c(rep("black", length(leg$lab) - band), if (band) "grey85"))
+    leg$pt.cex <- ifelse(leg$pch %in% 15, 2, 1.1)
+    lay <- did_leglayout(leg$lab, 0.75, x.intersp = 0.6)
   }
   if (is.null(ylim)) {
     ylim <- range(lo[ok], hi[ok], est[ok], 0, if (band) c(blo[ok], bhi[ok]))
@@ -138,24 +251,38 @@ did_drawes <- function(tab, event = TRUE, xlab = NULL, ylab = NULL, main = NULL,
   do.call(graphics::plot, c(list(x[ok], est[ok], type = "n", xlab = xlab, ylab = ylab,
                                  main = main, ylim = ylim, xaxt = "n"), dots))
   if (xaxis) graphics::axis(1, at = sort(unique(x)))
-  graphics::abline(h = 0, col = "grey40", lty = 3)
-  if (event) graphics::abline(v = -0.5, lty = 2, col = "grey40")
-  if (band) {
-    b <- ok & !ref
-    graphics::rect(x[b] - 0.2 * dx, blo[b], x[b] + 0.2 * dx, bhi[b], col = "grey85",
-                   border = NA)
+  if (st$style == "classic") {
+    graphics::abline(h = 0, col = "grey30")
+  } else {
+    graphics::abline(h = 0, col = "grey40", lty = 3)
   }
+  if (event) did_onset(st)
   ci <- ok & !ref
-  graphics::segments(x[ci], lo[ci], x[ci], hi[ci], lwd = 1.5)
-  graphics::points(x[ci], est[ci], pch = ifelse(pre[ci], 21, 19), bg = "white", cex = 1.1)
-  if (any(ref)) graphics::points(x[ref], est[ref], pch = 23, bg = "white", cex = 1.1)
+  if (st$style == "line") {
+    if (band) did_ribbon(x[ok], blo[ok], bhi[ok], grDevices::adjustcolor("grey30", 0.15))
+    did_ribbon(x[ok], lo[ok], hi[ok], grDevices::adjustcolor("grey30", 0.35))
+    graphics::lines(x[ok], est[ok], lwd = 1.8)
+    graphics::points(x[ci], est[ci], pch = ifelse(pre[ci], 21, 19), bg = "white", cex = 0.8)
+    if (any(ref)) graphics::points(x[ref], est[ref], pch = 23, bg = "white", cex = 0.9)
+  } else {
+    if (band) {
+      b <- ok & !ref
+      graphics::rect(x[b] - 0.2 * dx, blo[b], x[b] + 0.2 * dx, bhi[b], col = "grey85",
+                     border = NA)
+    }
+    if (st$style == "classic") {
+      did_whiskers(x[ci], lo[ci], hi[ci], caps = st$caps, lwd = 1.2)
+      graphics::points(x[ci], est[ci], pch = 19, cex = 1.1)
+      if (any(ref)) graphics::points(x[ref], est[ref], pch = 21, bg = "white", cex = 1.2)
+    } else {
+      did_whiskers(x[ci], lo[ci], hi[ci], caps = st$caps)
+      graphics::points(x[ci], est[ci], pch = ifelse(pre[ci], 21, 19), bg = "white", cex = 1.1)
+      if (any(ref)) graphics::points(x[ref], est[ref], pch = 23, bg = "white", cex = 1.1)
+    }
+  }
   if (legend) {
-    pch <- c(if (event && any(pre)) 21, 19, if (any(ref)) 23, NA, if (band) 15)
-    lty <- c(if (event && any(pre)) 0, 0, if (any(ref)) 0, 1, if (band) 0)
-    col <- c(rep("black", length(lab) - band), if (band) "grey85")
-    did_toplegend(lab, lay, 0.75, pch = pch, lty = lty, lwd = 1.5, col = col,
-                  pt.bg = "white", pt.cex = ifelse(seq_along(lab) == length(lab) & band, 2, 1.1),
-                  seg.len = 1.2, x.intersp = 0.6)
+    did_toplegend(leg$lab, lay, 0.75, pch = leg$pch, lty = leg$lty, lwd = 1.5, col = leg$col,
+                  pt.bg = "white", pt.cex = leg$pt.cex, seg.len = 1.2, x.intersp = 0.6)
   }
   attr(tab, "band") <- band
   invisible(tab)
@@ -274,9 +401,17 @@ treatmentplot <- function(data, index, treat, labels = NULL,
 #' horizontally, with pointwise confidence intervals and a legend: for
 #' example the two-way fixed-effects event study of [eventstudy()], the
 #' Callaway and Sant'Anna estimator of [attgt()] and the extended two-way
-#' fixed-effects estimator of [etwfe()]. Points are hollow before
-#' treatment and filled after. Uniform bands are not drawn here; use the
-#' `plot()` method of a single fit for them.
+#' fixed-effects estimator of [etwfe()]. Uniform bands are not drawn
+#' here; use the `plot()` method of a single fit for them.
+#'
+#' The styles are those of [plot.panglm_attgt()]. With `style = "classic"`
+#' (the default) the points are filled, the whiskers capped, each
+#' reference period is a hollow symbol at zero and the dashed onset line is
+#' at event time `0`, labelled "Intervention". With `style = "points"` the
+#' points are hollow before treatment and filled after, and the onset line
+#' is at `-0.5`. With `style = "line"` each fit is a coloured line with its
+#' pointwise intervals as a semi-transparent band (the fits are not
+#' offset).
 #'
 #' @param ... fits from [eventstudy()], [attgt()] or [etwfe()] (or the
 #'   event-time summaries of the last two). Names of the arguments are used
@@ -289,6 +424,10 @@ treatmentplot <- function(data, index, treat, labels = NULL,
 #' @param offset horizontal distance between the fits, in event-time units
 #' @param legend logical: add a legend
 #' @param xlab,ylab,main,ylim axis labels, title and y-axis limits
+#' @param ref event time of the reference period, marked when the estimate
+#'   of a fit is exactly zero there; the default (`NULL`) uses the omitted
+#'   period of each fit (`-1`, or the `ref` of an [eventstudy()] fit)
+#' @inheritParams plot.panglm_attgt
 #' @return a data frame of the plotted estimates (`model`, `event`,
 #'   `estimate`, `lower`, `upper`), invisibly
 #' @family policy evaluation
@@ -303,15 +442,20 @@ treatmentplot <- function(data, index, treat, labels = NULL,
 #' cs <- attgt(y ~ 1, d, index = c("id", "t"), treat = "first")
 #' ew <- etwfe(y ~ 1, d, index = c("id", "t"), treat = "first", control = "never")
 #' eventplot(TWFE = es, CS = cs, ETWFE = ew, min_e = -3, max_e = 3)
+#' eventplot(TWFE = es, ETWFE = ew, min_e = -3, max_e = 3, style = "points")
+#' eventplot(TWFE = es, CS = cs, min_e = -3, max_e = 3, style = "line")
 #' @export
 eventplot <- function(..., labels = NULL, min_e = -Inf, max_e = Inf,
                       col = c("black", "#D55E00", "#0072B2", "#009E73", "#CC79A7"),
                       pch = c(19, 17, 15, 18, 25), offset = 0.2, legend = TRUE,
-                      xlab = "Event time", ylab = "Estimate", main = NULL, ylim = NULL) {
+                      xlab = "Event time", ylab = "Estimate", main = NULL, ylim = NULL,
+                      style = c("classic", "points", "line"), ref = NULL, onset = NULL,
+                      onset_label = NA, caps = NULL) {
   fits <- list(...)
   if (!length(fits)) stop("give at least one fit", call. = FALSE)
   did_check_window(min_e, max_e)
-  tabs <- lapply(fits, did_eventtab, min_e = min_e, max_e = max_e)
+  st <- did_style(match.arg(style), onset, onset_label, caps)
+  tabs <- lapply(fits, did_eventtab, min_e = min_e, max_e = max_e, ref = ref)
   k <- length(fits)
   if (is.null(labels)) {
     labels <- names(fits)
@@ -325,6 +469,7 @@ eventplot <- function(..., labels = NULL, min_e = -Inf, max_e = Inf,
   pch <- rep_len(pch, k)
   hollow <- c(`19` = 21, `16` = 21, `17` = 24, `15` = 22, `18` = 23, `25` = 25)
   pch_pre <- ifelse(as.character(pch) %in% names(hollow), hollow[as.character(pch)], pch)
+  if (st$style == "line") offset <- 0
   shift <- (seq_len(k) - (k + 1) / 2) * offset
   all <- do.call(rbind, lapply(tabs, `[`, c("level", "estimate", "lower", "upper")))
   ok <- is.finite(all$estimate)
@@ -337,19 +482,35 @@ eventplot <- function(..., labels = NULL, min_e = -Inf, max_e = Inf,
   graphics::plot(NA, xlim = xr, ylim = ylim, xlab = xlab, ylab = ylab, main = main,
                  xaxt = "n")
   graphics::axis(1, at = sort(unique(all$level)))
-  graphics::abline(h = 0, col = "grey40", lty = 3)
-  graphics::abline(v = -0.5, lty = 2, col = "grey40")
+  if (st$style == "classic") {
+    graphics::abline(h = 0, col = "grey30")
+  } else {
+    graphics::abline(h = 0, col = "grey40", lty = 3)
+  }
+  did_onset(st)
   for (j in seq_len(k)) {
     t <- tabs[[j]]
     f <- is.finite(t$estimate)
     x <- t$level + shift[j]
     ci <- f & !t$ref & is.finite(t$lower) & is.finite(t$upper)
-    graphics::segments(x[ci], t$lower[ci], x[ci], t$upper[ci], col = col[j], lwd = 1.5)
-    p <- ifelse(t$level < 0 | t$ref, pch_pre[j], pch[j])
-    graphics::points(x[f], t$estimate[f], pch = p[f], col = col[j], bg = "white", cex = 1.1)
+    if (st$style == "line") {
+      lo <- ifelse(t$ref, t$estimate, t$lower)
+      hi <- ifelse(t$ref, t$estimate, t$upper)
+      did_ribbon(x, lo, hi, grDevices::adjustcolor(col[j], 0.2))
+      graphics::lines(x[f], t$estimate[f], col = col[j], lwd = 1.8)
+      p <- ifelse(t$level < 0 | t$ref, pch_pre[j], pch[j])
+      graphics::points(x[f], t$estimate[f], pch = p[f], col = col[j], bg = "white", cex = 0.8)
+    } else {
+      did_whiskers(x[ci], t$lower[ci], t$upper[ci], caps = st$caps, col = col[j],
+                   lwd = if (st$style == "classic") 1.2 else 1.5)
+      p <- if (st$style == "classic") ifelse(t$ref, pch_pre[j], pch[j]) else
+        ifelse(t$level < 0 | t$ref, pch_pre[j], pch[j])
+      graphics::points(x[f], t$estimate[f], pch = p[f], col = col[j], bg = "white", cex = 1.1)
+    }
   }
   if (legend) {
-    did_toplegend(labels, lay, 0.8, col = col, pch = pch, lty = 1, lwd = 1.5, seg.len = 1.2)
+    did_toplegend(labels, lay, 0.8, col = col, pch = pch, lty = 1,
+                  lwd = if (st$style == "line") 1.8 else 1.5, seg.len = 1.2)
   }
   out <- do.call(rbind, lapply(seq_len(k), function(j) {
     data.frame(model = labels[j], event = tabs[[j]]$level, estimate = tabs[[j]]$estimate,
@@ -363,8 +524,8 @@ eventplot <- function(..., labels = NULL, min_e = -Inf, max_e = Inf,
 #'
 #' @keywords internal
 #' @noRd
-did_eventtab <- function(x, min_e = -Inf, max_e = Inf) {
-  if (inherits(x, "panglm_eventstudy")) return(es_plottab(x, min_e, max_e))
+did_eventtab <- function(x, min_e = -Inf, max_e = Inf, ref = NULL) {
+  if (inherits(x, "panglm_eventstudy")) return(es_plottab(x, min_e, max_e, ref))
   if (inherits(x, "panglm_attgt")) {
     x <- summary.panglm_attgt(x, type = "dynamic", min_e = min_e, max_e = max_e)
   }
@@ -372,11 +533,12 @@ did_eventtab <- function(x, min_e = -Inf, max_e = Inf) {
     x <- summary.panglm_etwfe(x, type = "event", byxvar = FALSE)
   }
   if (inherits(x, "summary.panglm_attgt") && identical(x$type, "dynamic")) {
-    return(did_plottab(x$estimates, min_e = min_e, max_e = max_e))
+    tab <- did_plottab(x$estimates, min_e = min_e, max_e = max_e)
+    return(did_refmark(tab, if (is.null(ref)) -1 else ref))
   }
   if (inherits(x, "summary.panglm_etwfe") && identical(x$type, "event") &&
       is.null(x$xvar)) {
-    return(etwfe_plottab(x, min_e, max_e))
+    return(etwfe_plottab(x, min_e, max_e, ref))
   }
   stop("eventplot() takes fits from eventstudy(), attgt() or etwfe(), or their ",
        "event-time summaries", call. = FALSE)
@@ -397,19 +559,20 @@ did_estimator <- function(x) {
 #'
 #' @keywords internal
 #' @noRd
-es_plottab <- function(x, min_e = -Inf, max_e = Inf) {
+es_plottab <- function(x, min_e = -Inf, max_e = Inf, ref = NULL) {
   tab <- x$estimates
   names(tab)[names(tab) == "event"] <- "level"
-  did_plottab(tab, ref = x$ref, min_e = min_e, max_e = max_e)
+  tab <- did_plottab(tab, min_e = min_e, max_e = max_e)
+  did_refmark(tab, if (is.null(ref)) x$ref else ref)
 }
 
-#' Plot table of an etwfe() summary; the reference period has a zero
-#' effect and a zero standard error
+#' Plot table of an etwfe() summary; the reference period (event time -1
+#' with control = "never") has a zero effect
 #'
 #' @keywords internal
 #' @noRd
-etwfe_plottab <- function(x, min_e = -Inf, max_e = Inf) {
-  tab <- x$estimates
-  ref <- if (x$type == "event") tab$level[tab$estimate == 0 & tab$se == 0] else NULL
-  did_plottab(tab, ref = ref, min_e = min_e, max_e = max_e)
+etwfe_plottab <- function(x, min_e = -Inf, max_e = Inf, ref = NULL) {
+  tab <- did_plottab(x$estimates, min_e = min_e, max_e = max_e)
+  if (x$type != "event") return(tab)
+  did_refmark(tab, if (is.null(ref)) -1 else ref)
 }

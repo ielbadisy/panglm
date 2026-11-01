@@ -545,10 +545,10 @@ nobs.panglm_etwfe <- function(object, ...) object$nobs
 #' Plot ETWFE treatment effects
 #'
 #' Plots the event-study aggregation of an [etwfe()] fit (or the cohort or
-#' calendar aggregation) with pointwise confidence intervals, in the same
-#' style as [plot.panglm_attgt()]: hollow points before treatment, filled
-#' after, and an open diamond at the reference period (event time `-1`
-#' with `control = "never"`).
+#' calendar aggregation) with pointwise confidence intervals, in the
+#' styles of [plot.panglm_attgt()] (see its Styles section). The reference
+#' period (event time `-1` with `control = "never"`) is drawn as an open
+#' symbol at zero.
 #'
 #' @param x a `"panglm_etwfe"` fit from [etwfe()], or its summary
 #' @param type aggregation to plot (for a fit): `"event"`, `"group"` or
@@ -557,6 +557,10 @@ nobs.panglm_etwfe <- function(object, ...) object$nobs
 #' @param xlab,ylab,main axis labels and title
 #' @param ylim y-axis limits
 #' @param legend logical: add a compact legend of the symbols
+#' @param ref event time of the reference period, marked when its estimate
+#'   is exactly zero: event time `-1` with `control = "never"`; with
+#'   `control = "notyet"` there are no pre-treatment effects
+#' @inheritParams plot.panglm_attgt
 #' @param ... passed to [graphics::plot()]
 #' @return the plotted summary, invisibly
 #' @family etwfe methods
@@ -569,21 +573,31 @@ nobs.panglm_etwfe <- function(object, ...) object$nobs
 #' fit <- etwfe(y ~ 1, d, index = c("id", "t"), treat = "first", control = "never")
 #' plot(fit)
 #' plot(fit, min_e = -3, max_e = 3, legend = TRUE)
+#' plot(fit, style = "points", legend = TRUE)
+#' plot(fit, style = "line")
 #' @export
 plot.panglm_etwfe <- function(x, type = c("event", "group", "calendar"), min_e = -Inf,
-                              max_e = Inf, xlab = NULL, ylab = "ATT", main = NULL,
-                              ylim = NULL, legend = FALSE, ...) {
+                              max_e = Inf, xlab = NULL, ylab = "Estimated ATT", main = NULL,
+                              ylim = NULL, legend = FALSE,
+                              style = c("classic", "points", "line"), ref = -1, onset = NULL,
+                              onset_label = NA, caps = NULL, ...) {
   type <- match.arg(type)
+  style <- match.arg(style)
   plot.summary.panglm_etwfe(summary.panglm_etwfe(x, type = type, byxvar = FALSE),
                             min_e = min_e, max_e = max_e, xlab = xlab, ylab = ylab,
-                            main = main, ylim = ylim, legend = legend, ...)
+                            main = main, ylim = ylim, legend = legend, style = style,
+                            ref = ref, onset = onset, onset_label = onset_label,
+                            caps = caps, ...)
 }
 
 #' @rdname plot.panglm_etwfe
 #' @export
 plot.summary.panglm_etwfe <- function(x, type = NULL, min_e = -Inf, max_e = Inf, xlab = NULL,
-                                      ylab = "ATT", main = NULL, ylim = NULL, legend = FALSE,
-                                      ...) {
+                                      ylab = "Estimated ATT", main = NULL, ylim = NULL,
+                                      legend = FALSE,
+                                      style = c("classic", "points", "line"), ref = -1,
+                                      onset = NULL, onset_label = NA, caps = NULL, ...) {
+  style <- match.arg(style)
   tab <- x$estimates
   if (is.null(tab) || x$type == "simple") {
     stop("nothing to plot for the simple aggregation", call. = FALSE)
@@ -597,8 +611,9 @@ plot.summary.panglm_etwfe <- function(x, type = NULL, min_e = -Inf, max_e = Inf,
     xlab <- c(event = "Event time", group = "Treatment cohort", calendar = "Period")[[x$type]]
   }
   event <- x$type == "event"
-  ptab <- if (event) etwfe_plottab(x, min_e, max_e) else etwfe_plottab(x)
+  ptab <- if (event) did_refmark(etwfe_plottab(x, min_e, max_e), ref) else etwfe_plottab(x)
   did_drawes(ptab, event = event, xlab = xlab, ylab = ylab, main = main, ylim = ylim,
-             legend = legend, level = x$level, ...)
+             legend = legend, level = x$level, style = style, onset = onset,
+             onset_label = onset_label, caps = caps, ...)
   invisible(x)
 }

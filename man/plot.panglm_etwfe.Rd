@@ -11,10 +11,15 @@
   min_e = -Inf,
   max_e = Inf,
   xlab = NULL,
-  ylab = "ATT",
+  ylab = "Estimated ATT",
   main = NULL,
   ylim = NULL,
   legend = FALSE,
+  style = c("classic", "points", "line"),
+  ref = -1,
+  onset = NULL,
+  onset_label = NA,
+  caps = NULL,
   ...
 )
 
@@ -24,10 +29,15 @@
   min_e = -Inf,
   max_e = Inf,
   xlab = NULL,
-  ylab = "ATT",
+  ylab = "Estimated ATT",
   main = NULL,
   ylim = NULL,
   legend = FALSE,
+  style = c("classic", "points", "line"),
+  ref = -1,
+  onset = NULL,
+  onset_label = NA,
+  caps = NULL,
   ...
 )
 }
@@ -45,6 +55,25 @@
 
 \item{legend}{logical: add a compact legend of the symbols}
 
+\item{style}{\code{"classic"} (default), \code{"points"} or \code{"line"} (see
+Styles); for the event-time, cohort and calendar plots}
+
+\item{ref}{event time of the reference period, marked when its estimate
+is exactly zero: event time \code{-1} with \code{control = "never"}; with
+\code{control = "notyet"} there are no pre-treatment effects}
+
+\item{onset}{position of the dashed treatment-onset line on the event
+time axis: \code{NULL} gives \code{0} for \code{style = "classic"} and \code{-0.5}
+(between the last pre-treatment and the first treated period)
+otherwise}
+
+\item{onset_label}{text written above the onset line; the default
+(\code{NA}) is "Intervention" for \code{style = "classic"} and none otherwise,
+\code{NULL} suppresses it}
+
+\item{caps}{logical: draw caps on the confidence-interval whiskers; the
+default (\code{NULL}) draws them for \code{style = "classic"} only}
+
 \item{...}{passed to \code{\link[graphics:plot.default]{graphics::plot()}}}
 }
 \value{
@@ -52,10 +81,10 @@ the plotted summary, invisibly
 }
 \description{
 Plots the event-study aggregation of an \code{\link[=etwfe]{etwfe()}} fit (or the cohort or
-calendar aggregation) with pointwise confidence intervals, in the same
-style as \code{\link[=plot.panglm_attgt]{plot.panglm_attgt()}}: hollow points before treatment, filled
-after, and an open diamond at the reference period (event time \code{-1}
-with \code{control = "never"}).
+calendar aggregation) with pointwise confidence intervals, in the
+styles of \code{\link[=plot.panglm_attgt]{plot.panglm_attgt()}} (see its Styles section). The reference
+period (event time \code{-1} with \code{control = "never"}) is drawn as an open
+symbol at zero.
 }
 \examples{
 set.seed(2)
@@ -66,6 +95,8 @@ d$y <- rnorm(150)[d$id] + 0.2 * d$t +
 fit <- etwfe(y ~ 1, d, index = c("id", "t"), treat = "first", control = "never")
 plot(fit)
 plot(fit, min_e = -3, max_e = 3, legend = TRUE)
+plot(fit, style = "points", legend = TRUE)
+plot(fit, style = "line")
 }
 \seealso{
 Other etwfe methods: 

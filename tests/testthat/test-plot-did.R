@@ -116,3 +116,64 @@ test_that("top legends wrap into columns in a narrow panel", {
   expect_no_error(plot(cs, legend = TRUE))
   par(op)
 })
+
+test_that("event-study styles run for every plot method", {
+  d <- did_plot_panel(7)
+  cs <- attgt(y ~ 1, d, index = c("id", "t"), treat = "first", cband = TRUE,
+              biters = 99, seed = 1)
+  ew <- etwfe(y ~ 1, d, index = c("id", "t"), treat = "first", control = "never")
+  es <- eventstudy(y ~ 1, d, index = c("id", "t"), treat = "first", leads = 3, lags = 3)
+  pdf(NULL); on.exit(dev.off())
+  for (style in c("classic", "points", "line")) {
+    for (type in c("dynamic", "group", "calendar")) {
+      expect_no_error(plot(cs, type = type, style = style, legend = TRUE))
+    }
+    expect_no_error(plot(summary(cs, type = "dynamic"), style = style, min_e = -2))
+    for (type in c("event", "group", "calendar")) {
+      expect_no_error(plot(ew, type = type, style = style, legend = TRUE))
+    }
+    expect_no_error(plot(summary(ew, type = "event"), style = style))
+    expect_identical(plot(es, style = style, legend = TRUE), es)
+    out <- eventplot(TWFE = es, CS = cs, ETWFE = ew, style = style)
+    expect_setequal(out$model, c("TWFE", "CS", "ETWFE"))
+  }
+  expect_no_error(plot(es, style = "classic", onset = -0.5, onset_label = NULL,
+                       caps = FALSE, main = "m"))
+  expect_no_error(plot(cs, style = "points", onset_label = "Policy", caps = TRUE))
+  expect_error(plot(es, style = "bars"), "should be one of")
+  expect_error(plot(es, onset = NA), "onset")
+  expect_error(plot(es, onset_label = 1), "onset_label")
+  expect_error(plot(es, caps = NA), "caps")
+  expect_error(plot(es, ref = "a"), "ref")
+  st <- panglm:::did_style("classic")
+  expect_equal(st[c("onset", "onset_label", "caps")],
+               list(onset = 0, onset_label = "Intervention", caps = TRUE))
+  st <- panglm:::did_style("line")
+  expect_equal(st$onset, -0.5)
+  expect_null(st$onset_label)
+  expect_false(st$caps)
+})
+
+test_that("the reference period is marked only where the estimate is exactly zero", {
+  d <- did_plot_panel(8)
+  pdf(NULL); on.exit(dev.off())
+  es <- eventstudy(y ~ 1, d, index = c("id", "t"), treat = "first", leads = 3, lags = 3)
+  tab <- panglm:::did_refmark(panglm:::es_plottab(es), es$ref)
+  expect_equal(tab$level[tab$ref], es$ref)
+  expect_equal(tab$estimate[tab$ref], 0)
+  # varying base period: no omitted period, nothing marked
+  cv <- attgt(y ~ 1, d, index = c("id", "t"), treat = "first")
+  sv <- summary(cv, type = "dynamic")
+  tv <- panglm:::did_refmark(panglm:::did_plottab(sv$estimates), -1)
+  expect_false(any(tv$ref))
+  # universal base period: event time -1 is normalized to zero
+  cu <- attgt(y ~ 1, d, index = c("id", "t"), treat = "first", base = "universal")
+  su <- summary(cu, type = "dynamic")
+  tu <- panglm:::did_refmark(panglm:::did_plottab(su$estimates), -1)
+  expect_equal(tu$level[tu$ref], -1)
+  expect_identical(plot(su), su)
+  expect_false(any(panglm:::did_refmark(tu, NULL)$ref))
+  ew <- etwfe(y ~ 1, d, index = c("id", "t"), treat = "first", control = "never")
+  te <- panglm:::etwfe_plottab(summary(ew, type = "event"))
+  expect_equal(te$level[te$ref], -1)
+})

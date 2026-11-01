@@ -280,17 +280,20 @@ coef.panglm_eventstudy <- function(object, ...) {
 #' Plot event-study coefficients
 #'
 #' Plots the event-time coefficients of [eventstudy()] with pointwise
-#' confidence intervals, in the same style as [plot.panglm_attgt()]:
-#' hollow points before treatment, filled after, an open diamond at the
-#' omitted reference period (zero by construction) and a dashed line at
-#' treatment onset. With `bin = TRUE` the end points pool all earlier
-#' (later) event times.
+#' confidence intervals, in the styles of [plot.panglm_attgt()] (see its
+#' Styles section). The omitted reference period (zero by construction)
+#' is drawn as an open symbol at zero, without an interval. With
+#' `bin = TRUE` the end points pool all earlier (later) event times.
 #'
 #' @param x a `"panglm_eventstudy"` object from [eventstudy()]
 #' @param min_e,max_e event window to plot
 #' @param xlab,ylab,main axis labels and title
 #' @param ylim y-axis limits
 #' @param legend logical: add a compact legend of the symbols
+#' @param ref event time of the reference period, marked when its estimate
+#'   is exactly zero; the default is the period omitted by [eventstudy()]
+#'   (`x$ref`)
+#' @inheritParams plot.panglm_attgt
 #' @param ... passed to [graphics::plot()]
 #' @return `x`, invisibly
 #' @family eventstudy methods
@@ -305,12 +308,18 @@ coef.panglm_eventstudy <- function(object, ...) {
 #'                  treat = "first", leads = 3, lags = 2)
 #' plot(es, main = "Effect of the policy by event time")
 #' plot(es, min_e = -2, legend = TRUE)
+#' plot(es, style = "points")
+#' plot(es, style = "line")
 #' @export
 plot.panglm_eventstudy <- function(x, min_e = -Inf, max_e = Inf, xlab = "Event time",
                                    ylab = "Estimate", main = NULL, ylim = NULL,
-                                   legend = FALSE, ...) {
+                                   legend = FALSE, style = c("classic", "points", "line"),
+                                   ref = x$ref, onset = NULL, onset_label = NA, caps = NULL,
+                                   ...) {
+  style <- match.arg(style)
   did_check_window(min_e, max_e)
-  did_drawes(es_plottab(x, min_e, max_e), event = TRUE, xlab = xlab, ylab = ylab,
-             main = main, ylim = ylim, legend = legend, level = x$level, ...)
+  did_drawes(did_refmark(es_plottab(x, min_e, max_e), ref), event = TRUE, xlab = xlab, ylab = ylab,
+             main = main, ylim = ylim, legend = legend, level = x$level, style = style,
+             onset = onset, onset_label = onset_label, caps = caps, ...)
   invisible(x)
 }
