@@ -51,7 +51,7 @@ gaussian_re <- function(formula, data, index, label) {
 
 set.seed(1)
 grun_u <- Grunfeld[sort(sample(nrow(Grunfeld), 150)), ]
-hie <- transform(HealthIns, lcoins = log(1 + coins))
+hie <- transform(HealthIns, lcoins = coins)
 hie_fm <- med ~ lcoins + disease + sex + age + size + child
 
 hausman_u <- local({
