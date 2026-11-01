@@ -123,6 +123,17 @@ panels ship with the package. Estimates are unchanged.
   computationally singular". Groups whose positive counts are all 1 (no
   finite intercept) are dropped from the count part with a message, and
   a binary outcome stops with a clear error.
+* `panglm(model = "random", family = "tobit")` now converges on outcomes
+  in raw units such as costs in dollars. The quasi-Newton search used to
+  stop silently short of the maximum (on `meps$totexp` the log-likelihood
+  was 29 units below it and `sigma` 22% off) because the slopes and the
+  log standard deviations differed in scale by orders of magnitude. Both
+  Tobit fits now maximize the likelihood of `y / c` (`c` a power of two
+  near `sd(y)`) with standardized regressors and map the estimates back,
+  so that coefficients, `sigma_e`, `sigma`, their covariance and the
+  log-likelihood (which loses `log c` per uncensored observation) do not
+  depend on the units of `y`. The random-effects likelihood and its exact
+  scores are computed in C++: the `meps` fit takes 0.4 s instead of 210 s.
 
 ## Performance
 
@@ -141,21 +152,6 @@ panels ship with the package. Estimates are unchanged.
   under a second, the full panel about one second. Estimates match
   `glmmTMB` truncated Poisson and NB2 fits with group dummies; the NB2
   standard errors, which came from a not fully converged fit, change.
-
-* `panglm(model = "random", family = "tobit")` now converges on outcomes
-  in raw units such as costs in dollars. The quasi-Newton search used to
-  stop silently short of the maximum (on `meps$totexp` the log-likelihood
-  was 29 units below it and `sigma` 22% off) because the slopes and the
-  log standard deviations differed in scale by orders of magnitude. Both
-  Tobit fits now maximize the likelihood of `y / c` (`c` a power of two
-  near `sd(y)`) with standardized regressors and map the estimates back,
-  so that coefficients, `sigma_e`, `sigma`, their covariance and the
-  log-likelihood (which loses `log c` per uncensored observation) do not
-  depend on the units of `y`. The random-effects likelihood and its exact
-  scores are computed in C++: the `meps` fit takes 0.4 s instead of 210 s.
-
-## Performance
-
 * Random-intercept binomial, ordered and Tobit fits by adaptive quadrature are
   faster: parameter values with `sigma` outside `[1e-11, 7e10]`, which the
   first quasi-Newton steps can visit, are rejected without a mode search
