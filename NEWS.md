@@ -99,6 +99,18 @@ panels ship with the package. Estimates are unchanged.
   to `method = "mundlak"`. The print method drops the stray space before
   commas.
 
+* `panglm(model = "random", family = "tobit")` now converges on outcomes
+  in raw units such as costs in dollars. The quasi-Newton search used to
+  stop silently short of the maximum (on `meps$totexp` the log-likelihood
+  was 29 units below it and `sigma` 22% off) because the slopes and the
+  log standard deviations differed in scale by orders of magnitude. Both
+  Tobit fits now maximize the likelihood of `y / c` (`c` a power of two
+  near `sd(y)`) with standardized regressors and map the estimates back,
+  so that coefficients, `sigma_e`, `sigma`, their covariance and the
+  log-likelihood (which loses `log c` per uncensored observation) do not
+  depend on the units of `y`. The random-effects likelihood and its exact
+  scores are computed in C++: the `meps` fit takes 0.4 s instead of 210 s.
+
 # panglm 1.6.2
 
 Speed release for large panels. Estimates are unchanged: the

@@ -145,44 +145,28 @@ tobit_contrib_pooled <- function(X, y, status, left, right) {
 #' Random-intercept Tobit contributions by adaptive Gauss-Hermite quadrature
 #'
 #' theta = (beta, log sigma_e, log sigma_u). The integrand is log-concave in
-#' u_i, so Newton steps find the mode; its curvature scales the rule.
+#' u_i, so Newton steps find the mode; its curvature scales the rule. The
+#' contributions and their exact scores are computed in C++
+#' (`random_agq_cpp()`, kind 4, with log sigma_e in the place of the cut).
 #'
 #' @keywords internal
 #' @noRd
-tobit_contrib_random <- function(X, y, status, left, right, group, R) {
-  k <- ncol(X); G <- max(group)
+tobit_contrib_random <- function(X, y, left, right, group_size, R) {
+  k <- ncol(X); G <- length(group_size)
   gh <- gauss_hermite_quadrature(R)
-  log_w <- log(gh$weights * sqrt(pi)) + gh$nodes^2
+  X <- unname(as.matrix(X)); storage.mode(X) <- "double"
+  y <- as.numeric(y)
+  group_size <- as.integer(group_size)
+  group_start <- as.integer(c(0L, cumsum(group_size)[-G]))
   function(theta, score) {
     if (any(!is.finite(theta[k + 1:2])) || any(abs(theta[k + 1:2]) > 25)) {
-      return(list(ll = rep(-Inf, G)))
+      return(list(ll = rep(-Inf, G), score = matrix(0, G, k + 2L)))
     }
-    eta <- as.numeric(X %*% theta[seq_len(k)])
-    se <- exp(theta[k + 1L]); su <- exp(theta[k + 2L])
-    h <- function(u) {
-      as.numeric(rowsum(tobit_obs(eta + u[group], y, status, se, left, right)$ll, group)) +
-        stats::dnorm(u, 0, su, log = TRUE)
-    }
-    # every observation contributes a negative curvature, so the curvature
-    # of the integrand is at most -1 / su^2 (the bound guards rounding)
-    curv <- function(d2, u) pmin(as.numeric(rowsum(d2, group)) - 1 / su^2, -1 / su^2)
-    u <- rep(0, G)
-    for (step in seq_len(100L)) {
-      ob <- tobit_obs(eta + u[group], y, status, se, left, right)
-      g <- as.numeric(rowsum(ob$d1, group)) - u / su^2
-      H <- curv(ob$d2, u)
-      delta <- pmax(-2, pmin(2, g / H))
-      if (anyNA(delta)) return(list(ll = rep(-Inf, G)))
-      u <- u - delta
-      if (max(abs(delta)) < 1e-10) break
-    }
-    ob <- tobit_obs(eta + u[group], y, status, se, left, right)
-    tau <- 1 / sqrt(-curv(ob$d2, u))
-    terms <- vapply(seq_along(gh$nodes), function(q) {
-      log_w[q] + h(u + sqrt(2) * tau * gh$nodes[q])
-    }, numeric(G))
-    if (!is.matrix(terms)) terms <- matrix(terms, nrow = G)
-    list(ll = log(sqrt(2) * tau) + log_row_sum_exp(terms))
+    res <- random_agq_cpp(theta[seq_len(k)], theta[k + 1L], exp(theta[k + 2L]), X, y,
+                          group_start, group_size, gh$nodes, gh$weights, 4L, left, right)
+    out <- list(ll = res$ll)
+    if (score) out$score <- res$score
+    out
   }
 }
 
@@ -213,6 +197,16 @@ tobit_total_sd <- function(object) {
 
 #' Fit pooled or random-intercept Tobit
 #'
+#' The likelihood is maximized for the outcome divided by a power of two
+#' close to its standard deviation (`y / c`, limits `left / c` and
+#' `right / c`), with standardized regressors. Costs in dollars otherwise
+#' put the slopes and the log standard deviations on scales that differ by
+#' orders of magnitude, and the quasi-Newton search stalls. The estimates
+#' are mapped back: `beta = c beta_s`, `log sigma = log c + log sigma_s`,
+#' and the log-likelihood loses `log c` for every uncensored observation
+#' (the density of `y` is that of `y / c` divided by `c`; the censoring
+#' probabilities do not change). A power of two makes `y / c` exact.
+#'
 #' @keywords internal
 #' @noRd
 fit_tobit <- function(X, y, family, model, group_start, group_size, weights, R, maxit, tol) {
@@ -221,32 +215,46 @@ fit_tobit <- function(X, y, family, model, group_start, group_size, weights, R, 
   status <- tobit_status(y, left, right)
   if (!any(status == 0L)) stop("the Tobit model needs uncensored observations", call. = FALSE)
   w_obs <- weights %||% rep(1, length(y))
+  sc <- stats::sd(y)
+  sc <- if (is.finite(sc) && sc > 0) 2^round(log2(sc)) else 1
+  ys <- y / sc; ls <- left / sc; rs <- right / sc
   # starting values: least squares on the uncensored rows
   o <- status == 0L
-  b0 <- as.numeric(stats::lm.wfit(X[o, , drop = FALSE], y[o], w_obs[o])$coefficients)
+  b0 <- as.numeric(stats::lm.wfit(X[o, , drop = FALSE], ys[o], w_obs[o])$coefficients)
   b0[!is.finite(b0)] <- 0
-  s0 <- stats::sd(y[o] - as.numeric(X[o, , drop = FALSE] %*% b0))
+  s0 <- stats::sd(ys[o] - as.numeric(X[o, , drop = FALSE] %*% b0))
   if (!is.finite(s0) || s0 <= 0) s0 <- 1
-  pooled <- ml_optimize(c(b0, log(s0)), tobit_contrib_pooled(X, y, status, left, right),
-                        w_obs, maxit, tol)
+  pooled <- ml_optimize(c(b0, log(s0)), tobit_contrib_pooled(X, ys, status, ls, rs),
+                        w_obs, maxit, tol, scaling = ml_design_scaling(X, k + 1L),
+                        warn = model == "pooling", what = "the Tobit fit")
   if (model == "pooling") {
     res <- pooled
     w_units <- w_obs
+    w_uncens <- sum(w_obs[o])
   } else {
     w_units <- if (is.null(weights)) rep(1, length(group_size)) else individual_weights(weights, group_size)
     keep_ind <- w_units > 0
     keep_obs <- rep(keep_ind, group_size)
-    group <- rep(seq_len(sum(keep_ind)), group_size[keep_ind])
-    contrib <- tobit_contrib_random(X[keep_obs, , drop = FALSE], y[keep_obs], status[keep_obs],
-                                    left, right, group, R)
+    contrib <- tobit_contrib_random(X[keep_obs, , drop = FALSE], ys[keep_obs], ls, rs,
+                                    group_size[keep_ind], R)
     # split the pooled variance between the two components
     start <- c(pooled$theta[seq_len(k)], pooled$theta[k + 1L] + log(sqrt(0.6)),
                pooled$theta[k + 1L] + log(sqrt(0.4)))
-    res <- ml_optimize(start, contrib, w_units[keep_ind], maxit, tol)
+    res <- ml_optimize(start, contrib, w_units[keep_ind], maxit, tol,
+                       scaling = ml_design_scaling(X[keep_obs, , drop = FALSE], k + 2L),
+                       what = "the random-effects Tobit fit")
     score <- matrix(0, length(w_units), length(res$theta))
     score[keep_ind, ] <- res$score
     res$score <- score
+    w_uncens <- sum(rep(w_units, group_size)[o])
   }
+  # back to the scale of y
+  p <- length(res$theta)
+  a <- c(rep(sc, k), rep(1, p - k))
+  res$theta <- a * res$theta + c(rep(0, k), rep(log(sc), p - k))
+  res$vcov <- res$vcov * outer(a, a)
+  res$score <- sweep(res$score, 2, a, "/")
+  res$loglik <- res$loglik - w_uncens * log(sc)
   coefs <- res$theta[seq_len(k)]
   names(coefs) <- colnames(X)
   vcov <- res$vcov[seq_len(k), seq_len(k), drop = FALSE]
