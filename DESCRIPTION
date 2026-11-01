@@ -51,6 +51,8 @@ Suggests:
     glmmTMB,
     marginaleffects,
     lme4,
+    nlme,
+    GLMMadaptive,
     ordinal,
     betareg,
     splines,
