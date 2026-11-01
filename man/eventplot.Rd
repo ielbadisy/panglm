@@ -104,6 +104,7 @@ Other policy evaluation:
 \code{\link{did}()},
 \code{\link{etwfe}()},
 \code{\link{eventstudy}()},
+\code{\link{panelplot}()},
 \code{\link{treatmentplot}()},
 \code{\link{trendplot}()}
 }

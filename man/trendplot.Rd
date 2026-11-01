@@ -114,7 +114,8 @@ m <- trendplot(d, c("id", "t"), "first", "y", type = "event")
 head(m)
 }
 \seealso{
-\code{\link[=treatmentplot]{treatmentplot()}} for the treatment timing, \code{\link[=attgt]{attgt()}} and
+\code{\link[=treatmentplot]{treatmentplot()}} for the treatment timing, \code{\link[=panelplot]{panelplot()}} for the
+unit by period values, \code{\link[=attgt]{attgt()}} and
 \code{\link[=etwfe]{etwfe()}} for the estimators.
 
 Other policy evaluation: 
@@ -123,6 +124,7 @@ Other policy evaluation:
 \code{\link{etwfe}()},
 \code{\link{eventplot}()},
 \code{\link{eventstudy}()},
+\code{\link{panelplot}()},
 \code{\link{treatmentplot}()}
 }
 \concept{policy evaluation}

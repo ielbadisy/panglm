@@ -48,6 +48,7 @@ reference:
   - attgt
   - etwfe
   - trendplot
+  - panelplot
 
 - title: Endogeneity
   desc: >

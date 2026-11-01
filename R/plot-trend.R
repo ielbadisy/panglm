@@ -58,7 +58,8 @@
 #'   label), `time` (calendar period, or event time for `type = "event"`),
 #'   `mean`, `se` and `n` (number of observations)
 #' @family policy evaluation
-#' @seealso [treatmentplot()] for the treatment timing, [attgt()] and
+#' @seealso [treatmentplot()] for the treatment timing, [panelplot()] for the
+#'   unit by period values, [attgt()] and
 #'   [etwfe()] for the estimators.
 #' @examples
 #' set.seed(2)
