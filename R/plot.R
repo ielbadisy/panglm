@@ -405,3 +405,18 @@ plot.panglm_hurdle <- function(x, which = c("both", "zero", "count"),
   }
   invisible(NULL)
 }
+
+#' Single-model coefficient plot with every term (internal interface)
+#'
+#' Kept for internal callers written against the former helper; draws with
+#' the shared dot-and-whisker layout.
+#'
+#' @keywords internal
+#' @noRd
+.panglm_plot_coefficients <- function(coefficients, vcov, level, main, xlab, ...) {
+  tab <- .panglm_coef_matrices(
+    list(list(est = coefficients, se = .panglm_coef_se(coefficients, vcov))),
+    seq_along(coefficients), level
+  )
+  .panglm_dotwhisker(tab, main = main, xlab = xlab, ...)
+}
