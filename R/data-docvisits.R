@@ -119,8 +119,8 @@
 #'     against `model = "pooling"` or `model = "random"`.
 #'   \item Do covariates act on the decision to see a doctor or on how often
 #'     one goes? Fixed-effects hurdle count model `panhurdle(docvis ~ ...,
-#'     family = "poisson")` (time-varying regressors only; use a subset of
-#'     persons, it is slow on the full panel).
+#'     family = "poisson")` (time-varying regressors only: time-invariant
+#'     ones such as `female` are dropped with a warning).
 #'   \item Are there latent "low user" and "high user" classes, as in Deb and
 #'     Trivedi? Finite mixture `panfmm(docvis ~ ..., k = 2, family =
 #'     "negbin")`, with partial pooling by person.

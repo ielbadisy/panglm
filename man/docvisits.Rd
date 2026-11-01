@@ -107,8 +107,8 @@ Wooldridge initial conditions on the consecutive waves 1984 to 1988:
 Ordered outcome: \code{panglm(hsat ~ ..., family = "ologit", model = "within")} (blow-up-and-cluster fixed-effects ordered logit)
 against \code{model = "pooling"} or \code{model = "random"}.
 \item Do covariates act on the decision to see a doctor or on how often
-one goes? Fixed-effects hurdle count model \code{panhurdle(docvis ~ ..., family = "poisson")} (time-varying regressors only; use a subset of
-persons, it is slow on the full panel).
+one goes? Fixed-effects hurdle count model \code{panhurdle(docvis ~ ..., family = "poisson")} (time-varying regressors only: time-invariant
+ones such as \code{female} are dropped with a warning).
 \item Are there latent "low user" and "high user" classes, as in Deb and
 Trivedi? Finite mixture \code{panfmm(docvis ~ ..., k = 2, family = "negbin")}, with partial pooling by person.
 \item Effects of time-invariant characteristics (gender, schooling)
