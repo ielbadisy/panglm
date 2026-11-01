@@ -106,3 +106,72 @@ test_that("NB2 count part reaches the Poisson limit when the counts are underdis
   expect_equal(unname(nb$coefficients), unname(po$coefficients), tolerance = 1e-4)
   expect_equal(nb$loglik, po$loglik, tolerance = 1e-6)
 })
+
+hurdle_panel <- function(seed = 3, N = 40, Tt = 6) {
+  set.seed(seed)
+  d <- data.frame(id = rep(seq_len(N), each = Tt), time = rep(seq_len(Tt), N))
+  d$x1 <- rnorm(N * Tt)
+  d$x2 <- rnorm(N * Tt)
+  d$y <- stats::rnbinom(N * Tt, size = 1.5,
+                        mu = exp(0.5 + 0.4 * d$x1 - 0.3 * d$x2 + rep(rnorm(N), each = Tt)))
+  d
+}
+
+test_that("count part matches glmmTMB truncated counts with group dummies", {
+  skip_if_missing("glmmTMB")
+  d <- hurdle_panel()
+  dp <- d[d$y > 0, ]
+  ones <- tapply(dp$y, dp$id, function(v) all(v == 1))
+  dp <- dp[!ones[as.character(dp$id)], ]
+  for (fam in c("poisson", "negbin")) {
+    fit <- suppressMessages(panhurdle(y ~ x1 + x2, d, c("id", "time"), family = fam))
+    ref <- glmmTMB::glmmTMB(
+      y ~ x1 + x2 + factor(id), data = dp,
+      family = if (fam == "poisson") glmmTMB::truncated_poisson() else glmmTMB::truncated_nbinom2()
+    )
+    b <- glmmTMB::fixef(ref)$cond[c("x1", "x2")]
+    se <- sqrt(diag(stats::vcov(ref)$cond))[c("x1", "x2")]
+    expect_equal(unname(fit$count$coefficients), unname(b), tolerance = 1e-4)
+    expect_equal(unname(sqrt(diag(fit$count$vcov))), unname(se), tolerance = 1e-4)
+    expect_equal(fit$count$loglik, as.numeric(stats::logLik(ref)), tolerance = 1e-6)
+    if (fam == "negbin") expect_equal(fit$count$theta, stats::sigma(ref), tolerance = 1e-4)
+  }
+})
+
+test_that("zero part matches survival::clogit", {
+  skip_if_missing("survival")
+  suppressMessages(library(survival))
+  d <- hurdle_panel()
+  fit <- suppressMessages(panhurdle(y ~ x1 + x2, d, c("id", "time")))
+  d$pos <- as.numeric(d$y > 0)
+  ref <- clogit(pos ~ x1 + x2 + strata(id), data = d, method = "exact")
+  expect_equal(unname(fit$zero$coefficients), unname(stats::coef(ref)), tolerance = 1e-6)
+  expect_equal(fit$zero$loglik, ref$loglik[2], tolerance = 1e-6)
+})
+
+test_that("groups whose positive counts are all 1 are dropped from the count part", {
+  d <- hurdle_panel()
+  expect_message(fit <- panhurdle(y ~ x1 + x2, d, c("id", "time")), "all 1 dropped")
+  pos <- d[d$y > 0, ]
+  n_ones <- sum(tapply(pos$y, pos$id, function(v) all(v == 1)))
+  expect_gt(n_ones, 0)
+  expect_identical(fit$count$n_dropped_groups, n_ones)
+  expect_length(fit$count$fitted.values, fit$n_positive)
+  expect_true(all(is.finite(stats::coef(fit))))
+
+  d$y <- as.numeric(d$y > 0)
+  expect_error(suppressMessages(panhurdle(y ~ x1, d, c("id", "time"))), "not identified")
+})
+
+test_that("panhurdle() fits the docvisits panel in seconds", {
+  skip_on_cran()
+  data(docvisits, package = "panglm", envir = environment())
+  elapsed <- system.time(
+    fit <- suppressMessages(panhurdle(docvis ~ age + hhninc + hsat, docvisits,
+                                      c("id", "year"), family = "negbin"))
+  )[["elapsed"]]
+  expect_lt(elapsed, 20)
+  expect_identical(fit$count$convergence, 0L)
+  expect_true(all(is.finite(sqrt(diag(stats::vcov(fit))))))
+  expect_true(fit$count$theta > 1 && fit$count$theta < 10)
+})

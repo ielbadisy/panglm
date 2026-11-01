@@ -103,6 +103,23 @@ panels ship with the package. Estimates are unchanged.
   off to infinity (counts no more dispersed than Poisson): `log P(Y = 0)`
   is computed as `-theta * log1p(mu / theta)`, which stays finite, and
   the fit then reaches the zero-truncated Poisson limit.
+* `panhurdle()` count part: groups whose positive counts are all 1 have
+  no finite intercept and are now dropped with a message (they carry no
+  information). They made the Newton system singular ("system is
+  computationally singular", e.g. on `docvisits` and `meps`), and a
+  binary outcome now stops with a clear message instead of returning
+  meaningless count coefficients.
+* `panhurdle()` count part is now fit by Newton-Raphson with the analytic
+  gradient and Hessian, eliminating the diagonal block of the group
+  intercepts at each step instead of building an n x G dummy matrix
+  (NB2: previously BFGS with a numerical Hessian). A fit that took
+  minutes (144 s for `docvis ~ hsat` on 400 `docvisits` individuals;
+  almost 10 minutes on the full panel before failing) now takes about a
+  second. Estimates
+  match `glmmTMB` truncated Poisson / NB2 fits with group dummies; the
+  NB2 standard errors, previously from an inaccurate numerical Hessian
+  of a not fully converged BFGS fit, now equal the inverse observed
+  information.
 
 # panglm 1.6.2
 
