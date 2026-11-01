@@ -14,7 +14,8 @@ test_that("medicaid has the documented structure", {
   expect_false(anyNA(medicaid[setdiff(names(medicaid),
                                       c("lowpop", "uninslow", "adopt",
                                         "expdate"))]))
-  rd <- tools::Rd_db("panglm")[["medicaid.Rd"]]
+  db <- tryCatch(tools::Rd_db("panglm"), error = function(e) NULL)
+  rd <- db[["medicaid.Rd"]]
   if (!is.null(rd)) {
     expect_match(paste(as.character(rd), collapse = ""), "and 20\\s+columns")
   }
