@@ -99,7 +99,8 @@ panhurdle <- function(formula, data, index,
   }
 
   out <- list(zero = zero_fit, count = count_fit, formula = formula, index = index,
-              count_family = count_family, n = length(y), n_positive = sum(keep))
+              count_family = count_family, n = length(y), n_positive = sum(keep),
+              group_levels = panel$group_id)
   class(out) <- "panglm_hurdle"
   out
 }

@@ -110,6 +110,7 @@ Other panglm methods:
 \code{\link{coefplot}()},
 \code{\link{confint.panglm}()},
 \code{\link{fitted.panglm}()},
+\code{\link{fixef}()},
 \code{\link{glance.panglm}()},
 \code{\link{logLik.panglm}()},
 \code{\link{model.matrix.panglm}()},
