@@ -140,6 +140,22 @@ panglm_mean_function <- function(object) {
 #' @keywords internal
 #' @noRd
 panglm_predictor <- function(object, hold_cre = TRUE) {
+  parts <- panglm_index_predictor(object, hold_cre)
+  function(theta, data) {
+    parts$meanfun(data)(as.numeric(parts$design(data) %*% theta) + parts$shift)
+  }
+}
+
+#' The pieces of the mean prediction: design, offset of the index, mean of the index
+#'
+#' `design(data)` is the model matrix (CRE means held at their fitted
+#' values), `shift` the fixed-effect part of the linear index and
+#' `meanfun(data)` the function mapping the linear index to the mean used by
+#' [partialeffects()] (population-averaged for random-effects fits).
+#'
+#' @keywords internal
+#' @noRd
+panglm_index_predictor <- function(object, hold_cre = TRUE) {
   if (object$model == "within" && object$family$family == "binomial") {
     stop("partial effects are not identified for exact conditional logit fits; ",
          "use model = 'random' with cre = TRUE instead", call. = FALSE)
@@ -150,19 +166,18 @@ panglm_predictor <- function(object, hold_cre = TRUE) {
   }
   cre_columns <- object$cre_columns %||% character(0)
   cre_means <- if (hold_cre && length(cre_columns)) object$X[, cre_columns, drop = FALSE] else NULL
+  design <- function(data) panglm_design(object, data, cre_means)
   if (!is.null(object$varcomp)) {
     # random slopes: the population-averaged mean depends on z_it
-    return(function(theta, data) {
-      X <- panglm_design(object, data, cre_means)
-      slopes_marginal_mean(object$family, as.numeric(X %*% theta),
-                           slopes_z(object$random, data), object$varcomp)
-    })
+    meanfun <- function(data) {
+      Z <- slopes_z(object$random, data)
+      function(eta) slopes_marginal_mean(object$family, eta, Z, object$varcomp)
+    }
+  } else {
+    mean_fun <- panglm_mean_function(object)
+    meanfun <- function(data) mean_fun
   }
-  mean_fun <- panglm_mean_function(object)
-  function(theta, data) {
-    X <- panglm_design(object, data, cre_means)
-    mean_fun(as.numeric(X %*% theta) + shift)
-  }
+  list(design = design, shift = shift, meanfun = meanfun)
 }
 
 ape_variables <- function(terms_object, data, index, variables) {
