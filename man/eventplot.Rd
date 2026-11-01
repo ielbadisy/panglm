@@ -69,6 +69,7 @@ Other policy evaluation:
 \code{\link{did}()},
 \code{\link{etwfe}()},
 \code{\link{eventstudy}()},
-\code{\link{treatmentplot}()}
+\code{\link{treatmentplot}()},
+\code{\link{trendplot}()}
 }
 \concept{policy evaluation}

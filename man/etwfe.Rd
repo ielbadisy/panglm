@@ -218,6 +218,7 @@ Other policy evaluation:
 \code{\link{did}()},
 \code{\link{eventplot}()},
 \code{\link{eventstudy}()},
-\code{\link{treatmentplot}()}
+\code{\link{treatmentplot}()},
+\code{\link{trendplot}()}
 }
 \concept{policy evaluation}

@@ -116,6 +116,7 @@ Other policy evaluation:
 \code{\link{did}()},
 \code{\link{etwfe}()},
 \code{\link{eventplot}()},
-\code{\link{treatmentplot}()}
+\code{\link{treatmentplot}()},
+\code{\link{trendplot}()}
 }
 \concept{policy evaluation}
