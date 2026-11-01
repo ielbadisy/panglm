@@ -35,6 +35,7 @@ summary(pangmm(y ~ lag(y, 1) | lag(y, 2:99), data = d, index = c("id", "t")))
 }
 \seealso{
 Other pangmm methods: 
+\code{\link{plot.pangmm}()},
 \code{\link{predict.pangmm}()},
 \code{\link{vcov.pangmm}()}
 }

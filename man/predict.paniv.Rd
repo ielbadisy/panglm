@@ -59,6 +59,7 @@ predict(fit, newdata = data.frame(id = 1:2, t = 5, x = 0))
 }
 \seealso{
 Other paniv methods: 
+\code{\link{plot.pangmm}()},
 \code{\link{summary.paniv}()},
 \code{\link{vcov.paniv}()}
 }

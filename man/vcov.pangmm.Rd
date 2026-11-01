@@ -37,6 +37,7 @@ sqrt(diag(vcov(fit, type = "robust")))
 }
 \seealso{
 Other pangmm methods: 
+\code{\link{plot.pangmm}()},
 \code{\link{predict.pangmm}()},
 \code{\link{summary.pangmm}()}
 }

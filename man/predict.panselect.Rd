@@ -74,6 +74,7 @@ head(predict(fit, newdata = d, type = "selection"))
 }
 \seealso{
 Other panselect methods: 
+\code{\link{plot.pangmm}()},
 \code{\link{summary.panselect}()},
 \code{\link{vcov.panselect}()}
 }

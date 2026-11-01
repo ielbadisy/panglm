@@ -31,6 +31,7 @@ summary(panfmm(y ~ x, data = d, index = c("id", "t"), nstart = 2, seed = 1))
 }
 \seealso{
 Other panfmm methods: 
+\code{\link{plot.panfmm}()},
 \code{\link{predict.panfmm}()},
 \code{\link{vcov.panfmm}()}
 }

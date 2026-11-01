@@ -30,6 +30,7 @@ summary(paniv(y ~ x | z, data = d, index = c("id", "t"), model = "within"))
 }
 \seealso{
 Other paniv methods: 
+\code{\link{plot.pangmm}()},
 \code{\link{predict.paniv}()},
 \code{\link{vcov.paniv}()}
 }

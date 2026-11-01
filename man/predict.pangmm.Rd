@@ -66,6 +66,7 @@ head(predict(fit, newdata = d, type = "difference"))
 }
 \seealso{
 Other pangmm methods: 
+\code{\link{plot.pangmm}()},
 \code{\link{summary.pangmm}()},
 \code{\link{vcov.pangmm}()}
 }

@@ -61,6 +61,7 @@ predict(fit, newdata = data.frame(x = c(-1, 0, 1)), type = "components")
 }
 \seealso{
 Other panfmm methods: 
+\code{\link{plot.panfmm}()},
 \code{\link{summary.panfmm}()},
 \code{\link{vcov.panfmm}()}
 }

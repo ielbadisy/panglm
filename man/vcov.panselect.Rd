@@ -33,6 +33,7 @@ vcov(fit, type = "cluster")
 }
 \seealso{
 Other panselect methods: 
+\code{\link{plot.pangmm}()},
 \code{\link{predict.panselect}()},
 \code{\link{summary.panselect}()}
 }

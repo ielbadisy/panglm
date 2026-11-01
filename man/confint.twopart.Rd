@@ -32,6 +32,7 @@ confint(fit)
 }
 \seealso{
 Other twopart methods: 
+\code{\link{plot.twopart}()},
 \code{\link{predict.twopart}()}
 }
 \concept{twopart methods}

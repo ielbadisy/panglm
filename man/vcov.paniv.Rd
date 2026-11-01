@@ -34,6 +34,7 @@ vcov(fit, type = "cluster")
 }
 \seealso{
 Other paniv methods: 
+\code{\link{plot.pangmm}()},
 \code{\link{predict.paniv}()},
 \code{\link{summary.paniv}()}
 }

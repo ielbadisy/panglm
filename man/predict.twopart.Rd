@@ -37,6 +37,7 @@ head(predict(tp, type = "positive")) # E[y | y > 0]
 }
 \seealso{
 Other twopart methods: 
-\code{\link{confint.twopart}()}
+\code{\link{confint.twopart}()},
+\code{\link{plot.twopart}()}
 }
 \concept{twopart methods}

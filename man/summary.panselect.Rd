@@ -32,6 +32,7 @@ summary(panselect(s ~ x + z, y ~ x, data = d, index = c("id", "t"),
 }
 \seealso{
 Other panselect methods: 
+\code{\link{plot.pangmm}()},
 \code{\link{predict.panselect}()},
 \code{\link{vcov.panselect}()}
 }

@@ -36,6 +36,7 @@ sqrt(diag(vcov(fit, type = "cluster")))
 }
 \seealso{
 Other panfmm methods: 
+\code{\link{plot.panfmm}()},
 \code{\link{predict.panfmm}()},
 \code{\link{summary.panfmm}()}
 }
