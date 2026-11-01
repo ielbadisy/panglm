@@ -98,6 +98,17 @@ panels ship with the package. Estimates are unchanged.
   the signed statistic is kept, the p-value is `NA` and a warning points
   to `method = "mundlak"`. The print method drops the stray space before
   commas.
+* `panglm()` detects columns that are collinear up to rounding, not only
+  exactly. With `cre = TRUE`, an age that rises one per year but is stored
+  with a small rounding error (e.g. `pglm::HealthIns`) made the Mundlak
+  means of age and of the year dummies dependent up to 1e-6; the check,
+  which tested each column relative to its own norm, kept them all and
+  the fit returned offsetting coefficients of order 1e5 with no warning.
+  Each column is now scaled by the norm of its original column and a
+  combination below 1e-7 on that scale is dropped with the usual
+  "rank-deficient model matrix" warning naming the column. Exact
+  dependencies drop the same columns as `lm()`. This applies to every
+  model and family of `panglm()`.
 
 # panglm 1.6.2
 
