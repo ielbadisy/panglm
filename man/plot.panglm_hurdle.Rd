@@ -4,7 +4,7 @@
 \alias{plot.panglm_hurdle}
 \title{Plot a fitted panglm hurdle model}
 \usage{
-\method{plot}{panglm_hurdle}(x, which = c("both", "zero", "count"), level = 0.95, ...)
+\method{plot}{panglm_hurdle}(x, which = c("both", "zero", "count"), level = 0.95, parm = NULL, ...)
 }
 \arguments{
 \item{x}{a fitted \code{"panglm_hurdle"} object}
@@ -13,6 +13,9 @@
 
 \item{level}{confidence level for coefficient intervals}
 
+\item{parm}{names or positions of the terms to plot; by default every
+term except \code{"(Intercept)"}}
+
 \item{...}{additional arguments passed to \code{\link[graphics:plot.default]{graphics::plot.default()}}}
 }
 \value{
@@ -20,7 +23,8 @@
 }
 \description{
 Displays coefficient estimates and Wald confidence intervals for the
-binary hurdle component, the positive-count component, or both.
+binary hurdle component, the positive-count component, or both, in the
+dot-and-whisker layout of \code{\link[=plot.panglm]{plot.panglm()}}.
 }
 \examples{
 data(copd)

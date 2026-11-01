@@ -57,6 +57,7 @@ Other panglm methods:
 \code{\link{plot.panglm_effectcurve}()},
 \code{\link{predict.panglm}()},
 \code{\link{predict.panordered}()},
+\code{\link{residuals.panglm}()},
 \code{\link{tidy.panglm}()},
 \code{\link{vcov.panglm}()}
 }

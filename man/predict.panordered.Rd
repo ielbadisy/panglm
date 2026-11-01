@@ -46,6 +46,7 @@ Other panglm methods:
 \code{\link{plot.panglm}()},
 \code{\link{plot.panglm_effectcurve}()},
 \code{\link{predict.panglm}()},
+\code{\link{residuals.panglm}()},
 \code{\link{summary.panglm}()},
 \code{\link{tidy.panglm}()},
 \code{\link{vcov.panglm}()}

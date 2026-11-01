@@ -26,12 +26,45 @@ fitted.panglm <- function(object, ...) {
   stats::napredict(object$na.action, values)
 }
 
+#' Extract residuals from a panglm model
+#'
+#' Response residuals `y - mu` or Pearson residuals
+#' `(y - mu) / sqrt(V(mu))`, with `mu` the stored fitted values and `V` the
+#' variance function of the family, unscaled by the dispersion as in
+#' `stats::residuals.glm()`: `1` (Gaussian), `mu` (Poisson),
+#' `mu + mu^2 / theta` (NB2 negative binomial), `mu (1 - mu)` (binomial),
+#' `mu^2` (gamma) and `mu (1 - mu) / (1 + phi)` (beta). For random-effects
+#' Poisson-gamma and beta-negative-binomial random-intercept fits, whose
+#' fitted values are marginal means, `V` is the marginal variance implied by
+#' the mixing distribution; where it is not finite (beta parameter `a <= 2`)
+#' the Poisson variance is used. For random-slope fits `V` is the
+#' conditional variance function evaluated at the marginal mean. Pearson
+#' residuals are not defined for the ordered and Tobit families.
+#'
+#' @param object a fitted `"panglm"` object
+#' @param type `"response"` (default) or `"pearson"`
+#' @param ... unused
+#' @return a numeric vector, one value per row of the original data (in that
+#'   row order), `NA` at rows dropped for missingness.
+#' @family panglm methods
+#' @examples
+#' data(copd)
+#' fit <- panglm(exacerbations ~ crp, data = copd,
+#'               index = c("id", "visit"), model = "pooling",
+#'               family = "poisson")
+#' head(residuals(fit))
+#' head(residuals(fit, type = "pearson"))
 #' @export
-residuals.panglm <- function(object, ...) {
+residuals.panglm <- function(object, type = c("response", "pearson"), ...) {
+  type <- match.arg(type)
   if (is.null(object$fitted.values) || is.null(object$y)) {
     stop("residuals are not available for this fitted model", call. = FALSE)
   }
-  values <- object$y - object$fitted.values
+  values <- if (type == "pearson") {
+    panglm_pearson(object, fallback = FALSE)$residuals
+  } else {
+    object$y - object$fitted.values
+  }
   values <- values[object$inverse_order %||% seq_along(values)]
   stats::naresid(object$na.action, values)
 }

@@ -6,8 +6,12 @@
 \usage{
 \method{plot}{panglm}(
   x,
-  which = c("coefficients", "residuals", "fitted"),
+  which = c("coefficients", "residuals", "fitted", "qq", "calibration", "rootogram"),
   level = 0.95,
+  parm = NULL,
+  type = c("pearson", "response"),
+  bins = 10,
+  max = NULL,
   main = NULL,
   xlab = NULL,
   ...
@@ -16,9 +20,21 @@
 \arguments{
 \item{x}{a fitted \code{"panglm"} object}
 
-\item{which}{one of \code{"coefficients"}, \code{"residuals"}, or \code{"fitted"}}
+\item{which}{one of \code{"coefficients"}, \code{"residuals"}, \code{"fitted"}, \code{"qq"},
+\code{"calibration"} or \code{"rootogram"}}
 
-\item{level}{confidence level for coefficient intervals}
+\item{level}{confidence level for coefficient and calibration intervals}
+
+\item{parm}{names or positions of the terms of the coefficient plot; by
+default every term except \code{"(Intercept)"}}
+
+\item{type}{residuals of the \code{"residuals"} view, \code{"pearson"} (default)
+or \code{"response"}}
+
+\item{bins}{number of quantile bins of the calibration plot}
+
+\item{max}{largest count of the rootogram; by default the 99th
+percentile of the outcome}
 
 \item{main}{optional plot title}
 
@@ -30,15 +46,65 @@
 \code{x}, invisibly
 }
 \description{
-Provides base-graphics coefficient and diagnostic plots. The coefficient
-view shows Wald confidence intervals. Diagnostic views are available when
-the fitted object stores fitted values.
+Base-graphics coefficient and diagnostic plots of a \code{\link[=panglm]{panglm()}} fit.
+}
+\details{
+\itemize{
+\item \code{"coefficients"}: estimates with Wald confidence intervals (the
+dot-and-whisker layout shared by every panglm coefficient plot and by
+\code{\link[=coefplot]{coefplot()}}); the left margin is sized to the longest term label.
+\item \code{"residuals"}: residuals against fitted values with a
+\code{\link[stats:lowess]{stats::lowess()}} smooth. Pearson residuals by default (see
+\code{\link[=residuals.panglm]{residuals.panglm()}} for the variance functions); for the ordered and
+Tobit families, where they are not defined, response residuals are
+drawn with a message. For log-link families (Poisson, negative
+binomial, log-link gamma) the fitted values are on a logarithmic axis,
+which spreads the many small means of count data.
+\item \code{"fitted"}: observed against fitted values with the 45-degree line.
+\item \code{"qq"}: normal Q-Q plot of the Pearson residuals with a reference
+line through the quartiles; for the Gaussian and gamma families the
+residuals are divided by the square root of the dispersion
+(standardized Pearson residuals). For discrete outcomes the plot is
+lumpy by construction and mainly shows skewness and outliers.
+\item \code{"calibration"} (binomial families, logit or probit): observed
+proportion against mean predicted probability in \code{bins} quantile bins
+of the predicted probability, with exact (Clopper-Pearson) binomial
+confidence intervals and the 45-degree line.
+\item \code{"rootogram"} (Poisson and negative binomial families): hanging
+rootogram. The curve is \code{sqrt(E_k)}, the expected frequency of count
+\code{k} summed over observations, \verb{E_k = sum_i P(y_i = k)}; the bars of
+height \code{sqrt(O_k)} (observed frequency) hang from it, so that bars
+ending above zero mark counts predicted too often and bars ending below
+zero counts predicted too rarely. \code{P(y_i = k)} is the Poisson or NB2
+probability at the fitted mean for pooled and fixed-effects fits (the
+fixed-effects means include the estimated individual effects). For
+random-intercept fits it is the marginal probability of a single
+observation implied by the mixing distribution, which is exactly the
+distribution whose frequencies the rootogram compares: negative
+binomial with size \code{d} for the Poisson-gamma model, beta-negative
+binomial for the Hausman-Hall-Griliches negative binomial model.
+Random-slope fits have no closed-form marginal and are not supported.
+}
 }
 \examples{
 data(copd)
-fit <- panglm(fev1 ~ crp, data = copd, index = c("id", "visit"),
-              model = "within", family = "gaussian")
+fit <- panglm(fev1 ~ crp + age + treatment, data = copd,
+              index = c("id", "visit"), model = "random",
+              family = "gaussian")
 plot(fit)
+plot(fit, parm = c("crp", "treatment"))
+plot(fit, which = "residuals")
+plot(fit, which = "qq")
+
+counts <- panglm(exacerbations ~ crp + treatment, data = copd,
+                 index = c("id", "visit"), model = "pooling",
+                 family = "negbin")
+plot(counts, which = "rootogram")
+
+any_exacerbation <- panglm(I(exacerbations > 0) ~ crp + treatment,
+                           data = copd, index = c("id", "visit"),
+                           model = "pooling", family = "binomial")
+plot(any_exacerbation, which = "calibration", bins = 5)
 }
 \seealso{
 Other panglm methods: 
@@ -53,6 +119,7 @@ Other panglm methods:
 \code{\link{plot.panglm_effectcurve}()},
 \code{\link{predict.panglm}()},
 \code{\link{predict.panordered}()},
+\code{\link{residuals.panglm}()},
 \code{\link{summary.panglm}()},
 \code{\link{tidy.panglm}()},
 \code{\link{vcov.panglm}()}
