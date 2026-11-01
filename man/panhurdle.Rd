@@ -71,6 +71,13 @@ finite estimate (the truncated likelihood approaches its maximum as the
 group mean goes to 0, whatever the slopes), so they carry no
 information either.
 
+Both parts remove one effect per individual, so regressors that do not
+vary within individuals (sex, baseline covariates) are not identified:
+they are dropped with a warning, as in \code{panglm(model = "within")}. A
+regressor that varies only in individuals a part does not use (for
+example individuals with a single positive count, for the count part) is
+dropped from that part alone, with a warning.
+
 The count part is fit by Newton-Raphson with the analytic gradient and
 Hessian of the joint likelihood. The group intercepts enter through a
 diagonal Hessian block that is eliminated at each step, so the cost is

@@ -120,6 +120,13 @@ panels ship with the package. Estimates are unchanged.
   NB2 standard errors, previously from an inaccurate numerical Hessian
   of a not fully converged BFGS fit, now equal the inverse observed
   information.
+* `panhurdle()` no longer fails ("system is computationally singular")
+  when the formula contains time-invariant regressors such as sex or a
+  baseline covariate. Both parts of the fixed-effects hurdle remove an
+  effect per individual, so these regressors are not identified: they are
+  dropped with a warning, as in `panglm(model = "within")`. A regressor
+  that varies only in individuals a part does not use is dropped from
+  that part alone, with a warning.
 
 # panglm 1.6.2
 

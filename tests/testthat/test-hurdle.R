@@ -160,7 +160,7 @@ test_that("groups whose positive counts are all 1 are dropped from the count par
   expect_true(all(is.finite(stats::coef(fit))))
 
   d$y <- as.numeric(d$y > 0)
-  expect_error(suppressMessages(panhurdle(y ~ x1, d, c("id", "time"))), "not identified")
+  expect_error(suppressMessages(panhurdle(y ~ x1, d, c("id", "time"))), "identified")
 })
 
 test_that("panhurdle() fits the docvisits panel in seconds", {
@@ -174,4 +174,35 @@ test_that("panhurdle() fits the docvisits panel in seconds", {
   expect_identical(fit$count$convergence, 0L)
   expect_true(all(is.finite(sqrt(diag(stats::vcov(fit))))))
   expect_true(fit$count$theta > 1 && fit$count$theta < 10)
+})
+
+test_that("time-invariant regressors are dropped with a warning", {
+  data(copd, package = "panglm", envir = environment())
+  ref <- suppressMessages(panhurdle(exacerbations ~ crp + fev1, copd, c("id", "visit")))
+  expect_warning(
+    fit <- suppressMessages(panhurdle(exacerbations ~ crp + age + fev1, copd, c("id", "visit"))),
+    "time-invariant regressor\\(s\\) dropped.*age"
+  )
+  expect_equal(stats::coef(fit), stats::coef(ref))
+  expect_equal(stats::vcov(fit), stats::vcov(ref))
+  expect_error(
+    suppressWarnings(suppressMessages(
+      panhurdle(exacerbations ~ age + smoker, copd, c("id", "visit"))
+    )),
+    "no time-varying regressors left"
+  )
+})
+
+test_that("a regressor varying only where a part has no information is dropped from that part", {
+  d <- hurdle_panel()
+  pos_n <- tapply(d$y > 0 & d$y != 1, d$id, sum)
+  # z varies only in individuals with no count-part information
+  quiet_ids <- as.integer(names(pos_n)[pos_n == 0])
+  expect_gt(length(quiet_ids), 0)
+  d$z <- ifelse(d$id %in% quiet_ids, d$time, 0)
+  fit <- NULL
+  expect_warning(fit <- suppressMessages(panhurdle(y ~ x1 + z, d, c("id", "time"))),
+                 "not identified in the count part dropped from it: z")
+  expect_true("zero:z" %in% names(stats::coef(fit)))
+  expect_false("count:z" %in% names(stats::coef(fit)))
 })

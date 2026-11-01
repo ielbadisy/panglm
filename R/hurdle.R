@@ -35,6 +35,13 @@
 #' group mean goes to 0, whatever the slopes), so they carry no
 #' information either.
 #'
+#' Both parts remove one effect per individual, so regressors that do not
+#' vary within individuals (sex, baseline covariates) are not identified:
+#' they are dropped with a warning, as in `panglm(model = "within")`. A
+#' regressor that varies only in individuals a part does not use (for
+#' example individuals with a single positive count, for the count part) is
+#' dropped from that part alone, with a warning.
+#'
 #' The count part is fit by Newton-Raphson with the analytic gradient and
 #' Hessian of the joint likelihood. The group intercepts enter through a
 #' diagonal Hessian block that is eliminated at each step, so the cost is
@@ -94,16 +101,36 @@ panhurdle <- function(formula, data, index,
   X <- X[ord, , drop = FALSE]
   group_start <- panel$group_start
   group_size <- panel$group_size
+  group <- rep(seq_along(group_size), group_size)
+
+  # Both parts condition on (or estimate) one effect per individual, so a
+  # regressor constant within every individual (sex, a baseline covariate)
+  # is not identified: it is dropped with a warning, as in
+  # panglm(model = "within"). Each part is then checked on the individuals
+  # it actually uses.
+  if (!ncol(X)) stop("the model contains no regressors", call. = FALSE)
+  varying <- hurdle_identified(X, group, rep(TRUE, length(y)))
+  invariant <- setdiff(colnames(X), varying)
+  if (length(invariant)) {
+    warning("time-invariant regressor(s) dropped (not identified with fixed effects): ",
+            paste(invariant, collapse = ", "), call. = FALSE)
+    if (!length(varying)) stop("no time-varying regressors left", call. = FALSE)
+    X <- X[, varying, drop = FALSE]
+  }
 
   y_bin <- as.numeric(y > 0)
-  zero_fit <- fit_within_binomial(X, y_bin, group_start, group_size, maxit, tol)
+  informative <- rowsum(y_bin, group, reorder = TRUE)[, 1]
+  informative <- (informative > 0 & informative < group_size)[group]
+  X_zero <- hurdle_part_columns(X, group, informative, "zero")
+  zero_fit <- fit_within_binomial(X_zero, y_bin, group_start, group_size, maxit, tol)
   zero_fit$formula <- formula; zero_fit$index <- index
   class(zero_fit) <- "panglm"
 
-  group <- rep(seq_along(group_size), group_size)
   keep <- y > 0
+  not_ones <- rowsum(as.numeric(keep & y != 1), group, reorder = TRUE)[, 1] > 0
+  X_count <- hurdle_part_columns(X, group, keep & not_ones[group], "count")
   count_fit <- fit_truncated_count_fe(
-    X[keep, , drop = FALSE], y[keep], group[keep], count_family, maxit, tol
+    X_count[keep, , drop = FALSE], y[keep], group[keep], count_family, maxit, tol
   )
 
   out <- list(zero = zero_fit, count = count_fit, formula = formula, index = index,
@@ -111,6 +138,34 @@ panhurdle <- function(formula, data, index,
               group_levels = panel$group_id)
   class(out) <- "panglm_hurdle"
   out
+}
+
+# Columns of X identified once each individual's effect is removed,
+# judged on the rows in `rows` (the individuals a part actually uses).
+hurdle_identified <- function(X, group, rows) {
+  if (!any(rows)) return(character(0))
+  g <- group[rows]
+  size <- tabulate(match(g, unique(g)))
+  start <- as.integer(c(0L, cumsum(size)[-length(size)]))
+  cols <- tryCatch(
+    panglm_estimable_columns(X[rows, , drop = FALSE], "within", "individual", start, size, NULL),
+    error = function(e) integer(0)
+  )
+  colnames(X)[cols]
+}
+
+# The regressors of one hurdle part: those not identified on its rows are
+# dropped with a warning.
+hurdle_part_columns <- function(X, group, rows, part) {
+  ok <- hurdle_identified(X, group, rows)
+  if (!length(ok)) {
+    stop("no regressor is identified in the ", part, " part", call. = FALSE)
+  }
+  if (length(ok) < ncol(X)) {
+    warning("regressor(s) not identified in the ", part, " part dropped from it: ",
+            paste(setdiff(colnames(X), ok), collapse = ", "), call. = FALSE)
+  }
+  X[, ok, drop = FALSE]
 }
 
 #' Zero-truncated Poisson or NB2 count part with group intercepts
