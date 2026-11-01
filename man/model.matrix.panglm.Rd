@@ -52,6 +52,7 @@ Other panglm methods:
 \code{\link{logLik.panglm}()},
 \code{\link{partialeffects.panordered}()},
 \code{\link{plot.panglm}()},
+\code{\link{plot.panglm_ape}()},
 \code{\link{plot.panglm_effectcurve}()},
 \code{\link{predict.panglm}()},
 \code{\link{predict.panordered}()},

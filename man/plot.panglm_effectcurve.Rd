@@ -7,17 +7,30 @@
 \method{plot}{panglm_effectcurve}(
   x,
   xlab = attr(x, "variable"),
-  ylab = "Effect on the linear predictor",
+  ylab = NULL,
   band_col = "grey85",
+  rug = TRUE,
+  col = NULL,
+  legend = "auto",
   ...
 )
 }
 \arguments{
 \item{x}{a \code{"panglm_effectcurve"} object from \code{\link[=effectcurve]{effectcurve()}}}
 
-\item{xlab, ylab}{axis labels}
+\item{xlab, ylab}{axis labels; \code{ylab} defaults to a label for the scale}
 
-\item{band_col}{colour of the confidence band}
+\item{band_col}{colour of the confidence band (single curve)}
+
+\item{rug}{if \code{TRUE}, mark the percentiles of the observed regressor on
+the horizontal axis}
+
+\item{col}{colour(s) of the curve(s); black for a single curve and the
+Okabe-Ito palette for curves by group by default}
+
+\item{legend}{position of the legend for curves by group: \code{"auto"} (the
+corner of the plot least covered by the curves and bands), a keyword
+accepted by \code{\link[graphics:legend]{graphics::legend()}}, or \code{FALSE} for none}
 
 \item{...}{passed to \code{\link[graphics:plot.default]{graphics::plot()}}}
 }
@@ -25,7 +38,12 @@
 \code{x}, invisibly
 }
 \description{
-Plot an effect curve
+Draws the estimate as a line over a shaded pointwise confidence band, a
+rug of the percentiles of the observed regressor, and dotted reference
+lines: at zero and at the reference value for link-scale curves, at zero
+for slope curves. Curves by group share one panel, one colour each, with
+a legend. Curves of a discrete regressor are drawn as points with
+confidence whiskers.
 }
 \examples{
 data(copd)
@@ -44,6 +62,7 @@ Other panglm methods:
 \code{\link{model.matrix.panglm}()},
 \code{\link{partialeffects.panordered}()},
 \code{\link{plot.panglm}()},
+\code{\link{plot.panglm_ape}()},
 \code{\link{predict.panglm}()},
 \code{\link{predict.panordered}()},
 \code{\link{residuals.panglm}()},

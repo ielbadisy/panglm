@@ -81,7 +81,9 @@ data(copd)
 fit <- panglm(hospitalized ~ treatment + age + crp, data = copd,
               index = c("id", "visit"), model = "random",
               family = "probit", cre = TRUE)
-partialeffects(fit)
+ape <- partialeffects(fit)
+ape
+plot(ape)
 }
 \references{
 Wooldridge, J. M. (2005). Unobserved heterogeneity and
@@ -89,7 +91,9 @@ estimation of average partial effects. In \emph{Identification and
 Inference for Econometric Models}, Cambridge University Press.
 }
 \seealso{
-\code{\link[=effectcurve]{effectcurve()}} for the effect of a spline term across its range.
+\code{\link[=plot.panglm_ape]{plot.panglm_ape()}} for a dot-and-whisker chart, and \code{\link[=effectcurve]{effectcurve()}}
+for the effect of a regressor across its range on the link, response or
+slope scale.
 
 Other panglm methods: 
 \code{\link{coefplot}()},
@@ -100,6 +104,7 @@ Other panglm methods:
 \code{\link{logLik.panglm}()},
 \code{\link{model.matrix.panglm}()},
 \code{\link{plot.panglm}()},
+\code{\link{plot.panglm_ape}()},
 \code{\link{plot.panglm_effectcurve}()},
 \code{\link{predict.panglm}()},
 \code{\link{predict.panordered}()},
