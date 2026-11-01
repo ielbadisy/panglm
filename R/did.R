@@ -279,8 +279,18 @@ coef.panglm_eventstudy <- function(object, ...) {
 
 #' Plot event-study coefficients
 #'
+#' Plots the event-time coefficients of [eventstudy()] with pointwise
+#' confidence intervals, in the same style as [plot.panglm_attgt()]:
+#' hollow points before treatment, filled after, an open diamond at the
+#' omitted reference period (zero by construction) and a dashed line at
+#' treatment onset. With `bin = TRUE` the end points pool all earlier
+#' (later) event times.
+#'
 #' @param x a `"panglm_eventstudy"` object from [eventstudy()]
-#' @param xlab,ylab axis labels
+#' @param min_e,max_e event window to plot
+#' @param xlab,ylab,main axis labels and title
+#' @param ylim y-axis limits
+#' @param legend logical: add a compact legend of the symbols
 #' @param ... passed to [graphics::plot()]
 #' @return `x`, invisibly
 #' @family eventstudy methods
@@ -294,15 +304,13 @@ coef.panglm_eventstudy <- function(object, ...) {
 #' es <- eventstudy(visits ~ 1, data = d, index = c("id", "year"),
 #'                  treat = "first", leads = 3, lags = 2)
 #' plot(es, main = "Effect of the policy by event time")
+#' plot(es, min_e = -2, legend = TRUE)
 #' @export
-plot.panglm_eventstudy <- function(x, xlab = "Event time", ylab = "Estimate", ...) {
-  tab <- x$estimates
-  ok <- is.finite(tab$estimate)
-  graphics::plot(tab$event[ok], tab$estimate[ok], pch = 19, xlab = xlab, ylab = ylab,
-                 ylim = range(tab$lower[ok], tab$upper[ok]), xaxt = "n", ...)
-  graphics::axis(1, at = tab$event)
-  graphics::segments(tab$event[ok], tab$lower[ok], tab$event[ok], tab$upper[ok])
-  graphics::abline(h = 0, lty = 3)
-  graphics::abline(v = x$ref + 0.5, lty = 2)
+plot.panglm_eventstudy <- function(x, min_e = -Inf, max_e = Inf, xlab = "Event time",
+                                   ylab = "Estimate", main = NULL, ylim = NULL,
+                                   legend = FALSE, ...) {
+  did_check_window(min_e, max_e)
+  did_drawes(es_plottab(x, min_e, max_e), event = TRUE, xlab = xlab, ylab = ylab,
+             main = main, ylim = ylim, legend = legend, level = x$level, ...)
   invisible(x)
 }

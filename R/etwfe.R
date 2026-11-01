@@ -545,12 +545,18 @@ nobs.panglm_etwfe <- function(object, ...) object$nobs
 #' Plot ETWFE treatment effects
 #'
 #' Plots the event-study aggregation of an [etwfe()] fit (or the cohort or
-#' calendar aggregation) with pointwise confidence intervals.
+#' calendar aggregation) with pointwise confidence intervals, in the same
+#' style as [plot.panglm_attgt()]: hollow points before treatment, filled
+#' after, and an open diamond at the reference period (event time `-1`
+#' with `control = "never"`).
 #'
 #' @param x a `"panglm_etwfe"` fit from [etwfe()], or its summary
 #' @param type aggregation to plot (for a fit): `"event"`, `"group"` or
 #'   `"calendar"`
-#' @param xlab,ylab axis labels
+#' @param min_e,max_e event window to plot (event-time plots only)
+#' @param xlab,ylab,main axis labels and title
+#' @param ylim y-axis limits
+#' @param legend logical: add a compact legend of the symbols
 #' @param ... passed to [graphics::plot()]
 #' @return the plotted summary, invisibly
 #' @family etwfe methods
@@ -560,18 +566,24 @@ nobs.panglm_etwfe <- function(object, ...) object$nobs
 #' d$first <- rep(c(4, 6, NA), each = 50)[d$id]
 #' d$y <- rnorm(150)[d$id] + 0.2 * d$t +
 #'   ifelse(!is.na(d$first) & d$t >= d$first, 1, 0) + rnorm(nrow(d))
-#' plot(etwfe(y ~ 1, d, index = c("id", "t"), treat = "first", control = "never"))
+#' fit <- etwfe(y ~ 1, d, index = c("id", "t"), treat = "first", control = "never")
+#' plot(fit)
+#' plot(fit, min_e = -3, max_e = 3, legend = TRUE)
 #' @export
-plot.panglm_etwfe <- function(x, type = c("event", "group", "calendar"), xlab = NULL,
-                              ylab = "ATT", ...) {
+plot.panglm_etwfe <- function(x, type = c("event", "group", "calendar"), min_e = -Inf,
+                              max_e = Inf, xlab = NULL, ylab = "ATT", main = NULL,
+                              ylim = NULL, legend = FALSE, ...) {
   type <- match.arg(type)
-  plot.summary.panglm_etwfe(summary.panglm_etwfe(x, type = type, byxvar = FALSE), xlab = xlab,
-                            ylab = ylab, ...)
+  plot.summary.panglm_etwfe(summary.panglm_etwfe(x, type = type, byxvar = FALSE),
+                            min_e = min_e, max_e = max_e, xlab = xlab, ylab = ylab,
+                            main = main, ylim = ylim, legend = legend, ...)
 }
 
 #' @rdname plot.panglm_etwfe
 #' @export
-plot.summary.panglm_etwfe <- function(x, type = NULL, xlab = NULL, ylab = "ATT", ...) {
+plot.summary.panglm_etwfe <- function(x, type = NULL, min_e = -Inf, max_e = Inf, xlab = NULL,
+                                      ylab = "ATT", main = NULL, ylim = NULL, legend = FALSE,
+                                      ...) {
   tab <- x$estimates
   if (is.null(tab) || x$type == "simple") {
     stop("nothing to plot for the simple aggregation", call. = FALSE)
@@ -580,7 +592,13 @@ plot.summary.panglm_etwfe <- function(x, type = NULL, xlab = NULL, ylab = "ATT",
     stop("plot a summary with byxvar = FALSE, or subset the estimates by '", x$xvar, "'",
          call. = FALSE)
   }
-  s <- list(estimates = tab[, c("level", "estimate", "se", "lower", "upper")],
-            type = c(event = "dynamic", group = "group", calendar = "calendar")[[x$type]])
-  plot.summary.panglm_attgt(s, xlab = xlab, ylab = ylab, ...)
+  did_check_window(min_e, max_e)
+  if (is.null(xlab)) {
+    xlab <- c(event = "Event time", group = "Treatment cohort", calendar = "Period")[[x$type]]
+  }
+  event <- x$type == "event"
+  ptab <- if (event) etwfe_plottab(x, min_e, max_e) else etwfe_plottab(x)
+  did_drawes(ptab, event = event, xlab = xlab, ylab = ylab, main = main, ylim = ylim,
+             legend = legend, level = x$level, ...)
+  invisible(x)
 }

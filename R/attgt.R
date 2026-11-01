@@ -763,18 +763,35 @@ nobs.panglm_attgt <- function(object, ...) object$n
 
 #' Plot an event study from group-time effects
 #'
-#' Plots the dynamic aggregation of [attgt()] (`ATT(e)` by event time with
-#' pointwise confidence intervals), or the cohort or calendar aggregation.
-#' When the fit has uniform confidence bands (`cband = TRUE`), they are
-#' drawn as thin grey whiskers behind the pointwise intervals.
+#' Plots the dynamic aggregation of [attgt()] (`ATT(e)` by event time), the
+#' cohort or calendar aggregation, or the group-time effects `ATT(g, t)`
+#' themselves. Points are hollow before treatment and filled after, with
+#' pointwise confidence intervals as black segments and a dashed line at
+#' treatment onset. When the fit has uniform confidence bands
+#' (`cband = TRUE`), they are drawn as light grey bars behind the pointwise
+#' intervals.
+#'
+#' With `type = "gt"`, one small panel per treatment cohort shows
+#' `ATT(g, t)` against calendar time, with the cohort size in the panel
+#' title, a dashed line at adoption and a common y axis (as `did::ggdid()`).
+#' The uniform bands of a `cband = TRUE` fit are simultaneous over all
+#' `ATT(g, t)`.
 #'
 #' @param x a `"panglm_attgt"` fit from [attgt()], or its summary
-#' @param type aggregation to plot (for a fit): `"dynamic"`, `"group"` or
-#'   `"calendar"`
-#' @param xlab,ylab axis labels
-#' @param ... passed to [summary.panglm_attgt()] (for example `min_e`,
-#'   `max_e`) and then to [graphics::plot()]
-#' @return the plotted summary, invisibly
+#' @param type what to plot (for a fit): `"dynamic"` (event study),
+#'   `"group"`, `"calendar"` or `"gt"` (the group-time effects, one panel
+#'   per cohort)
+#' @param min_e,max_e event window (event time for `"dynamic"`, calendar
+#'   time for `"gt"`)
+#' @param ncol number of panel columns for `type = "gt"` (default: about
+#'   the square root of the number of cohorts)
+#' @param xlab,ylab,main axis labels and title
+#' @param ylim y-axis limits
+#' @param legend logical: add a compact legend of the symbols
+#' @param ... passed to [summary.panglm_attgt()] (`balance_e`, `level`) and
+#'   then to [graphics::plot()]
+#' @return the plotted summary, invisibly; for `type = "gt"`, the plotted
+#'   rows of the `estimates` of the fit
 #' @family attgt methods
 #' @examples
 #' set.seed(2)
@@ -782,47 +799,124 @@ nobs.panglm_attgt <- function(object, ...) object$n
 #' d$first <- rep(c(4, 6, NA), each = 50)[d$id]
 #' d$y <- rnorm(150)[d$id] + 0.2 * d$t +
 #'   ifelse(!is.na(d$first) & d$t >= d$first, 1, 0) + rnorm(nrow(d))
-#' plot(attgt(y ~ 1, d, index = c("id", "t"), treat = "first"))
+#' fit <- attgt(y ~ 1, d, index = c("id", "t"), treat = "first")
+#' plot(fit)
+#' plot(fit, min_e = -2, max_e = 2, legend = TRUE)
+#' plot(fit, type = "gt")
+#' plot(fit, type = "group")
 #' @export
-plot.panglm_attgt <- function(x, type = c("dynamic", "group", "calendar"), xlab = NULL,
-                              ylab = "ATT", ...) {
+plot.panglm_attgt <- function(x, type = c("dynamic", "group", "calendar", "gt"),
+                              min_e = -Inf, max_e = Inf, ncol = NULL, xlab = NULL,
+                              ylab = "ATT", main = NULL, ylim = NULL, legend = FALSE, ...) {
   type <- match.arg(type)
+  did_check_window(min_e, max_e)
+  if (type == "gt") {
+    return(attgt_plotgt(x, min_e = min_e, max_e = max_e, ncol = ncol, xlab = xlab,
+                        ylab = ylab, main = main, ylim = ylim, legend = legend, ...))
+  }
   dots <- list(...)
-  sargs <- intersect(names(dots), c("min_e", "max_e", "balance_e", "level"))
-  s <- do.call(summary.panglm_attgt, c(list(x, type = type), dots[sargs]))
-  do.call(plot.summary.panglm_attgt, c(list(s, xlab = xlab, ylab = ylab),
+  sargs <- intersect(names(dots), c("balance_e", "level"))
+  s <- do.call(summary.panglm_attgt, c(list(x, type = type),
+                                       if (type == "dynamic") list(min_e = min_e, max_e = max_e),
+                                       dots[sargs]))
+  do.call(plot.summary.panglm_attgt, c(list(s, xlab = xlab, ylab = ylab, main = main,
+                                            ylim = ylim, legend = legend),
                                        dots[setdiff(names(dots), sargs)]))
 }
 
 #' @rdname plot.panglm_attgt
 #' @export
-plot.summary.panglm_attgt <- function(x, type = NULL, xlab = NULL, ylab = "ATT", ...) {
+plot.summary.panglm_attgt <- function(x, type = NULL, min_e = -Inf, max_e = Inf, xlab = NULL,
+                                      ylab = "ATT", main = NULL, ylim = NULL, legend = FALSE,
+                                      ...) {
   tab <- x$estimates
   if (is.null(tab)) stop("nothing to plot for the simple aggregation", call. = FALSE)
+  did_check_window(min_e, max_e)
   if (is.null(xlab)) {
     xlab <- c(dynamic = "Event time", group = "Treatment cohort",
               calendar = "Period")[[x$type]]
   }
-  ok <- is.finite(tab$estimate)
-  lo <- ifelse(is.finite(tab$lower), tab$lower, tab$estimate)
-  hi <- ifelse(is.finite(tab$upper), tab$upper, tab$estimate)
-  band <- !is.null(tab$band_lower)
-  if (band) {
-    blo <- ifelse(is.finite(tab$band_lower), tab$band_lower, tab$estimate)
-    bhi <- ifelse(is.finite(tab$band_upper), tab$band_upper, tab$estimate)
+  event <- x$type == "dynamic"
+  tab <- if (event) {
+    did_plottab(tab, min_e = min_e, max_e = max_e)
+  } else {
+    did_plottab(tab)
   }
-  pre <- x$type == "dynamic" & tab$level < 0
-  yl <- range(lo[ok], hi[ok], 0, if (band) c(blo[ok], bhi[ok]))
-  graphics::plot(tab$level[ok], tab$estimate[ok], pch = ifelse(pre[ok], 1, 19),
-                 xlab = xlab, ylab = ylab, ylim = yl, xaxt = "n", ...)
-  graphics::axis(1, at = tab$level)
-  if (band) {
-    graphics::segments(tab$level[ok], blo[ok], tab$level[ok], bhi[ok], col = "grey60", lwd = 1)
-  }
-  graphics::segments(tab$level[ok], lo[ok], tab$level[ok], hi[ok], lwd = if (band) 2 else 1)
-  graphics::abline(h = 0, lty = 3)
-  if (x$type == "dynamic") graphics::abline(v = -0.5, lty = 2)
+  did_drawes(tab, event = event, xlab = xlab, ylab = ylab, main = main, ylim = ylim,
+             legend = legend, level = if (is.null(x$level)) 0.95 else x$level, ...)
   invisible(x)
+}
+
+#' Group-time ATT panels, one per cohort
+#'
+#' @keywords internal
+#' @noRd
+attgt_plotgt <- function(x, min_e = -Inf, max_e = Inf, ncol = NULL, xlab = NULL,
+                         ylab = "ATT", main = NULL, ylim = NULL, legend = FALSE, ...) {
+  est <- x$estimates
+  est <- est[est$time >= min_e & est$time <= max_e, , drop = FALSE]
+  groups <- x$groups[x$groups %in% est$group[is.finite(est$estimate)]]
+  if (!length(groups)) stop("no ATT(g, t) to plot", call. = FALSE)
+  k <- length(groups)
+  if (is.null(ncol)) ncol <- ceiling(sqrt(k))
+  if (!is.numeric(ncol) || length(ncol) != 1L || ncol < 1) {
+    stop("'ncol' must be a positive number", call. = FALSE)
+  }
+  ncol <- min(as.integer(ncol), k)
+  nrow <- ceiling(k / ncol)
+  if (is.null(xlab)) xlab <- "Period"
+  band <- !is.null(est$band_lower)
+  use <- est$group %in% groups & is.finite(est$estimate)
+  if (is.null(ylim)) {
+    ylim <- range(est$lower[use], est$upper[use], est$estimate[use], 0,
+                  if (band) c(est$band_lower[use], est$band_upper[use]), na.rm = TRUE)
+  }
+  sizes <- vapply(groups, function(g) sum(x$units$group == g), numeric(1))
+  op <- graphics::par(no.readonly = TRUE)
+  on.exit(graphics::par(op))
+  graphics::par(mfrow = c(nrow, ncol), mar = c(2, 2, 1.6, 0.6), mgp = c(2, 0.5, 0),
+                tcl = -0.3, oma = c(if (legend) 4.5 else 3, 3, if (is.null(main)) 0.5 else 2.5,
+                                    0.5),
+                cex.axis = 0.8)
+  for (g in groups) {
+    eg <- est[est$group == g, , drop = FALSE]
+    tab <- data.frame(level = eg$time - g, estimate = eg$estimate, lower = eg$lower,
+                      upper = eg$upper)
+    if (band) {
+      tab$band_lower <- eg$band_lower
+      tab$band_upper <- eg$band_upper
+    }
+    tab$ref <- FALSE
+    did_drawes(tab, event = TRUE, xlab = "", ylab = "", ylim = ylim, legend = FALSE,
+               level = x$level, xaxis = FALSE, axes = FALSE, ...)
+    graphics::box()
+    graphics::axis(2)
+    at <- sort(unique(eg$time))
+    if (length(at) > 8L) at <- at[at %in% pretty(at)]
+    graphics::axis(1, at = at - g, labels = at)
+    graphics::title(main = paste0("Cohort ", g, " (n = ", sizes[groups == g], ")"),
+                    font.main = 1, cex.main = 0.9, line = 0.4)
+  }
+  pc <- graphics::par("cex")
+  graphics::mtext(xlab, side = 1, outer = TRUE, line = 1.5, cex = pc)
+  graphics::mtext(ylab, side = 2, outer = TRUE, line = 1.5, cex = pc)
+  if (!is.null(main)) {
+    graphics::mtext(main, side = 3, outer = TRUE, line = 0.8, font = 2, cex = 1.1 * pc)
+  }
+  if (legend) {
+    graphics::par(mfrow = c(1, 1), mar = c(0, 0, 0, 0), oma = c(0, 0, 0, 0), new = TRUE)
+    graphics::plot.new()
+    pct <- paste0(format(100 * x$level), "% ")
+    lab <- c("Pre-treatment", "Post-treatment", paste0(pct, "pointwise CI"),
+             if (band) paste0(pct, "uniform band"))
+    graphics::legend("bottom", legend = lab, pch = c(21, 19, NA, if (band) 15),
+                     lty = c(0, 0, 1, if (band) 0), lwd = 1.5,
+                     col = c("black", "black", "black", if (band) "grey85"),
+                     pt.bg = "white", pt.cex = c(1.1, 1.1, 1.1, if (band) 2),
+                     horiz = TRUE, bty = "n", cex = pc, seg.len = 1.2,
+                     text.width = did_textwidth(lab, pc))
+  }
+  invisible(est[est$group %in% groups, , drop = FALSE])
 }
 
 #' Sampling weights for attgt() and etwfe()

@@ -5,9 +5,31 @@
 \alias{plot.summary.panglm_etwfe}
 \title{Plot ETWFE treatment effects}
 \usage{
-\method{plot}{panglm_etwfe}(x, type = c("event", "group", "calendar"), xlab = NULL, ylab = "ATT", ...)
+\method{plot}{panglm_etwfe}(
+  x,
+  type = c("event", "group", "calendar"),
+  min_e = -Inf,
+  max_e = Inf,
+  xlab = NULL,
+  ylab = "ATT",
+  main = NULL,
+  ylim = NULL,
+  legend = FALSE,
+  ...
+)
 
-\method{plot}{summary.panglm_etwfe}(x, type = NULL, xlab = NULL, ylab = "ATT", ...)
+\method{plot}{summary.panglm_etwfe}(
+  x,
+  type = NULL,
+  min_e = -Inf,
+  max_e = Inf,
+  xlab = NULL,
+  ylab = "ATT",
+  main = NULL,
+  ylim = NULL,
+  legend = FALSE,
+  ...
+)
 }
 \arguments{
 \item{x}{a \code{"panglm_etwfe"} fit from \code{\link[=etwfe]{etwfe()}}, or its summary}
@@ -15,7 +37,13 @@
 \item{type}{aggregation to plot (for a fit): \code{"event"}, \code{"group"} or
 \code{"calendar"}}
 
-\item{xlab, ylab}{axis labels}
+\item{min_e, max_e}{event window to plot (event-time plots only)}
+
+\item{xlab, ylab, main}{axis labels and title}
+
+\item{ylim}{y-axis limits}
+
+\item{legend}{logical: add a compact legend of the symbols}
 
 \item{...}{passed to \code{\link[graphics:plot.default]{graphics::plot()}}}
 }
@@ -24,7 +52,10 @@ the plotted summary, invisibly
 }
 \description{
 Plots the event-study aggregation of an \code{\link[=etwfe]{etwfe()}} fit (or the cohort or
-calendar aggregation) with pointwise confidence intervals.
+calendar aggregation) with pointwise confidence intervals, in the same
+style as \code{\link[=plot.panglm_attgt]{plot.panglm_attgt()}}: hollow points before treatment, filled
+after, and an open diamond at the reference period (event time \code{-1}
+with \code{control = "never"}).
 }
 \examples{
 set.seed(2)
@@ -32,7 +63,9 @@ d <- expand.grid(id = 1:150, t = 1:8)
 d$first <- rep(c(4, 6, NA), each = 50)[d$id]
 d$y <- rnorm(150)[d$id] + 0.2 * d$t +
   ifelse(!is.na(d$first) & d$t >= d$first, 1, 0) + rnorm(nrow(d))
-plot(etwfe(y ~ 1, d, index = c("id", "t"), treat = "first", control = "never"))
+fit <- etwfe(y ~ 1, d, index = c("id", "t"), treat = "first", control = "never")
+plot(fit)
+plot(fit, min_e = -3, max_e = 3, legend = TRUE)
 }
 \seealso{
 Other etwfe methods: 

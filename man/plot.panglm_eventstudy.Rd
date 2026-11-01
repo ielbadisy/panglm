@@ -4,12 +4,28 @@
 \alias{plot.panglm_eventstudy}
 \title{Plot event-study coefficients}
 \usage{
-\method{plot}{panglm_eventstudy}(x, xlab = "Event time", ylab = "Estimate", ...)
+\method{plot}{panglm_eventstudy}(
+  x,
+  min_e = -Inf,
+  max_e = Inf,
+  xlab = "Event time",
+  ylab = "Estimate",
+  main = NULL,
+  ylim = NULL,
+  legend = FALSE,
+  ...
+)
 }
 \arguments{
 \item{x}{a \code{"panglm_eventstudy"} object from \code{\link[=eventstudy]{eventstudy()}}}
 
-\item{xlab, ylab}{axis labels}
+\item{min_e, max_e}{event window to plot}
+
+\item{xlab, ylab, main}{axis labels and title}
+
+\item{ylim}{y-axis limits}
+
+\item{legend}{logical: add a compact legend of the symbols}
 
 \item{...}{passed to \code{\link[graphics:plot.default]{graphics::plot()}}}
 }
@@ -17,7 +33,12 @@
 \code{x}, invisibly
 }
 \description{
-Plot event-study coefficients
+Plots the event-time coefficients of \code{\link[=eventstudy]{eventstudy()}} with pointwise
+confidence intervals, in the same style as \code{\link[=plot.panglm_attgt]{plot.panglm_attgt()}}:
+hollow points before treatment, filled after, an open diamond at the
+omitted reference period (zero by construction) and a dashed line at
+treatment onset. With \code{bin = TRUE} the end points pool all earlier
+(later) event times.
 }
 \examples{
 set.seed(1)
@@ -29,6 +50,7 @@ d$visits <- 3 + rnorm(100)[d$id] + ifelse(!is.na(e) & e >= 0, 1, 0) +
 es <- eventstudy(visits ~ 1, data = d, index = c("id", "year"),
                  treat = "first", leads = 3, lags = 2)
 plot(es, main = "Effect of the policy by event time")
+plot(es, min_e = -2, legend = TRUE)
 }
 \seealso{
 Other eventstudy methods: 
