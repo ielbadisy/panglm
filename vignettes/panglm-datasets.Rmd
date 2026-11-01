@@ -1,0 +1,213 @@
+---
+title: "Health-economics datasets for teaching panel models"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Health-economics datasets for teaching panel models}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+`panglm` ships one simulated and five real panel datasets so that every
+estimator family can be taught on data where it makes substantive sense.
+The simulated `copd` panel has known data-generating values, so students
+can first check that an estimator recovers the truth; the real panels then
+pose the same questions on public data, and their build scripts
+(`data-raw/` in the GitHub repository) reproduce published numbers to show
+that the data were assembled correctly. Each help page (for example
+`?docvisits`) lists every variable, the source and licence, the
+validation, and a "Teaching use" section with research questions.
+
+```{r setup}
+library(panglm)
+```
+
+## Overview
+
+| Dataset | Panel | Outcome types | Estimators | Research question |
+|---|---|---|---|---|
+| `copd` (simulated) | 60 patients x 5 visits | continuous, count, binary, cost with zeros, proportion, ordinal | all families, `twopart()`, `panqr()`, `attgt()`, `etwfe()`, `eventstudy()` | Do the estimators recover the known effects, including that of a staggered care-management programme on cost? |
+| `docvisits` | 7,293 persons x 1984-1994 (7 waves, unbalanced) | count, binary, ordinal (0-10) | Poisson / negbin within and random, `panhausman()`, probit with `dynamic = TRUE`, FE ordered logit, `panfmm()`, `panhurdle()`, `paniv()` Hausman-Taylor | Does add-on insurance raise doctor visits; is doctor use state dependent? |
+| `meps` | 3,000 US adults x 2018-2019 | expenditure with zeros, counts, binary, ordinal | `twopart()`, `family = "gamma"`, `"tobit"`, `panqr()`, `panselect()`, negbin, `cre = TRUE` | How much less do the uninsured spend, and how much of the gap is selection? |
+| `medicaid` | 51 states x 2009-2019 | rates (continuous) | `attgt()`, `etwfe()`, `eventstudy()`, `did()`, two-way within | Did the ACA Medicaid expansion reduce uninsurance? |
+| `healthspend` | 193 countries x 2000-2022 | continuous (log spending), shares in (0, 1) | within / random / CRE, `panhausman()`, `pangmm()`, `paniv()` Hausman-Taylor, `family = "beta"`, random slopes, `panqr()` | Is health care a luxury good? |
+| `cigar` | 46 US states x 1963-1992 | continuous (log demand) | pooled vs within vs `pangmm()`, `dynamic = TRUE` | How addictive is cigarette demand, and what is the long-run price elasticity? |
+
+Each exercise below states a question, fits the model and interprets the
+numbers it prints.
+
+## copd: recovering a known programme effect
+
+**Question.** Clinics 1 and 2 adopted a care-management programme at visit
+3, clinics 3 and 4 at visit 4, and clinics 5 and 6 never did. By
+construction, the programme cuts the cost of users by `1 - exp(-0.5)`, about
+39 percent, and its sample average effect on the treated visits is -406
+euros (see `?copd`). Do the estimators find it?
+
+```{r copd}
+idx <- c("id", "visit")
+att <- attgt(cost ~ 1, data = copd, index = idx, treat = "adopt",
+             control = "notyet")
+summary(att)
+
+tp <- twopart(cost ~ exacerbations + hospitalized + smoker + treatment + crp +
+                visit + programme + factor(clinic),
+              binary_formula = ~ exacerbations + hospitalized + smoker +
+                treatment + crp,
+              data = copd, index = idx, positive = "lognormal")
+coef(tp$positive)[["programme"]]
+```
+
+**Interpretation.** With only 60 patients the Callaway and Sant'Anna
+estimate is imprecise (about -184 euros, standard error about 200): its
+confidence interval covers the true -406 euros, and the pre-trend test does
+not reject parallel trends, but a single small panel cannot pin the effect
+down. The two-part model is far more precise because it conditions on
+exacerbations and admissions, which explain most of the cost variation: its
+programme coefficient on the log positive cost is about -0.52 (standard
+error 0.13) against a true value of -0.5. Rerunning the design on a large
+simulated panel (as `data-raw/copd.R` does) brings both estimators close to
+the truth; that is the point of a known-truth teaching dataset.
+
+## docvisits: state dependence in doctor use
+
+**Question.** People who saw a doctor last year are more likely to see one
+this year. Is that habit (true state dependence) or persistent ill health
+(unobserved heterogeneity)? We use the consecutive waves 1984 to 1988 and
+the Wooldridge initial-conditions approach (`dynamic = TRUE`).
+
+```{r docvisits}
+early <- subset(docvisits, year <= 1988)
+f <- doctor ~ age + hhninc + hhkids + married + working
+pooled <- panglm(f, data = early, index = c("id", "year"), model = "pooling",
+                 family = "probit", dynamic = TRUE, vcov = "cluster")
+random <- panglm(f, data = early, index = c("id", "year"), model = "random",
+                 family = "probit", dynamic = TRUE, R = 8)
+cbind(pooled = coef(pooled)[c("lag_doctor", "initial_doctor")],
+      random = coef(random)[c("lag_doctor", "initial_doctor")])
+```
+
+**Interpretation.** The pooled dynamic probit gives a lagged-visit
+coefficient of about 0.65, which mixes true state dependence with
+persistent unobserved health. The random-effects probit with initial
+conditions shrinks it to about 0.28 (roughly 8 percentage points on the
+probability scale, see `partialeffects()`), while the initial-condition
+coefficient and the random-effect variance absorb the rest: most of the
+apparent persistence is heterogeneity, not habit.
+
+## meps: the spending gap of the uninsured
+
+**Question.** How much less do uninsured adults spend on health care, and
+how much of the cross-sectional gap survives once we compare the same
+person before and after a change of coverage?
+
+```{r meps}
+tp <- twopart(totexp ~ insurance + I(age / 10) + sex + nchronic + povcat,
+              data = meps, index = c("id", "year"), positive = "gamma")
+partialeffects(tp, variables = "insurance")
+
+pos <- subset(meps, totexp > 0)
+pooled <- panglm(totexp ~ insurance + povcat + I(age / 10) + sex + nchronic,
+                 data = pos, index = c("id", "year"), family = "gamma",
+                 model = "pooling")
+within <- panglm(totexp ~ insurance + povcat, data = pos,
+                 index = c("id", "year"), family = "gamma", model = "within")
+exp(c(pooled = coef(pooled)[["insuranceuninsured"]],
+      within = coef(within)[["insuranceuninsured"]])) - 1
+```
+
+**Interpretation.** The two-part model puts the average partial effect of
+being uninsured rather than privately insured at about -6,200 dollars per
+person-year, while public-only coverage differs little from private. Among
+people with positive spending, the pooled gamma model says the uninsured
+spend about 68 percent less; the within estimate, identified only from
+people who gained or lost coverage between 2018 and 2019, shrinks this to
+about 31 percent less. Much of the cross-sectional gap reflects who is
+uninsured rather than the effect of losing coverage.
+
+## medicaid: staggered adoption of the Medicaid expansion
+
+**Question.** Did the Affordable Care Act Medicaid expansion reduce
+uninsurance among adults below the poverty line? Adoption was staggered
+(2014 to 2019 within the panel; later adopters and the ten non-adopters
+serve as controls), so the single-coefficient two-way fixed effects
+regression may compare late adopters with already-treated early adopters.
+`attgt()` builds clean comparisons with never-treated states.
+
+```{r medicaid}
+ix <- c("state", "year")
+cs <- attgt(uninspov ~ 1, data = medicaid, index = ix, treat = "adopt",
+            control = "never")
+summary(cs, type = "dynamic")
+
+tw <- did(uninspov ~ 1, data = medicaid, index = ix, treat = "adopt")
+ew <- etwfe(uninspov ~ 1, data = medicaid, index = ix, treat = "adopt")
+c(attgt = summary(cs)$overall$estimate, etwfe = summary(ew)$overall$estimate,
+  twfe = coef(tw)[["treated"]])
+
+# first stage: Medicaid coverage of the same adults
+summary(attgt(medicaidpov ~ 1, data = medicaid, index = ix,
+              treat = "adopt", control = "never"))$overall
+```
+
+**Interpretation.** Leads before expansion are small and scattered around
+zero, which supports parallel trends. The uninsured share of adults below
+the poverty line falls by about 5 percentage points in the year of
+expansion and by 6 to 8 points after two to three years; the overall
+group-time ATT is about -6.5 points (SE about 1.3). Medicaid coverage of
+the same adults rises by about 10 points, more than uninsurance falls:
+part of the gain replaces other coverage (crowd-out). Here the two-way
+fixed effects estimate (about -7.2) stays close to the robust ones
+(extended TWFE about -7.1), because most treated states adopted in 2014
+and the effect is fairly flat after two years; with more spread-out
+adoption and stronger dynamics the gap can be large.
+
+## healthspend: is health care a luxury?
+
+**Question.** Does health spending rise more than proportionally with
+national income (an income elasticity above 1)?
+
+```{r healthspend}
+hs <- transform(healthspend, lche = log(chereal), lgdp = log(gdppc))
+ix <- c("iso3c", "year")
+fe <- panglm(lche ~ lgdp, data = hs, index = ix, model = "within")
+re <- panglm(lche ~ lgdp, data = hs, index = ix, model = "random")
+fe2 <- panglm(lche ~ lgdp, data = hs, index = ix, model = "within",
+              effect = "twoways", vcov = "cluster")
+cbind(within = coef(fe), random = coef(re)[-1], twoways = coef(fe2))
+panhausman(fe, method = "mundlak", data = hs)
+```
+
+**Interpretation.** Within countries, real health spending grows by about
+1.15 percent for each 1 percent of income, which looks like a luxury good,
+and the Mundlak test does not reject random effects. Adding year effects
+brings the elasticity down to about 0.84: much of the apparent luxury
+effect is a common upward trend in spending across all countries.
+
+## cigar: habits and the long-run price elasticity
+
+**Question.** Cigarette demand is addictive: how strong is the habit, and
+what is the long-run price elasticity? The lagged dependent variable makes
+pooled OLS biased upwards and the within estimator biased downwards
+(Nickell bias); difference GMM should lie in between.
+
+```{r cigar}
+ix <- c("state", "year")
+f <- lnc ~ lag(lnc, 1) + lnp + lnpn + lny
+ols <- panglm(f, data = cigar, index = ix, model = "pooling")
+fe <- panglm(f, data = cigar, index = ix, model = "within", effect = "twoways")
+ab <- pangmm(lnc ~ lag(lnc, 1) + lnp + lnpn + lny | lag(lnc, 2:99),
+             data = cigar, index = ix, transformation = "d", model = "onestep")
+tab <- rbind(OLS = coef(ols)[-1], Within = coef(fe), GMM = coef(ab)[1:4])
+round(tab, 3)
+round(tab[, "lnp"] / (1 - tab[, 1]), 2)  # long-run price elasticity
+```
+
+**Interpretation.** The habit coefficient from difference GMM (0.84) lies
+between the within (0.83) and OLS (0.97) estimates, as theory predicts, and
+the three rows reproduce Table 8.1 of Baltagi's *Econometric Analysis of
+Panel Data*. The short-run price elasticity is about -0.38 and the
+long-run one about -2.4.
