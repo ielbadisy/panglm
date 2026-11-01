@@ -174,8 +174,10 @@ plot.panglm <- function(x, which = c("coefficients", "residuals", "fitted", "qq"
   }
   tidy_check_level(level)
   cal <- panglm_calibration(x$y, x$fitted.values, bins, level)
+  op <- graphics::par(pty = "s")
+  on.exit(graphics::par(op), add = TRUE)
   graphics::plot.default(
-    NA, NA, xlim = c(0, 1), ylim = c(0, 1), asp = 1,
+    NA, NA, xlim = c(0, 1), ylim = c(0, 1),
     main = main %||% "Calibration",
     xlab = xlab %||% "Mean predicted probability", ylab = "Observed proportion", ...
   )
