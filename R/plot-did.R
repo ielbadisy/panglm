@@ -220,6 +220,132 @@ treatmentplot <- function(data, index, treat, labels = NULL,
   invisible(out)
 }
 
+#' Compare event studies on one plot
+#'
+#' Draws the event-time effects of several fits on one axis, offset
+#' horizontally, with pointwise confidence intervals and a legend: for
+#' example the two-way fixed-effects event study of [eventstudy()], the
+#' Callaway and Sant'Anna estimator of [attgt()] and the extended two-way
+#' fixed-effects estimator of [etwfe()]. Points are hollow before
+#' treatment and filled after. Uniform bands are not drawn here; use the
+#' `plot()` method of a single fit for them.
+#'
+#' @param ... fits from [eventstudy()], [attgt()] or [etwfe()] (or the
+#'   event-time summaries of the last two). Names of the arguments are used
+#'   as labels.
+#' @param labels optional labels, one per fit (default: the argument names,
+#'   else the estimator)
+#' @param min_e,max_e event window to plot
+#' @param col,pch colours and (filled) plotting symbols, recycled over the
+#'   fits; the hollow version of each symbol is used before treatment
+#' @param offset horizontal distance between the fits, in event-time units
+#' @param legend logical: add a legend
+#' @param xlab,ylab,main,ylim axis labels, title and y-axis limits
+#' @return a data frame of the plotted estimates (`model`, `event`,
+#'   `estimate`, `lower`, `upper`), invisibly
+#' @family policy evaluation
+#' @examples
+#' set.seed(2)
+#' d <- expand.grid(id = 1:150, t = 1:8)
+#' d$first <- rep(c(4, 6, NA), each = 50)[d$id]
+#' d$y <- rnorm(150)[d$id] + 0.2 * d$t +
+#'   ifelse(!is.na(d$first) & d$t >= d$first, 1, 0) + rnorm(nrow(d))
+#' es <- eventstudy(y ~ 1, d, index = c("id", "t"), treat = "first",
+#'                  leads = 3, lags = 3)
+#' cs <- attgt(y ~ 1, d, index = c("id", "t"), treat = "first")
+#' ew <- etwfe(y ~ 1, d, index = c("id", "t"), treat = "first", control = "never")
+#' eventplot(TWFE = es, CS = cs, ETWFE = ew, min_e = -3, max_e = 3)
+#' @export
+eventplot <- function(..., labels = NULL, min_e = -Inf, max_e = Inf,
+                      col = c("black", "#D55E00", "#0072B2", "#009E73", "#CC79A7"),
+                      pch = c(19, 17, 15, 18, 25), offset = 0.2, legend = TRUE,
+                      xlab = "Event time", ylab = "Estimate", main = NULL, ylim = NULL) {
+  fits <- list(...)
+  if (!length(fits)) stop("give at least one fit", call. = FALSE)
+  did_check_window(min_e, max_e)
+  tabs <- lapply(fits, did_eventtab, min_e = min_e, max_e = max_e)
+  k <- length(fits)
+  if (is.null(labels)) {
+    labels <- names(fits)
+    if (is.null(labels)) labels <- rep("", k)
+    auto <- vapply(fits, did_estimator, character(1))
+    labels[labels == ""] <- auto[labels == ""]
+    labels <- make.unique(labels, sep = " ")
+  }
+  if (length(labels) != k) stop("give one label per fit", call. = FALSE)
+  col <- rep_len(col, k)
+  pch <- rep_len(pch, k)
+  hollow <- c(`19` = 21, `16` = 21, `17` = 24, `15` = 22, `18` = 23, `25` = 25)
+  pch_pre <- ifelse(as.character(pch) %in% names(hollow), hollow[as.character(pch)], pch)
+  shift <- (seq_len(k) - (k + 1) / 2) * offset
+  all <- do.call(rbind, lapply(tabs, `[`, c("level", "estimate", "lower", "upper")))
+  ok <- is.finite(all$estimate)
+  if (is.null(ylim)) {
+    ylim <- range(all$lower[ok], all$upper[ok], all$estimate[ok], 0, na.rm = TRUE)
+    if (legend) ylim[2] <- ylim[2] + 0.12 * diff(ylim)
+  }
+  xr <- range(all$level) + c(-1, 1) * max(abs(shift), 0.3)
+  graphics::plot(NA, xlim = xr, ylim = ylim, xlab = xlab, ylab = ylab, main = main,
+                 xaxt = "n")
+  graphics::axis(1, at = sort(unique(all$level)))
+  graphics::abline(h = 0, col = "grey40", lty = 3)
+  graphics::abline(v = -0.5, lty = 2, col = "grey40")
+  for (j in seq_len(k)) {
+    t <- tabs[[j]]
+    f <- is.finite(t$estimate)
+    x <- t$level + shift[j]
+    ci <- f & !t$ref & is.finite(t$lower) & is.finite(t$upper)
+    graphics::segments(x[ci], t$lower[ci], x[ci], t$upper[ci], col = col[j], lwd = 1.5)
+    p <- ifelse(t$level < 0 | t$ref, pch_pre[j], pch[j])
+    graphics::points(x[f], t$estimate[f], pch = p[f], col = col[j], bg = "white", cex = 1.1)
+  }
+  if (legend) {
+    graphics::legend("top", legend = labels, col = col, pch = pch, lty = 1, lwd = 1.5,
+                     horiz = TRUE, bty = "n", cex = 0.8, seg.len = 1.2,
+                     text.width = did_textwidth(labels, 0.8))
+  }
+  out <- do.call(rbind, lapply(seq_len(k), function(j) {
+    data.frame(model = labels[j], event = tabs[[j]]$level, estimate = tabs[[j]]$estimate,
+               lower = tabs[[j]]$lower, upper = tabs[[j]]$upper)
+  }))
+  rownames(out) <- NULL
+  invisible(out)
+}
+
+#' Event-time table of a DiD fit (for eventplot)
+#'
+#' @keywords internal
+#' @noRd
+did_eventtab <- function(x, min_e = -Inf, max_e = Inf) {
+  if (inherits(x, "panglm_eventstudy")) return(es_plottab(x, min_e, max_e))
+  if (inherits(x, "panglm_attgt")) {
+    x <- summary.panglm_attgt(x, type = "dynamic", min_e = min_e, max_e = max_e)
+  }
+  if (inherits(x, "panglm_etwfe")) {
+    x <- summary.panglm_etwfe(x, type = "event", byxvar = FALSE)
+  }
+  if (inherits(x, "summary.panglm_attgt") && identical(x$type, "dynamic")) {
+    return(did_plottab(x$estimates, min_e = min_e, max_e = max_e))
+  }
+  if (inherits(x, "summary.panglm_etwfe") && identical(x$type, "event") &&
+      is.null(x$xvar)) {
+    return(etwfe_plottab(x, min_e, max_e))
+  }
+  stop("eventplot() takes fits from eventstudy(), attgt() or etwfe(), or their ",
+       "event-time summaries", call. = FALSE)
+}
+
+#' Default label of a DiD fit
+#'
+#' @keywords internal
+#' @noRd
+did_estimator <- function(x) {
+  if (inherits(x, "panglm_eventstudy")) return("TWFE event study")
+  if (inherits(x, c("panglm_attgt", "summary.panglm_attgt"))) return("Callaway-Sant'Anna")
+  if (inherits(x, c("panglm_etwfe", "summary.panglm_etwfe"))) return("ETWFE")
+  "model"
+}
+
 #' Event-study table of an eventstudy() fit
 #'
 #' @keywords internal

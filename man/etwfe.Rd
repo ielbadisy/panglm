@@ -216,6 +216,7 @@ difference-in-differences with panel data. \emph{The Econometrics Journal},
 Other policy evaluation: 
 \code{\link{attgt}()},
 \code{\link{did}()},
+\code{\link{eventplot}()},
 \code{\link{eventstudy}()},
 \code{\link{treatmentplot}()}
 }

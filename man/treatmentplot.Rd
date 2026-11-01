@@ -59,6 +59,7 @@ Other policy evaluation:
 \code{\link{attgt}()},
 \code{\link{did}()},
 \code{\link{etwfe}()},
+\code{\link{eventplot}()},
 \code{\link{eventstudy}()}
 }
 \concept{policy evaluation}

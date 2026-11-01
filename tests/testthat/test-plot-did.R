@@ -62,6 +62,25 @@ test_that("etwfe and eventstudy plots share the drawer and take an event window"
   expect_error(plot(es, min_e = 5), "window")
 })
 
+test_that("eventplot compares the three estimators", {
+  d <- did_plot_panel(4)
+  es <- eventstudy(y ~ 1, d, index = c("id", "t"), treat = "first", leads = 3, lags = 3)
+  cs <- attgt(y ~ 1, d, index = c("id", "t"), treat = "first")
+  ew <- etwfe(y ~ 1, d, index = c("id", "t"), treat = "first", control = "never")
+  pdf(tempfile(fileext = ".pdf")); on.exit(dev.off())
+  out <- expect_invisible(eventplot(TWFE = es, CS = cs, ETWFE = ew, min_e = -3, max_e = 3))
+  expect_setequal(out$model, c("TWFE", "CS", "ETWFE"))
+  expect_true(all(out$event >= -3 & out$event <= 3))
+  out <- eventplot(es, summary(cs, type = "dynamic"), summary(ew, type = "event"),
+                   legend = FALSE)
+  expect_setequal(out$model, c("TWFE event study", "Callaway-Sant'Anna", "ETWFE"))
+  expect_equal(unique(eventplot(cs, cs)$model), c("Callaway-Sant'Anna",
+                                                  "Callaway-Sant'Anna 1"))
+  expect_error(eventplot(), "at least one")
+  expect_error(eventplot(lm(y ~ t, d)), "eventplot")
+  expect_error(eventplot(es, cs, labels = "a"), "one label")
+})
+
 test_that("treatmentplot shows cohorts and scales to many units", {
   d <- did_plot_panel(5, N = 30)
   d$first[is.na(d$first)] <- 0
