@@ -167,7 +167,8 @@ coefplot <- function(..., parm = NULL, level = 0.95, labels = NULL,
   if (legend) {
     entry <- graphics::strwidth(colnames(est), units = "inches", cex = graphics::par("cex")) +
       0.45 * graphics::par("cex")
-    avail <- fin - mai[2] - mai[4]
+    # the legend may span the whole figure width, centred on the figure
+    avail <- fin - 0.2
     per_row <- max(1L, min(M, floor(avail / max(entry))))
     legend_rows <- ceiling(M / per_row)
     mai[3] <- mai[3] + legend_rows * line_height * 1.1
@@ -193,8 +194,13 @@ coefplot <- function(..., parm = NULL, level = 0.95, labels = NULL,
   }
   if (legend) {
     usr <- graphics::par("usr")
+    plt <- graphics::par("plt")
+    # centred on the plot region, or on the figure when it is wider
+    width <- ceiling(M / legend_rows) * max(entry)
+    at <- if (width <= fin - mai[2] - mai[4]) 0.5 * (plt[1] + plt[2]) else 0.5
+    centre <- usr[1] + (at - plt[1]) / (plt[2] - plt[1]) * (usr[2] - usr[1])
     graphics::par(xpd = NA)
-    graphics::legend(mean(usr[1:2]), usr[4], legend = colnames(est), col = col, pch = pch,
+    graphics::legend(centre, usr[4], legend = colnames(est), col = col, pch = pch,
                      lwd = 1.5, ncol = ceiling(M / legend_rows), bty = "n",
                      xjust = 0.5, yjust = 0, seg.len = 1.2, x.intersp = 0.6)
   }
