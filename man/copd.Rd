@@ -3,9 +3,10 @@
 \docType{data}
 \name{copd}
 \alias{copd}
-\title{Synthetic COPD follow-up panel}
+\title{Synthetic COPD follow-up panel with costs and a staggered programme}
 \format{
-A data frame with 300 rows (60 patients x 5 visits) and 10 columns:
+A data frame with 300 rows (60 patients x 5 visits) and 16 columns;
+the panel index is \code{c("id", "visit")}:
 \describe{
 \item{id}{integer patient identifier (1-60), the panel individual index}
 \item{visit}{integer visit number (1-5), the panel time index}
@@ -28,6 +29,20 @@ previous visit; a count outcome, one value per visit}
 \item{hospitalized}{integer indicator (0/1) of a hospital admission in
 the interval since the previous visit; a binary outcome, one value per
 visit}
+\item{clinic}{integer clinic (1-6) treating the patient, time-invariant;
+10 patients per clinic}
+\item{adopt}{integer visit at which the patient's clinic adopted the
+care-management programme (3 or 4), 0 if the clinic never adopted;
+the \code{treat} column for \code{\link[=attgt]{attgt()}}, \code{\link[=etwfe]{etwfe()}} and \code{\link[=eventstudy]{eventstudy()}}}
+\item{programme}{integer indicator (0/1) that the programme is in place
+at this visit (\code{adopt > 0} and \code{visit >= adopt})}
+\item{cost}{numeric outpatient plus inpatient cost (euros, two
+decimals) since the previous visit; 28.7 percent zeros and a
+right-skewed positive part}
+\item{adherence}{numeric proportion of prescribed inhaler doses taken
+since the previous visit, in (0, 1), three decimals}
+\item{symptoms}{ordered factor of symptom severity at the visit:
+none < mild < moderate < severe}
 }
 }
 \source{
@@ -39,18 +54,98 @@ copd
 }
 \description{
 A simulated longitudinal (panel) dataset of chronic obstructive pulmonary
-disease (COPD) patients followed over several clinic visits, used
-throughout this package's examples and vignette. It is entirely
+disease (COPD) patients followed over five clinic visits, used
+throughout this package's examples and vignettes. It is entirely
 synthetic (not real patient data), generated to have a realistic panel
-structure (time-invariant baseline covariates plus an individual-level
-frailty or random intercept), so it exercises pooled, fixed-effects and
-random-effects fits for continuous, count and binary outcomes without
-depending on any suggested package. The generating code is in
-\code{data-raw/copd.R} in the package's GitHub repository.
+structure (time-invariant baseline covariates plus individual-level
+frailties or random intercepts). Because every data-generating value is
+known (see Details), it is the dataset on which students can check that
+an estimator recovers the truth before using it on the real panels
+shipped with the package (\link{docvisits}, \link{meps}, \link{medicaid},
+\link{healthspend}, \link{cigar}). The generating code is in \code{data-raw/copd.R}
+in the package's GitHub repository.
 }
+\details{
+The first ten columns (\code{id} to \code{hospitalized}) are unchanged from
+earlier releases. The last six (\code{clinic} to \code{symptoms}) add health
+economics outcomes and were generated afterwards in a separate random
+number stream, so the clinical columns did not change.
+
+Data-generating values (patient random intercepts are normal with mean
+zero and are independent of the covariates; \code{visit} enters linearly).
+\itemize{
+\item \code{exacerbations}: Poisson with mean
+\verb{f_i exp(0.4 - 0.35 treatment + 0.02 (age - 65) + 0.3 smoker + 0.05 crp)},
+with a gamma frailty \code{f_i} of mean 1 and variance 0.25.
+\item \code{hospitalized}: logit with index
+\verb{-1.5 - 0.6 treatment + 0.03 (age - 65) + 0.5 smoker + 0.08 crp + r_i},
+\code{sd(r_i) = 0.4}.
+\item \code{fev1}: \verb{3.2 - 0.02 (age - 65) - 0.25 smoker + 0.15 treatment - 0.03 crp + r_i + e},
+\code{sd(e) = 0.2} (same \code{r_i}).
+\item \code{cost}, any cost: probit with index
+\verb{-0.6 + 0.4 exacerbations + 1.5 hospitalized + 0.3 smoker - 0.2 treatment + 0.05 crp + a_i},
+\code{sd(a_i) = 0.5}.
+\item \code{cost}, positive part: lognormal, `log(cost) = 5.8 + 0.1 exacerbations
+\itemize{
+\item 0.7 hospitalized + 0.25 smoker - 0.2 treatment + 0.04 crp + 0.05 visit
+}
+\itemize{
+\item 0.5 programme + c_k + b_i + e\verb{, with }sd(b_i) = 0.4\verb{, }corr(a_i, b_i) = 0.5\verb{, }sd(e) = 0.4\verb{and clinic effects}c_k = (0.20, 0.10, 0.15, 0.00, -0.10, -0.15)\verb{for clinics 1 to 6. The programme therefore lowers expected cost among users by}1 - exp(-0.5)`, about 39 percent, without changing the probability of
+any cost. Clinics 1 and 2 adopt at visit 3, clinics 3 and 4 at visit 4,
+clinics 5 and 6 never; adopting clinics have higher baseline costs
+(selection on levels) but parallel trends hold. Because both potential
+costs were simulated from the same draws, the sample average effect on
+the treated rows is known: about -406.0 euros per visit interval (100 treated patient-visits).
+}
+\item \code{adherence}: beta with precision 25 and logit mean
+\verb{0.8 + 0.6 treatment - 0.5 smoker - 0.08 visit + v_i}, \code{sd(v_i) = 0.3}.
+\item \code{symptoms}: ordered logit with latent index
+\verb{0.5 smoker - 0.6 treatment + 0.25 crp + w_i}, \code{sd(w_i) = 0.8}, and
+cut points 0.5, 2.0 and 3.5.
+}
+
+Random-effects (conditional) estimators target these values; pooled
+nonlinear fits estimate population-averaged coefficients, which are
+attenuated for the binary, ordered and beta outcomes. With only 60
+patients the estimates are noisy: \code{data-raw/copd.R} also refits the
+correctly specified models on a 6,000-patient panel drawn from the same
+design and checks that they land close to these values.
+}
+\section{Teaching use}{
+
+\itemize{
+\item Lung function and inflammation (\code{fev1} on \code{crp}): pooled, within,
+between and random effects, CRE and \code{\link[=panhausman]{panhausman()}}.
+\item Exacerbation counts: \code{family = "poisson"} or \code{"negbin"}, \code{\link[=panhurdle]{panhurdle()}},
+\code{\link[=panfmm]{panfmm()}}.
+\item Hospital admission: \code{family = "binomial"} or \code{"probit"}, with
+\code{dynamic = TRUE} for state dependence.
+\item What drives outpatient and inpatient cost? \code{\link[=twopart]{twopart()}} (probit plus
+lognormal or gamma, \code{correlated = TRUE}), \code{family = "gamma"} on
+positive costs, \code{family = "tobit"}, \code{\link[=panqr]{panqr()}} for cost quantiles.
+\item Did the care-management programme lower costs? \code{\link[=attgt]{attgt()}}, \code{\link[=etwfe]{etwfe()}},
+\code{\link[=eventstudy]{eventstudy()}} with \code{treat = "adopt"}, against the known effect above.
+\item Adherence (\code{family = "beta"}) and symptom severity (\code{family = "ologit"},
+within = fixed-effects ordered logit).
+}
+}
+
 \examples{
 data(copd)
 str(copd)
-table(copd$visit)
+mean(copd$cost == 0)
+# two-part model of cost, programme effect on the positive part
+# (clinic dummies absorb the clinic cost levels that differ between
+# adopting and never-adopting clinics)
+tp <- twopart(cost ~ exacerbations + hospitalized + smoker + treatment +
+                crp + visit + programme + factor(clinic),
+              binary_formula = ~ exacerbations + hospitalized + smoker +
+                treatment + crp,
+              data = copd, index = c("id", "visit"), positive = "lognormal")
+summary(tp)
+# staggered adoption: group-time effects of the programme on cost
+att <- attgt(cost ~ 1, data = copd, index = c("id", "visit"),
+             treat = "adopt", control = "notyet")
+summary(att)
 }
 \keyword{datasets}
