@@ -204,6 +204,31 @@ test_that("pangmm warns about too many instruments and notes it in the summary",
   expect_equal(unname(coef(fit)[1]), unname(coef(p)[1]), tolerance = 1e-6)
 })
 
+test_that("one-step GMM does not warn about the second-step matrix it does not use", {
+  set.seed(5)
+  N <- 30; TT <- 10
+  d <- data.frame(id = rep(seq_len(N), each = TT), t = rep(seq_len(TT), N))
+  mu <- rep(rnorm(N), each = TT)
+  d$y <- ave(mu + rnorm(N * TT), d$id, FUN = function(e) stats::filter(e, 0.5,
+    method = "recursive"))
+  w <- character()
+  fit <- withCallingHandlers(
+    pangmm(y ~ lag(y, 1) | lag(y, 2:99), data = d, index = c("id", "t"), model = "onestep"),
+    warning = function(cond) {
+      w <<- c(w, conditionMessage(cond))
+      invokeRestart("muffleWarning")
+    })
+  expect_true(any(grepl("too many instruments", w)))
+  expect_false(any(grepl("second-step", w)))
+  expect_true(is.finite(fit$hansen$statistic))
+  skip_if_not_installed("plm")
+  p <- suppressWarnings(gmm_pgmm(y ~ lag(y, 1) | lag(y, 2:99), data = d, index = c("id", "t"),
+                                 effect = "twoways", model = "onestep"))
+  expect_equal(unname(coef(fit)), unname(coef(p)), tolerance = 1e-6)
+  expect_equal(unname(sqrt(diag(vcov(fit)))), unname(sqrt(diag(suppressWarnings(plm::vcovHC(p))))),
+               tolerance = 1e-6)
+})
+
 test_that("pangmm() accepts vcov = 'cluster' as a synonym of 'robust'", {
   d <- gmm_sim(N = 150, TT = 6, seed = 4)
   f <- y ~ lag(y, 1) + x | lag(y, 2:99)

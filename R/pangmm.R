@@ -94,7 +94,11 @@
 #' the Hansen statistic by default and `N s2` times the Sargan statistic
 #' with `weights = "onestep"`. Many instruments weaken the
 #' Hansen test (Roodman 2009); collapsing or limiting the lag depth keeps
-#' the instrument count well below the number of individuals.
+#' the instrument count well below the number of individuals. When the
+#' second-step matrix `S2` is singular (more instruments than individuals)
+#' a generalized inverse is used, as in [plm::pgmm()]; a two-step fit warns
+#' because its estimates depend on it, a one-step fit does not because only
+#' its Hansen statistic does.
 #'
 #' @section Finite-sample bias:
 #' The estimators are consistent as the number of individuals grows, but
@@ -663,15 +667,19 @@ gmm_fsm <- function(m, sys) {
 #'
 #' Same rule as plm::pgmm(): a Moore-Penrose inverse (as MASS::ginv) when
 #' the smallest eigenvalue is below 1e-9, which happens when there are more
-#' instruments than individuals.
+#' instruments than individuals. `warn = FALSE` skips the warning when the
+#' inverse does not enter the estimates (the second-step matrix of a
+#' one-step fit, used only by the Hansen test).
 #'
 #' @keywords internal
 #' @noRd
-gmm_inverse <- function(S, step) {
+gmm_inverse <- function(S, step, warn = TRUE) {
   ev <- eigen(S, symmetric = TRUE, only.values = TRUE)$values
   if (min(ev) >= 1e-9) return(solve(S))
-  warning("the ", step, " weighting matrix is singular; a generalized inverse is used",
-          call. = FALSE)
+  if (warn) {
+    warning("the ", step, " weighting matrix is singular; a generalized inverse is used",
+            call. = FALSE)
+  }
   sv <- svd(S)
   pos <- sv$d > max(sqrt(.Machine$double.eps) * sv$d[1L], 0)
   sv$v[, pos, drop = FALSE] %*% (t(sv$u[, pos, drop = FALSE]) / sv$d[pos])
@@ -699,7 +707,8 @@ gmm_estimate <- function(y, X, W, H, group, R, model) {
   e1 <- as.numeric(y - X %*% b1)
   Q1 <- gmm_blocksum(W * e1, R)
   S2 <- crossprod(Q1)
-  S2i <- gmm_inverse(S2, "second-step")
+  # a one-step fit needs S2^-1 only for the Hansen statistic
+  S2i <- gmm_inverse(S2, "second-step", warn = model == "twostep")
   S2iZX <- S2i %*% ZX
   V2 <- solve(crossprod(ZX, S2iZX))
   b2 <- as.numeric(V2 %*% crossprod(S2iZX, Zy))

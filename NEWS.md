@@ -109,6 +109,13 @@ panels ship with the package. Estimates are unchanged.
   "rank-deficient model matrix" warning naming the column. Exact
   dependencies drop the same columns as `lm()`. This applies to every
   model and family of `panglm()`.
+* `pangmm(model = "onestep")` no longer warns that the second-step
+  weighting matrix is singular. A one-step fit uses that matrix only for
+  the Hansen statistic, which takes a generalized inverse as
+  `plm::pgmm()` does; the warning is kept for two-step fits, whose
+  estimates depend on it. One-step estimates and robust standard errors
+  match `plm::pgmm()` on `EmplUK` to 3e-13 and on `cigar` (437
+  instruments, 46 states) to 2e-7.
 
 # panglm 1.6.2
 
