@@ -114,6 +114,15 @@ panels ship with the package. Estimates are unchanged.
   weighting matrix is singular: a one-step fit uses it only for the
   Hansen statistic, through a generalized inverse as in `plm::pgmm()`.
   Two-step fits keep the warning.
+* `panhurdle(family = "negbin")` no longer stops with "NAs are not
+  allowed in subscripted assignments" when the NB2 shape parameter runs
+  off to infinity (counts no more dispersed than Poisson): `log P(Y = 0)`
+  is computed as `-theta * log1p(mu / theta)`, which stays finite.
+* `panhurdle()` drops time-invariant regressors with a warning, as
+  `panglm(model = "within")` does, instead of failing with "system is
+  computationally singular". Groups whose positive counts are all 1 (no
+  finite intercept) are dropped from the count part with a message, and
+  a binary outcome stops with a clear error.
 
 ## Performance
 
@@ -125,6 +134,13 @@ panels ship with the package. Estimates are unchanged.
   unchanged up to the optimizer tolerance, and the likelihood matches
   `GLMMadaptive::mixed_model(family = hurdle.lognormal())` at the same
   parameters.
+* The `panhurdle()` count part is fit by Newton-Raphson with analytic
+  derivatives and the group intercepts eliminated, instead of a dense
+  dummy matrix (and, for NB2, BFGS with a numerical Hessian). A fit that
+  took minutes on a few hundred `docvisits` individuals now takes well
+  under a second, the full panel about one second. Estimates match
+  `glmmTMB` truncated Poisson and NB2 fits with group dummies; the NB2
+  standard errors, which came from a not fully converged fit, change.
 
 # panglm 1.6.2
 
