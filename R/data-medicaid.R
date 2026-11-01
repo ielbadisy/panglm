@@ -1,0 +1,212 @@
+#' Health insurance coverage and the ACA Medicaid expansion, US states 2009-2019
+#'
+#' A real public state-year panel of health insurance coverage for the 50
+#' US states and the District of Columbia, 2009 to 2019, built from the
+#' American Community Survey (ACS) 1-year estimates of the US Census
+#' Bureau, with the date on which each state implemented the Affordable
+#' Care Act (ACA) Medicaid expansion to adults with incomes up to 138
+#' percent of the federal poverty level. Adoption was staggered (2014,
+#' 2015, 2016, 2017, 2019, with ten states never adopting and several
+#' adopting after 2019), which makes it the standard teaching example for
+#' staggered difference-in-differences. The panel unit is the state and the
+#' time unit is the calendar year; the panel is balanced (51 x 11).
+#'
+#' The ACS starts asking about health insurance in 2008, but the 2008
+#' Summary File has no table by ratio of income to poverty nor a Medicaid
+#' table, so the panel starts in 2009. It stops in 2019 because the Census
+#' Bureau did not release standard 2020 ACS 1-year estimates (only
+#' experimental ones), after the pandemic disrupted data collection.
+#' The rates are computed from the published counts of tables B27001 and
+#' B27016 (state level), so they reproduce the published percentages; see
+#' `data-raw/medicaid.R` in the package's GitHub repository for the build
+#' and its validation checks.
+#'
+#' @format A data frame with 561 rows (51 states x 11 years) and 20
+#'   columns. The panel index pair is `c("state", "year")`.
+#' \describe{
+#'   \item{state}{factor, state name (51 levels, District of Columbia
+#'     included); the panel individual index}
+#'   \item{year}{integer calendar year of the ACS estimate (2009-2019); the
+#'     panel time index}
+#'   \item{abb}{factor, two-letter postal abbreviation}
+#'   \item{fips}{integer state FIPS code}
+#'   \item{region}{factor, Census region (Northeast, Midwest, South, West)}
+#'   \item{pop}{integer civilian noninstitutionalized population (all ages),
+#'     the universe of the health insurance tables (B27001)}
+#'   \item{uninsured}{numeric percent of the civilian noninstitutionalized
+#'     population without health insurance coverage, all ages (B27001)}
+#'   \item{adultpop}{integer adults aged 18 to 64 (2009-2016) or 19 to 64
+#'     (2017-2019) for whom poverty status is determined (B27016); the ACS
+#'     moved its age break from 18 to 19 in 2017, for all states at once}
+#'   \item{uninsadult}{numeric percent of `adultpop` without health
+#'     insurance coverage}
+#'   \item{medicaidadult}{numeric percent of `adultpop` with Medicaid or
+#'     other means-tested public coverage (alone or with other coverage)}
+#'   \item{povpop}{integer adults (same ages) with family income below 100
+#'     percent of the poverty threshold}
+#'   \item{povbase}{integer `povpop` of the state in 2013, the last year
+#'     before the main expansion wave: a time-invariant weight, as needed
+#'     by [attgt()] (weights constant within individuals)}
+#'   \item{uninspov}{numeric percent of `povpop` without health insurance
+#'     coverage; the low-income outcome available in every year}
+#'   \item{medicaidpov}{numeric percent of `povpop` with Medicaid or other
+#'     means-tested public coverage}
+#'   \item{lowpop}{integer adults (same ages) with family income below 138
+#'     percent of the poverty threshold, the ACA eligibility cut; `NA` in
+#'     2009-2010, when the ACS tables cut at 100 and 150 percent}
+#'   \item{uninslow}{numeric percent of `lowpop` without health insurance
+#'     coverage; `NA` in 2009-2010}
+#'   \item{adopt}{integer expansion year: the first calendar year coded as
+#'     treated, `NA` for the 10 states that had not adopted by October
+#'     2026. Convention of Miller, Johnson and Wherry (2021): the year of
+#'     implementation if the expansion took effect before July 1, otherwise
+#'     the following year (so Michigan, April 2014, is 2014; New Hampshire,
+#'     August 2014, is 2015; Louisiana, July 2016, is 2017). Values after
+#'     2019 (Idaho and Utah 2020, Nebraska 2021, Missouri and Oklahoma 2022,
+#'     North Carolina and South Dakota 2024) are kept: in this panel those
+#'     states are never treated, and [attgt()] treats cohorts first treated
+#'     after the last period as never treated}
+#'   \item{expdate}{Date the expansion took effect (KFF); `NA` if not
+#'     adopted}
+#'   \item{expanded}{integer 0/1 indicator that `year >= adopt`}
+#'   \item{prior}{factor coverage of low-income adults before 2014:
+#'     `"full"` for DE, DC, MA, NY and VT, which already covered adults up
+#'     to the poverty line or more (Miller, Johnson and Wherry 2021, who
+#'     drop them); `"early"` for CA, CT, MN, NJ and WA, which made limited
+#'     early expansions in 2010-2012 under the ACA option or waivers
+#'     (Sommers et al. 2013); `"none"` otherwise. A standard robustness
+#'     check drops `prior != "none"`. Wisconsin is coded as a non-adopter
+#'     but has covered adults up to 100 percent of poverty since 2014
+#'     through a waiver}
+#' }
+#'
+#' @source US Census Bureau, American Community Survey 1-year estimates,
+#'   2009-2019, detailed tables B27001 (health insurance coverage status by
+#'   sex by age) and B27016 (health insurance coverage status and type by
+#'   ratio of income to poverty level by age), Summary File,
+#'   <https://www2.census.gov/programs-surveys/acs/summary_file/>. Works of
+#'   the US federal government are in the public domain (17 U.S.C. 105);
+#'   the Census Bureau states "You do not need permission to use American
+#'   Community Survey data"
+#'   (<https://www.census.gov/help/topics/faq.how-do-i-cite-or-source-acs-data.html>).
+#'   Attribution: "Source: U.S. Census Bureau, American Community Survey
+#'   1-year estimates." This product is not endorsed or certified by the
+#'   Census Bureau. Expansion dates: KFF, Status of State Action on the
+#'   Medicaid Expansion Decision (State Health Facts), status as of October
+#'   2026,
+#'   <https://www.kff.org/affordable-care-act/state-indicator/state-activity-around-expanding-medicaid-under-the-affordable-care-act/>.
+#'
+#' @references
+#' Miller, S., Johnson, N. and Wherry, L. R. (2021). Medicaid and mortality:
+#' new evidence from linked survey and administrative data. *Quarterly
+#' Journal of Economics*, 136(3), 1783-1829. \doi{10.1093/qje/qjab004}
+#'
+#' Courtemanche, C., Marton, J., Ukert, B., Yelowitz, A. and Zapata, D.
+#' (2017). Early impacts of the Affordable Care Act on health insurance
+#' coverage in Medicaid expansion and non-expansion states. *Journal of
+#' Policy Analysis and Management*, 36(1), 178-210.
+#' \doi{10.1002/pam.21961}
+#'
+#' Sommers, B. D., Arntson, E., Kenney, G. M. and Epstein, A. M. (2013).
+#' Lessons from early Medicaid expansions under health reform: interviews
+#' with Medicaid officials. *Medicare and Medicaid Research Review*, 3(4).
+#' \doi{10.5600/mmrr.003.04.a02}
+#'
+#' Smith, J. C. and Medalia, C. (2015). *Health Insurance Coverage in the
+#' United States: 2014*. Current Population Reports P60-253, US Census
+#' Bureau.
+#'
+#' Callaway, B. and Sant'Anna, P. H. C. (2021). Difference-in-differences
+#' with multiple time periods. *Journal of Econometrics*, 225(2), 200-230.
+#' \doi{10.1016/j.jeconom.2020.12.001}
+#'
+#' Goodman-Bacon, A. (2021). Difference-in-differences with variation in
+#' treatment timing. *Journal of Econometrics*, 225(2), 254-277.
+#' \doi{10.1016/j.jeconom.2021.03.014}
+#'
+#' @section Teaching use:
+#' \itemize{
+#'   \item Did the expansion reduce uninsurance among low-income adults?
+#'     Staggered DiD with [attgt()] (`treat = "adopt"`, never-treated or
+#'     not-yet-treated controls), aggregated by cohort and event time with
+#'     [summary.panglm_attgt()]. Weights must be constant within a state:
+#'     use the base-year population `povbase` (`povpop` in 2013).
+#'   \item How large is the bias of the single-coefficient two-way fixed
+#'     effects regression? Compare [did()] (or [panglm()] with
+#'     `model = "within"`, `effect = "twoways"` and the `expanded`
+#'     dummy) with [attgt()] and [etwfe()]: the effect grows with time
+#'     since expansion, so early cohorts serve as controls for later ones.
+#'   \item Are pre-trends parallel, and how does the effect build up?
+#'     [eventstudy()] with leads and lags, and `summary(type = "dynamic")`
+#'     of [attgt()]. Louisiana (July 2016, coded 2017) is partly treated
+#'     in 2016: compare `anticipation = 1`.
+#'   \item Inference with 51 clusters: the TWFE coefficient from
+#'     [panglm()] with `model = "within"` and `effect = "twoways"` has a
+#'     classical standard error less than half the cluster-robust one
+#'     (`vcov = "cluster"`), the default of [did()].
+#'   \item Did Medicaid enrolment (`medicaidpov`, `medicaidadult`) rise,
+#'     and is the fall in uninsurance among all ages (`uninsured`) smaller,
+#'     as expected from a policy aimed at low-income adults? Same
+#'     estimators with other outcomes (a "first stage" and a dilution
+#'     check).
+#'   \item Robustness: drop the states with prior coverage
+#'     (`prior != "none"`), restrict to the ACA income cut (`uninslow`,
+#'     2011-2019), or use population weights versus none. Weighted
+#'     fixed-effects fits are not available in [panglm()]; a weighted TWFE
+#'     is `model = "pooling"` with state and year dummies.
+#' }
+#'
+#' @examples
+#' data(medicaid)
+#' str(medicaid)
+#' # adoption cohorts (first treated year; NA = not adopted by 2026)
+#' table(unique(medicaid[, c("state", "adopt")])$adopt, useNA = "ifany")
+#' ix <- c("state", "year")
+#'
+#' # Callaway-Sant'Anna ATT(g, t) for the uninsured rate of adults below
+#' # the poverty line, never-treated controls, states weighted equally
+#' cs <- attgt(uninspov ~ 1, data = medicaid, index = ix, treat = "adopt",
+#'             control = "never")
+#' summary(cs)
+#' summary(cs, type = "dynamic")   # leads test pre-trends, lags the build-up
+#'
+#' # weighted by the pre-expansion (2013) low-income adult population,
+#' # with not-yet-treated controls
+#' cs2 <- attgt(uninspov ~ 1, data = medicaid, index = ix, treat = "adopt",
+#'              control = "notyet", weights = "povbase")
+#' summary(cs2)
+#'
+#' # extended TWFE and the single-coefficient TWFE for comparison (the
+#' # latter can be biased under staggered adoption with dynamic effects)
+#' ew <- etwfe(uninspov ~ 1, data = medicaid, index = ix, treat = "adopt")
+#' summary(ew)
+#' tw <- did(uninspov ~ 1, data = medicaid, index = ix, treat = "adopt")
+#' coef(tw)["treated"]
+#'
+#' # event-study regression with a joint pre-trend test
+#' eventstudy(uninspov ~ 1, data = medicaid, index = ix, treat = "adopt",
+#'            leads = 4, lags = 5)
+#'
+#' # first stage: Medicaid coverage of adults below the poverty line
+#' summary(attgt(medicaidpov ~ 1, data = medicaid, index = ix,
+#'               treat = "adopt", control = "never"))
+#'
+#' \donttest{
+#' # the same TWFE coefficient with classical and cluster-robust SEs
+#' fe <- panglm(uninspov ~ expanded, data = medicaid, index = ix,
+#'              model = "within", effect = "twoways")
+#' fecl <- update(fe, vcov = "cluster")
+#' cbind(classical = sqrt(diag(vcov(fe))), cluster = sqrt(diag(vcov(fecl))))
+#'
+#' # weighted TWFE: a pooled fit with state and year dummies
+#' tww <- panglm(uninspov ~ expanded + state + factor(year), data = medicaid,
+#'               index = ix, model = "pooling", weights = "povbase",
+#'               vcov = "cluster")
+#' coef(summary(tww))["expanded", ]
+#'
+#' # robustness: drop the states with pre-2014 coverage of these adults
+#' summary(attgt(uninspov ~ 1, data = subset(medicaid, prior == "none"),
+#'               index = ix, treat = "adopt", control = "never"))
+#' }
+#' @keywords datasets
+"medicaid"
