@@ -47,6 +47,8 @@ reference:
   - eventstudy
   - attgt
   - etwfe
+  - trendplot
+  - panelplot
 
 - title: Endogeneity
   desc: >

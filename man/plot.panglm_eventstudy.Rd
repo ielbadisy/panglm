@@ -13,6 +13,11 @@
   main = NULL,
   ylim = NULL,
   legend = FALSE,
+  style = c("classic", "points", "line"),
+  ref = x$ref,
+  onset = NULL,
+  onset_label = NA,
+  caps = NULL,
   ...
 )
 }
@@ -27,6 +32,25 @@
 
 \item{legend}{logical: add a compact legend of the symbols}
 
+\item{style}{\code{"classic"} (default), \code{"points"} or \code{"line"} (see
+Styles); for the event-time, cohort and calendar plots}
+
+\item{ref}{event time of the reference period, marked when its estimate
+is exactly zero; the default is the period omitted by \code{\link[=eventstudy]{eventstudy()}}
+(\code{x$ref})}
+
+\item{onset}{position of the dashed treatment-onset line on the event
+time axis: \code{NULL} gives \code{0} for \code{style = "classic"} and \code{-0.5}
+(between the last pre-treatment and the first treated period)
+otherwise}
+
+\item{onset_label}{text written above the onset line; the default
+(\code{NA}) is "Intervention" for \code{style = "classic"} and none otherwise,
+\code{NULL} suppresses it}
+
+\item{caps}{logical: draw caps on the confidence-interval whiskers; the
+default (\code{NULL}) draws them for \code{style = "classic"} only}
+
 \item{...}{passed to \code{\link[graphics:plot.default]{graphics::plot()}}}
 }
 \value{
@@ -34,11 +58,10 @@
 }
 \description{
 Plots the event-time coefficients of \code{\link[=eventstudy]{eventstudy()}} with pointwise
-confidence intervals, in the same style as \code{\link[=plot.panglm_attgt]{plot.panglm_attgt()}}:
-hollow points before treatment, filled after, an open diamond at the
-omitted reference period (zero by construction) and a dashed line at
-treatment onset. With \code{bin = TRUE} the end points pool all earlier
-(later) event times.
+confidence intervals, in the styles of \code{\link[=plot.panglm_attgt]{plot.panglm_attgt()}} (see its
+Styles section). The omitted reference period (zero by construction)
+is drawn as an open symbol at zero, without an interval. With
+\code{bin = TRUE} the end points pool all earlier (later) event times.
 }
 \examples{
 set.seed(1)
@@ -51,6 +74,8 @@ es <- eventstudy(visits ~ 1, data = d, index = c("id", "year"),
                  treat = "first", leads = 3, lags = 2)
 plot(es, main = "Effect of the policy by event time")
 plot(es, min_e = -2, legend = TRUE)
+plot(es, style = "points")
+plot(es, style = "line")
 }
 \seealso{
 Other eventstudy methods: 

@@ -765,11 +765,11 @@ nobs.panglm_attgt <- function(object, ...) object$n
 #'
 #' Plots the dynamic aggregation of [attgt()] (`ATT(e)` by event time), the
 #' cohort or calendar aggregation, or the group-time effects `ATT(g, t)`
-#' themselves. Points are hollow before treatment and filled after, with
-#' pointwise confidence intervals as black segments and a dashed line at
-#' treatment onset. When the fit has uniform confidence bands
-#' (`cband = TRUE`), they are drawn as light grey bars behind the pointwise
-#' intervals.
+#' themselves. The default style (`"classic"`) draws filled points with
+#' capped pointwise confidence intervals, a solid line at zero and, for
+#' event time, a dashed line at treatment onset labelled "Intervention".
+#' When the fit has uniform confidence bands (`cband = TRUE`), they are
+#' drawn as light grey bars behind the pointwise intervals.
 #'
 #' With `type = "gt"`, one small panel per treatment cohort shows
 #' `ATT(g, t)` against calendar time, with the cohort size in the panel
@@ -777,21 +777,69 @@ nobs.panglm_attgt <- function(object, ...) object$n
 #' The uniform bands of a `cband = TRUE` fit are simultaneous over all
 #' `ATT(g, t)`.
 #'
+#' With `type = "heatmap"`, the `ATT(g, t)` are shown as a cohort (rows,
+#' earliest adopters at the top) by calendar period (columns) heat map,
+#' on a blue-white-red scale centred at zero with a colour bar.
+#' Pre-treatment cells are hatched, a thick black edge marks the adoption
+#' of each cohort and grey cells have no estimate. With `cells = TRUE` the
+#' estimates are printed in the cells, in bold with a star when the
+#' pointwise confidence interval excludes zero.
+#'
+#' @section Styles:
+#' `style = "classic"` (the default) is the textbook dynamic
+#' difference-in-differences figure: filled points with capped whiskers,
+#' the reference period as an open circle at zero without a whisker, a
+#' solid line at zero and a dashed vertical line at event time `0`
+#' labelled "Intervention" above the plot. `style = "points"` draws hollow
+#' points before treatment and filled points after, an open diamond at the
+#' reference period, uncapped intervals, a dotted zero line and the onset
+#' line at `-0.5`, between the last pre-treatment and the first treated
+#' period. `style = "line"` joins
+#' the estimates by a line and shades the pointwise confidence intervals
+#' (and, lighter, the uniform bands), with the onset line at `-0.5`. The
+#' cohort panels of `type = "gt"` always use the `"points"` look.
+#'
+#' The reference period is the event time `ref` when its estimate is
+#' exactly zero, that is when it is omitted or normalized. With
+#' `base = "universal"` in [attgt()] the effect at event time `-1` is
+#' normalized to zero and drawn as the reference. With the default
+#' `base = "varying"` no period is omitted (each pre-treatment estimate is
+#' a short difference), so no reference period is drawn.
+#'
 #' @param x a `"panglm_attgt"` fit from [attgt()], or its summary
 #' @param type what to plot (for a fit): `"dynamic"` (event study),
-#'   `"group"`, `"calendar"` or `"gt"` (the group-time effects, one panel
-#'   per cohort)
+#'   `"group"`, `"calendar"`, `"gt"` (the group-time effects, one panel
+#'   per cohort) or `"heatmap"` (the group-time effects as a cohort by
+#'   period heat map)
 #' @param min_e,max_e event window (event time for `"dynamic"`, calendar
-#'   time for `"gt"`)
+#'   time for `"gt"` and `"heatmap"`)
 #' @param ncol number of panel columns for `type = "gt"` (default: about
 #'   the square root of the number of cohorts)
 #' @param xlab,ylab,main axis labels and title
-#' @param ylim y-axis limits
-#' @param legend logical: add a compact legend of the symbols
+#' @param ylim y-axis limits; for the heat map, the limits of the colour
+#'   scale (default: symmetric around zero)
+#' @param legend logical: add a compact legend of the symbols (the heat map
+#'   always has its colour bar)
+#' @param style `"classic"` (default), `"points"` or `"line"` (see
+#'   Styles); for the event-time, cohort and calendar plots
+#' @param ref event time of the reference period, marked when its estimate
+#'   is exactly zero (see Styles); `NULL` marks none
+#' @param onset position of the dashed treatment-onset line on the event
+#'   time axis: `NULL` gives `0` for `style = "classic"` and `-0.5`
+#'   (between the last pre-treatment and the first treated period)
+#'   otherwise
+#' @param onset_label text written above the onset line; the default
+#'   (`NA`) is "Intervention" for `style = "classic"` and none otherwise,
+#'   `NULL` suppresses it
+#' @param caps logical: draw caps on the confidence-interval whiskers; the
+#'   default (`NULL`) draws them for `style = "classic"` only
+#' @param cells logical: print the estimates in the cells of the heat map
+#' @param digits number of decimals of the printed estimates
 #' @param ... passed to [summary.panglm_attgt()] (`balance_e`, `level`) and
 #'   then to [graphics::plot()]
-#' @return the plotted summary, invisibly; for `type = "gt"`, the plotted
-#'   rows of the `estimates` of the fit
+#' @return the plotted summary, invisibly; for `type = "gt"` and
+#'   `"heatmap"`, the plotted rows of the `estimates` of the fit (with a
+#'   logical column `pre` for the heat map)
 #' @family attgt methods
 #' @examples
 #' set.seed(2)
@@ -804,12 +852,33 @@ nobs.panglm_attgt <- function(object, ...) object$n
 #' plot(fit, min_e = -2, max_e = 2, legend = TRUE)
 #' plot(fit, type = "gt")
 #' plot(fit, type = "group")
+#' plot(fit, type = "heatmap", cells = TRUE)
+#' plot(fit, style = "points", legend = TRUE)
+#' plot(fit, style = "line")
+#' # with a universal base period, event time -1 is the reference (zero)
+#' fu <- attgt(y ~ 1, d, index = c("id", "t"), treat = "first", base = "universal")
+#' plot(fu, min_e = -3, max_e = 3)
 #' @export
-plot.panglm_attgt <- function(x, type = c("dynamic", "group", "calendar", "gt"),
+plot.panglm_attgt <- function(x, type = c("dynamic", "group", "calendar", "gt", "heatmap"),
                               min_e = -Inf, max_e = Inf, ncol = NULL, xlab = NULL,
-                              ylab = "ATT", main = NULL, ylim = NULL, legend = FALSE, ...) {
+                              ylab = "Estimated ATT", main = NULL, ylim = NULL, legend = FALSE,
+                              style = c("classic", "points", "line"), ref = -1, onset = NULL,
+                              onset_label = NA, caps = NULL, cells = FALSE, digits = 2,
+                              ...) {
   type <- match.arg(type)
+  style <- match.arg(style)
   did_check_window(min_e, max_e)
+  if (type == "heatmap") {
+    est <- x$estimates
+    est <- est[est$time >= min_e & est$time <= max_e, , drop = FALSE]
+    sizes <- vapply(x$groups, function(g) sum(x$units$group == g), numeric(1))
+    names(sizes) <- as.character(x$groups)
+    if (missing(ylab)) ylab <- "Treatment cohort"
+    out <- did_heatmap(est, sizes = sizes, cells = cells, digits = digits,
+                       xlab = if (is.null(xlab)) "Period" else xlab, ylab = ylab,
+                       main = main, zlim = ylim, title = "ATT(g, t)", ...)
+    return(invisible(out))
+  }
   if (type == "gt") {
     return(attgt_plotgt(x, min_e = min_e, max_e = max_e, ncol = ncol, xlab = xlab,
                         ylab = ylab, main = main, ylim = ylim, legend = legend, ...))
@@ -820,15 +889,20 @@ plot.panglm_attgt <- function(x, type = c("dynamic", "group", "calendar", "gt"),
                                        if (type == "dynamic") list(min_e = min_e, max_e = max_e),
                                        dots[sargs]))
   do.call(plot.summary.panglm_attgt, c(list(s, xlab = xlab, ylab = ylab, main = main,
-                                            ylim = ylim, legend = legend),
+                                            ylim = ylim, legend = legend, style = style,
+                                            ref = ref, onset = onset,
+                                            onset_label = onset_label, caps = caps),
                                        dots[setdiff(names(dots), sargs)]))
 }
 
 #' @rdname plot.panglm_attgt
 #' @export
 plot.summary.panglm_attgt <- function(x, type = NULL, min_e = -Inf, max_e = Inf, xlab = NULL,
-                                      ylab = "ATT", main = NULL, ylim = NULL, legend = FALSE,
-                                      ...) {
+                                      ylab = "Estimated ATT", main = NULL, ylim = NULL,
+                                      legend = FALSE,
+                                      style = c("classic", "points", "line"), ref = -1,
+                                      onset = NULL, onset_label = NA, caps = NULL, ...) {
+  style <- match.arg(style)
   tab <- x$estimates
   if (is.null(tab)) stop("nothing to plot for the simple aggregation", call. = FALSE)
   did_check_window(min_e, max_e)
@@ -838,12 +912,13 @@ plot.summary.panglm_attgt <- function(x, type = NULL, min_e = -Inf, max_e = Inf,
   }
   event <- x$type == "dynamic"
   tab <- if (event) {
-    did_plottab(tab, min_e = min_e, max_e = max_e)
+    did_refmark(did_plottab(tab, min_e = min_e, max_e = max_e), ref)
   } else {
     did_plottab(tab)
   }
   did_drawes(tab, event = event, xlab = xlab, ylab = ylab, main = main, ylim = ylim,
-             legend = legend, level = if (is.null(x$level)) 0.95 else x$level, ...)
+             legend = legend, level = if (is.null(x$level)) 0.95 else x$level,
+             style = style, onset = onset, onset_label = onset_label, caps = caps, ...)
   invisible(x)
 }
 

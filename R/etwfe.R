@@ -500,6 +500,40 @@ etwfe_ate <- function(object, use, key, level, overall = FALSE, key2 = NULL) {
   out
 }
 
+#' Cohort-by-period ATT(g, t) of an ETWFE fit, response scale
+#'
+#' With `control = "never"` the reference cell of each cohort (period
+#' `g - 1`) is added at zero.
+#'
+#' @keywords internal
+#' @noRd
+etwfe_gt <- function(object, level = object$level) {
+  rows <- object$rows
+  treated <- is.finite(rows$group) & rows$group != object$reference
+  use <- treated & rows$cell
+  est <- etwfe_ate(object, use, rows$group[use], level, key2 = rows$time[use])
+  names(est)[1:2] <- c("group", "time")
+  if (object$control == "never") {
+    groups <- sort(unique(rows$group[treated]))
+    ref <- data.frame(group = groups, time = groups - 1)
+    ref <- ref[ref$time %in% rows$time & !paste(ref$group, ref$time) %in%
+                 paste(est$group, est$time), , drop = FALSE]
+    if (nrow(ref)) {
+      add <- est[rep(1L, nrow(ref)), , drop = FALSE]
+      add$group <- ref$group
+      add$time <- ref$time
+      add[, c("estimate", "se", "lower", "upper")] <- 0
+      add$statistic <- NA
+      add$p.value <- NA
+      est <- rbind(est, add)
+    }
+  }
+  est <- est[order(est$group, est$time), , drop = FALSE]
+  est$event <- est$time - est$group
+  rownames(est) <- NULL
+  est
+}
+
 #' @export
 print.summary.panglm_etwfe <- function(x, digits = max(3, getOption("digits") - 3), ...) {
   fam <- c(gaussian = "linear", poisson = "Poisson", binomial = "logit")[[x$family]]
@@ -545,20 +579,30 @@ nobs.panglm_etwfe <- function(object, ...) object$nobs
 #' Plot ETWFE treatment effects
 #'
 #' Plots the event-study aggregation of an [etwfe()] fit (or the cohort or
-#' calendar aggregation) with pointwise confidence intervals, in the same
-#' style as [plot.panglm_attgt()]: hollow points before treatment, filled
-#' after, and an open diamond at the reference period (event time `-1`
-#' with `control = "never"`).
+#' calendar aggregation) with pointwise confidence intervals, in the
+#' styles of [plot.panglm_attgt()] (see its Styles section). The reference
+#' period (event time `-1` with `control = "never"`) is drawn as an open
+#' symbol at zero.
+#'
+#' `type = "heatmap"` draws the cohort-by-period effects ATT(g, t) on the
+#' response scale as a heat map, as for [plot.panglm_attgt()]; with
+#' `control = "never"` the reference cell `g - 1` of each cohort is zero.
 #'
 #' @param x a `"panglm_etwfe"` fit from [etwfe()], or its summary
-#' @param type aggregation to plot (for a fit): `"event"`, `"group"` or
-#'   `"calendar"`
-#' @param min_e,max_e event window to plot (event-time plots only)
+#' @param type aggregation to plot (for a fit): `"event"`, `"group"`,
+#'   `"calendar"` or `"heatmap"` (cohort by period heat map of ATT(g, t))
+#' @param min_e,max_e event window to plot (event time for the event-time
+#'   plot, calendar time for the heat map)
 #' @param xlab,ylab,main axis labels and title
 #' @param ylim y-axis limits
 #' @param legend logical: add a compact legend of the symbols
+#' @param ref event time of the reference period, marked when its estimate
+#'   is exactly zero: event time `-1` with `control = "never"`; with
+#'   `control = "notyet"` there are no pre-treatment effects
+#' @inheritParams plot.panglm_attgt
 #' @param ... passed to [graphics::plot()]
-#' @return the plotted summary, invisibly
+#' @return the plotted summary, invisibly; for the heat map, the table of
+#'   ATT(g, t) with a logical column `pre` (pre-treatment cell)
 #' @family etwfe methods
 #' @examples
 #' set.seed(2)
@@ -569,21 +613,47 @@ nobs.panglm_etwfe <- function(object, ...) object$nobs
 #' fit <- etwfe(y ~ 1, d, index = c("id", "t"), treat = "first", control = "never")
 #' plot(fit)
 #' plot(fit, min_e = -3, max_e = 3, legend = TRUE)
+#' plot(fit, style = "points", legend = TRUE)
+#' plot(fit, style = "line")
+#' plot(fit, type = "heatmap", cells = TRUE)
 #' @export
-plot.panglm_etwfe <- function(x, type = c("event", "group", "calendar"), min_e = -Inf,
-                              max_e = Inf, xlab = NULL, ylab = "ATT", main = NULL,
-                              ylim = NULL, legend = FALSE, ...) {
+plot.panglm_etwfe <- function(x, type = c("event", "group", "calendar", "heatmap"),
+                              min_e = -Inf, max_e = Inf, xlab = NULL, ylab = "Estimated ATT",
+                              main = NULL, ylim = NULL, legend = FALSE,
+                              style = c("classic", "points", "line"), ref = -1, onset = NULL,
+                              onset_label = NA, caps = NULL, cells = FALSE, digits = 2, ...) {
   type <- match.arg(type)
+  style <- match.arg(style)
+  if (type == "heatmap") {
+    did_check_window(min_e, max_e)
+    est <- etwfe_gt(x)
+    est <- est[est$time >= min_e & est$time <= max_e, , drop = FALSE]
+    rows <- x$rows
+    groups <- sort(unique(est$group))
+    sizes <- vapply(groups, function(g) length(unique(rows$id[rows$group %in% g])),
+                    numeric(1))
+    names(sizes) <- as.character(groups)
+    if (missing(ylab)) ylab <- "Treatment cohort"
+    out <- did_heatmap(est, sizes = sizes, cells = cells, digits = digits,
+                       xlab = if (is.null(xlab)) "Period" else xlab, ylab = ylab,
+                       main = main, zlim = ylim, title = "ATT(g, t)", ...)
+    return(invisible(out))
+  }
   plot.summary.panglm_etwfe(summary.panglm_etwfe(x, type = type, byxvar = FALSE),
                             min_e = min_e, max_e = max_e, xlab = xlab, ylab = ylab,
-                            main = main, ylim = ylim, legend = legend, ...)
+                            main = main, ylim = ylim, legend = legend, style = style,
+                            ref = ref, onset = onset, onset_label = onset_label,
+                            caps = caps, ...)
 }
 
 #' @rdname plot.panglm_etwfe
 #' @export
 plot.summary.panglm_etwfe <- function(x, type = NULL, min_e = -Inf, max_e = Inf, xlab = NULL,
-                                      ylab = "ATT", main = NULL, ylim = NULL, legend = FALSE,
-                                      ...) {
+                                      ylab = "Estimated ATT", main = NULL, ylim = NULL,
+                                      legend = FALSE,
+                                      style = c("classic", "points", "line"), ref = -1,
+                                      onset = NULL, onset_label = NA, caps = NULL, ...) {
+  style <- match.arg(style)
   tab <- x$estimates
   if (is.null(tab) || x$type == "simple") {
     stop("nothing to plot for the simple aggregation", call. = FALSE)
@@ -597,8 +667,9 @@ plot.summary.panglm_etwfe <- function(x, type = NULL, min_e = -Inf, max_e = Inf,
     xlab <- c(event = "Event time", group = "Treatment cohort", calendar = "Period")[[x$type]]
   }
   event <- x$type == "event"
-  ptab <- if (event) etwfe_plottab(x, min_e, max_e) else etwfe_plottab(x)
+  ptab <- if (event) did_refmark(etwfe_plottab(x, min_e, max_e), ref) else etwfe_plottab(x)
   did_drawes(ptab, event = event, xlab = xlab, ylab = ylab, main = main, ylim = ylim,
-             legend = legend, level = x$level, ...)
+             legend = legend, level = x$level, style = style, onset = onset,
+             onset_label = onset_label, caps = caps, ...)
   invisible(x)
 }
