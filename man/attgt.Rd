@@ -230,6 +230,8 @@ binary outcomes), \code{\link[=did]{did()}} and \code{\link[=eventstudy]{eventst
 Other policy evaluation: 
 \code{\link{did}()},
 \code{\link{etwfe}()},
-\code{\link{eventstudy}()}
+\code{\link{eventplot}()},
+\code{\link{eventstudy}()},
+\code{\link{treatmentplot}()}
 }
 \concept{policy evaluation}

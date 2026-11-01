@@ -114,6 +114,8 @@ model, \link{tidy-methods} for \code{tidy()} and \code{glance()}.
 Other policy evaluation: 
 \code{\link{attgt}()},
 \code{\link{did}()},
-\code{\link{etwfe}()}
+\code{\link{etwfe}()},
+\code{\link{eventplot}()},
+\code{\link{treatmentplot}()}
 }
 \concept{policy evaluation}

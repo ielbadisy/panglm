@@ -7,33 +7,72 @@
 \usage{
 \method{plot}{panglm_attgt}(
   x,
-  type = c("dynamic", "group", "calendar"),
+  type = c("dynamic", "group", "calendar", "gt"),
+  min_e = -Inf,
+  max_e = Inf,
+  ncol = NULL,
   xlab = NULL,
   ylab = "ATT",
+  main = NULL,
+  ylim = NULL,
+  legend = FALSE,
   ...
 )
 
-\method{plot}{summary.panglm_attgt}(x, type = NULL, xlab = NULL, ylab = "ATT", ...)
+\method{plot}{summary.panglm_attgt}(
+  x,
+  type = NULL,
+  min_e = -Inf,
+  max_e = Inf,
+  xlab = NULL,
+  ylab = "ATT",
+  main = NULL,
+  ylim = NULL,
+  legend = FALSE,
+  ...
+)
 }
 \arguments{
 \item{x}{a \code{"panglm_attgt"} fit from \code{\link[=attgt]{attgt()}}, or its summary}
 
-\item{type}{aggregation to plot (for a fit): \code{"dynamic"}, \code{"group"} or
-\code{"calendar"}}
+\item{type}{what to plot (for a fit): \code{"dynamic"} (event study),
+\code{"group"}, \code{"calendar"} or \code{"gt"} (the group-time effects, one panel
+per cohort)}
 
-\item{xlab, ylab}{axis labels}
+\item{min_e, max_e}{event window (event time for \code{"dynamic"}, calendar
+time for \code{"gt"})}
 
-\item{...}{passed to \code{\link[=summary.panglm_attgt]{summary.panglm_attgt()}} (for example \code{min_e},
-\code{max_e}) and then to \code{\link[graphics:plot.default]{graphics::plot()}}}
+\item{ncol}{number of panel columns for \code{type = "gt"} (default: about
+the square root of the number of cohorts)}
+
+\item{xlab, ylab, main}{axis labels and title}
+
+\item{ylim}{y-axis limits}
+
+\item{legend}{logical: add a compact legend of the symbols}
+
+\item{...}{passed to \code{\link[=summary.panglm_attgt]{summary.panglm_attgt()}} (\code{balance_e}, \code{level}) and
+then to \code{\link[graphics:plot.default]{graphics::plot()}}}
 }
 \value{
-the plotted summary, invisibly
+the plotted summary, invisibly; for \code{type = "gt"}, the plotted
+rows of the \code{estimates} of the fit
 }
 \description{
-Plots the dynamic aggregation of \code{\link[=attgt]{attgt()}} (\code{ATT(e)} by event time with
-pointwise confidence intervals), or the cohort or calendar aggregation.
-When the fit has uniform confidence bands (\code{cband = TRUE}), they are
-drawn as thin grey whiskers behind the pointwise intervals.
+Plots the dynamic aggregation of \code{\link[=attgt]{attgt()}} (\code{ATT(e)} by event time), the
+cohort or calendar aggregation, or the group-time effects \code{ATT(g, t)}
+themselves. Points are hollow before treatment and filled after, with
+pointwise confidence intervals as black segments and a dashed line at
+treatment onset. When the fit has uniform confidence bands
+(\code{cband = TRUE}), they are drawn as light grey bars behind the pointwise
+intervals.
+}
+\details{
+With \code{type = "gt"}, one small panel per treatment cohort shows
+\code{ATT(g, t)} against calendar time, with the cohort size in the panel
+title, a dashed line at adoption and a common y axis (as \code{did::ggdid()}).
+The uniform bands of a \code{cband = TRUE} fit are simultaneous over all
+\code{ATT(g, t)}.
 }
 \examples{
 set.seed(2)
@@ -41,7 +80,11 @@ d <- expand.grid(id = 1:150, t = 1:8)
 d$first <- rep(c(4, 6, NA), each = 50)[d$id]
 d$y <- rnorm(150)[d$id] + 0.2 * d$t +
   ifelse(!is.na(d$first) & d$t >= d$first, 1, 0) + rnorm(nrow(d))
-plot(attgt(y ~ 1, d, index = c("id", "t"), treat = "first"))
+fit <- attgt(y ~ 1, d, index = c("id", "t"), treat = "first")
+plot(fit)
+plot(fit, min_e = -2, max_e = 2, legend = TRUE)
+plot(fit, type = "gt")
+plot(fit, type = "group")
 }
 \seealso{
 Other attgt methods: 
