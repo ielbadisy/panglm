@@ -158,12 +158,15 @@ tobit_contrib_random <- function(X, y, left, right, group_size, R) {
   y <- as.numeric(y)
   group_size <- as.integer(group_size)
   group_start <- as.integer(c(0L, cumsum(group_size)[-G]))
+  modes <- agq_mode_cache(G)
   function(theta, score) {
     if (any(!is.finite(theta[k + 1:2])) || any(abs(theta[k + 1:2]) > 25)) {
       return(list(ll = rep(-Inf, G), score = matrix(0, G, k + 2L)))
     }
     res <- random_agq_cpp(theta[seq_len(k)], theta[k + 1L], exp(theta[k + 2L]), X, y,
-                          group_start, group_size, gh$nodes, gh$weights, 4L, left, right)
+                          group_start, group_size, gh$nodes, gh$weights, 4L, left, right,
+                          start_mode = modes$get())
+    modes$set(res)
     out <- list(ll = res$ll)
     if (score) out$score <- res$score
     out

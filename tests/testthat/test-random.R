@@ -127,3 +127,21 @@ test_that("panhausman flags a contrast that is not positive definite", {
   out <- capture.output(print(h))
   expect_true(any(grepl("^chisq = -64.2[0-9]*, df = 3, p-value = NA$", out)))
 })
+
+test_that("adaptive quadrature warm starts and the sigma guard leave the likelihood unchanged", {
+  set.seed(3)
+  G <- 60; Tt <- 4
+  X <- cbind(1, rnorm(G * Tt))
+  y <- as.numeric(X %*% c(-0.2, 0.8) + rep(rnorm(G), each = Tt) + rnorm(G * Tt) > 0)
+  gs <- rep(Tt, G); st <- c(0L, cumsum(gs)[-G])
+  th <- c(-0.3, 1, log(1.2))
+  cold <- panglm:::random_agq_cpp(th[1:2], numeric(0), exp(th[3]), X, y, st, gs,
+                                  panglm:::gauss_hermite_quadrature(9)$nodes,
+                                  panglm:::gauss_hermite_quadrature(9)$weights, 1L)
+  cf <- panglm:::agq_contrib(1L, X, y, st, gs, 9L)
+  cf(th * 1.3, TRUE) # leaves modes at other parameter values
+  warm <- cf(th, TRUE)
+  expect_equal(warm$ll, cold$ll, tolerance = 1e-12)
+  expect_equal(warm$score, cold$score, tolerance = 1e-10)
+  expect_true(all(cf(c(1, 1, 40), FALSE)$ll == -Inf))
+})

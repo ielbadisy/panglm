@@ -84,8 +84,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // random_agq_cpp
-List random_agq_cpp(NumericVector beta, NumericVector cuts, double sigma, NumericMatrix X, NumericVector y, IntegerVector group_start, IntegerVector group_size, NumericVector nodes, NumericVector weights, int kind, double left, double right);
-RcppExport SEXP _panglm_random_agq_cpp(SEXP betaSEXP, SEXP cutsSEXP, SEXP sigmaSEXP, SEXP XSEXP, SEXP ySEXP, SEXP group_startSEXP, SEXP group_sizeSEXP, SEXP nodesSEXP, SEXP weightsSEXP, SEXP kindSEXP, SEXP leftSEXP, SEXP rightSEXP) {
+List random_agq_cpp(NumericVector beta, NumericVector cuts, double sigma, NumericMatrix X, NumericVector y, IntegerVector group_start, IntegerVector group_size, NumericVector nodes, NumericVector weights, int kind, double left, double right, NumericVector start_mode);
+RcppExport SEXP _panglm_random_agq_cpp(SEXP betaSEXP, SEXP cutsSEXP, SEXP sigmaSEXP, SEXP XSEXP, SEXP ySEXP, SEXP group_startSEXP, SEXP group_sizeSEXP, SEXP nodesSEXP, SEXP weightsSEXP, SEXP kindSEXP, SEXP leftSEXP, SEXP rightSEXP, SEXP start_modeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -101,7 +101,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type kind(kindSEXP);
     Rcpp::traits::input_parameter< double >::type left(leftSEXP);
     Rcpp::traits::input_parameter< double >::type right(rightSEXP);
-    rcpp_result_gen = Rcpp::wrap(random_agq_cpp(beta, cuts, sigma, X, y, group_start, group_size, nodes, weights, kind, left, right));
+    Rcpp::traits::input_parameter< NumericVector >::type start_mode(start_modeSEXP);
+    rcpp_result_gen = Rcpp::wrap(random_agq_cpp(beta, cuts, sigma, X, y, group_start, group_size, nodes, weights, kind, left, right, start_mode));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -299,7 +300,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_panglm_irls_fit_cpp", (DL_FUNC) &_panglm_irls_fit_cpp, 7},
     {"_panglm_logit_irls_cpp", (DL_FUNC) &_panglm_logit_irls_cpp, 5},
     {"_panglm_negbin_irls_fit_cpp", (DL_FUNC) &_panglm_negbin_irls_fit_cpp, 5},
-    {"_panglm_random_agq_cpp", (DL_FUNC) &_panglm_random_agq_cpp, 12},
+    {"_panglm_random_agq_cpp", (DL_FUNC) &_panglm_random_agq_cpp, 13},
     {"_panglm_random_binomial_loglik_grad_cpp", (DL_FUNC) &_panglm_random_binomial_loglik_grad_cpp, 9},
     {"_panglm_group_means_cpp", (DL_FUNC) &_panglm_group_means_cpp, 4},
     {"_panglm_quasi_demean_cpp", (DL_FUNC) &_panglm_quasi_demean_cpp, 5},

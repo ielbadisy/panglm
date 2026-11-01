@@ -161,6 +161,48 @@ ml_optimize <- function(theta0, contrib, w, maxit = 200, tol = 1e-10, scaling = 
        convergence = opt$convergence)
 }
 
+#' Starting values by BHHH steps (outer product of the unit scores)
+#'
+#' Newton-type steps with the outer product of the unit scores in place of
+#' the Hessian, halved until the log-likelihood does not decrease. They
+#' cost one likelihood evaluation each (the scores come with it) and are
+#' invariant to the scaling of the parameters, so a few of them bring a
+#' crude start (pooled slopes, a guessed variance) close to the maximum,
+#' where the quasi-Newton search of `ml_optimize()` then needs few
+#' evaluations; started far away its first steps overshoot, and every
+#' backtracking step costs a full quadrature pass. Stops when the
+#' decrement `g' B^{-1} g` falls below `tol`. Needs analytic scores.
+#'
+#' @keywords internal
+#' @noRd
+ml_bhhh <- function(theta, contrib, w, maxit = 50L, tol = 1e-6) {
+  r <- tryCatch(contrib(theta, TRUE), error = function(e) NULL)
+  if (is.null(r) || is.null(r$score)) return(theta)
+  value <- sum(w * r$ll)
+  if (!is.finite(value)) return(theta)
+  for (it in seq_len(maxit)) {
+    g <- colSums(w * r$score)
+    B <- crossprod(r$score * sqrt(w))
+    delta <- tryCatch(solve(B, g), error = function(e) NULL)
+    if (is.null(delta) || any(!is.finite(delta))) break
+    decrement <- sum(g * delta)
+    accepted <- FALSE
+    for (halving in 0:30) {
+      candidate <- theta + delta / 2^halving
+      rc <- tryCatch(contrib(candidate, TRUE), error = function(e) NULL)
+      vc <- if (is.null(rc)) NA_real_ else sum(w * rc$ll)
+      if (is.finite(vc) && vc >= value) {
+        accepted <- TRUE
+        break
+      }
+    }
+    if (!accepted) break
+    theta <- candidate; r <- rc; value <- vc
+    if (decrement < tol) break
+  }
+  theta
+}
+
 #' Warn when a maximum likelihood optimum is not a proper maximum
 #'
 #' Checks that the Hessian `H` is negative definite, that the covariance

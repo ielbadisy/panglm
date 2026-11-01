@@ -21,8 +21,8 @@ negbin_irls_fit_cpp <- function(X, y, maxit = 100L, tol = 1e-10, weights = NULL)
     .Call(`_panglm_negbin_irls_fit_cpp`, X, y, maxit, tol, weights)
 }
 
-random_agq_cpp <- function(beta, cuts, sigma, X, y, group_start, group_size, nodes, weights, kind, left = 0.0, right = 0.0) {
-    .Call(`_panglm_random_agq_cpp`, beta, cuts, sigma, X, y, group_start, group_size, nodes, weights, kind, left, right)
+random_agq_cpp <- function(beta, cuts, sigma, X, y, group_start, group_size, nodes, weights, kind, left = 0.0, right = 0.0, start_mode = numeric(0)) {
+    .Call(`_panglm_random_agq_cpp`, beta, cuts, sigma, X, y, group_start, group_size, nodes, weights, kind, left, right, start_mode)
 }
 
 random_binomial_loglik_grad_cpp <- function(beta, sigma, X, y, group_start, group_size, nodes, weights, link_id) {

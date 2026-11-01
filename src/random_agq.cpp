@@ -186,16 +186,20 @@ struct AGQWorker : public Worker {
   const std::vector<double>& logc; // log(w_q sqrt(pi)) + z_q^2
   int kind;
   double left, right;
+  const RVector<double> mode0; // starting modes (length 0: start at 0)
   RVector<double> ll;
+  RVector<double> mode;
   RMatrix<double> score;
 
   AGQWorker(const NumericMatrix& X, const NumericVector& y, const IntegerVector& gstart,
             const IntegerVector& gsize, const std::vector<double>& beta,
             const std::vector<double>& cuts, double sigma, const std::vector<double>& z,
             const std::vector<double>& logc, int kind, double left, double right,
-            NumericVector ll, NumericMatrix score)
+            const NumericVector& mode0, NumericVector ll, NumericVector mode,
+            NumericMatrix score)
     : X(X), y(y), gstart(gstart), gsize(gsize), beta(beta), cuts(cuts), sigma(sigma),
-      z(z), logc(logc), kind(kind), left(left), right(right), ll(ll), score(score) {}
+      z(z), logc(logc), kind(kind), left(left), right(right), mode0(mode0), ll(ll),
+      mode(mode), score(score) {}
 
   void operator()(std::size_t begin, std::size_t end) {
     const std::size_t k = X.ncol();
@@ -217,32 +221,43 @@ struct AGQWorker : public Worker {
         for (std::size_t j = 0; j < k; ++j) s += X(st + t, j) * beta[j];
         eta[t] = s;
       }
-      auto hval = [&](double u) {
-        double s = lnorm - 0.5 * u * u / s2;
-        for (int t = 0; t < T; ++t) s += obs_deriv(kind, y[st + t], eta[t] + u, cuts, left, right).lp;
-        return s;
-      };
-      // mode of the strictly concave h by damped Newton
-      double u = 0.0, hu_cur = hval(u);
-      for (int it = 0; it < 200; ++it) {
-        double g1 = -u / s2, g2 = -1.0 / s2;
+      // h and its first two derivatives in u, in one pass over the rows
+      auto heval = [&](double u, double& h, double& g1, double& g2) {
+        h = lnorm - 0.5 * u * u / s2; g1 = -u / s2; g2 = -1.0 / s2;
         for (int t = 0; t < T; ++t) {
           ObsDeriv o = obs_deriv(kind, y[st + t], eta[t] + u, cuts, left, right);
-          g1 += o.d1; g2 += o.d2;
+          h += o.lp; g1 += o.d1; g2 += o.d2;
         }
+      };
+      // mode of the strictly concave h by damped Newton, from the mode of
+      // the previous call when there is one (it moves little between the
+      // nearby parameter values of an optimizer, so one or two steps do)
+      double u = (mode0.length() == (R_xlen_t) gstart.length() && std::isfinite(mode0[g]))
+        ? mode0[g] : 0.0;
+      const double lim = 10.0 * std::max(1.0, sigma);
+      double hu_cur, g1, g2;
+      heval(u, hu_cur, g1, g2);
+      if (u != 0.0 && (!std::isfinite(hu_cur) || std::fabs(u) > lim)) {
+        // a far or invalid start: keep it only if it beats u = 0
+        double h0, a1, a2;
+        heval(0.0, h0, a1, a2);
+        if (!std::isfinite(hu_cur) || h0 >= hu_cur) { u = 0.0; hu_cur = h0; g1 = a1; g2 = a2; }
+      }
+      for (int it = 0; it < 200; ++it) {
         double step = g1 / g2;
         if (!std::isfinite(step)) break;
-        double lim = 10.0 * std::max(1.0, sigma);
         if (step > lim) step = lim;
         if (step < -lim) step = -lim;
-        double un = u - step, hn = hval(un);
+        double un = u - step, hn, gn1, gn2;
+        heval(un, hn, gn1, gn2);
         int halv = 0;
         while ((!std::isfinite(hn) || hn < hu_cur - 1e-12 * std::fabs(hu_cur)) && halv < 40) {
-          step /= 2.0; un = u - step; hn = hval(un); ++halv;
+          step /= 2.0; un = u - step; heval(un, hn, gn1, gn2); ++halv;
         }
-        u = un; hu_cur = hn;
+        u = un; hu_cur = hn; g1 = gn1; g2 = gn2;
         if (std::fabs(step) < 1e-11 * (1.0 + std::fabs(u))) break;
       }
+      mode[g] = u;
       // derivatives at the mode
       double H2 = -1.0 / s2, H3 = 0.0;
       std::fill(Hu_t.begin(), Hu_t.end(), 0.0);
@@ -307,7 +322,8 @@ List random_agq_cpp(NumericVector beta, NumericVector cuts, double sigma,
                     NumericMatrix X, NumericVector y,
                     IntegerVector group_start, IntegerVector group_size,
                     NumericVector nodes, NumericVector weights, int kind,
-                    double left = 0.0, double right = 0.0) {
+                    double left = 0.0, double right = 0.0,
+                    NumericVector start_mode = NumericVector(0)) {
   const int G = group_start.size();
   const int p = X.ncol() + cuts.size() + 1;
   std::vector<double> b(beta.begin(), beta.end()), c(cuts.begin(), cuts.end());
@@ -315,10 +331,14 @@ List random_agq_cpp(NumericVector beta, NumericVector cuts, double sigma,
   for (int q = 0; q < nodes.size(); ++q) {
     logc[q] = std::log(weights[q] * std::sqrt(M_PI)) + z[q] * z[q];
   }
-  NumericVector ll(G);
+  NumericVector ll(G), mode(G);
   NumericMatrix score(G, p);
-  AGQWorker worker(X, y, group_start, group_size, b, c, sigma, z, logc, kind, left, right, ll,
-                   score);
+  if (!std::isfinite(sigma) || sigma <= 0.0) {
+    std::fill(ll.begin(), ll.end(), R_NegInf);
+    return List::create(Named("ll") = ll, Named("score") = score, Named("mode") = mode);
+  }
+  AGQWorker worker(X, y, group_start, group_size, b, c, sigma, z, logc, kind, left, right,
+                   start_mode, ll, mode, score);
   parallelFor(0, G, worker, panglm::grain(G));
-  return List::create(Named("ll") = ll, Named("score") = score);
+  return List::create(Named("ll") = ll, Named("score") = score, Named("mode") = mode);
 }
