@@ -117,7 +117,7 @@ summary.panglm_eventstudy <- function(object, level = object$level, ...) {
 print.summary.panglm_eventstudy <- function(x, digits = max(3, getOption("digits") - 3),
                                             signif.stars = TRUE, ...) {
   cat("\nEvent study (two-way fixed effects, ", x$family, ")\n", sep = "")
-  cat("N =", x$nobs, " groups =", x$n_groups, " vcov:", x$vcov_type, "\n")
+  cat("n =", x$nobs, " groups =", x$n_groups, " vcov:", x$vcov_type, "\n")
   cat("Reference event time:", x$ref, if (x$bin) "(end points binned)" else "", "\n")
   cat("\nEvent-time coefficients:\n")
   stats::printCoefmat(x$coefficients, digits = digits, signif.stars = signif.stars,

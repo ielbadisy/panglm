@@ -63,7 +63,7 @@ print.summary.panglm <- function(x, digits = max(3, getOption("digits") - 3), ..
   print(x$call)
   cat("\nFamily:", x$family$family, " Link:", x$family$link,
       " Model:", x$model, " Effect:", x$effect, "\n")
-  cat("N =", x$nobs, " groups =", x$n_groups,
+  cat("n =", x$nobs, " groups =", x$n_groups,
       " vcov:", x$vcov_type, "\n\n")
   cat("Coefficients:\n")
   stats::printCoefmat(x$coefficients, digits = digits, signif.stars = TRUE, has.Pvalue = TRUE)

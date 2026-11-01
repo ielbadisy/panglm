@@ -685,7 +685,7 @@ print.summary.panglm_attgt <- function(x, digits = max(3, getOption("digits") - 
   label <- c(simple = "overall (simple weighted average)",
              dynamic = "event study (by time since treatment)",
              group = "by treatment cohort", calendar = "by calendar period")
-  cat("\nCallaway and Sant'Anna group-time ATT, aggregated ", label[[x$type]], "\n", sep = "")
+  cat("\nCallaway and Sant'Anna group-time ATT\nAggregation: ", label[[x$type]], "\n", sep = "")
   cat("Control group:", if (x$control == "never") "never treated" else "not yet treated",
       " Estimator:", if (length(x$covariates)) toupper(x$method) else "unconditional",
       " Individuals:", x$n, "\n\n")
@@ -743,7 +743,7 @@ print.panglm_attgt <- function(x, digits = max(3, getOption("digits") - 3), ...)
         ", df = ", x$pretrend$df, ", p-value = ",
         format.pval(x$pretrend$p.value, digits = digits), "\n", sep = "")
   }
-  cat("Use summary(x, type = ...) for the simple, dynamic, group or calendar aggregation.\n\n")
+  cat("summary(x, type = ...) gives the simple, dynamic, group or calendar\naggregation.\n\n")
   invisible(x)
 }
 

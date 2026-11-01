@@ -637,7 +637,7 @@ qr_label <- function(x) {
 print.panqr <- function(x, digits = max(3, getOption("digits") - 3), ...) {
   cat("panqr(", qr_label(x), ")\n\n", sep = "")
   print(x$coefficients, digits = digits)
-  cat("\nN =", x$nobs, " groups =", x$n_groups, "\n")
+  cat("\nn =", x$nobs, " groups =", x$n_groups, "\n")
   invisible(x)
 }
 
@@ -688,7 +688,7 @@ print.summary.panqr <- function(x, digits = max(3, getOption("digits") - 3), ...
   cat("\nCall:\n")
   print(x$call)
   cat("\nEstimator:", x$label, "\n")
-  cat("N =", x$nobs, " groups =", x$n_groups, " vcov:", x$vcov_type,
+  cat("n =", x$nobs, " groups =", x$n_groups, " vcov:", x$vcov_type,
       if (identical(x$vcov_type, "bootstrap")) paste0("(cluster, boot = ", x$R, ")")
       else if (identical(x$vcov_type, "analytic") && !is.null(x$n_clusters))
         paste0("(cluster by ", if (is.null(x$cluster)) "individual" else x$cluster,

@@ -143,7 +143,7 @@ print.summary.panglm_hurdle <- function(x, digits = max(3, getOption("digits") -
   cat("\nFormula: ", paste(deparse(x$formula), collapse = " "), "\n", sep = "")
   cat("\nEstimator: fixed-effects hurdle model (conditional logit and zero-truncated ",
       family_label, ")\n", sep = "")
-  cat("N =", x$nobs, " positive =", x$n_positive, " vcov: model-based (inverse Hessian)\n")
+  cat("n =", x$nobs, " positive =", x$n_positive, " vcov: model-based (inverse Hessian)\n")
   cat("\nZero part, 1(y > 0), conditional logit (groups used = ",
       or_na(x$n_groups_zero, NA_integer_), "):\n", sep = "")
   stats::printCoefmat(x$zero, digits = digits, signif.stars = TRUE, has.Pvalue = TRUE)

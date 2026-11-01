@@ -264,6 +264,6 @@ print.panglm_hurdle <- function(x, digits = max(3, getOption("digits") - 3), ...
   if (identical(x$count_family, "negbin")) {
     cat("Theta:", format(x$count$theta, digits = digits), "\n")
   }
-  cat("\nN =", x$n, " positive =", x$n_positive, "\n")
+  cat("\nn =", x$n, " positive =", x$n_positive, "\n")
   invisible(x)
 }

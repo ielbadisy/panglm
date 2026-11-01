@@ -382,7 +382,7 @@ print.twopart <- function(x, digits = max(3, getOption("digits") - 3), ...) {
       if (x$positive_type == "gamma") "gamma (log link)" else "log-linear",
       " for E[y | y > 0])\n\n", sep = "")
   print(stats::coef(x), digits = digits)
-  cat("\nN =", x$nobs, " groups =", x$binary$n_groups, " positive =", x$n_positive, "\n")
+  cat("\nn =", x$nobs, " groups =", x$binary$n_groups, " positive =", x$n_positive, "\n")
   invisible(x)
 }
 
@@ -407,7 +407,7 @@ print.summary.twopart <- function(x, digits = max(3, getOption("digits") - 3), .
   print(object$call)
   cat("\nEstimator: two-part model (", object$model,
       if (isTRUE(object$correlated)) ", correlated", ")\n", sep = "")
-  cat("N =", object$nobs, " groups =", object$binary$n_groups,
+  cat("n =", object$nobs, " groups =", object$binary$n_groups,
       " positive =", object$n_positive, " vcov:", object$binary$vcov_type, "\n")
   cat("\nPart 1: P(y > 0), binomial", object$link, "\n")
   stats::printCoefmat(x$binary$coefficients, digits = digits, signif.stars = TRUE,

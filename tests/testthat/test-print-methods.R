@@ -1,13 +1,13 @@
 # The print and summary-print methods share one layout: a header naming the
-# estimator, an "N = ..." line (with "vcov: ..." in summaries), a
+# estimator, an "n = ..." line (with "vcov: ..." in summaries), a
 # printCoefmat() table with significance stars, and an invisible return.
 
 expect_print_layout <- function(obj, vcov_line = FALSE) {
   out <- utils::capture.output(res <- withVisible(print(obj)))
   expect_false(res$visible)
   expect_identical(res$value, obj)
-  expect_true(any(grepl("\\bN = ", out)))
-  if (vcov_line) expect_true(any(grepl("N = .*vcov:", out)))
+  expect_true(any(grepl("\\bn = ", out)))
+  if (vcov_line) expect_true(any(grepl("(n = .*vcov:|^vcov:)", out)))
   out
 }
 

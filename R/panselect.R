@@ -489,8 +489,8 @@ ps_label <- function(x) {
 print.panselect <- function(x, digits = max(3, getOption("digits") - 3), ...) {
   cat("panselect(Wooldridge selection correction, ", ps_label(x), ")\n\n", sep = "")
   print(x$coefficients, digits = digits)
-  cat("\nSelected N =", x$nobs, " groups =", x$n_groups,
-      " (selection sample N =", x$nobs_selection, ")\n")
+  cat("\nSelected n =", x$nobs, " groups =", x$n_groups,
+      " (selection sample n =", x$nobs_selection, ")\n")
   invisible(x)
 }
 
@@ -537,8 +537,8 @@ print.summary.panselect <- function(x, digits = max(3, getOption("digits") - 3),
   cat("\nCall:\n")
   print(x$call)
   cat("\nWooldridge (1995) panel selection correction:", x$label, "\n")
-  cat("Selection sample: N =", x$nobs_selection, " groups =", x$n_groups_selection, "\n")
-  cat("Outcome sample:   N =", x$nobs, " groups =", x$n_groups, "\n")
+  cat("Selection sample: n =", x$nobs_selection, " groups =", x$n_groups_selection, "\n")
+  cat("Outcome sample:   n =", x$nobs, " groups =", x$n_groups, "\n")
   cat("Probits fitted for periods:", paste(x$probit_periods, collapse = ", "), "\n")
   cat("\nOutcome equation (vcov: ",
       if (x$vcov_type == "boot") {

@@ -842,7 +842,7 @@ gmm_label <- function(x) {
 print.pangmm <- function(x, digits = max(3, getOption("digits") - 3), ...) {
   cat("pangmm(", gmm_label(x), ")\n\n", sep = "")
   print(x$coefficients[setdiff(names(x$coefficients), x$timedummies)], digits = digits)
-  cat("\nN =", x$n_groups, " T =", x$n_periods, " equations used =", x$nobs,
+  cat("\nn =", x$nobs, " groups =", x$n_groups, " T =", x$n_periods,
       " instruments =", x$n_instruments, "\n")
   invisible(x)
 }
@@ -891,8 +891,9 @@ print.summary.pangmm <- function(x, digits = max(3, getOption("digits") - 3), ..
   cat("\nEstimator:", x$label, "\n")
   se_lab <- if (x$vcov_type == "classical") "classical" else if (x$model == "twostep")
     "robust (Windmeijer)" else "robust"
-  cat("N =", x$n_groups, " T =", x$n_periods, " equations used =", x$nobs,
-      " instruments =", x$n_instruments, " vcov:", se_lab, "\n")
+  cat("n =", x$nobs, " groups =", x$n_groups, " T =", x$n_periods,
+      " instruments =", x$n_instruments, "\n")
+  cat("vcov:", se_lab, "\n")
   cat("\nCoefficients:\n")
   stats::printCoefmat(x$coefficients, digits = digits, signif.stars = TRUE, has.Pvalue = TRUE)
   test_line <- function(name, t) {

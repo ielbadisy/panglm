@@ -670,7 +670,7 @@ confint.paniv <- function(object, parm, level = 0.95, ...) {
 print.paniv <- function(x, digits = max(3, getOption("digits") - 3), ...) {
   cat("paniv(", iv_label(x), ")\n\n", sep = "")
   print(x$coefficients, digits = digits)
-  cat("\nN =", x$nobs, " groups =", x$n_groups, "\n")
+  cat("\nn =", x$nobs, " groups =", x$n_groups, "\n")
   invisible(x)
 }
 
@@ -722,7 +722,7 @@ print.summary.paniv <- function(x, digits = max(3, getOption("digits") - 3), ...
   cat("\nCall:\n")
   print(x$call)
   cat("\nEstimator:", x$label, "\n")
-  cat("N =", x$nobs, " groups =", x$n_groups, " vcov:", x$vcov_type, "\n")
+  cat("n =", x$nobs, " groups =", x$n_groups, " vcov:", x$vcov_type, "\n")
   if (!is.null(x$varlist)) {
     show <- function(v) if (length(v)) paste(v, collapse = ", ") else "(none)"
     cat("Exogenous time-varying:  ", show(x$varlist$xv), "\n")

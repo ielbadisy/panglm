@@ -563,7 +563,7 @@ print.summary.panglm_etwfe <- function(x, digits = max(3, getOption("digits") - 
 print.panglm_etwfe <- function(x, digits = max(3, getOption("digits") - 3), ...) {
   s <- summary.panglm_etwfe(x)
   print(s, digits = digits)
-  cat("Use summary(x, type = ...) for effects by group, calendar period or event time.\n\n")
+  cat("summary(x, type = ...) gives effects by group, calendar period or event time.\n\n")
   invisible(x)
 }
 

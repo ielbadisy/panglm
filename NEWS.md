@@ -98,6 +98,10 @@ panels ship with the package. Estimates are unchanged.
   the signed statistic is kept, the p-value is `NA` and a warning points
   to `method = "mundlak"`. The print method drops the stray space before
   commas.
+* Print methods use one sample-size line, `n = <observations>  groups =
+  <individuals>` (`pangmm()` printed the number of individuals as `N`),
+  and keep every line within 80 characters (the `pangmm()` summary, the
+  `attgt()` summary and the `etwfe()` footer were wider).
 
 # panglm 1.6.2
 

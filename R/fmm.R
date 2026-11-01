@@ -949,7 +949,7 @@ print.panfmm <- function(x, digits = max(3, getOption("digits") - 3), ...) {
   cat("\nlogLik =", format(x$loglik, digits = digits + 3), " AIC =",
       format(stats::AIC(x), digits = digits + 3), " BIC =",
       format(stats::BIC(x), digits = digits + 3), "\n")
-  cat("N =", x$nobs, " groups =", x$n_groups, "\n")
+  cat("n =", x$nobs, " groups =", x$n_groups, "\n")
   invisible(x)
 }
 
@@ -1016,7 +1016,7 @@ print.summary.panfmm <- function(x, digits = max(3, getOption("digits") - 3), ..
   cat("\nCall:\n")
   print(x$call)
   cat("\nModel:", x$label, "\n")
-  cat("N =", x$nobs, " groups =", x$n_groups, " vcov:", x$vcov_type, "\n")
+  cat("n =", x$nobs, " groups =", x$n_groups, " vcov:", x$vcov_type, "\n")
   for (c in seq_along(x$classes)) {
     cat(sprintf("\nClass %d (prior %.3f, %d individuals by modal posterior, mean outcome %s):\n",
                 c, x$prior_mean[c], x$size[c], format(x$classmean[c], digits = digits)))
