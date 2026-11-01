@@ -1,0 +1,197 @@
+#' German health-care demand panel (doctor and hospital visits, GSOEP)
+#'
+#' A real, public, unbalanced panel of 7,293 adults (aged 25 to 64) from the
+#' German Socio-Economic Panel (GSOEP), observed in up to seven waves
+#' (1984 to 1988, 1991 and 1994), 27,326 person-years in total. It is the
+#' data set of Riphahn, Wambach and Million (2003), who studied doctor and
+#' hospital visits in relation to public and add-on private health
+#' insurance, and it is the "German health care data" used in Greene's
+#' Econometric Analysis and his discrete choice lecture notes. The
+#' outcomes cover the main types of health-econometrics panel models: a
+#' count with many zeros and a long right tail (`docvis`, `hospvis`),
+#' binary use indicators (`doctor`, `hospital`) and an 11-point ordinal
+#' self-assessment (`hsat`). The unit is the person and the time index is the
+#' calendar year; the panel index is `c("id", "year")`. The build script,
+#' including the checks against published numbers, is `data-raw/docvisits.R`
+#' in the package's GitHub repository.
+#'
+#' Cleaning relative to the original file: the 40 imputed non-integer
+#' values of `hsat` (between 6.5 and 7) are set to 7, as in Greene (2008);
+#' the handicap indicator, which the data authors report as swapped (0 and 1)
+#' in 1987, is recoded for that year; the degree of handicap (erroneously
+#' imputed in 1987) and five overlapping schooling-degree dummies are
+#' dropped; income is rescaled to 1000 DM. Missing values of `hsat`,
+#' `educ` and the handicap indicator were imputed by the data authors with
+#' gender-specific sample means (so a few `educ` values are not whole or half
+#' years). Note that the waves are not equally spaced (gaps after 1988 and
+#' 1991): lags and `dynamic = TRUE` fits only use consecutive years, so
+#' dynamic examples restrict the data to 1984 to 1988.
+#'
+#' @format A data frame with 27326 rows (7,293 persons, 1 to 7 waves each)
+#'   and 21 columns. Panel index: `id` (individual) and `year` (time).
+#' \describe{
+#'   \item{id}{integer person identifier (1 to 7293), the panel individual
+#'     index}
+#'   \item{year}{integer calendar year of the interview (1984, 1985, 1986,
+#'     1987, 1988, 1991, 1994), the panel time index}
+#'   \item{docvis}{integer number of doctor visits in the last three months
+#'     (0 to 121); count outcome}
+#'   \item{hospvis}{integer number of hospital visits in the last calendar
+#'     year (0 to 51); count outcome}
+#'   \item{doctor}{integer indicator (0/1) of at least one doctor visit,
+#'     `docvis > 0`; binary outcome}
+#'   \item{hospital}{integer indicator (0/1) of at least one hospital visit,
+#'     `hospvis > 0`; binary outcome}
+#'   \item{hsat}{integer health satisfaction, 0 (low) to 10 (high); ordinal
+#'     outcome}
+#'   \item{female}{integer indicator, 1 = female, 0 = male; time-invariant}
+#'   \item{age}{integer age in years (25 to 64)}
+#'   \item{educ}{numeric years of schooling (7 to 18); constant within
+#'     person for almost everyone}
+#'   \item{married}{integer indicator, 1 = married}
+#'   \item{hhkids}{integer indicator, 1 = children under 16 in the household}
+#'   \item{hhninc}{numeric household nominal monthly net income, in 1000
+#'     German marks (DM); 4 person-years report 0}
+#'   \item{working}{integer indicator, 1 = employed}
+#'   \item{bluecollar}{integer indicator, 1 = blue-collar employee}
+#'   \item{whitecollar}{integer indicator, 1 = white-collar employee}
+#'   \item{self}{integer indicator, 1 = self-employed}
+#'   \item{civil}{integer indicator, 1 = civil servant (Beamter)}
+#'   \item{handicap}{integer indicator, 1 = officially handicapped (1987
+#'     values recoded, see Description)}
+#'   \item{public}{integer indicator, 1 = insured in the public (statutory)
+#'     health insurance}
+#'   \item{addon}{integer indicator, 1 = holds add-on (supplementary private)
+#'     health insurance}
+#' }
+#'
+#' @source Journal of Applied Econometrics Data Archive, Riphahn, Wambach
+#'   and Million (2003), file `rwm-data.zip`:
+#'   <http://qed.econ.queensu.ca/jae/2003-v18.4/riphahn-wambach-million/>
+#'   (now at <https://journaldata.zbw.eu/>, DOI 10.15456/jae.2022314.1312212303).
+#'   The original survey is the German Socio-Economic Panel (SOEP, DIW Berlin).
+#'   The same 27,326 x 25 file is distributed on CRAN under the GPL (>= 2) as
+#'   `Health` in package Rchoice (citing Riphahn et al. 2003), and subsets
+#'   are in package COUNT (GPL-2) as `rwm`, `rwm5yr` and `rwm1984`; the build
+#'   script checks that the JAE file and the Rchoice copy are identical. The
+#'   JAE readme states that "the distributors of the data require that the
+#'   data are only used for the purpose of scientific studies": use these data
+#'   for teaching and research only, and cite Riphahn, Wambach and Million
+#'   (2003).
+#'
+#' @references
+#' Riphahn, R. T., Wambach, A. and Million, A. (2003). Incentive effects in
+#' the demand for health care: a bivariate panel count data estimation.
+#' *Journal of Applied Econometrics*, 18(4), 387-405.
+#' \doi{10.1002/jae.680}
+#'
+#' Greene, W. H. (2018). *Econometric Analysis*, 8th ed. Pearson (uses
+#' these German health care data in several examples).
+#'
+#' Greene, W. H. (2014). Discrete choice modeling, Part 3: panel data binary
+#' choice models. Lecture notes, Stern School of Business, New York
+#' University (pooled and random-effects probit of `doctor`, reproduced by
+#' the build script).
+#'
+#' Greene, W. H. (2008). Modeling ordered choices. Working paper, Stern
+#' School of Business, New York University (Table 3.1, ordered logit of
+#' collapsed health satisfaction in 1988).
+#'
+#' Hilbe, J. M. (2011). *Negative Binomial Regression*, 2nd ed. Cambridge
+#' University Press.
+#'
+#' @section Teaching use:
+#' \itemize{
+#'   \item Is income or add-on insurance associated with more doctor visits
+#'     once stable individual differences are removed? Count models:
+#'     `panglm(docvis ~ ..., family = "poisson", model = "within")`
+#'     (conditional fixed-effects Poisson) against `model = "random"` or
+#'     `family = "negbin"`, compared with the classical `panhausman()` test
+#'     or a correlated random effects fit (`cre = TRUE`, Mundlak).
+#'   \item Is a doctor visit this year partly caused by a visit last year
+#'     (state dependence) or only by persistent health? Binary model with
+#'     Wooldridge initial conditions on the consecutive waves 1984 to 1988:
+#'     `panglm(doctor ~ ..., family = "probit", model = "random",
+#'     dynamic = TRUE)`; `partialeffects()` for the effect on the probability.
+#'   \item Which life events change health satisfaction within a person?
+#'     Ordered outcome: `panglm(hsat ~ ..., family = "ologit",
+#'     model = "within")` (blow-up-and-cluster fixed-effects ordered logit)
+#'     against `model = "pooling"` or `model = "random"`.
+#'   \item Do covariates act on the decision to see a doctor or on how often
+#'     one goes? Fixed-effects hurdle count model `panhurdle(docvis ~ ...,
+#'     family = "poisson")` (time-varying regressors only; use a subset of
+#'     persons, it is slow on the full panel).
+#'   \item Are there latent "low user" and "high user" classes, as in Deb and
+#'     Trivedi? Finite mixture `panfmm(docvis ~ ..., k = 2, family =
+#'     "negbin")`, with partial pooling by person.
+#'   \item Effects of time-invariant characteristics (gender, schooling)
+#'     when time-varying regressors may be correlated with the individual
+#'     effect: `paniv(..., model = "hausmantaylor")`, or `cre = TRUE` in
+#'     `panglm()`. (`educ` varies slightly within a few persons because of
+#'     the imputation, so `paniv()` treats it as time-varying.)
+#' }
+#'
+#' @keywords datasets
+#' @examples
+#' data(docvisits)
+#' str(docvisits)
+#' table(docvisits$year)
+#' # sample means by gender
+#' aggregate(cbind(docvis, hospvis, doctor, addon, public, hsat) ~ female,
+#'           data = docvisits, FUN = mean)
+#'
+#' idx <- c("id", "year")
+#'
+#' # Count outcome: fixed-effects (conditional) Poisson versus random
+#' # effects, with a Hausman test
+#' fe <- panglm(docvis ~ age + hhninc + hhkids + married + working + addon,
+#'              data = docvisits, index = idx, model = "within",
+#'              family = "poisson")
+#' re <- panglm(docvis ~ age + hhninc + hhkids + married + working + addon,
+#'              data = docvisits, index = idx, model = "random",
+#'              family = "poisson")
+#' summary(fe)
+#' panhausman(fe, re)
+#'
+#' # Ordinal outcome: fixed-effects ordered logit (blow-up and cluster)
+#' # of health satisfaction
+#' fo <- panglm(hsat ~ age + hhninc + hhkids + married + working + handicap,
+#'              data = docvisits, index = idx, model = "within",
+#'              family = "ologit")
+#' summary(fo)
+#'
+#' # Binary outcome with state dependence, consecutive waves 1984-1988
+#' early <- subset(docvisits, year <= 1988)
+#' dp <- panglm(doctor ~ age + hhninc + hhkids + married + working,
+#'              data = early, index = idx, model = "pooling",
+#'              family = "probit", dynamic = TRUE, vcov = "cluster")
+#' coef(dp)[c("lag_doctor", "initial_doctor")]
+#'
+#' \donttest{
+#' # Dynamic random-effects probit (Wooldridge initial conditions)
+#' dr <- panglm(doctor ~ age + hhninc + hhkids + married + working,
+#'              data = early, index = idx, model = "random",
+#'              family = "probit", dynamic = TRUE, R = 8)
+#' summary(dr)
+#'
+#' # Latent "low user" / "high user" classes (Deb-Trivedi style),
+#' # women 1984-1988
+#' women <- subset(docvisits, female == 1 & year <= 1988)
+#' lc <- panfmm(docvis ~ age + educ + hhninc + hhkids + working + addon,
+#'              data = women, index = idx, k = 2, family = "negbin",
+#'              nstart = 3, seed = 1)
+#' summary(lc)
+#'
+#' # Hausman-Taylor: effect of the time-invariant female indicator when
+#' # income may be correlated with the individual effect
+#' ht <- paniv(log(1 + docvis) ~ age + hhninc + working + female |
+#'               age + working + female,
+#'             data = docvisits, index = idx, model = "hausmantaylor")
+#' summary(ht)
+#'
+#' # Replicates Greene's random-effects probit (DOCTOR on AGE, EDUC,
+#' # HHNINC; log L = -16290.72); slow (about 1.5 minutes) on 27,326 rows:
+#' # panglm(doctor ~ age + educ + I(hhninc / 10), data = docvisits,
+#' #        index = idx, model = "random", family = "probit")
+#' }
+"docvisits"
