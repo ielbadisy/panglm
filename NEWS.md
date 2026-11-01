@@ -102,6 +102,18 @@ panels ship with the package. Estimates are unchanged.
   <individuals>` (`pangmm()` printed the number of individuals as `N`),
   and keep every line within 80 characters (the `pangmm()` summary, the
   `attgt()` summary and the `etwfe()` footer were wider).
+* `panglm()` detects columns that are collinear up to rounding, not only
+  exactly. With `cre = TRUE`, an age that rises one per year but is
+  stored with a small rounding error (e.g. `pglm::HealthIns`) gave
+  offsetting coefficients of order 1e5 with no warning. Columns are now
+  scaled by their own norm before the rank check, and a near dependency
+  is dropped with the usual "rank-deficient model matrix" warning. Exact
+  dependencies drop the same columns as `lm()`. This applies to every
+  model and family.
+* `pangmm(model = "onestep")` no longer warns that the second-step
+  weighting matrix is singular: a one-step fit uses it only for the
+  Hansen statistic, through a generalized inverse as in `plm::pgmm()`.
+  Two-step fits keep the warning.
 
 # panglm 1.6.2
 

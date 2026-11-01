@@ -165,7 +165,11 @@ freedom (\code{L} instruments, \code{k} coefficients); \code{plm::sargan()} retu
 the Hansen statistic by default and \verb{N s2} times the Sargan statistic
 with \code{weights = "onestep"}. Many instruments weaken the
 Hansen test (Roodman 2009); collapsing or limiting the lag depth keeps
-the instrument count well below the number of individuals.
+the instrument count well below the number of individuals. When the
+second-step matrix \code{S2} is singular (more instruments than individuals)
+a generalized inverse is used, as in \code{\link[plm:pgmm]{plm::pgmm()}}; a two-step fit warns
+because its estimates depend on it, a one-step fit does not because only
+its Hansen statistic does.
 }
 
 \section{Finite-sample bias}{

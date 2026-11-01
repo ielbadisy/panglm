@@ -644,12 +644,61 @@ panglm_estimable_columns <- function(X, model, effect, group_start, group_size, 
     stop("the model contains no covariates identified by the requested estimator",
          call. = FALSE)
   }
-  decomposition <- qr(transformed[, candidate, drop = FALSE], tol = 1e-7)
-  if (decomposition$rank == 0L) {
-    stop("the model contains no covariates identified by the requested estimator",
-         call. = FALSE)
+  # The same idea applies to linear combinations: each transformed column
+  # is scaled by the norm of its original column, and a combination whose
+  # norm is below 1e-7 on that scale is treated as an exact dependency.
+  # qr()'s column-by-column test misses such combinations when the rounding
+  # error sits in a large-valued column (e.g. an age stored in single
+  # precision that rises one per year, next to year dummies and their
+  # Mundlak means) and the fit then returns huge offsetting coefficients.
+  kept <- independent_columns(transformed[, candidate, drop = FALSE], raw_norm[candidate])
+  candidate[kept]
+}
+
+#' Columns of a column-scaled matrix that are numerically independent
+#'
+#' The matrix is `S` with column `j` divided by `scale[j]`; the scaling is
+#' applied to the triangular factor (the QR factor of `S D^-1` is
+#' `R D^-1` up to pivoting), so `S` is not copied. The numerical rank
+#' counts the singular values above `tol`. When some are
+#' below, the columns dropped are, as in lm(), the last ones (in column
+#' order) involved in the near dependencies: the near null space is scanned
+#' backwards and a column is dropped when it adds a direction to it. Exact
+#' dependencies therefore lose the same columns as lm().
+#'
+#' @keywords internal
+#' @noRd
+independent_columns <- function(S, scale = rep(1, ncol(S)), tol = 1e-7) {
+  keep <- seq_len(ncol(S))
+  repeat {
+    decomposition <- qr(if (length(keep) < ncol(S)) S[, keep, drop = FALSE] else S, tol = 0)
+    R <- sweep(qr.R(decomposition), 2L, scale[keep][decomposition$pivot], "/")
+    sv <- svd(R, nu = 0L, nv = length(keep))
+    # a wide matrix has length(keep) - nrow(S) zero singular values
+    d <- c(sv$d, numeric(length(keep) - length(sv$d)))
+    small <- which(d <= tol)
+    if (!length(small)) break
+    if (length(small) == length(keep)) {
+      stop("the model contains no covariates identified by the requested estimator",
+           call. = FALSE)
+    }
+    null_space <- sv$v[order(decomposition$pivot), small, drop = FALSE]
+    basis <- matrix(0, 0L, ncol(null_space))
+    drop <- integer(0)
+    for (j in rev(seq_along(keep))) {
+      row <- null_space[j, ]
+      if (nrow(basis)) row <- row - as.numeric(crossprod(basis %*% row, basis))
+      size <- sqrt(sum(row^2))
+      if (size > 1e-3) {
+        basis <- rbind(basis, row / size)
+        drop <- c(drop, j)
+        if (length(drop) == length(small)) break
+      }
+    }
+    if (!length(drop)) drop <- length(keep)
+    keep <- keep[-drop]
   }
-  sort(candidate[decomposition$pivot[seq_len(decomposition$rank)]])
+  keep
 }
 
 panglm_parameter_count <- function(fit, model, family, effect, n_groups, n_time) {
