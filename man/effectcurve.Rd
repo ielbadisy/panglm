@@ -2,7 +2,7 @@
 % Please edit documentation in R/splines.R
 \name{effectcurve}
 \alias{effectcurve}
-\title{Estimated effect curve of a continuous regressor}
+\title{Estimated effect curve of a regressor}
 \usage{
 effectcurve(
   object,
@@ -10,7 +10,9 @@ effectcurve(
   values = NULL,
   ref = NULL,
   vcov = NULL,
-  level = 0.95
+  level = 0.95,
+  scale = c("link", "response", "slope"),
+  by = NULL
 )
 }
 \arguments{
@@ -19,30 +21,75 @@ effectcurve(
 \item{variable}{name of the regressor}
 
 \item{values}{values at which to evaluate the curve; default: 100 points
-between the 1st and 99th percentile of the regressor in the fit}
+between the 1st and 99th percentile of the regressor in the fit, or
+every level of a discrete regressor}
 
-\item{ref}{reference value; default: the median of the regressor}
+\item{ref}{reference value of the link-scale curve; default: the median
+of the regressor}
 
 \item{vcov}{\code{NULL} (the covariance stored on the fit) or a type passed to
 \code{\link[=vcov.panglm]{vcov.panglm()}}}
 
 \item{level}{confidence level of the pointwise band}
+
+\item{scale}{\code{"link"}, \code{"response"} or \code{"slope"}, see Details}
+
+\item{by}{optional name of a discrete variable (factor, character,
+logical, or at most 10 distinct values) giving one curve per level;
+response and slope scales only}
 }
 \value{
 a data frame of class \code{"panglm_effectcurve"} with columns
-\code{value}, \code{estimate}, \code{se}, \code{lower} and \code{upper}
+\code{value}, \code{estimate}, \code{se}, \code{lower} and \code{upper} (and \code{by} when \code{by} is
+given). The attributes record the variable, scale, reference value and
+the percentiles of the observed regressor used for the rug.
 }
 \description{
-For a regressor entered through a regression spline (\code{splines::ns()},
-\code{splines::bs()}), a polynomial or linearly, returns the change in the
-linear predictor when the regressor moves from the reference value
-\code{ref} to each of \code{values}, with delta-method pointwise confidence limits.
-Centering at a reference is what makes the curve comparable across
-models: in fixed-effects fits the level is absorbed by the individual
-effects. The scale is the link scale: a difference in mean for the
-identity link, a log rate ratio for Poisson and negative binomial models,
-a log odds ratio for the logit link. Use \code{plot()} to draw it.
+Three views of how the expected outcome depends on one regressor, each
+with delta-method pointwise confidence limits from the covariance of the
+fit. Use \code{plot()} to draw them.
 }
+\details{
+\itemize{
+\item \code{scale = "link"} (default): for a regressor entered through a
+regression spline (\code{splines::ns()}, \code{splines::bs()}), a polynomial or
+linearly, the change in the linear predictor when the regressor moves
+from the reference value \code{ref} to each of \code{values}. Centering at a
+reference is what makes the curve comparable across models: in
+fixed-effects fits the level is absorbed by the individual effects. The
+scale is the link scale: a difference in mean for the identity link, a
+log rate ratio for Poisson and negative binomial models, a log odds
+ratio for the logit link.
+\item \code{scale = "response"}: the average adjusted prediction (partial
+dependence), that is the mean outcome when the regressor is set to each
+value for every observation of the fitted data, all other regressors at
+their observed values. The mean is the one used by \code{\link[=partialeffects]{partialeffects()}}:
+the GLM mean for pooled fits and the population-averaged mean for
+random-effects fits, with the individual means of correlated random
+effects fits held at their fitted values. For a factor, logical or 0/1
+regressor the curve has one point per level. Not available for
+fixed-effects (within) fits, where the level of the mean is not
+identified.
+\item \code{scale = "slope"}: the average marginal effect \verb{d E[y] / dx} when the
+regressor is set to each value for every observation, the derivative of
+the response-scale curve (a central difference in the regressor).
+Averaged over the sample at the observed values it would be the APE of
+\code{\link[=partialeffects]{partialeffects()}}.
+}
+
+On the response and slope scales the regressor may enter interactions,
+and \code{by} gives one curve per level of a second variable, set to that
+level for every observation. Standard errors treat variance components,
+dispersion and fixed-effect intercepts as fixed, as in
+\code{\link[=partialeffects]{partialeffects()}}.
+}
+\section{Validation}{
+
+The package tests compare the response and slope curves of pooled fits
+with \code{marginaleffects::avg_predictions()} and
+\code{marginaleffects::avg_slopes()} on counterfactual grids.
+}
+
 \examples{
 data(copd)
 fit <- panglm(fev1 ~ splines::ns(crp, 3), data = copd,
@@ -50,6 +97,13 @@ fit <- panglm(fev1 ~ splines::ns(crp, 3), data = copd,
 curve_crp <- effectcurve(fit, "crp")
 head(curve_crp)
 plot(curve_crp)
+
+pois <- panglm(exacerbations ~ splines::ns(crp, 3) + factor(smoker),
+               data = copd, index = c("id", "visit"), model = "random",
+               family = "poisson", cre = TRUE, vcov = "cluster")
+plot(effectcurve(pois, "crp", scale = "response", by = "smoker"))
+plot(effectcurve(pois, "crp", scale = "slope"))
+plot(effectcurve(pois, "smoker", scale = "response"))
 }
 \seealso{
 Other panglm methods: 
