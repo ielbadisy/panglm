@@ -365,11 +365,13 @@ binary outcomes), <code><a href="did.html">did()</a></code> and <code><a href="e
 <span class="r-out co"><span class="r-pr">#&gt;</span>   2020 2021     1  1.97049 0.2993  1.3839 2.5570</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Pre-trend test: Chi-squared = 17.36, df = 15, p-value = 0.2978</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Use summary(x, type = ...) for the simple, dynamic, group or calendar aggregation.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> summary(x, type = ...) gives the simple, dynamic, group or calendar</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> aggregation.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span>                     <span class="co"># overall ATT</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Callaway and Sant'Anna group-time ATT, aggregated overall (simple weighted average)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Callaway and Sant'Anna group-time ATT</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Aggregation: overall (simple weighted average)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Control group: never treated  Estimator: unconditional  Individuals: 120 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ATT: 2.853 (SE 0.2018, 95% CI 2.458 to 3.248)</span>
@@ -378,7 +380,8 @@ binary outcomes), <code><a href="did.html">did()</a></code> and <code><a href="e
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit</span>, type <span class="op">=</span> <span class="st">"dynamic"</span><span class="op">)</span>   <span class="co"># event study</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Callaway and Sant'Anna group-time ATT, aggregated event study (by time since treatment)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Callaway and Sant'Anna group-time ATT</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Aggregation: event study (by time since treatment)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Control group: never treated  Estimator: unconditional  Individuals: 120 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ATT (mean of e &gt;= 0): 3.188 (SE 0.2282, 95% CI 2.741 to 3.635)</span>
@@ -402,7 +405,8 @@ binary outcomes), <code><a href="did.html">did()</a></code> and <code><a href="e
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit</span>, type <span class="op">=</span> <span class="st">"group"</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Callaway and Sant'Anna group-time ATT, aggregated by treatment cohort</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Callaway and Sant'Anna group-time ATT</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Aggregation: by treatment cohort</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Control group: never treated  Estimator: unconditional  Individuals: 120 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ATT (cohort-size weighted): 2.664 (SE 0.1918, 95% CI 2.288 to 3.039)</span>
@@ -421,7 +425,8 @@ binary outcomes), <code><a href="did.html">did()</a></code> and <code><a href="e
 <span class="r-in"><span>              treat <span class="op">=</span> <span class="st">"adoption"</span>, control <span class="op">=</span> <span class="st">"notyet"</span>, method <span class="op">=</span> <span class="st">"dr"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fitx</span>, type <span class="op">=</span> <span class="st">"dynamic"</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Callaway and Sant'Anna group-time ATT, aggregated event study (by time since treatment)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Callaway and Sant'Anna group-time ATT</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Aggregation: event study (by time since treatment)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Control group: not yet treated  Estimator: DR  Individuals: 120 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ATT (mean of e &gt;= 0): 3.226 (SE 0.1746, 95% CI 2.884 to 3.569)</span>

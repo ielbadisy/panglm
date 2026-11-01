@@ -48,7 +48,7 @@ summary(panqr(y ~ x, data = d, index = c("id", "t"), tau = 0.9, model = "mmqr"))
 #>     model = "mmqr")
 #> 
 #> Estimator: MM-QR fixed-effects quantile regression (Machado and Santos Silva 2019) 
-#> N = 500  groups = 100  vcov: analytic (cluster by individual, G = 100) 
+#> n = 500  groups = 100  vcov: analytic (cluster by individual, G = 100) 
 #> 
 #> Location (within regression, cluster-robust):
 #>   Estimate Std. Error z value Pr(>|z|)    

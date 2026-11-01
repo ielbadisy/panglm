@@ -44,8 +44,10 @@ panhausman(
 
 a list with class `"panglm_hausman"`: `statistic`, `parameter` (df; two
 values for an F reference), `p.value`, `method`, `distribution`
-(`"chisq"` or `"F"`), and the compared coefficient vectors (`coef_fe`,
-`coef_re` for `"classical"`; `coef_mean` for `"mundlak"`)
+(`"chisq"` or `"F"`), `pos_def` (`"classical"` only: whether
+`V_fe - V_re` is positive definite), and the compared coefficient
+vectors (`coef_fe`, `coef_re` for `"classical"`; `coef_mean` for
+`"mundlak"`)
 
 ## Details
 
@@ -57,7 +59,12 @@ dropped), with a chi-square reference. It always uses the model-based
 the contrast variance `V_fe - V_re` relies on the random-effects
 estimator being efficient under the null, which holds only for
 model-based covariances and independent, homoskedastic idiosyncratic
-errors.
+errors. In finite samples `V_fe - V_re` need not be positive definite
+and the statistic can then be negative. The signed value is returned,
+with `p.value = NA` and a warning
+([`plm::phtest()`](https://rdrr.io/pkg/plm/man/phtest.html) reports its
+absolute value instead); the regression-based `method = "mundlak"` has
+no such problem.
 
 `method = "mundlak"` is the regression-based (correlated random effects)
 version of the same test (Mundlak 1978; Wooldridge 2010, section
@@ -95,14 +102,14 @@ panhausman(fit_fe, fit_re)
 #> 
 #>  Hausman specification test (fixed vs. random effects)
 #> 
-#> chisq = 0.08488 , df = 1 , p-value = 0.7708 
+#> chisq = 0.08488, df = 1, p-value = 0.7708
 #> alternative hypothesis: one model is inconsistent
 #> 
 panhausman(fit_fe, method = "mundlak", data = copd)
 #> 
-#>  Mundlak specification test (fixed vs. random effects), vcov: cluster 
+#>  Mundlak specification test (fixed vs. random effects), vcov: cluster
 #> 
-#> F = 0.1647 , df = 1, 59 , p-value = 0.6864 
+#> F = 0.1647, df = 1, 59, p-value = 0.6864
 #> alternative hypothesis: one model is inconsistent
 #> 
 ```

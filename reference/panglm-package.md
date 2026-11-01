@@ -16,7 +16,7 @@ regression-spline curves and linearity tests, difference-in-differences
 and event studies, and two-part models for costs (Duan et al. 1983)
 [doi:10.1080/07350015.1983.10509330](https://doi.org/10.1080/07350015.1983.10509330)
 , including correlated random intercepts (Van Ourti 2004)
-[doi:10.1002/hec.869](https://doi.org/10.1002/hec.869) . Estimators and
+[doi:10.1002/hec.920](https://doi.org/10.1002/hec.920) . Estimators and
 tests follow standard panel-data references, including Hausman (1978)
 [doi:10.2307/1913827](https://doi.org/10.2307/1913827) , Chamberlain
 (1980) [doi:10.2307/2297110](https://doi.org/10.2307/2297110) , Allison

@@ -60,7 +60,7 @@ summary(rs)
 #>     "year"), model = "random", random = ~year)
 #> 
 #> Family: gaussian  Link: identity  Model: random  Effect: individual 
-#> N = 600  groups = 100  vcov: classical 
+#> n = 600  groups = 100  vcov: classical 
 #> 
 #> Coefficients:
 #>              Estimate Std. Error z value Pr(>|z|)    
@@ -123,7 +123,7 @@ summary(rp)
 #>     R = 5)
 #> 
 #> Family: poisson  Link: log  Model: random  Effect: individual 
-#> N = 600  groups = 100  vcov: classical 
+#> n = 600  groups = 100  vcov: classical 
 #> 
 #> Coefficients:
 #>             Estimate Std. Error z value Pr(>|z|)   
@@ -209,7 +209,7 @@ summary(fmm)
 #>     nstart = 3, seed = 1)
 #> 
 #> Model: 2-class latent class Poisson model 
-#> N = 1200  groups = 300  vcov: classical 
+#> n = 1200  groups = 300  vcov: classical 
 #> 
 #> Class 1 (prior 0.693, 208 individuals by modal posterior, mean outcome 1.099):
 #>              Estimate Std. Error z value Pr(>|z|)    
@@ -310,7 +310,7 @@ summary(qr)
 #>     "year"), tau = c(0.1, 0.25, 0.5, 0.75, 0.9), model = "mmqr")
 #> 
 #> Estimator: MM-QR fixed-effects quantile regression (Machado and Santos Silva 2019) 
-#> N = 1000  groups = 200  vcov: analytic (cluster by individual, G = 200) 
+#> n = 1000  groups = 200  vcov: analytic (cluster by individual, G = 200) 
 #> 
 #> Location (within regression, cluster-robust):
 #>         Estimate Std. Error z value Pr(>|z|)    

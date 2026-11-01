@@ -142,7 +142,7 @@ summary(fit)
 #>     treat = "first")
 #> 
 #> Family: gaussian  Link: identity  Model: within  Effect: twoways 
-#> N = 1600  groups = 200  vcov: cluster 
+#> n = 1600  groups = 200  vcov: cluster 
 #> 
 #> Coefficients:
 #>         Estimate Std. Error z value Pr(>|z|)    

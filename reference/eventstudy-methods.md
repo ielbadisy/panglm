@@ -98,7 +98,7 @@ es <- eventstudy(visits ~ 1, data = d, index = c("id", "year"),
 summary(es)
 #> 
 #> Event study (two-way fixed effects, gaussian)
-#> N = 1600  groups = 200  vcov: cluster 
+#> n = 1600  groups = 200  vcov: cluster 
 #> Reference event time: -1 (end points binned) 
 #> 
 #> Event-time coefficients:

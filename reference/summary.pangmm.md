@@ -55,7 +55,8 @@ summary(pangmm(y ~ lag(y, 1) | lag(y, 2:99), data = d, index = c("id", "t")))
 #>     "t"))
 #> 
 #> Estimator: two-way one-step difference GMM (Arellano-Bond) 
-#> N = 200  T = 6  equations used = 800  instruments = 14  vcov: robust 
+#> n = 800  groups = 200  T = 6  instruments = 14 
+#> vcov: robust 
 #> 
 #> Coefficients:
 #>           Estimate Std. Error z value Pr(>|z|)   

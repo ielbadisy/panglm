@@ -229,8 +229,8 @@ Wooldridge initial conditions on the consecutive waves 1984 to 1988:
 Ordered outcome: <code>panglm(hsat ~ ..., family = "ologit", model = "within")</code> (blow-up-and-cluster fixed-effects ordered logit)
 against <code>model = "pooling"</code> or <code>model = "random"</code>.</p></li>
 <li><p>Do covariates act on the decision to see a doctor or on how often
-one goes? Fixed-effects hurdle count model <code>panhurdle(docvis ~ ..., family = "poisson")</code> (time-varying regressors only; use a subset of
-persons, it is slow on the full panel).</p></li>
+one goes? Fixed-effects hurdle count model <code>panhurdle(docvis ~ ..., family = "poisson")</code> (time-varying regressors only: time-invariant
+ones such as <code>female</code> are dropped with a warning).</p></li>
 <li><p>Are there latent "low user" and "high user" classes, as in Deb and
 Trivedi? Finite mixture <code>panfmm(docvis ~ ..., k = 2, family = "negbin")</code>, with partial pooling by person.</p></li>
 <li><p>Effects of time-invariant characteristics (gender, schooling)
@@ -312,7 +312,7 @@ University Press.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     addon, data = docvisits, index = idx, model = "within", family = "poisson")</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Family: poisson  Link: log  Model: within  Effect: individual </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> N = 27326  groups = 7293  vcov: classical </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> n = 27326  groups = 7293  vcov: classical </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>          Estimate Std. Error z value Pr(&gt;|z|)    </span>
@@ -333,7 +333,7 @@ University Press.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 	Hausman specification test (fixed vs. random effects)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> chisq = 131.3 , df = 6 , p-value = &lt; 2.2e-16 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> chisq = 131.3, df = 6, p-value = &lt; 2.2e-16</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> alternative hypothesis: one model is inconsistent</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
@@ -350,7 +350,7 @@ University Press.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     family = "ologit")</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Family: ordered  Link: logit  Model: within  Effect: individual </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> N = 27326  groups = 7293  vcov: cluster </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> n = 27326  groups = 7293  vcov: cluster </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           Estimate Std. Error z value Pr(&gt;|z|)    </span>
@@ -389,7 +389,7 @@ University Press.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     dynamic = TRUE, R = 8)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Family: binomial  Link: probit  Model: random  Effect: individual </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> N = 11862  groups = 4578  vcov: classical </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> n = 11862  groups = 4578  vcov: classical </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                Estimate Std. Error z value Pr(&gt;|z|)    </span>
@@ -413,7 +413,7 @@ University Press.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Dispersion parameter: 1 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Random-intercept SD: 0.6453 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Mundlak test (individual means jointly zero): chi2(5) = 12.73, p = 0.026</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Residual df: 11848  Iterations: 95</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Residual df: 11848  Iterations: 8</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Latent "low user" / "high user" classes (Deb-Trivedi style),</span></span></span>
@@ -430,7 +430,7 @@ University Press.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     nstart = 3, seed = 1)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Model: 2-class latent class NB2 model </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> N = 9422  groups = 3058  vcov: classical </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> n = 9422  groups = 3058  vcov: classical </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Class 1 (prior 0.616, 2005 individuals by modal posterior, mean outcome 1.589):</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>              Estimate Std. Error z value Pr(&gt;|z|)    </span>
@@ -483,7 +483,7 @@ University Press.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     age + working + female, data = docvisits, index = idx, model = "hausmantaylor")</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Estimator: Hausman-Taylor </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> N = 27326  groups = 7293  vcov: classical </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> n = 27326  groups = 7293  vcov: classical </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Exogenous time-varying:   age, working </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Endogenous time-varying:  hhninc </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Exogenous time-invariant: female </span>

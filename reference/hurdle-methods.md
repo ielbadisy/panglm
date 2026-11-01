@@ -86,6 +86,7 @@ Other panhurdle methods:
 data(copd)
 fit <- panhurdle(exacerbations ~ crp, data = copd, index = c("id", "visit"))
 #> 26 group(s) with no within-group outcome variation dropped (all-0 or all-1) -- they carry no information for the conditional likelihood.
+#> 6 group(s) whose positive counts are all 1 dropped from the count part -- their intercept is not finite and they carry no information.
 coef(fit)
 #>   zero:crp  count:crp 
 #> 0.10889286 0.04246066 
@@ -98,13 +99,13 @@ summary(fit)
 #> Formula: exacerbations ~ crp
 #> 
 #> Estimator: fixed-effects hurdle model (conditional logit and zero-truncated Poisson)
-#> N = 300  positive = 238  vcov: model-based (inverse Hessian)
+#> n = 300  positive = 238  vcov: model-based (inverse Hessian)
 #> 
 #> Zero part, 1(y > 0), conditional logit (groups used = 34):
 #>     Estimate Std. Error z value Pr(>|z|)
 #> crp  0.10889    0.08173   1.332    0.183
 #> 
-#> Count part, y | y > 0, zero-truncated Poisson (groups used = 59):
+#> Count part, y | y > 0, zero-truncated Poisson (groups used = 53):
 #>     Estimate Std. Error z value Pr(>|z|)  
 #> crp  0.04246    0.02485   1.709   0.0875 .
 #> ---

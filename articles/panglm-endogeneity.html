@@ -179,7 +179,7 @@ regressor absent from the instrument list is endogenous.</p>
 <span><span class="co">#&gt;     index = c("id", "wave"), model = "within", vcov = "cluster")</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Estimator: fixed-effects 2SLS </span></span>
-<span><span class="co">#&gt; N = 1200  groups = 300  vcov: cluster </span></span>
+<span><span class="co">#&gt; n = 1200  groups = 300  vcov: cluster </span></span>
 <span><span class="co">#&gt; Endogenous: insured </span></span>
 <span><span class="co">#&gt; Excluded instruments: offer </span></span>
 <span><span class="co">#&gt; </span></span>
@@ -231,7 +231,7 @@ values: offer 0.4, income 0.2, female 0.3, school 0.1.</p>
 <span><span class="co">#&gt;     female, data = d, index = c("id", "wave"), model = "hausmantaylor")</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Estimator: Hausman-Taylor </span></span>
-<span><span class="co">#&gt; N = 1200  groups = 300  vcov: classical </span></span>
+<span><span class="co">#&gt; n = 1200  groups = 300  vcov: classical </span></span>
 <span><span class="co">#&gt; Exogenous time-varying:   offer </span></span>
 <span><span class="co">#&gt; Endogenous time-varying:  income </span></span>
 <span><span class="co">#&gt; Exogenous time-invariant: female </span></span>
@@ -302,7 +302,8 @@ lags from the second on.</p>
 <span><span class="co">#&gt;     data = g, index = c("id", "wave"), model = "twostep")</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Estimator: two-way two-step difference GMM (Arellano-Bond) </span></span>
-<span><span class="co">#&gt; N = 300  T = 7  equations used = 1500  instruments = 21  vcov: robust (Windmeijer) </span></span>
+<span><span class="co">#&gt; n = 1500  groups = 300  T = 7  instruments = 21 </span></span>
+<span><span class="co">#&gt; vcov: robust (Windmeijer) </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Coefficients:</span></span>
 <span><span class="co">#&gt;              Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
@@ -327,7 +328,8 @@ lags from the second on.</p>
 <span><span class="co">#&gt;     model = "twostep", collapse = TRUE, maxlag = 4)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Estimator: two-way two-step system GMM (Blundell-Bond) </span></span>
-<span><span class="co">#&gt; N = 300  T = 7  equations used = 3300  instruments = 12  vcov: robust (Windmeijer) </span></span>
+<span><span class="co">#&gt; n = 3300  groups = 300  T = 7  instruments = 12 </span></span>
+<span><span class="co">#&gt; vcov: robust (Windmeijer) </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Coefficients:</span></span>
 <span><span class="co">#&gt;              Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
@@ -425,8 +427,8 @@ practice.</p>
 <span><span class="co">#&gt;     boot = 49, seed = 2)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Wooldridge (1995) panel selection correction: fixed effects with Mundlak means, inverse Mills ratio by period </span></span>
-<span><span class="co">#&gt; Selection sample: N = 1200  groups = 300 </span></span>
-<span><span class="co">#&gt; Outcome sample:   N = 710  groups = 286 </span></span>
+<span><span class="co">#&gt; Selection sample: n = 1200  groups = 300 </span></span>
+<span><span class="co">#&gt; Outcome sample:   n = 710  groups = 286 </span></span>
 <span><span class="co">#&gt; Probits fitted for periods: 1, 2, 3, 4 </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Outcome equation (vcov: panel bootstrap, 49 replicates):</span></span>

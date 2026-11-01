@@ -333,7 +333,7 @@ summary(tp)
 #>     povcat, data = meps, index = c("id", "year"), positive = "gamma")
 #> 
 #> Estimator: two-part model (pooling)
-#> N = 6000  groups = 3000  positive = 5151  vcov: classical 
+#> n = 6000  groups = 3000  positive = 5151  vcov: classical 
 #> 
 #> Part 1: P(y > 0), binomial probit 
 #>                     Estimate Std. Error z value Pr(>|z|)    
@@ -390,7 +390,7 @@ summary(fe)
 #>     "year"), model = "within", family = "gamma")
 #> 
 #> Family: gamma  Link: log  Model: within  Effect: individual 
-#> N = 5151  groups = 2757  vcov: classical 
+#> n = 5151  groups = 2757  vcov: classical 
 #> 
 #> Coefficients:
 #>                    Estimate Std. Error z value Pr(>|z|)  
@@ -419,7 +419,7 @@ summary(nb)
 #>     data = meps, index = c("id", "year"), model = "random", family = "negbin")
 #> 
 #> Family: negbin  Link: log  Model: random  Effect: individual 
-#> N = 6000  groups = 3000  vcov: classical 
+#> n = 6000  groups = 3000  vcov: classical 
 #> 
 #> Coefficients:
 #>                    Estimate Std. Error z value Pr(>|z|)    
@@ -450,7 +450,7 @@ summary(cre)
 #>     cre = TRUE)
 #> 
 #> Family: binomial  Link: probit  Model: random  Effect: individual 
-#> N = 6000  groups = 3000  vcov: classical 
+#> n = 6000  groups = 3000  vcov: classical 
 #> 
 #> Coefficients:
 #>                         Estimate Std. Error z value Pr(>|z|)    
@@ -476,7 +476,7 @@ summary(cre)
 #> Dispersion parameter: 1 
 #> Random-intercept SD: 1.275 
 #> Mundlak test (individual means jointly zero): chi2(6) = 21.37, p = 0.001572
-#> Residual df: 5984  Iterations: 98
+#> Residual df: 5984  Iterations: 6
 #> 
 
 # censored log spending: tobit
@@ -490,7 +490,7 @@ summary(panglm(log1p(totexp) ~ insurance + I(age / 10) + sex + nchronic,
 #>     family = "tobit")
 #> 
 #> Family: tobit  Link: identity  Model: pooling  Effect: individual 
-#> N = 6000  groups = 3000  vcov: classical 
+#> n = 6000  groups = 3000  vcov: classical 
 #> 
 #> Coefficients:
 #>                    Estimate Std. Error z value Pr(>|z|)    
@@ -505,7 +505,7 @@ summary(panglm(log1p(totexp) ~ insurance + I(age / 10) + sex + nchronic,
 #> 
 #> Log-likelihood: -14031 
 #> Dispersion parameter: 9.096 
-#> Residual df: 5993  Iterations: 87
+#> Residual df: 5993  Iterations: 114
 #> 
 
 # quantiles of log spending with individual effects (the many tied
@@ -522,7 +522,7 @@ summary(qr)
 #>     boot = 50, seed = 1)
 #> 
 #> Estimator: Canay (2011) two-step fixed-effects quantile regression 
-#> N = 6000  groups = 3000  vcov: bootstrap (cluster, boot = 50) 
+#> n = 6000  groups = 3000  vcov: bootstrap (cluster, boot = 50) 
 #> 
 #> Quantile tau = 0.25:
 #>                      Estimate Std. Error z value Pr(>|z|)    
@@ -564,8 +564,8 @@ summary(panselect(anyexp ~ insurance + povcat, logexp ~ insurance,
 #>     boot = 49, seed = 1)
 #> 
 #> Wooldridge (1995) panel selection correction: fixed effects with Mundlak means, inverse Mills ratio by period 
-#> Selection sample: N = 6000  groups = 3000 
-#> Outcome sample:   N = 5151  groups = 2757 
+#> Selection sample: n = 6000  groups = 3000 
+#> Outcome sample:   n = 5151  groups = 2757 
 #> Probits fitted for periods: 2018, 2019 
 #> 
 #> Outcome equation (vcov: panel bootstrap, 49 replicates):
@@ -593,7 +593,7 @@ summary(panglm(health ~ nchronic + I(age / 10) + povcat, data = meps,
 #>     index = c("id", "year"), model = "random", family = "oprobit")
 #> 
 #> Family: ordered  Link: probit  Model: random  Effect: individual 
-#> N = 5996  groups = 3000  vcov: classical 
+#> n = 5996  groups = 3000  vcov: classical 
 #> 
 #> Coefficients:
 #>                    Estimate Std. Error z value Pr(>|z|)    

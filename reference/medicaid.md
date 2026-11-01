@@ -281,14 +281,16 @@ cs <- attgt(uninspov ~ 1, data = medicaid, index = ix, treat = "adopt",
             control = "never")
 summary(cs)
 #> 
-#> Callaway and Sant'Anna group-time ATT, aggregated overall (simple weighted average)
+#> Callaway and Sant'Anna group-time ATT
+#> Aggregation: overall (simple weighted average)
 #> Control group: never treated  Estimator: unconditional  Individuals: 51 
 #> 
 #> ATT: -6.54 (SE 1.295, 95% CI -9.078 to -4.002)
 #> 
 summary(cs, type = "dynamic")   # leads test pre-trends, lags the build-up
 #> 
-#> Callaway and Sant'Anna group-time ATT, aggregated event study (by time since treatment)
+#> Callaway and Sant'Anna group-time ATT
+#> Aggregation: event study (by time since treatment)
 #> Control group: never treated  Estimator: unconditional  Individuals: 51 
 #> 
 #> ATT (mean of e >= 0): -6.562 (SE 1.317, 95% CI -9.143 to -3.98)
@@ -317,7 +319,8 @@ cs2 <- attgt(uninspov ~ 1, data = medicaid, index = ix, treat = "adopt",
              control = "notyet", weights = "povbase")
 summary(cs2)
 #> 
-#> Callaway and Sant'Anna group-time ATT, aggregated overall (simple weighted average)
+#> Callaway and Sant'Anna group-time ATT
+#> Aggregation: overall (simple weighted average)
 #> Control group: not yet treated  Estimator: unconditional  Individuals: 51 
 #> 
 #> ATT: -7.018 (SE 1.428, 95% CI -9.815 to -4.22)
@@ -344,7 +347,7 @@ eventstudy(uninspov ~ 1, data = medicaid, index = ix, treat = "adopt",
            leads = 4, lags = 5)
 #> 
 #> Event study (two-way fixed effects, gaussian)
-#> N = 561  groups = 51  vcov: cluster 
+#> n = 561  groups = 51  vcov: cluster 
 #> Reference event time: -1 (end points binned) 
 #> 
 #>  event estimate     se    lower  upper
@@ -365,7 +368,8 @@ eventstudy(uninspov ~ 1, data = medicaid, index = ix, treat = "adopt",
 summary(attgt(medicaidpov ~ 1, data = medicaid, index = ix,
               treat = "adopt", control = "never"))
 #> 
-#> Callaway and Sant'Anna group-time ATT, aggregated overall (simple weighted average)
+#> Callaway and Sant'Anna group-time ATT
+#> Aggregation: overall (simple weighted average)
 #> Control group: never treated  Estimator: unconditional  Individuals: 51 
 #> 
 #> ATT: 10.24 (SE 1.406, 95% CI 7.48 to 12.99)
@@ -392,7 +396,8 @@ coef(summary(tww))["expanded", ]
 summary(attgt(uninspov ~ 1, data = subset(medicaid, prior == "none"),
               index = ix, treat = "adopt", control = "never"))
 #> 
-#> Callaway and Sant'Anna group-time ATT, aggregated overall (simple weighted average)
+#> Callaway and Sant'Anna group-time ATT
+#> Aggregation: overall (simple weighted average)
 #> Control group: never treated  Estimator: unconditional  Individuals: 41 
 #> 
 #> ATT: -8.878 (SE 1.255, 95% CI -11.34 to -6.418)

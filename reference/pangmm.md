@@ -189,7 +189,11 @@ freedom (`L` instruments, `k` coefficients);
 Hansen statistic by default and `N s2` times the Sargan statistic with
 `weights = "onestep"`. Many instruments weaken the Hansen test (Roodman
 2009); collapsing or limiting the lag depth keeps the instrument count
-well below the number of individuals.
+well below the number of individuals. When the second-step matrix `S2`
+is singular (more instruments than individuals) a generalized inverse is
+used, as in [`plm::pgmm()`](https://rdrr.io/pkg/plm/man/pgmm.html); a
+two-step fit warns because its estimates depend on it, a one-step fit
+does not because only its Hansen statistic does.
 
 ## Finite-sample bias
 
@@ -295,7 +299,8 @@ summary(ab)
 #>     data = d, index = c("id", "wave"), model = "twostep")
 #> 
 #> Estimator: two-way two-step difference GMM (Arellano-Bond) 
-#> N = 300  T = 7  equations used = 1500  instruments = 21  vcov: robust (Windmeijer) 
+#> n = 1500  groups = 300  T = 7  instruments = 21 
+#> vcov: robust (Windmeijer) 
 #> 
 #> Coefficients:
 #>              Estimate Std. Error z value Pr(>|z|)    
@@ -324,7 +329,8 @@ summary(bb)
 #>     model = "twostep", collapse = TRUE, maxlag = 4)
 #> 
 #> Estimator: two-way two-step system GMM (Blundell-Bond) 
-#> N = 300  T = 7  equations used = 3300  instruments = 12  vcov: robust (Windmeijer) 
+#> n = 3300  groups = 300  T = 7  instruments = 12 
+#> vcov: robust (Windmeijer) 
 #> 
 #> Coefficients:
 #>              Estimate Std. Error z value Pr(>|z|)    
@@ -355,7 +361,8 @@ if (requireNamespace("plm", quietly = TRUE)) {
 #>     2:99), data = EmplUK, index = c("firm", "year"), model = "twostep")
 #> 
 #> Estimator: two-way two-step difference GMM (Arellano-Bond) 
-#> N = 140  T = 9  equations used = 611  instruments = 38  vcov: robust (Windmeijer) 
+#> n = 611  groups = 140  T = 9  instruments = 38 
+#> vcov: robust (Windmeijer) 
 #> 
 #> Coefficients:
 #>                     Estimate Std. Error z value Pr(>|z|)    

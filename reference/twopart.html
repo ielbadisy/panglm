@@ -200,7 +200,9 @@ zeros) to both parts, the Mundlak correlated random effects device.</p>
 also check that the pooled two-part prediction is the product of the two
 <code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">stats::glm()</a></code> fits, the smearing retransformation of the lognormal part,
 and the correlated random-intercept likelihood against two-dimensional
-numerical integration.</p>
+numerical integration and against <code><a href="https://drizopoulos.github.io/GLMMadaptive/reference/mixed_model.html" class="external-link">GLMMadaptive::mixed_model()</a></code> with the
+<code>hurdle.lognormal()</code> family (logit link, correlated random intercepts),
+whose log-likelihood it reproduces at the same parameters.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
@@ -213,7 +215,7 @@ method. <em>Journal of the American Statistical Association</em>, 78,
 605-610. <a href="https://doi.org/10.1080/01621459.1983.10478017" class="external-link">doi:10.1080/01621459.1983.10478017</a></p>
 <p>Van Ourti, T. (2004). Measuring horizontal inequity in Belgian health
 care using a Gaussian random effects two part count data model.
-<em>Health Economics</em>, 13, 705-724. <a href="https://doi.org/10.1002/hec.869" class="external-link">doi:10.1002/hec.869</a></p>
+<em>Health Economics</em>, 13, 705-724. <a href="https://doi.org/10.1002/hec.920" class="external-link">doi:10.1002/hec.920</a></p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -245,7 +247,7 @@ the fitted model, <a href="tidy-methods.html">tidy-methods</a> for <code>tidy()<
 <span class="r-out co"><span class="r-pr">#&gt;</span>     index = c("id", "visit"), positive = "gamma")</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Estimator: two-part model (pooling)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> N = 300  groups = 60  positive = 238  vcov: classical </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> n = 300  groups = 60  positive = 238  vcov: classical </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Part 1: P(y &gt; 0), binomial probit </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             Estimate Std. Error z value Pr(&gt;|z|)   </span>

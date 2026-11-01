@@ -104,7 +104,8 @@ required for <code>method = "classical"</code>, ignored for <code>"mundlak"</cod
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>a list with class <code>"panglm_hausman"</code>: <code>statistic</code>, <code>parameter</code>
 (df; two values for an F reference), <code>p.value</code>, <code>method</code>,
-<code>distribution</code> (<code>"chisq"</code> or <code>"F"</code>), and the compared coefficient
+<code>distribution</code> (<code>"chisq"</code> or <code>"F"</code>), <code>pos_def</code> (<code>"classical"</code> only:
+whether <code>V_fe - V_re</code> is positive definite), and the compared coefficient
 vectors (<code>coef_fe</code>, <code>coef_re</code> for <code>"classical"</code>; <code>coef_mean</code> for
 <code>"mundlak"</code>)</p>
     </div>
@@ -117,7 +118,11 @@ dropped), with a chi-square reference. It always uses the model-based
 (classical) covariances, also when <code>fe</code> was fit with a robust <code>vcov</code>: the
 contrast variance <code>V_fe - V_re</code> relies on the random-effects estimator
 being efficient under the null, which holds only for model-based
-covariances and independent, homoskedastic idiosyncratic errors.</p>
+covariances and independent, homoskedastic idiosyncratic errors.
+In finite samples <code>V_fe - V_re</code> need not be positive definite and the
+statistic can then be negative. The signed value is returned, with
+<code>p.value = NA</code> and a warning (<code><a href="https://rdrr.io/pkg/plm/man/phtest.html" class="external-link">plm::phtest()</a></code> reports its absolute value
+instead); the regression-based <code>method = "mundlak"</code> has no such problem.</p>
 <p><code>method = "mundlak"</code> is the regression-based (correlated random effects)
 version of the same test (Mundlak 1978; Wooldridge 2010, section 10.7.3),
 valid under heteroskedasticity and serial correlation. The pooled model
@@ -155,14 +160,14 @@ test.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 	Hausman specification test (fixed vs. random effects)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> chisq = 0.08488 , df = 1 , p-value = 0.7708 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> chisq = 0.08488, df = 1, p-value = 0.7708</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> alternative hypothesis: one model is inconsistent</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span><span class="fu">panhausman</span><span class="op">(</span><span class="va">fit_fe</span>, method <span class="op">=</span> <span class="st">"mundlak"</span>, data <span class="op">=</span> <span class="va">copd</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 	Mundlak specification test (fixed vs. random effects), vcov: cluster </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 	Mundlak specification test (fixed vs. random effects), vcov: cluster</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> F = 0.1647 , df = 1, 59 , p-value = 0.6864 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F = 0.1647, df = 1, 59, p-value = 0.6864</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> alternative hypothesis: one model is inconsistent</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 </code></pre></div>

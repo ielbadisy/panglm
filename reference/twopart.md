@@ -141,7 +141,10 @@ two-part prediction is the product of the two
 [`stats::glm()`](https://rdrr.io/r/stats/glm.html) fits, the smearing
 retransformation of the lognormal part, and the correlated
 random-intercept likelihood against two-dimensional numerical
-integration.
+integration and against
+[`GLMMadaptive::mixed_model()`](https://drizopoulos.github.io/GLMMadaptive/reference/mixed_model.html)
+with the `hurdle.lognormal()` family (logit link, correlated random
+intercepts), whose log-likelihood it reproduces at the same parameters.
 
 ## References
 
@@ -157,7 +160,7 @@ method. *Journal of the American Statistical Association*, 78, 605-610.
 Van Ourti, T. (2004). Measuring horizontal inequity in Belgian health
 care using a Gaussian random effects two part count data model. *Health
 Economics*, 13, 705-724.
-[doi:10.1002/hec.869](https://doi.org/10.1002/hec.869)
+[doi:10.1002/hec.920](https://doi.org/10.1002/hec.920)
 
 ## See also
 
@@ -195,7 +198,7 @@ summary(tp)
 #>     index = c("id", "visit"), positive = "gamma")
 #> 
 #> Estimator: two-part model (pooling)
-#> N = 300  groups = 60  positive = 238  vcov: classical 
+#> n = 300  groups = 60  positive = 238  vcov: classical 
 #> 
 #> Part 1: P(y > 0), binomial probit 
 #>             Estimate Std. Error z value Pr(>|z|)   

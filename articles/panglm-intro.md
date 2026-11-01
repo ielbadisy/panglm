@@ -86,7 +86,7 @@ summary(fit_pool)
 #>     index = c("id", "visit"), model = "pooling", vcov = "cluster")
 #> 
 #> Family: gaussian  Link: identity  Model: pooling  Effect: individual 
-#> N = 300  groups = 60  vcov: cluster 
+#> n = 300  groups = 60  vcov: cluster 
 #> 
 #> Coefficients:
 #>              Estimate Std. Error z value Pr(>|z|)    
@@ -119,7 +119,7 @@ summary(fit_fe)
 #>     model = "within", vcov = "cluster")
 #> 
 #> Family: gaussian  Link: identity  Model: within  Effect: individual 
-#> N = 300  groups = 60  vcov: cluster 
+#> n = 300  groups = 60  vcov: cluster 
 #> 
 #> Coefficients:
 #>      Estimate Std. Error z value Pr(>|z|)    
@@ -182,7 +182,7 @@ summary(fit_cre)
 #>     cre = TRUE)
 #> 
 #> Family: gaussian  Link: identity  Model: random  Effect: individual 
-#> N = 300  groups = 60  vcov: cluster 
+#> n = 300  groups = 60  vcov: cluster 
 #> 
 #> Coefficients:
 #>              Estimate Std. Error z value Pr(>|z|)    
@@ -218,13 +218,13 @@ panhausman(fit_fe, fit_re1)
 #> 
 #>  Hausman specification test (fixed vs. random effects)
 #> 
-#> chisq = 0.08488 , df = 1 , p-value = 0.7708 
+#> chisq = 0.08488, df = 1, p-value = 0.7708
 #> alternative hypothesis: one model is inconsistent
 panhausman(fit_fe, method = "mundlak", data = copd)
 #> 
-#>  Mundlak specification test (fixed vs. random effects), vcov: cluster 
+#>  Mundlak specification test (fixed vs. random effects), vcov: cluster
 #> 
-#> F = 0.1647 , df = 1, 59 , p-value = 0.6864 
+#> F = 0.1647, df = 1, 59, p-value = 0.6864
 #> alternative hypothesis: one model is inconsistent
 ```
 

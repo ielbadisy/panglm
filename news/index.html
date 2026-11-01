@@ -102,6 +102,29 @@
 <li>New vignette <code><a href="../articles/panglm-datasets.html">vignette("panglm-datasets")</a></code>.</li>
 <li>Lazy-loaded data are compressed with xz.</li>
 </ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-1-7-0">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-7-0"></a></h3>
+<ul><li>
+<code>panhausman(method = "classical")</code> no longer reports p = 1 when <code>V_fe - V_re</code> is not positive definite and the statistic is negative: the signed statistic is kept, the p-value is <code>NA</code> and a warning points to <code>method = "mundlak"</code>. The print method drops the stray space before commas.</li>
+<li>Print methods use one sample-size line, <code>n = &lt;observations&gt;  groups = &lt;individuals&gt;</code> (<code><a href="../reference/pangmm.html">pangmm()</a></code> printed the number of individuals as <code>N</code>), and keep every line within 80 characters (the <code><a href="../reference/pangmm.html">pangmm()</a></code> summary, the <code><a href="../reference/attgt.html">attgt()</a></code> summary and the <code><a href="../reference/etwfe.html">etwfe()</a></code> footer were wider).</li>
+<li>
+<code><a href="../reference/panglm.html">panglm()</a></code> detects columns that are collinear up to rounding, not only exactly. With <code>cre = TRUE</code>, an age that rises one per year but is stored with a small rounding error (e.g. <code><a href="https://rdrr.io/pkg/pglm/man/HealthIns.html" class="external-link">pglm::HealthIns</a></code>) gave offsetting coefficients of order 1e5 with no warning. Columns are now scaled by their own norm before the rank check, and a near dependency is dropped with the usual “rank-deficient model matrix” warning. Exact dependencies drop the same columns as <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code>. This applies to every model and family.</li>
+<li>
+<code>pangmm(model = "onestep")</code> no longer warns that the second-step weighting matrix is singular: a one-step fit uses it only for the Hansen statistic, through a generalized inverse as in <code><a href="https://rdrr.io/pkg/plm/man/pgmm.html" class="external-link">plm::pgmm()</a></code>. Two-step fits keep the warning.</li>
+<li>
+<code>panhurdle(family = "negbin")</code> no longer stops with “NAs are not allowed in subscripted assignments” when the NB2 shape parameter runs off to infinity (counts no more dispersed than Poisson): <code>log P(Y = 0)</code> is computed as <code>-theta * log1p(mu / theta)</code>, which stays finite.</li>
+<li>
+<code><a href="../reference/panhurdle.html">panhurdle()</a></code> drops time-invariant regressors with a warning, as <code>panglm(model = "within")</code> does, instead of failing with “system is computationally singular”. Groups whose positive counts are all 1 (no finite intercept) are dropped from the count part with a message, and a binary outcome stops with a clear error.</li>
+<li>
+<code>panglm(model = "random", family = "tobit")</code> now converges on outcomes in raw units such as costs in dollars. The quasi-Newton search used to stop silently short of the maximum (on <code>meps$totexp</code> the log-likelihood was 29 units below it and <code>sigma</code> 22% off) because the slopes and the log standard deviations differed in scale by orders of magnitude. Both Tobit fits now maximize the likelihood of <code>y / c</code> (<code>c</code> a power of two near <code>sd(y)</code>) with standardized regressors and map the estimates back, so that coefficients, <code>sigma_e</code>, <code>sigma</code>, their covariance and the log-likelihood (which loses <code>log c</code> per uncensored observation) do not depend on the units of <code>y</code>. The random-effects likelihood and its exact scores are computed in C++: the <code>meps</code> fit takes 0.4 s instead of 210 s.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="performance-1-7-0">Performance<a class="anchor" aria-label="anchor" href="#performance-1-7-0"></a></h3>
+<ul><li>
+<code>twopart(correlated = TRUE)</code> is much faster: the joint likelihood and its exact gradient (including the dependence of the adaptive quadrature mode and scale on the parameters) are computed in C++, replacing numerical differences of an R likelihood. A <code>meps</code> fit on 6,000 person-years takes about 5 seconds instead of 5 minutes. Estimates are unchanged up to the optimizer tolerance, and the likelihood matches <code>GLMMadaptive::mixed_model(family = hurdle.lognormal())</code> at the same parameters.</li>
+<li>The <code><a href="../reference/panhurdle.html">panhurdle()</a></code> count part is fit by Newton-Raphson with analytic derivatives and the group intercepts eliminated, instead of a dense dummy matrix (and, for NB2, BFGS with a numerical Hessian). A fit that took minutes on a few hundred <code>docvisits</code> individuals now takes well under a second, the full panel about one second. Estimates match <code>glmmTMB</code> truncated Poisson and NB2 fits with group dummies; the NB2 standard errors, which came from a not fully converged fit, change.</li>
+<li>Random-intercept binomial, ordered and Tobit fits by adaptive quadrature are faster: parameter values with <code>sigma</code> outside <code>[1e-11, 7e10]</code>, which the first quasi-Newton steps can visit, are rejected without a mode search (each such evaluation used to cost as much as 200 ordinary ones), each individual’s mode search starts from its mode at the previous evaluation and takes one pass over the rows per Newton step, and the binomial fit starts from a few BHHH steps. The probit model of <code>doctor</code> on <code>docvisits</code> (27,326 rows) takes 4 s instead of 37 s; the estimates agree to <code>1e-7</code>.</li>
+</ul></div>
 </div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.6.2" id="panglm-162">panglm 1.6.2<a class="anchor" aria-label="anchor" href="#panglm-162"></a></h2>

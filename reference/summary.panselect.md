@@ -50,8 +50,8 @@ summary(panselect(s ~ x + z, y ~ x, data = d, index = c("id", "t"),
 #>     "t"), boot = 29, seed = 1)
 #> 
 #> Wooldridge (1995) panel selection correction: fixed effects with Mundlak means, inverse Mills ratio by period 
-#> Selection sample: N = 300  groups = 100 
-#> Outcome sample:   N = 193  groups = 94 
+#> Selection sample: n = 300  groups = 100 
+#> Outcome sample:   n = 193  groups = 94 
 #> Probits fitted for periods: 1, 2, 3 
 #> 
 #> Outcome equation (vcov: panel bootstrap, 29 replicates):

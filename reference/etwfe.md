@@ -250,7 +250,7 @@ fit                                   # overall ATT, admissions per district
 #> 
 #> ATT (response scale): 1.606 (SE 0.3506, 95% CI 0.9193 to 2.294, p = 4.606e-06)
 #> 
-#> Use summary(x, type = ...) for effects by group, calendar period or event time.
+#> summary(x, type = ...) gives effects by group, calendar period or event time.
 #> 
 summary(fit, type = "event")          # by time since adoption
 #> 

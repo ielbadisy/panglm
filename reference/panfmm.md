@@ -261,7 +261,7 @@ summary(fit)
 #>     "year"), k = 2, family = "poisson", nstart = 3, seed = 1)
 #> 
 #> Model: 2-class latent class Poisson model 
-#> N = 1600  groups = 400  vcov: classical 
+#> n = 1600  groups = 400  vcov: classical 
 #> 
 #> Class 1 (prior 0.719, 288 individuals by modal posterior, mean outcome 1.13):
 #>              Estimate Std. Error z value Pr(>|z|)    

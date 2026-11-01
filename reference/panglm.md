@@ -326,7 +326,7 @@ summary(fit_pool)
 #>     index = c("id", "visit"), model = "pooling", family = "gaussian")
 #> 
 #> Family: gaussian  Link: identity  Model: pooling  Effect: individual 
-#> N = 300  groups = 60  vcov: classical 
+#> n = 300  groups = 60  vcov: classical 
 #> 
 #> Coefficients:
 #>              Estimate Std. Error z value Pr(>|z|)    
@@ -378,7 +378,7 @@ summary(fit_cre)
 #>     cre = TRUE)
 #> 
 #> Family: binomial  Link: probit  Model: random  Effect: individual 
-#> N = 300  groups = 60  vcov: classical 
+#> n = 300  groups = 60  vcov: classical 
 #> 
 #> Coefficients:
 #>             Estimate Std. Error z value Pr(>|z|)    
@@ -394,7 +394,7 @@ summary(fit_cre)
 #> Dispersion parameter: 1 
 #> Random-intercept SD: 0.2689 
 #> Mundlak test (individual means jointly zero): chi2(1) = 1.243, p = 0.2649
-#> Residual df: 294  Iterations: 35
+#> Residual df: 294  Iterations: 31
 #> 
 
 # patient trajectories: random intercept and random slope of FEV1
@@ -410,7 +410,7 @@ summary(fit_rs)
 #>     index = c("id", "visit"), model = "random", random = ~visit)
 #> 
 #> Family: gaussian  Link: identity  Model: random  Effect: individual 
-#> N = 300  groups = 60  vcov: classical 
+#> n = 300  groups = 60  vcov: classical 
 #> 
 #> Coefficients:
 #>              Estimate Std. Error z value Pr(>|z|)    
@@ -452,7 +452,7 @@ summary(fit_2w)
 #>     vcov = "cluster")
 #> 
 #> Family: binomial  Link: logit  Model: within  Effect: twoways 
-#> N = 1000  groups = 200  vcov: cluster 
+#> n = 1000  groups = 200  vcov: cluster 
 #> 
 #> Coefficients:
 #>       Estimate Std. Error z value Pr(>|z|)    

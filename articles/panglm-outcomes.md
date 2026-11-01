@@ -64,7 +64,7 @@ summary(fe_pois)
 #>     "year"), model = "within", family = "poisson", vcov = "cluster")
 #> 
 #> Family: poisson  Link: log  Model: within  Effect: individual 
-#> N = 1000  groups = 200  vcov: cluster 
+#> n = 1000  groups = 200  vcov: cluster 
 #> 
 #> Coefficients:
 #>         Estimate Std. Error z value Pr(>|z|)    
@@ -164,18 +164,19 @@ it.
 data(copd)
 hur <- panhurdle(exacerbations ~ crp, data = copd, index = c("id", "visit"))
 #> 26 group(s) with no within-group outcome variation dropped (all-0 or all-1) -- they carry no information for the conditional likelihood.
+#> 6 group(s) whose positive counts are all 1 dropped from the count part -- their intercept is not finite and they carry no information.
 summary(hur)
 #> 
 #> Formula: exacerbations ~ crp
 #> 
 #> Estimator: fixed-effects hurdle model (conditional logit and zero-truncated Poisson)
-#> N = 300  positive = 238  vcov: model-based (inverse Hessian)
+#> n = 300  positive = 238  vcov: model-based (inverse Hessian)
 #> 
 #> Zero part, 1(y > 0), conditional logit (groups used = 34):
 #>     Estimate Std. Error z value Pr(>|z|)
 #> crp  0.10889    0.08173   1.332    0.183
 #> 
-#> Count part, y | y > 0, zero-truncated Poisson (groups used = 59):
+#> Count part, y | y > 0, zero-truncated Poisson (groups used = 53):
 #>     Estimate Std. Error z value Pr(>|z|)  
 #> crp  0.04246    0.02485   1.709   0.0875 .
 #> ---
@@ -224,7 +225,7 @@ summary(tp)
 #>     "year"), model = "pooling", vcov = "cluster")
 #> 
 #> Estimator: two-part model (pooling)
-#> N = 600  groups = 150  positive = 274  vcov: cluster 
+#> n = 600  groups = 150  positive = 274  vcov: cluster 
 #> 
 #> Part 1: P(y > 0), binomial probit 
 #>              Estimate Std. Error z value Pr(>|z|)    
@@ -281,7 +282,7 @@ summary(fit_beta)
 #>     "year"), model = "random", family = "beta", R = 5)
 #> 
 #> Family: beta  Link: logit  Model: random  Effect: individual 
-#> N = 600  groups = 150  vcov: classical 
+#> n = 600  groups = 150  vcov: classical 
 #> 
 #> Coefficients:
 #>             Estimate Std. Error z value Pr(>|z|)    
@@ -336,7 +337,7 @@ summary(fit_ord)
 #>     R = 8)
 #> 
 #> Family: ordered  Link: logit  Model: random  Effect: individual 
-#> N = 300  groups = 60  vcov: classical 
+#> n = 300  groups = 60  vcov: classical 
 #> 
 #> Coefficients:
 #>             Estimate Std. Error z value Pr(>|z|)    
@@ -432,7 +433,7 @@ fit_tob <- panglm(eq5d ~ age + chronic, data = eq, index = c("id", "wave"),
                   R = 5)
 coef(fit_tob)
 #>  (Intercept)          age      chronic 
-#>  1.567750520 -0.008401564 -0.082276325
+#>  1.567750861 -0.008401569 -0.082276323
 c(sigma_e = fit_tob$sigma_e, sigma_u = fit_tob$sigma)
 #>   sigma_e   sigma_u 
 #> 0.1177384 0.1346040

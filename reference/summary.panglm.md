@@ -79,7 +79,7 @@ summary(fit)
 #>     index = c("id", "visit"), model = "pooling", family = "gaussian")
 #> 
 #> Family: gaussian  Link: identity  Model: pooling  Effect: individual 
-#> N = 300  groups = 60  vcov: classical 
+#> n = 300  groups = 60  vcov: classical 
 #> 
 #> Coefficients:
 #>              Estimate Std. Error z value Pr(>|z|)    

@@ -215,7 +215,7 @@ cluster by individual.</p>
 <span><span class="co">#&gt;     index = c("id", "visit"), model = "pooling", vcov = "cluster")</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Family: gaussian  Link: identity  Model: pooling  Effect: individual </span></span>
-<span><span class="co">#&gt; N = 300  groups = 60  vcov: cluster </span></span>
+<span><span class="co">#&gt; n = 300  groups = 60  vcov: cluster </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Coefficients:</span></span>
 <span><span class="co">#&gt;              Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
@@ -245,7 +245,7 @@ regressors are not identified and are dropped.</p>
 <span><span class="co">#&gt;     model = "within", vcov = "cluster")</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Family: gaussian  Link: identity  Model: within  Effect: individual </span></span>
-<span><span class="co">#&gt; N = 300  groups = 60  vcov: cluster </span></span>
+<span><span class="co">#&gt; n = 300  groups = 60  vcov: cluster </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Coefficients:</span></span>
 <span><span class="co">#&gt;      Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
@@ -300,7 +300,7 @@ and <code>smoker</code> stay in the model.</p>
 <span><span class="co">#&gt;     cre = TRUE)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Family: gaussian  Link: identity  Model: random  Effect: individual </span></span>
-<span><span class="co">#&gt; N = 300  groups = 60  vcov: cluster </span></span>
+<span><span class="co">#&gt; n = 300  groups = 60  vcov: cluster </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Coefficients:</span></span>
 <span><span class="co">#&gt;              Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
@@ -336,13 +336,13 @@ correlation, so it is the one to report.</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;  Hausman specification test (fixed vs. random effects)</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; chisq = 0.08488 , df = 1 , p-value = 0.7708 </span></span>
+<span><span class="co">#&gt; chisq = 0.08488, df = 1, p-value = 0.7708</span></span>
 <span><span class="co">#&gt; alternative hypothesis: one model is inconsistent</span></span>
 <span><span class="fu"><a href="../reference/panhausman.html">panhausman</a></span><span class="op">(</span><span class="va">fit_fe</span>, method <span class="op">=</span> <span class="st">"mundlak"</span>, data <span class="op">=</span> <span class="va">copd</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;  Mundlak specification test (fixed vs. random effects), vcov: cluster </span></span>
+<span><span class="co">#&gt;  Mundlak specification test (fixed vs. random effects), vcov: cluster</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; F = 0.1647 , df = 1, 59 , p-value = 0.6864 </span></span>
+<span><span class="co">#&gt; F = 0.1647, df = 1, 59, p-value = 0.6864</span></span>
 <span><span class="co">#&gt; alternative hypothesis: one model is inconsistent</span></span></code></pre></div>
 <p>Neither test rejects: in these data CRP is unrelated to the stable
 part of lung function, and random effects is acceptable. When the test

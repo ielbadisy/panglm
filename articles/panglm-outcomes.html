@@ -185,7 +185,7 @@ the default choice for panel counts.</p>
 <span><span class="co">#&gt;     "year"), model = "within", family = "poisson", vcov = "cluster")</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Family: poisson  Link: log  Model: within  Effect: individual </span></span>
-<span><span class="co">#&gt; N = 1000  groups = 200  vcov: cluster </span></span>
+<span><span class="co">#&gt; n = 1000  groups = 200  vcov: cluster </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Coefficients:</span></span>
 <span><span class="co">#&gt;         Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
@@ -271,18 +271,19 @@ dropped from it.</p>
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">copd</span><span class="op">)</span></span>
 <span><span class="va">hur</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/panhurdle.html">panhurdle</a></span><span class="op">(</span><span class="va">exacerbations</span> <span class="op">~</span> <span class="va">crp</span>, data <span class="op">=</span> <span class="va">copd</span>, index <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"visit"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; 26 group(s) with no within-group outcome variation dropped (all-0 or all-1) -- they carry no information for the conditional likelihood.</span></span>
+<span><span class="co">#&gt; 6 group(s) whose positive counts are all 1 dropped from the count part -- their intercept is not finite and they carry no information.</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">hur</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Formula: exacerbations ~ crp</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Estimator: fixed-effects hurdle model (conditional logit and zero-truncated Poisson)</span></span>
-<span><span class="co">#&gt; N = 300  positive = 238  vcov: model-based (inverse Hessian)</span></span>
+<span><span class="co">#&gt; n = 300  positive = 238  vcov: model-based (inverse Hessian)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Zero part, 1(y &gt; 0), conditional logit (groups used = 34):</span></span>
 <span><span class="co">#&gt;     Estimate Std. Error z value Pr(&gt;|z|)</span></span>
 <span><span class="co">#&gt; crp  0.10889    0.08173   1.332    0.183</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Count part, y | y &gt; 0, zero-truncated Poisson (groups used = 59):</span></span>
+<span><span class="co">#&gt; Count part, y | y &gt; 0, zero-truncated Poisson (groups used = 53):</span></span>
 <span><span class="co">#&gt;     Estimate Std. Error z value Pr(&gt;|z|)  </span></span>
 <span><span class="co">#&gt; crp  0.04246    0.02485   1.709   0.0875 .</span></span>
 <span><span class="co">#&gt; ---</span></span>
@@ -330,7 +331,7 @@ with smearing instead.</p>
 <span><span class="co">#&gt;     "year"), model = "pooling", vcov = "cluster")</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Estimator: two-part model (pooling)</span></span>
-<span><span class="co">#&gt; N = 600  groups = 150  positive = 274  vcov: cluster </span></span>
+<span><span class="co">#&gt; n = 600  groups = 150  positive = 274  vcov: cluster </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Part 1: P(y &gt; 0), binomial probit </span></span>
 <span><span class="co">#&gt;              Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
@@ -386,7 +387,7 @@ normal random intercept on the link scale.</p>
 <span><span class="co">#&gt;     "year"), model = "random", family = "beta", R = 5)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Family: beta  Link: logit  Model: random  Effect: individual </span></span>
-<span><span class="co">#&gt; N = 600  groups = 150  vcov: classical </span></span>
+<span><span class="co">#&gt; n = 600  groups = 150  vcov: classical </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Coefficients:</span></span>
 <span><span class="co">#&gt;             Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
@@ -438,7 +439,7 @@ Staub and Winkelmann (2015), which is consistent for the slopes.</p>
 <span><span class="co">#&gt;     R = 8)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Family: ordered  Link: logit  Model: random  Effect: individual </span></span>
-<span><span class="co">#&gt; N = 300  groups = 60  vcov: classical </span></span>
+<span><span class="co">#&gt; n = 300  groups = 60  vcov: classical </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Coefficients:</span></span>
 <span><span class="co">#&gt;             Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
@@ -525,7 +526,7 @@ instead.</p>
 <span>                  R <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit_tob</span><span class="op">)</span></span>
 <span><span class="co">#&gt;  (Intercept)          age      chronic </span></span>
-<span><span class="co">#&gt;  1.567750520 -0.008401564 -0.082276325</span></span>
+<span><span class="co">#&gt;  1.567750861 -0.008401569 -0.082276323</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>sigma_e <span class="op">=</span> <span class="va">fit_tob</span><span class="op">$</span><span class="va">sigma_e</span>, sigma_u <span class="op">=</span> <span class="va">fit_tob</span><span class="op">$</span><span class="va">sigma</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   sigma_e   sigma_u </span></span>
 <span><span class="co">#&gt; 0.1177384 0.1346040</span></span>

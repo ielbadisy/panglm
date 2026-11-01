@@ -185,7 +185,7 @@ the lags trace the effect over time.</p>
 <span><span class="va">es</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Event study (two-way fixed effects, gaussian)</span></span>
-<span><span class="co">#&gt; N = 1600  groups = 200  vcov: cluster </span></span>
+<span><span class="co">#&gt; n = 1600  groups = 200  vcov: cluster </span></span>
 <span><span class="co">#&gt; Reference event time: -1 (end points binned) </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;  event   estimate     se   lower  upper</span></span>
@@ -268,7 +268,8 @@ then aggregates them.</p>
 <span><span class="co">#&gt; 6  2016 2018     2  3.8892271 0.4413501  3.0241968 4.7542574  TRUE</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">cs</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Callaway and Sant'Anna group-time ATT, aggregated overall (simple weighted average)</span></span>
+<span><span class="co">#&gt; Callaway and Sant'Anna group-time ATT</span></span>
+<span><span class="co">#&gt; Aggregation: overall (simple weighted average)</span></span>
 <span><span class="co">#&gt; Control group: never treated  Estimator: unconditional  Individuals: 120 </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ATT: 3.541 (SE 0.217, 95% CI 3.116 to 3.967)</span></span>
@@ -284,7 +285,8 @@ the TWFE contamination), <code>"group"</code> (by cohort) and
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">cs</span>, type <span class="op">=</span> <span class="st">"dynamic"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Callaway and Sant'Anna group-time ATT, aggregated event study (by time since treatment)</span></span>
+<span><span class="co">#&gt; Callaway and Sant'Anna group-time ATT</span></span>
+<span><span class="co">#&gt; Aggregation: event study (by time since treatment)</span></span>
 <span><span class="co">#&gt; Control group: never treated  Estimator: unconditional  Individuals: 120 </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ATT (mean of e &gt;= 0): 4.132 (SE 0.2421, 95% CI 3.658 to 4.607)</span></span>
@@ -326,7 +328,8 @@ event times jointly.</p>
 <span>             cluster <span class="op">=</span> <span class="st">"region"</span>, cband <span class="op">=</span> <span class="cn">TRUE</span>, biters <span class="op">=</span> <span class="fl">199</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">csb</span>, type <span class="op">=</span> <span class="st">"dynamic"</span>, min_e <span class="op">=</span> <span class="op">-</span><span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Callaway and Sant'Anna group-time ATT, aggregated event study (by time since treatment)</span></span>
+<span><span class="co">#&gt; Callaway and Sant'Anna group-time ATT</span></span>
+<span><span class="co">#&gt; Aggregation: event study (by time since treatment)</span></span>
 <span><span class="co">#&gt; Control group: not yet treated  Estimator: DR  Individuals: 120 </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Bootstrap standard errors (rademacher, 199 draws); uniform bands with critical value 2.465</span></span>

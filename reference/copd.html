@@ -266,7 +266,7 @@ within = fixed-effects ordered logit).</p></li>
 <span class="r-out co"><span class="r-pr">#&gt;</span>         hospitalized + smoker + treatment + crp, positive = "lognormal")</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Estimator: two-part model (pooling)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> N = 300  groups = 60  positive = 214  vcov: classical </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> n = 300  groups = 60  positive = 214  vcov: classical </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Part 1: P(y &gt; 0), binomial probit </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               Estimate Std. Error z value Pr(&gt;|z|)    </span>
@@ -305,7 +305,8 @@ within = fixed-effects ordered logit).</p></li>
 <span class="r-in"><span>             treat <span class="op">=</span> <span class="st">"adopt"</span>, control <span class="op">=</span> <span class="st">"notyet"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">att</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Callaway and Sant'Anna group-time ATT, aggregated overall (simple weighted average)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Callaway and Sant'Anna group-time ATT</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Aggregation: overall (simple weighted average)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Control group: not yet treated  Estimator: unconditional  Individuals: 60 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ATT: -184 (SE 199.1, 95% CI -574.2 to 206.2)</span>

@@ -49,7 +49,7 @@ summary(panfmm(y ~ x, data = d, index = c("id", "t"), nstart = 2, seed = 1))
 #>     seed = 1)
 #> 
 #> Model: 2-class latent class Poisson model 
-#> N = 450  groups = 150  vcov: classical 
+#> n = 450  groups = 150  vcov: classical 
 #> 
 #> Class 1 (prior 0.621, 94 individuals by modal posterior, mean outcome 0.9923):
 #>             Estimate Std. Error z value Pr(>|z|)    

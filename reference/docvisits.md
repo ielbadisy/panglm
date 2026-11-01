@@ -176,7 +176,8 @@ consecutive years, so dynamic examples restrict the data to 1984 to
 - Do covariates act on the decision to see a doctor or on how often one
   goes? Fixed-effects hurdle count model
   `panhurdle(docvis ~ ..., family = "poisson")` (time-varying regressors
-  only; use a subset of persons, it is slow on the full panel).
+  only: time-invariant ones such as `female` are dropped with a
+  warning).
 
 - Are there latent "low user" and "high user" classes, as in Deb and
   Trivedi? Finite mixture
@@ -269,7 +270,7 @@ summary(fe)
 #>     addon, data = docvisits, index = idx, model = "within", family = "poisson")
 #> 
 #> Family: poisson  Link: log  Model: within  Effect: individual 
-#> N = 27326  groups = 7293  vcov: classical 
+#> n = 27326  groups = 7293  vcov: classical 
 #> 
 #> Coefficients:
 #>          Estimate Std. Error z value Pr(>|z|)    
@@ -290,7 +291,7 @@ panhausman(fe, re)
 #> 
 #>  Hausman specification test (fixed vs. random effects)
 #> 
-#> chisq = 131.3 , df = 6 , p-value = < 2.2e-16 
+#> chisq = 131.3, df = 6, p-value = < 2.2e-16
 #> alternative hypothesis: one model is inconsistent
 #> 
 
@@ -307,7 +308,7 @@ summary(fo)
 #>     family = "ologit")
 #> 
 #> Family: ordered  Link: logit  Model: within  Effect: individual 
-#> N = 27326  groups = 7293  vcov: cluster 
+#> n = 27326  groups = 7293  vcov: cluster 
 #> 
 #> Coefficients:
 #>           Estimate Std. Error z value Pr(>|z|)    
@@ -346,7 +347,7 @@ summary(dr)
 #>     dynamic = TRUE, R = 8)
 #> 
 #> Family: binomial  Link: probit  Model: random  Effect: individual 
-#> N = 11862  groups = 4578  vcov: classical 
+#> n = 11862  groups = 4578  vcov: classical 
 #> 
 #> Coefficients:
 #>                Estimate Std. Error z value Pr(>|z|)    
@@ -370,7 +371,7 @@ summary(dr)
 #> Dispersion parameter: 1 
 #> Random-intercept SD: 0.6453 
 #> Mundlak test (individual means jointly zero): chi2(5) = 12.73, p = 0.026
-#> Residual df: 11848  Iterations: 95
+#> Residual df: 11848  Iterations: 8
 #> 
 
 # Latent "low user" / "high user" classes (Deb-Trivedi style),
@@ -387,7 +388,7 @@ summary(lc)
 #>     nstart = 3, seed = 1)
 #> 
 #> Model: 2-class latent class NB2 model 
-#> N = 9422  groups = 3058  vcov: classical 
+#> n = 9422  groups = 3058  vcov: classical 
 #> 
 #> Class 1 (prior 0.616, 2005 individuals by modal posterior, mean outcome 1.589):
 #>              Estimate Std. Error z value Pr(>|z|)    
@@ -440,7 +441,7 @@ summary(ht)
 #>     age + working + female, data = docvisits, index = idx, model = "hausmantaylor")
 #> 
 #> Estimator: Hausman-Taylor 
-#> N = 27326  groups = 7293  vcov: classical 
+#> n = 27326  groups = 7293  vcov: classical 
 #> Exogenous time-varying:   age, working 
 #> Endogenous time-varying:  hhninc 
 #> Exogenous time-invariant: female 

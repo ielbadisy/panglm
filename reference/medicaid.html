@@ -314,14 +314,16 @@ treatment timing. <em>Journal of Econometrics</em>, 225(2), 254-277.
 <span class="r-in"><span>            control <span class="op">=</span> <span class="st">"never"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">cs</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Callaway and Sant'Anna group-time ATT, aggregated overall (simple weighted average)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Callaway and Sant'Anna group-time ATT</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Aggregation: overall (simple weighted average)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Control group: never treated  Estimator: unconditional  Individuals: 51 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ATT: -6.54 (SE 1.295, 95% CI -9.078 to -4.002)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">cs</span>, type <span class="op">=</span> <span class="st">"dynamic"</span><span class="op">)</span>   <span class="co"># leads test pre-trends, lags the build-up</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Callaway and Sant'Anna group-time ATT, aggregated event study (by time since treatment)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Callaway and Sant'Anna group-time ATT</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Aggregation: event study (by time since treatment)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Control group: never treated  Estimator: unconditional  Individuals: 51 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ATT (mean of e &gt;= 0): -6.562 (SE 1.317, 95% CI -9.143 to -3.98)</span>
@@ -350,7 +352,8 @@ treatment timing. <em>Journal of Econometrics</em>, 225(2), 254-277.
 <span class="r-in"><span>             control <span class="op">=</span> <span class="st">"notyet"</span>, weights <span class="op">=</span> <span class="st">"povbase"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">cs2</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Callaway and Sant'Anna group-time ATT, aggregated overall (simple weighted average)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Callaway and Sant'Anna group-time ATT</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Aggregation: overall (simple weighted average)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Control group: not yet treated  Estimator: unconditional  Individuals: 51 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ATT: -7.018 (SE 1.428, 95% CI -9.815 to -4.22)</span>
@@ -377,7 +380,7 @@ treatment timing. <em>Journal of Econometrics</em>, 225(2), 254-277.
 <span class="r-in"><span>           leads <span class="op">=</span> <span class="fl">4</span>, lags <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Event study (two-way fixed effects, gaussian)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> N = 561  groups = 51  vcov: cluster </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> n = 561  groups = 51  vcov: cluster </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Reference event time: -1 (end points binned) </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  event estimate     se    lower  upper</span>
@@ -398,7 +401,8 @@ treatment timing. <em>Journal of Econometrics</em>, 225(2), 254-277.
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu"><a href="attgt.html">attgt</a></span><span class="op">(</span><span class="va">medicaidpov</span> <span class="op">~</span> <span class="fl">1</span>, data <span class="op">=</span> <span class="va">medicaid</span>, index <span class="op">=</span> <span class="va">ix</span>,</span></span>
 <span class="r-in"><span>              treat <span class="op">=</span> <span class="st">"adopt"</span>, control <span class="op">=</span> <span class="st">"never"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Callaway and Sant'Anna group-time ATT, aggregated overall (simple weighted average)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Callaway and Sant'Anna group-time ATT</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Aggregation: overall (simple weighted average)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Control group: never treated  Estimator: unconditional  Individuals: 51 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ATT: 10.24 (SE 1.406, 95% CI 7.48 to 12.99)</span>
@@ -425,7 +429,8 @@ treatment timing. <em>Journal of Econometrics</em>, 225(2), 254-277.
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu"><a href="attgt.html">attgt</a></span><span class="op">(</span><span class="va">uninspov</span> <span class="op">~</span> <span class="fl">1</span>, data <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">medicaid</span>, <span class="va">prior</span> <span class="op">==</span> <span class="st">"none"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>              index <span class="op">=</span> <span class="va">ix</span>, treat <span class="op">=</span> <span class="st">"adopt"</span>, control <span class="op">=</span> <span class="st">"never"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Callaway and Sant'Anna group-time ATT, aggregated overall (simple weighted average)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Callaway and Sant'Anna group-time ATT</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Aggregation: overall (simple weighted average)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Control group: never treated  Estimator: unconditional  Individuals: 41 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ATT: -8.878 (SE 1.255, 95% CI -11.34 to -6.418)</span>

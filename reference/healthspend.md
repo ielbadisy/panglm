@@ -207,14 +207,14 @@ panhausman(fe, re)
 #> 
 #>  Hausman specification test (fixed vs. random effects)
 #> 
-#> chisq = 3.735 , df = 1 , p-value = 0.05329 
+#> chisq = 3.735, df = 1, p-value = 0.05329
 #> alternative hypothesis: one model is inconsistent
 #> 
 panhausman(fe, method = "mundlak", data = hs)
 #> 
-#>  Mundlak specification test (fixed vs. random effects), vcov: cluster 
+#>  Mundlak specification test (fixed vs. random effects), vcov: cluster
 #> 
-#> F = 1.463 , df = 1, 185 , p-value = 0.228 
+#> F = 1.463, df = 1, 185, p-value = 0.228
 #> alternative hypothesis: one model is inconsistent
 #> 
 
@@ -230,7 +230,8 @@ summary(gs)
 #>     model = "twostep", collapse = TRUE)
 #> 
 #> Estimator: two-way two-step system GMM (Blundell-Bond) 
-#> N = 193  T = 23  equations used = 7886  instruments = 66  vcov: robust (Windmeijer) 
+#> n = 7886  groups = 193  T = 23  instruments = 66 
+#> vcov: robust (Windmeijer) 
 #> 
 #> Coefficients:
 #>              Estimate Std. Error z value Pr(>|z|)    
@@ -300,7 +301,7 @@ summary(br)
 #>     R = 7)
 #> 
 #> Family: beta  Link: logit  Model: random  Effect: individual 
-#> N = 916  groups = 186  vcov: cluster 
+#> n = 916  groups = 186  vcov: cluster 
 #> 
 #> Coefficients:
 #>             Estimate Std. Error z value Pr(>|z|)    
@@ -330,7 +331,7 @@ summary(rs)
 #>     random = ~lgdpc, R = 7)
 #> 
 #> Family: gaussian  Link: identity  Model: random  Effect: individual 
-#> N = 4222  groups = 186  vcov: classical 
+#> n = 4222  groups = 186  vcov: classical 
 #> 
 #> Coefficients:
 #>             Estimate Std. Error z value Pr(>|z|)    

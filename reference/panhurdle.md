@@ -84,7 +84,28 @@ single surviving observation) contribute no information about the shared
 count-part slope, the same profiling fact that applies to the other
 fixed-effects estimators in this package; they are not dropped
 explicitly since a perfectly-fit singleton doesn't diverge, it simply
-carries zero weight.
+carries zero weight. Groups whose positive counts are all equal to 1 are
+dropped from the count part with a message: their intercept has no
+finite estimate (the truncated likelihood approaches its maximum as the
+group mean goes to 0, whatever the slopes), so they carry no information
+either.
+
+Both parts remove one effect per individual, so regressors that do not
+vary within individuals (sex, baseline covariates) are not identified:
+they are dropped with a warning, as in `panglm(model = "within")`. A
+regressor that varies only in individuals a part does not use (for
+example individuals with a single positive count, for the count part) is
+dropped from that part alone, with a warning.
+
+The count part is fit by Newton-Raphson with the analytic gradient and
+Hessian of the joint likelihood. The group intercepts enter through a
+diagonal Hessian block that is eliminated at each step, so the cost is
+linear in the number of groups and the intercepts are never stored as
+dummy columns. Standard errors are the slope block of the inverse
+observed information of the joint likelihood (slopes, intercepts and,
+for NB2, `log(theta)`). When the NB2 shape parameter runs off to
+infinity (no overdispersion), it is stopped at `1e8` with a warning and
+the fit equals the zero-truncated Poisson one.
 
 ## Validation
 
@@ -118,6 +139,7 @@ Other panel models:
 data(copd)
 fit <- panhurdle(exacerbations ~ crp, data = copd, index = c("id", "visit"))
 #> 26 group(s) with no within-group outcome variation dropped (all-0 or all-1) -- they carry no information for the conditional likelihood.
+#> 6 group(s) whose positive counts are all 1 dropped from the count part -- their intercept is not finite and they carry no information.
 fit
 #> Fixed-effects hurdle model (zero part: conditional logit; count part: zero-truncated Poisson)
 #> 
@@ -129,5 +151,5 @@ fit
 #>     crp 
 #> 0.04246 
 #> 
-#> N = 300  positive = 238 
+#> n = 300  positive = 238 
 ```

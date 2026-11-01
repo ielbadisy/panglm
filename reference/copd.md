@@ -245,7 +245,7 @@ summary(tp)
 #>         hospitalized + smoker + treatment + crp, positive = "lognormal")
 #> 
 #> Estimator: two-part model (pooling)
-#> N = 300  groups = 60  positive = 214  vcov: classical 
+#> n = 300  groups = 60  positive = 214  vcov: classical 
 #> 
 #> Part 1: P(y > 0), binomial probit 
 #>               Estimate Std. Error z value Pr(>|z|)    
@@ -284,7 +284,8 @@ att <- attgt(cost ~ 1, data = copd, index = c("id", "visit"),
              treat = "adopt", control = "notyet")
 summary(att)
 #> 
-#> Callaway and Sant'Anna group-time ATT, aggregated overall (simple weighted average)
+#> Callaway and Sant'Anna group-time ATT
+#> Aggregation: overall (simple weighted average)
 #> Control group: not yet treated  Estimator: unconditional  Individuals: 60 
 #> 
 #> ATT: -184 (SE 199.1, 95% CI -574.2 to 206.2)

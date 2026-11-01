@@ -69,6 +69,7 @@ data(copd)
 fit <- panhurdle(exacerbations ~ crp, data = copd,
                      index = c("id", "visit"))
 #> 26 group(s) with no within-group outcome variation dropped (all-0 or all-1) -- they carry no information for the conditional likelihood.
+#> 6 group(s) whose positive counts are all 1 dropped from the count part -- their intercept is not finite and they carry no information.
 plot(fit)
 
 plot(fit, which = "correlation")

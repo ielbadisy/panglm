@@ -228,7 +228,6 @@ Econometrica, 49(6), 1417-1426.</p>
 <span class="r-in"><span>              data <span class="op">=</span> <span class="va">cigar</span>, index <span class="op">=</span> <span class="va">ix</span>, transformation <span class="op">=</span> <span class="st">"d"</span>,</span></span>
 <span class="r-in"><span>              model <span class="op">=</span> <span class="st">"onestep"</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>437 instruments for 46 individuals: too many instruments bias GMM toward OLS and weaken the Hansen test; use collapse = TRUE or a smaller maxlag</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>the second-step weighting matrix is singular; a generalized inverse is used</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span>OLS <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">ols</span><span class="op">)</span><span class="op">[</span><span class="op">-</span><span class="fl">1</span><span class="op">]</span>, Within <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fe</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>            <span class="st">"GMM one-step"</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">ab1</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">4</span><span class="op">]</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>              lag(lnc, 1)    lnp   lnpn    lny</span>
@@ -256,7 +255,8 @@ Econometrica, 49(6), 1417-1426.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     collapse = TRUE, maxlag = 6)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Estimator: two-way two-step system GMM (Blundell-Bond) </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> N = 46  T = 30  equations used = 2622  instruments = 41  vcov: robust (Windmeijer) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> n = 2622  groups = 46  T = 30  instruments = 41 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> vcov: robust (Windmeijer) </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             Estimate Std. Error z value Pr(&gt;|z|)    </span>
@@ -280,9 +280,9 @@ Econometrica, 49(6), 1417-1426.</p>
 <span class="r-in"><span>              model <span class="op">=</span> <span class="st">"within"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="panhausman.html">panhausman</a></span><span class="op">(</span><span class="va">sfe</span>, method <span class="op">=</span> <span class="st">"mundlak"</span>, data <span class="op">=</span> <span class="va">cigar</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 	Mundlak specification test (fixed vs. random effects), vcov: cluster </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 	Mundlak specification test (fixed vs. random effects), vcov: cluster</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> F = 7.172 , df = 3, 45 , p-value = 0.0004902 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F = 7.172, df = 3, 45, p-value = 0.0004902</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> alternative hypothesis: one model is inconsistent</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 </code></pre></div>

@@ -102,7 +102,8 @@ d$y <- rnorm(150)[d$id] + 0.2 * d$t +
 fit <- attgt(y ~ 1, d, index = c("id", "t"), treat = "first")
 summary(fit, type = "dynamic")
 #> 
-#> Callaway and Sant'Anna group-time ATT, aggregated event study (by time since treatment)
+#> Callaway and Sant'Anna group-time ATT
+#> Aggregation: event study (by time since treatment)
 #> Control group: never treated  Estimator: unconditional  Individuals: 150 
 #> 
 #> ATT (mean of e >= 0): 1.176 (SE 0.163, 95% CI 0.8569 to 1.496)
@@ -122,7 +123,8 @@ summary(fit, type = "dynamic")
 #> 
 summary(fit, type = "calendar")
 #> 
-#> Callaway and Sant'Anna group-time ATT, aggregated by calendar period
+#> Callaway and Sant'Anna group-time ATT
+#> Aggregation: by calendar period
 #> Control group: never treated  Estimator: unconditional  Individuals: 150 
 #> 
 #> ATT (mean over periods): 1.141 (SE 0.1613, 95% CI 0.825 to 1.457)

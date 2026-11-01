@@ -304,11 +304,13 @@ fit
 #>   2020 2021     1  1.97049 0.2993  1.3839 2.5570
 #> 
 #> Pre-trend test: Chi-squared = 17.36, df = 15, p-value = 0.2978
-#> Use summary(x, type = ...) for the simple, dynamic, group or calendar aggregation.
+#> summary(x, type = ...) gives the simple, dynamic, group or calendar
+#> aggregation.
 #> 
 summary(fit)                     # overall ATT
 #> 
-#> Callaway and Sant'Anna group-time ATT, aggregated overall (simple weighted average)
+#> Callaway and Sant'Anna group-time ATT
+#> Aggregation: overall (simple weighted average)
 #> Control group: never treated  Estimator: unconditional  Individuals: 120 
 #> 
 #> ATT: 2.853 (SE 0.2018, 95% CI 2.458 to 3.248)
@@ -317,7 +319,8 @@ summary(fit)                     # overall ATT
 #> 
 summary(fit, type = "dynamic")   # event study
 #> 
-#> Callaway and Sant'Anna group-time ATT, aggregated event study (by time since treatment)
+#> Callaway and Sant'Anna group-time ATT
+#> Aggregation: event study (by time since treatment)
 #> Control group: never treated  Estimator: unconditional  Individuals: 120 
 #> 
 #> ATT (mean of e >= 0): 3.188 (SE 0.2282, 95% CI 2.741 to 3.635)
@@ -341,7 +344,8 @@ summary(fit, type = "dynamic")   # event study
 #> 
 summary(fit, type = "group")
 #> 
-#> Callaway and Sant'Anna group-time ATT, aggregated by treatment cohort
+#> Callaway and Sant'Anna group-time ATT
+#> Aggregation: by treatment cohort
 #> Control group: never treated  Estimator: unconditional  Individuals: 120 
 #> 
 #> ATT (cohort-size weighted): 2.664 (SE 0.1918, 95% CI 2.288 to 3.039)
@@ -360,7 +364,8 @@ fitx <- attgt(visits ~ urban, data = d, index = c("province", "year"),
               treat = "adoption", control = "notyet", method = "dr")
 summary(fitx, type = "dynamic")
 #> 
-#> Callaway and Sant'Anna group-time ATT, aggregated event study (by time since treatment)
+#> Callaway and Sant'Anna group-time ATT
+#> Aggregation: event study (by time since treatment)
 #> Control group: not yet treated  Estimator: DR  Individuals: 120 
 #> 
 #> ATT (mean of e >= 0): 3.226 (SE 0.1746, 95% CI 2.884 to 3.569)

@@ -228,7 +228,7 @@ summary(fe2sls)
 #>     index = c("id", "wave"), model = "within", vcov = "cluster")
 #> 
 #> Estimator: fixed-effects 2SLS 
-#> N = 2000  groups = 500  vcov: cluster 
+#> n = 2000  groups = 500  vcov: cluster 
 #> Endogenous: insured 
 #> Excluded instruments: offer 
 #> 
@@ -260,7 +260,7 @@ summary(ht)
 #>     female, data = d, index = c("id", "wave"), model = "hausmantaylor")
 #> 
 #> Estimator: Hausman-Taylor 
-#> N = 2000  groups = 500  vcov: classical 
+#> n = 2000  groups = 500  vcov: classical 
 #> Exogenous time-varying:   offer 
 #> Endogenous time-varying:  income 
 #> Exogenous time-invariant: female 

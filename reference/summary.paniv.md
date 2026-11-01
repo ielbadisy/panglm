@@ -47,7 +47,7 @@ summary(paniv(y ~ x | z, data = d, index = c("id", "t"), model = "within"))
 #> paniv(formula = y ~ x | z, data = d, index = c("id", "t"), model = "within")
 #> 
 #> Estimator: fixed-effects 2SLS 
-#> N = 200  groups = 50  vcov: classical 
+#> n = 200  groups = 50  vcov: classical 
 #> Endogenous: x 
 #> Excluded instruments: z 
 #> 

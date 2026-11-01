@@ -90,7 +90,7 @@ es <- eventstudy(visits ~ 1, data = d, index = c("id", "year"),
 es
 #> 
 #> Event study (two-way fixed effects, gaussian)
-#> N = 1600  groups = 200  vcov: cluster 
+#> n = 1600  groups = 200  vcov: cluster 
 #> Reference event time: -1 (end points binned) 
 #> 
 #>  event   estimate     se   lower  upper
@@ -179,7 +179,8 @@ head(cs$estimates)
 #> 6  2016 2018     2  3.8892271 0.4413501  3.0241968 4.7542574  TRUE
 summary(cs)
 #> 
-#> Callaway and Sant'Anna group-time ATT, aggregated overall (simple weighted average)
+#> Callaway and Sant'Anna group-time ATT
+#> Aggregation: overall (simple weighted average)
 #> Control group: never treated  Estimator: unconditional  Individuals: 120 
 #> 
 #> ATT: 3.541 (SE 0.217, 95% CI 3.116 to 3.967)
@@ -198,7 +199,8 @@ year).
 
 summary(cs, type = "dynamic")
 #> 
-#> Callaway and Sant'Anna group-time ATT, aggregated event study (by time since treatment)
+#> Callaway and Sant'Anna group-time ATT
+#> Aggregation: event study (by time since treatment)
 #> Control group: never treated  Estimator: unconditional  Individuals: 120 
 #> 
 #> ATT (mean of e >= 0): 4.132 (SE 0.2421, 95% CI 3.658 to 4.607)
@@ -244,7 +246,8 @@ csb <- attgt(visits ~ urban, data = s, index = c("province", "year"),
              cluster = "region", cband = TRUE, biters = 199, seed = 1)
 summary(csb, type = "dynamic", min_e = -3)
 #> 
-#> Callaway and Sant'Anna group-time ATT, aggregated event study (by time since treatment)
+#> Callaway and Sant'Anna group-time ATT
+#> Aggregation: event study (by time since treatment)
 #> Control group: not yet treated  Estimator: DR  Individuals: 120 
 #> 
 #> Bootstrap standard errors (rademacher, 199 draws); uniform bands with critical value 2.465

@@ -210,8 +210,8 @@ summary(fit)
 #>     boot = 49, seed = 2)
 #> 
 #> Wooldridge (1995) panel selection correction: fixed effects with Mundlak means, inverse Mills ratio by period 
-#> Selection sample: N = 1200  groups = 300 
-#> Outcome sample:   N = 710  groups = 286 
+#> Selection sample: n = 1200  groups = 300 
+#> Outcome sample:   n = 710  groups = 286 
 #> Probits fitted for periods: 1, 2, 3, 4 
 #> 
 #> Outcome equation (vcov: panel bootstrap, 49 replicates):

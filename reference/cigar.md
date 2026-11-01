@@ -179,7 +179,6 @@ ab1 <- pangmm(lnc ~ lag(lnc, 1) + lnp + lnpn + lny | lag(lnc, 2:99),
               data = cigar, index = ix, transformation = "d",
               model = "onestep")
 #> Warning: 437 instruments for 46 individuals: too many instruments bias GMM toward OLS and weaken the Hansen test; use collapse = TRUE or a smaller maxlag
-#> Warning: the second-step weighting matrix is singular; a generalized inverse is used
 round(rbind(OLS = coef(ols)[-1], Within = coef(fe),
             "GMM one-step" = coef(ab1)[1:4]), 3)
 #>              lag(lnc, 1)    lnp   lnpn    lny
@@ -207,7 +206,8 @@ summary(sys)
 #>     collapse = TRUE, maxlag = 6)
 #> 
 #> Estimator: two-way two-step system GMM (Blundell-Bond) 
-#> N = 46  T = 30  equations used = 2622  instruments = 41  vcov: robust (Windmeijer) 
+#> n = 2622  groups = 46  T = 30  instruments = 41 
+#> vcov: robust (Windmeijer) 
 #> 
 #> Coefficients:
 #>             Estimate Std. Error z value Pr(>|z|)    
@@ -231,9 +231,9 @@ sfe <- panglm(lnc ~ lnp + lnpn + lny, data = cigar, index = ix,
               model = "within")
 panhausman(sfe, method = "mundlak", data = cigar)
 #> 
-#>  Mundlak specification test (fixed vs. random effects), vcov: cluster 
+#>  Mundlak specification test (fixed vs. random effects), vcov: cluster
 #> 
-#> F = 7.172 , df = 3, 45 , p-value = 0.0004902 
+#> F = 7.172, df = 3, 45, p-value = 0.0004902
 #> alternative hypothesis: one model is inconsistent
 #> 
 ```

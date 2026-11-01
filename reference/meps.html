@@ -366,7 +366,7 @@ comparison of alternative models for the demand for medical care.
 <span class="r-out co"><span class="r-pr">#&gt;</span>     povcat, data = meps, index = c("id", "year"), positive = "gamma")</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Estimator: two-part model (pooling)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> N = 6000  groups = 3000  positive = 5151  vcov: classical </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> n = 6000  groups = 3000  positive = 5151  vcov: classical </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Part 1: P(y &gt; 0), binomial probit </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                     Estimate Std. Error z value Pr(&gt;|z|)    </span>
@@ -423,7 +423,7 @@ comparison of alternative models for the demand for medical care.
 <span class="r-out co"><span class="r-pr">#&gt;</span>     "year"), model = "within", family = "gamma")</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Family: gamma  Link: log  Model: within  Effect: individual </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> N = 5151  groups = 2757  vcov: classical </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> n = 5151  groups = 2757  vcov: classical </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                    Estimate Std. Error z value Pr(&gt;|z|)  </span>
@@ -452,7 +452,7 @@ comparison of alternative models for the demand for medical care.
 <span class="r-out co"><span class="r-pr">#&gt;</span>     data = meps, index = c("id", "year"), model = "random", family = "negbin")</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Family: negbin  Link: log  Model: random  Effect: individual </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> N = 6000  groups = 3000  vcov: classical </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> n = 6000  groups = 3000  vcov: classical </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                    Estimate Std. Error z value Pr(&gt;|z|)    </span>
@@ -483,7 +483,7 @@ comparison of alternative models for the demand for medical care.
 <span class="r-out co"><span class="r-pr">#&gt;</span>     cre = TRUE)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Family: binomial  Link: probit  Model: random  Effect: individual </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> N = 6000  groups = 3000  vcov: classical </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> n = 6000  groups = 3000  vcov: classical </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                         Estimate Std. Error z value Pr(&gt;|z|)    </span>
@@ -509,7 +509,7 @@ comparison of alternative models for the demand for medical care.
 <span class="r-out co"><span class="r-pr">#&gt;</span> Dispersion parameter: 1 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Random-intercept SD: 1.275 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Mundlak test (individual means jointly zero): chi2(6) = 21.37, p = 0.001572</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Residual df: 5984  Iterations: 98</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Residual df: 5984  Iterations: 6</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># censored log spending: tobit</span></span></span>
@@ -523,7 +523,7 @@ comparison of alternative models for the demand for medical care.
 <span class="r-out co"><span class="r-pr">#&gt;</span>     family = "tobit")</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Family: tobit  Link: identity  Model: pooling  Effect: individual </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> N = 6000  groups = 3000  vcov: classical </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> n = 6000  groups = 3000  vcov: classical </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                    Estimate Std. Error z value Pr(&gt;|z|)    </span>
@@ -538,7 +538,7 @@ comparison of alternative models for the demand for medical care.
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: -14031 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Dispersion parameter: 9.096 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Residual df: 5993  Iterations: 87</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Residual df: 5993  Iterations: 114</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># quantiles of log spending with individual effects (the many tied</span></span></span>
@@ -555,7 +555,7 @@ comparison of alternative models for the demand for medical care.
 <span class="r-out co"><span class="r-pr">#&gt;</span>     boot = 50, seed = 1)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Estimator: Canay (2011) two-step fixed-effects quantile regression </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> N = 6000  groups = 3000  vcov: bootstrap (cluster, boot = 50) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> n = 6000  groups = 3000  vcov: bootstrap (cluster, boot = 50) </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Quantile tau = 0.25:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                      Estimate Std. Error z value Pr(&gt;|z|)    </span>
@@ -597,8 +597,8 @@ comparison of alternative models for the demand for medical care.
 <span class="r-out co"><span class="r-pr">#&gt;</span>     boot = 49, seed = 1)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Wooldridge (1995) panel selection correction: fixed effects with Mundlak means, inverse Mills ratio by period </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Selection sample: N = 6000  groups = 3000 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Outcome sample:   N = 5151  groups = 2757 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Selection sample: n = 6000  groups = 3000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Outcome sample:   n = 5151  groups = 2757 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Probits fitted for periods: 2018, 2019 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Outcome equation (vcov: panel bootstrap, 49 replicates):</span>
@@ -626,7 +626,7 @@ comparison of alternative models for the demand for medical care.
 <span class="r-out co"><span class="r-pr">#&gt;</span>     index = c("id", "year"), model = "random", family = "oprobit")</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Family: ordered  Link: probit  Model: random  Effect: individual </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> N = 5996  groups = 3000  vcov: classical </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> n = 5996  groups = 3000  vcov: classical </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                    Estimate Std. Error z value Pr(&gt;|z|)    </span>

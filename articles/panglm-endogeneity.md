@@ -68,7 +68,7 @@ summary(fe2sls)
 #>     index = c("id", "wave"), model = "within", vcov = "cluster")
 #> 
 #> Estimator: fixed-effects 2SLS 
-#> N = 1200  groups = 300  vcov: cluster 
+#> n = 1200  groups = 300  vcov: cluster 
 #> Endogenous: insured 
 #> Excluded instruments: offer 
 #> 
@@ -125,7 +125,7 @@ summary(ht)
 #>     female, data = d, index = c("id", "wave"), model = "hausmantaylor")
 #> 
 #> Estimator: Hausman-Taylor 
-#> N = 1200  groups = 300  vcov: classical 
+#> n = 1200  groups = 300  vcov: classical 
 #> Exogenous time-varying:   offer 
 #> Endogenous time-varying:  income 
 #> Exogenous time-invariant: female 
@@ -204,7 +204,8 @@ summary(ab)
 #>     data = g, index = c("id", "wave"), model = "twostep")
 #> 
 #> Estimator: two-way two-step difference GMM (Arellano-Bond) 
-#> N = 300  T = 7  equations used = 1500  instruments = 21  vcov: robust (Windmeijer) 
+#> n = 1500  groups = 300  T = 7  instruments = 21 
+#> vcov: robust (Windmeijer) 
 #> 
 #> Coefficients:
 #>              Estimate Std. Error z value Pr(>|z|)    
@@ -229,7 +230,8 @@ summary(bb)
 #>     model = "twostep", collapse = TRUE, maxlag = 4)
 #> 
 #> Estimator: two-way two-step system GMM (Blundell-Bond) 
-#> N = 300  T = 7  equations used = 3300  instruments = 12  vcov: robust (Windmeijer) 
+#> n = 3300  groups = 300  T = 7  instruments = 12 
+#> vcov: robust (Windmeijer) 
 #> 
 #> Coefficients:
 #>              Estimate Std. Error z value Pr(>|z|)    
@@ -340,8 +342,8 @@ summary(sel)
 #>     boot = 49, seed = 2)
 #> 
 #> Wooldridge (1995) panel selection correction: fixed effects with Mundlak means, inverse Mills ratio by period 
-#> Selection sample: N = 1200  groups = 300 
-#> Outcome sample:   N = 710  groups = 286 
+#> Selection sample: n = 1200  groups = 300 
+#> Outcome sample:   n = 710  groups = 286 
 #> Probits fitted for periods: 1, 2, 3, 4 
 #> 
 #> Outcome equation (vcov: panel bootstrap, 49 replicates):

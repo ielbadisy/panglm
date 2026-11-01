@@ -47,7 +47,8 @@ att <- attgt(cost ~ 1, data = copd, index = idx, treat = "adopt",
              control = "notyet")
 summary(att)
 #> 
-#> Callaway and Sant'Anna group-time ATT, aggregated overall (simple weighted average)
+#> Callaway and Sant'Anna group-time ATT
+#> Aggregation: overall (simple weighted average)
 #> Control group: not yet treated  Estimator: unconditional  Individuals: 60 
 #> 
 #> ATT: -184 (SE 199.1, 95% CI -574.2 to 206.2)
@@ -168,7 +169,8 @@ cs <- attgt(uninspov ~ 1, data = medicaid, index = ix, treat = "adopt",
             control = "never")
 summary(cs, type = "dynamic")
 #> 
-#> Callaway and Sant'Anna group-time ATT, aggregated event study (by time since treatment)
+#> Callaway and Sant'Anna group-time ATT
+#> Aggregation: event study (by time since treatment)
 #> Control group: never treated  Estimator: unconditional  Individuals: 51 
 #> 
 #> ATT (mean of e >= 0): -6.562 (SE 1.317, 95% CI -9.143 to -3.98)
@@ -234,9 +236,9 @@ cbind(within = coef(fe), random = coef(re)[-1], twoways = coef(fe2))
 #> lgdp 1.14926 1.135463 0.8396004
 panhausman(fe, method = "mundlak", data = hs)
 #> 
-#>  Mundlak specification test (fixed vs. random effects), vcov: cluster 
+#>  Mundlak specification test (fixed vs. random effects), vcov: cluster
 #> 
-#> F = 1.463 , df = 1, 185 , p-value = 0.228 
+#> F = 1.463, df = 1, 185, p-value = 0.228
 #> alternative hypothesis: one model is inconsistent
 ```
 
@@ -264,8 +266,6 @@ ab <- pangmm(lnc ~ lag(lnc, 1) + lnp + lnpn + lny | lag(lnc, 2:99),
              data = cigar, index = ix, transformation = "d", model = "onestep")
 #> Warning: 437 instruments for 46 individuals: too many instruments bias GMM
 #> toward OLS and weaken the Hansen test; use collapse = TRUE or a smaller maxlag
-#> Warning: the second-step weighting matrix is singular; a generalized inverse is
-#> used
 tab <- rbind(OLS = coef(ols)[-1], Within = coef(fe), GMM = coef(ab)[1:4])
 round(tab, 3)
 #>        lag(lnc, 1)    lnp   lnpn    lny

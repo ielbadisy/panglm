@@ -248,7 +248,11 @@ freedom (<code>L</code> instruments, <code>k</code> coefficients); <code><a href
 the Hansen statistic by default and <code>N s2</code> times the Sargan statistic
 with <code>weights = "onestep"</code>. Many instruments weaken the
 Hansen test (Roodman 2009); collapsing or limiting the lag depth keeps
-the instrument count well below the number of individuals.</p>
+the instrument count well below the number of individuals. When the
+second-step matrix <code>S2</code> is singular (more instruments than individuals)
+a generalized inverse is used, as in <code><a href="https://rdrr.io/pkg/plm/man/pgmm.html" class="external-link">plm::pgmm()</a></code>; a two-step fit warns
+because its estimates depend on it, a one-step fit does not because only
+its Hansen statistic does.</p>
     </div>
     <div class="section level2">
     <h2 id="finite-sample-bias">Finite-sample bias<a class="anchor" aria-label="anchor" href="#finite-sample-bias"></a></h2>
@@ -348,7 +352,8 @@ fitted model, <a href="tidy-methods.html">tidy-methods</a> for <code>tidy()</cod
 <span class="r-out co"><span class="r-pr">#&gt;</span>     data = d, index = c("id", "wave"), model = "twostep")</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Estimator: two-way two-step difference GMM (Arellano-Bond) </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> N = 300  T = 7  equations used = 1500  instruments = 21  vcov: robust (Windmeijer) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> n = 1500  groups = 300  T = 7  instruments = 21 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> vcov: robust (Windmeijer) </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>              Estimate Std. Error z value Pr(&gt;|z|)    </span>
@@ -377,7 +382,8 @@ fitted model, <a href="tidy-methods.html">tidy-methods</a> for <code>tidy()</cod
 <span class="r-out co"><span class="r-pr">#&gt;</span>     model = "twostep", collapse = TRUE, maxlag = 4)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Estimator: two-way two-step system GMM (Blundell-Bond) </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> N = 300  T = 7  equations used = 3300  instruments = 12  vcov: robust (Windmeijer) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> n = 3300  groups = 300  T = 7  instruments = 12 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> vcov: robust (Windmeijer) </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>              Estimate Std. Error z value Pr(&gt;|z|)    </span>
@@ -408,7 +414,8 @@ fitted model, <a href="tidy-methods.html">tidy-methods</a> for <code>tidy()</cod
 <span class="r-out co"><span class="r-pr">#&gt;</span>     2:99), data = EmplUK, index = c("firm", "year"), model = "twostep")</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Estimator: two-way two-step difference GMM (Arellano-Bond) </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> N = 140  T = 9  equations used = 611  instruments = 38  vcov: robust (Windmeijer) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> n = 611  groups = 140  T = 9  instruments = 38 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> vcov: robust (Windmeijer) </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                     Estimate Std. Error z value Pr(&gt;|z|)    </span>

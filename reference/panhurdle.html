@@ -139,7 +139,26 @@ single surviving observation) contribute no information about the shared
 count-part slope, the same profiling fact that applies to the other
 fixed-effects estimators in this package; they are not dropped
 explicitly since a perfectly-fit singleton doesn't diverge, it simply
-carries zero weight.</p>
+carries zero weight. Groups whose positive counts are all equal to 1 are
+dropped from the count part with a message: their intercept has no
+finite estimate (the truncated likelihood approaches its maximum as the
+group mean goes to 0, whatever the slopes), so they carry no
+information either.</p>
+<p>Both parts remove one effect per individual, so regressors that do not
+vary within individuals (sex, baseline covariates) are not identified:
+they are dropped with a warning, as in <code>panglm(model = "within")</code>. A
+regressor that varies only in individuals a part does not use (for
+example individuals with a single positive count, for the count part) is
+dropped from that part alone, with a warning.</p>
+<p>The count part is fit by Newton-Raphson with the analytic gradient and
+Hessian of the joint likelihood. The group intercepts enter through a
+diagonal Hessian block that is eliminated at each step, so the cost is
+linear in the number of groups and the intercepts are never stored as
+dummy columns. Standard errors are the slope block of the inverse
+observed information of the joint likelihood (slopes, intercepts and,
+for NB2, <code>log(theta)</code>). When the NB2 shape parameter runs off to
+infinity (no overdispersion), it is stopped at <code>1e8</code> with a warning and
+the fit equals the zero-truncated Poisson one.</p>
     </div>
     <div class="section level2">
     <h2 id="validation">Validation<a class="anchor" aria-label="anchor" href="#validation"></a></h2>
@@ -169,6 +188,7 @@ costs.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">copd</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu">panhurdle</span><span class="op">(</span><span class="va">exacerbations</span> <span class="op">~</span> <span class="va">crp</span>, data <span class="op">=</span> <span class="va">copd</span>, index <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"visit"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> 26 group(s) with no within-group outcome variation dropped (all-0 or all-1) -- they carry no information for the conditional likelihood.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 6 group(s) whose positive counts are all 1 dropped from the count part -- their intercept is not finite and they carry no information.</span>
 <span class="r-in"><span><span class="va">fit</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Fixed-effects hurdle model (zero part: conditional logit; count part: zero-truncated Poisson)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
@@ -180,7 +200,7 @@ costs.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     crp </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 0.04246 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> N = 300  positive = 238 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> n = 300  positive = 238 </span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
