@@ -107,7 +107,9 @@ Both parts are \code{\link[=panglm]{panglm()}} fits and share its validation. Th
 also check that the pooled two-part prediction is the product of the two
 \code{stats::glm()} fits, the smearing retransformation of the lognormal part,
 and the correlated random-intercept likelihood against two-dimensional
-numerical integration.
+numerical integration and against \code{GLMMadaptive::mixed_model()} with the
+\code{hurdle.lognormal()} family (logit link, correlated random intercepts),
+whose log-likelihood it reproduces at the same parameters.
 }
 
 \examples{
