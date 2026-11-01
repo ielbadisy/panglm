@@ -1,3 +1,50 @@
+# panglm 1.7.0
+
+Plotting release: every fitted object has a plot method, and the
+diagnostics, marginal effects and difference-in-differences results can
+be drawn directly with base graphics. Estimates are unchanged.
+
+## Diagnostics and coefficients
+
+* `plot.panglm()` gains `which = "qq"` (normal Q-Q plot of the Pearson
+  residuals), `"calibration"` (observed proportion against the mean
+  predicted probability in quantile bins, for binary outcomes) and
+  `"rootogram"` (hanging rootogram for Poisson and negative binomial
+  fits, including random-intercept fits through the marginal count
+  distribution). The residual view uses Pearson residuals by default
+  (`type`), adds a smooth, and uses a log axis for log-link models.
+  Coefficient plots take `parm`, omit the intercept by default and size
+  the margin to the term names.
+* `residuals.panglm()` gains `type = c("response", "pearson")`.
+* New `coefplot()` compares the coefficients of several fitted models in
+  one figure.
+* New plot methods for `twopart()`, `panfmm()` (coefficients by class and
+  the posterior class probabilities), `pangmm()`, `paniv()` and
+  `panselect()` fits; `plot.panglm_hurdle()` gains `parm`.
+
+## Marginal effects
+
+* New plot method for `partialeffects()` results.
+* `effectcurve()` gains `scale = c("link", "response", "slope")`: the
+  average predicted outcome, or the average marginal effect, as the
+  regressor varies, with delta-method bands, also for factor regressors;
+  and `by`, curves for each level of a factor. The plot adds a rug of the
+  observed values.
+
+## Difference-in-differences
+
+* `attgt()`, `etwfe()` and `eventstudy()` plots share one event-study
+  layout: hollow points before treatment, the reference period marked,
+  and uniform confidence bands drawn as visible bars behind the
+  pointwise intervals. All three take `min_e`, `max_e`, `ylim`, `main`
+  and `legend`. The `eventstudy()` plot now marks treatment onset at
+  -0.5.
+* `plot(<attgt>, type = "gt")` draws the group-time effects, one panel
+  per cohort.
+* New `treatmentplot()` shows the treatment timing of a staggered design.
+* New `eventplot()` compares event studies from several estimators on
+  one axis.
+
 # panglm 1.6.2
 
 Speed release for large panels. Estimates are unchanged: the
