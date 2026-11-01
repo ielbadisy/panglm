@@ -48,7 +48,9 @@ reference:
   - attgt
   - etwfe
   - trendplot
+  - treatmentplot
   - panelplot
+  - eventplot
 
 - title: Endogeneity
   desc: >
@@ -88,14 +90,19 @@ reference:
   - fitted.panglm
   - logLik.panglm
   - model.matrix.panglm
+  - residuals.panglm
+  - fixef
   - plot.panglm
+  - coefplot
   - partialeffects
+  - plot.panglm_ape
   - effectcurve
   - plot.panglm_effectcurve
 - subtitle: Other model classes
   contents:
   - predict.twopart
   - confint.twopart
+  - plot.twopart
   - hurdle-methods
   - plot.panglm_hurdle
   - eventstudy-methods
@@ -110,6 +117,7 @@ reference:
   - summary.pangmm
   - vcov.pangmm
   - predict.pangmm
+  - plot.pangmm
   - summary.panselect
   - vcov.panselect
   - predict.panselect
@@ -119,6 +127,7 @@ reference:
   - summary.panfmm
   - vcov.panfmm
   - predict.panfmm
+  - plot.panfmm
 - subtitle: Tidiers
   contents:
   - tidy.panglm
@@ -126,8 +135,16 @@ reference:
   - tidy-methods
 
 - title: Data
+  desc: >
+    Health economics panels for teaching: one simulated panel with known
+    truth and five real public panels.
   contents:
   - copd
+  - docvisits
+  - meps
+  - medicaid
+  - healthspend
+  - cigar
 
 - title: Deprecated
   desc: Former names, kept as wrappers that warn and call the new function.
@@ -146,6 +163,7 @@ articles:
   - panglm-endogeneity
   - panglm-policy
   - panglm-heterogeneity
+  - panglm-datasets
 - title: Technical reference
   navbar: Technical reference
   contents:
