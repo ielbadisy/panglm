@@ -6,12 +6,36 @@
 #' intervals use `vcov()`, so that they are the joint-likelihood intervals of
 #' correlated two-part fits.
 #'
+#' `which = "density"` compares the observed outcome with the
+#' distribution implied by the model, a point mass at zero plus a density
+#' on the positive values. The bars at zero are the observed share of zeros
+#' (grey) and the predicted probability `mean_i (1 - p_i)` (orange, on the
+#' right-hand axis); the curves are the kernel density of the positive
+#' outcomes ([stats::density()], bandwidth `bw`) scaled by their share
+#' (grey) and the implied density `mean_i p_i g_i(t)` (orange), where `p_i`
+#' is the probability of a positive outcome and `g_i` the gamma density
+#' (shape `1 / phi`, `phi` the Pearson dispersion of the positive part) or
+#' the lognormal density (`sigma^2` the residual variance of `log y`).
+#' Random-effects fits integrate over the random intercepts: independent
+#' intercepts by Gauss-Hermite quadrature (closed form for the lognormal
+#' part), correlated intercepts over their joint normal distribution.
+#' Skewed costs are drawn on a logarithmic axis (densities of `log(y)`, the
+#' bars at zero left of the axis) unless `log = ""` is passed.
+#'
+#' `which = "correlation"` draws the heatmap of the correlation matrix of
+#' the estimates of both parts, `cov2cor(vcov(x))` (see [plot.panglm()]).
+#'
 #' @param x a fitted `"twopart"` object
-#' @param which `"both"` (default), `"binary"` or `"positive"`
+#' @param which `"both"` (default), `"binary"`, `"positive"`, `"density"`
+#'   or `"correlation"`
 #' @param parm names or positions of the terms to plot; by default every
 #'   term except `"(Intercept)"`. With `which = "both"`, names absent from
-#'   one part are ignored in that part.
+#'   one part are ignored in that part. For `"correlation"`, names as in
+#'   `coef(x)` (with the `binary:` and `positive:` prefixes).
 #' @param level confidence level of the intervals
+#' @param bw bandwidth of the observed kernel density of the `"density"`
+#'   view, passed to [stats::density()]
+#' @param cells for `"correlation"`, print the correlation in each cell
 #' @param ... additional arguments passed to [graphics::plot.default()]
 #' @return `x`, invisibly
 #' @family twopart methods
@@ -24,10 +48,20 @@
 #'               index = c("id", "visit"), positive = "gamma")
 #' plot(tp)
 #' plot(tp, which = "positive", parm = "crp")
+#' plot(tp, which = "density")
+#' plot(tp, which = "correlation")
 #' @export
-plot.twopart <- function(x, which = c("both", "binary", "positive"), parm = NULL,
-                         level = 0.95, ...) {
+plot.twopart <- function(x, which = c("both", "binary", "positive", "density", "correlation"),
+                         parm = NULL, level = 0.95, bw = "nrd0", cells = FALSE, ...) {
   which <- match.arg(which)
+  if (which == "correlation") {
+    .panglm_corrplot(stats::vcov(x), parm, cells, ...)
+    return(invisible(x))
+  }
+  if (which == "density") {
+    .panglm_plot_density(twopart_outcome_density(x), bw = bw, ...)
+    return(invisible(x))
+  }
   est <- stats::coef(x)
   se <- .panglm_coef_se(est, stats::vcov(x))
   parts <- if (which == "both") c("binary", "positive") else which
@@ -54,11 +88,16 @@ plot.twopart <- function(x, which = c("both", "binary", "positive"), parm = NULL
 #' probability. Mass close to one means well-separated classes; the
 #' subtitle reports its mean and the relative entropy
 #' `1 - sum(-p log p) / (N log k)` (one for a perfect classification).
+#' `which = "correlation"` draws the heatmap of the correlation matrix of
+#' all the estimates, `cov2cor(vcov(x))` (see [plot.panglm()]).
 #'
 #' @param x a fitted `"panfmm"` object
-#' @param which `"coefficients"` (default) or `"posterior"`
+#' @param which `"coefficients"` (default), `"posterior"` or
+#'   `"correlation"`
 #' @param parm names or positions of the terms to plot (without the class
-#'   prefix); by default every term except `"(Intercept)"`
+#'   prefix); by default every term except `"(Intercept)"`. For
+#'   `"correlation"`, names as in `coef(x)`.
+#' @param cells for `"correlation"`, print the correlation in each cell
 #' @param level confidence level of the intervals
 #' @param main optional plot title
 #' @param xlab optional horizontal-axis label
@@ -72,10 +111,15 @@ plot.twopart <- function(x, which = c("both", "binary", "positive"), parm = NULL
 #'               nstart = 2, seed = 1)
 #' plot(fit)
 #' plot(fit, which = "posterior")
+#' plot(fit, which = "correlation", cells = TRUE)
 #' @export
-plot.panfmm <- function(x, which = c("coefficients", "posterior"), parm = NULL,
-                        level = 0.95, main = NULL, xlab = NULL, ...) {
+plot.panfmm <- function(x, which = c("coefficients", "posterior", "correlation"), parm = NULL,
+                        level = 0.95, cells = FALSE, main = NULL, xlab = NULL, ...) {
   which <- match.arg(which)
+  if (which == "correlation") {
+    .panglm_corrplot(stats::vcov(x), parm, cells, main, ...)
+    return(invisible(x))
+  }
   if (which == "posterior") {
     post <- as.matrix(x$posterior)
     best <- apply(post, 1L, max)

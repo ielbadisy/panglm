@@ -30,6 +30,7 @@ Encoding: UTF-8
 Depends: R (>= 3.6.0)
 Imports:
     Rcpp,
+    grDevices,
     graphics,
     grDevices,
     stats
@@ -51,6 +52,8 @@ Suggests:
     glmmTMB,
     marginaleffects,
     lme4,
+    nlme,
+    GLMMadaptive,
     ordinal,
     betareg,
     splines,

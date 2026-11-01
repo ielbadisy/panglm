@@ -4,17 +4,27 @@
 \alias{plot.panglm_hurdle}
 \title{Plot a fitted panglm hurdle model}
 \usage{
-\method{plot}{panglm_hurdle}(x, which = c("both", "zero", "count"), level = 0.95, parm = NULL, ...)
+\method{plot}{panglm_hurdle}(
+  x,
+  which = c("both", "zero", "count", "correlation"),
+  level = 0.95,
+  parm = NULL,
+  cells = FALSE,
+  ...
+)
 }
 \arguments{
 \item{x}{a fitted \code{"panglm_hurdle"} object}
 
-\item{which}{one of \code{"both"}, \code{"zero"}, or \code{"count"}}
+\item{which}{one of \code{"both"}, \code{"zero"}, \code{"count"} or \code{"correlation"}}
 
 \item{level}{confidence level for coefficient intervals}
 
 \item{parm}{names or positions of the terms to plot; by default every
-term except \code{"(Intercept)"}}
+term except \code{"(Intercept)"}. For \code{"correlation"}, names as in
+\code{coef(x)} (with the \verb{zero:} and \verb{count:} prefixes).}
+
+\item{cells}{for \code{"correlation"}, print the correlation in each cell}
 
 \item{...}{additional arguments passed to \code{\link[graphics:plot.default]{graphics::plot.default()}}}
 }
@@ -24,13 +34,17 @@ term except \code{"(Intercept)"}}
 \description{
 Displays coefficient estimates and Wald confidence intervals for the
 binary hurdle component, the positive-count component, or both, in the
-dot-and-whisker layout of \code{\link[=plot.panglm]{plot.panglm()}}.
+dot-and-whisker layout of \code{\link[=plot.panglm]{plot.panglm()}}. \code{which = "correlation"} draws
+the heatmap of the correlation matrix of all the estimates (see
+\code{\link[=plot.panglm]{plot.panglm()}}); the two parts are estimated separately, so the
+between-part block is zero.
 }
 \examples{
 data(copd)
 fit <- panhurdle(exacerbations ~ crp, data = copd,
                      index = c("id", "visit"))
 plot(fit)
+plot(fit, which = "correlation")
 }
 \seealso{
 Other panhurdle methods: 

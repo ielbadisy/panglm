@@ -48,6 +48,7 @@ Other panglm methods:
 \code{\link{confint.panglm}()},
 \code{\link{effectcurve}()},
 \code{\link{fitted.panglm}()},
+\code{\link{fixef}()},
 \code{\link{logLik.panglm}()},
 \code{\link{model.matrix.panglm}()},
 \code{\link{partialeffects.panordered}()},
