@@ -254,7 +254,7 @@ twopart_outcome_density <- function(object) {
   inner[length(inner)] <- inner[length(inner)] - eps
   implied <- if (logx) exp(inner) * dens$f(exp(inner)) else dens$f(inner)
   implied[!is.finite(implied)] <- NA
-  top <- max(c(observed, implied), na.rm = TRUE) * 1.12
+  top <- max(c(observed, implied), na.rm = TRUE) * 1.3
 
   op <- savepar()
   on.exit(graphics::par(op), add = TRUE)
@@ -280,11 +280,11 @@ twopart_outcome_density <- function(object) {
   graphics::lines(grid, implied, col = "#D55E00", lwd = 2)
 
   if (has_mass) {
-    mass_top <- max(c(masses$predicted, masses$observed)) * 1.25
+    mass_top <- max(c(masses$predicted, masses$observed)) * 1.45
     ticks <- pretty(c(0, mass_top))
     ticks <- ticks[ticks <= mass_top]
     scale <- top / mass_top
-    width <- 0.3 * pad
+    width <- 0.4 * pad
     for (i in seq_len(nrow(masses))) {
       left_side <- mass_at[i] <= from
       edge <- if (left_side) from else to
@@ -298,10 +298,19 @@ twopart_outcome_density <- function(object) {
                      border = "grey45")
       graphics::rect(xp, 0, xp + width, masses$predicted[i] * scale, col = "#D55E00",
                      border = "#A04000")
-      graphics::text(c(xo, xp) + width / 2,
-                     c(masses$observed[i], masses$predicted[i]) * scale,
-                     sprintf("%.0f%%", 100 * c(masses$observed[i], masses$predicted[i])),
-                     pos = 3, cex = 0.62, offset = 0.2, xpd = NA)
+      labs <- sprintf("%.0f%%", 100 * c(masses$observed[i], masses$predicted[i]))
+      ylab_at <- c(masses$observed[i], masses$predicted[i]) * scale
+      # lift the second label when the two would overlap
+      gap <- xp - xo
+      hgt <- graphics::strheight("0%", cex = 0.62)
+      if (max(graphics::strwidth(labs, cex = 0.62)) > gap &&
+          abs(diff(ylab_at)) < 1.6 * hgt) {
+        ylab_at[2] <- max(ylab_at) + 1.6 * hgt
+        ylab_at[1] <- min(ylab_at[1], ylab_at[2] - 1.6 * hgt)
+      }
+      graphics::text(c(xo, xp) + width / 2, ylab_at, labs,
+                     pos = 3, cex = 0.62, offset = 0.2, xpd = NA,
+                     col = c("grey30", "#A04000"))
       if (logx || !is.finite(mass_at[i])) {
         graphics::axis(1, at = centre, labels = format(masses$at[i]), tick = FALSE)
       }
@@ -310,7 +319,8 @@ twopart_outcome_density <- function(object) {
     graphics::mtext("Probability (point mass)", side = 4, line = 2.6)
   }
   graphics::legend(
-    "topright", bty = "n", cex = 0.85,
+    "top", bty = "n", cex = 0.75, horiz = TRUE, inset = 0.01, seg.len = 1.2,
+    x.intersp = 0.5, text.width = NULL,
     legend = c("Observed", "Model-implied"),
     fill = c("grey80", if (has_mass) "#D55E00" else NA),
     border = c("grey45", if (has_mass) "#A04000" else NA),
