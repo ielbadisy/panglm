@@ -142,6 +142,30 @@ panels ship with the package. Estimates are unchanged.
   `glmmTMB` truncated Poisson and NB2 fits with group dummies; the NB2
   standard errors, which came from a not fully converged fit, change.
 
+* `panglm(model = "random", family = "tobit")` now converges on outcomes
+  in raw units such as costs in dollars. The quasi-Newton search used to
+  stop silently short of the maximum (on `meps$totexp` the log-likelihood
+  was 29 units below it and `sigma` 22% off) because the slopes and the
+  log standard deviations differed in scale by orders of magnitude. Both
+  Tobit fits now maximize the likelihood of `y / c` (`c` a power of two
+  near `sd(y)`) with standardized regressors and map the estimates back,
+  so that coefficients, `sigma_e`, `sigma`, their covariance and the
+  log-likelihood (which loses `log c` per uncensored observation) do not
+  depend on the units of `y`. The random-effects likelihood and its exact
+  scores are computed in C++: the `meps` fit takes 0.4 s instead of 210 s.
+
+## Performance
+
+* Random-intercept binomial, ordered and Tobit fits by adaptive quadrature are
+  faster: parameter values with `sigma` outside `[1e-11, 7e10]`, which the
+  first quasi-Newton steps can visit, are rejected without a mode search
+  (each such evaluation used to cost as much as 200 ordinary ones),
+  each individual's mode search starts from its mode at the previous
+  evaluation and takes one pass over the rows per Newton step, and the
+  binomial fit starts from a few BHHH steps. The probit model of `doctor`
+  on `docvisits` (27,326 rows) takes 4 s instead of 37 s; the estimates
+  agree to `1e-7`.
+
 # panglm 1.6.2
 
 Speed release for large panels. Estimates are unchanged: the

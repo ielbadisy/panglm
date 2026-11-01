@@ -1225,6 +1225,10 @@ fit_random_binomial <- function(X, y, family, group_start, group_size, R, maxit,
   start <- irls_fit_cpp(X, y, 2L, family$link_id, maxit, tol)
   theta0 <- c(as.numeric(start$coefficients), log(0.5))
   contrib <- agq_contrib(agq_kind(family), X, y, group_start, group_size, R)
+  # BHHH warm-up; dropped when it drifts towards a zero or infinite
+  # variance, where the quasi-Newton search handles the boundary as before
+  warm <- ml_bhhh(theta0, contrib, rep(1, length(group_size)))
+  if (abs(warm[k + 1L]) < 5) theta0 <- warm
   res <- ml_optimize(theta0, contrib, rep(1, length(group_size)), maxit, tol,
                      scaling = ml_design_scaling(X, k + 1L),
                      what = "the random-effects binomial fit")

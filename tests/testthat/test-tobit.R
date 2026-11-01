@@ -104,3 +104,46 @@ test_that("random-intercept Tobit far from the start gives no NaN warnings", {
   expect_equal(unname(coef(m21)), unname(coef(r)[1:3]), tolerance = 1e-4)
   expect_equal(m21$loglik, as.numeric(stats::logLik(r)), tolerance = 1e-5)
 })
+
+test_that("random-intercept Tobit converges on a raw cost scale and is scale invariant", {
+  data(copd, package = "panglm", envir = environment())
+  copd$cost_k <- copd$cost / 1000
+  fm <- cost ~ age + smoker + treatment + fev1
+  m <- expect_silent(panglm(fm, copd, index = c("id", "visit"), model = "random",
+                            family = "tobit", R = 30))
+  # censReg(cost / 1000 ~ ..., left = 0, nGHQ = 30, method = "NR"), times 1000
+  expect_equal(unname(coef(m)), c(-2544.72533, 38.8548222, 612.009451, -545.990474, 205.574535),
+               tolerance = 1e-6)
+  expect_equal(c(m$sigma, m$sigma_e), 1000 * exp(c(-0.641224321, -0.126102994)), tolerance = 1e-6)
+  n_obs <- sum(copd$cost > 0)
+  expect_equal(m$loglik, -373.01005 - n_obs * log(1000), tolerance = 1e-8)
+  mk <- panglm(update(fm, cost_k ~ .), copd, index = c("id", "visit"), model = "random",
+               family = "tobit", R = 30)
+  expect_equal(coef(m), 1000 * coef(mk), tolerance = 1e-6)
+  expect_equal(c(m$sigma, m$sigma_e), 1000 * c(mk$sigma, mk$sigma_e), tolerance = 1e-6)
+  expect_equal(vcov(m), 1000^2 * vcov(mk), tolerance = 1e-5)
+  expect_equal(vcov(m, type = "cluster"), 1000^2 * vcov(mk, type = "cluster"), tolerance = 1e-5)
+  # the density part shifts by log(1000) per uncensored observation
+  expect_equal(m$loglik, mk$loglik - n_obs * log(1000), tolerance = 1e-10)
+  p <- panglm(fm, copd, index = c("id", "visit"), family = "tobit")
+  pk <- panglm(update(fm, cost_k ~ .), copd, index = c("id", "visit"), family = "tobit")
+  expect_equal(coef(p), 1000 * coef(pk), tolerance = 1e-6)
+  expect_equal(p$loglik, pk$loglik - n_obs * log(1000), tolerance = 1e-10)
+})
+
+test_that("compiled random-intercept Tobit scores match numerical derivatives", {
+  d <- make_tobit_data(G = 30)
+  X <- cbind(1, d$x, d$z)
+  gs <- rep(4L, 30)
+  for (lim in list(c(0, Inf), c(0, 2), c(-Inf, 1.5))) {
+    y <- pmin(lim[2], pmax(lim[1], d$y2 - 0.3))
+    cf <- panglm:::tobit_contrib_random(X, y, lim[1], lim[2], gs, 7L)
+    th <- c(0.2, 0.7, -0.4, log(0.9), log(0.7))
+    an <- colSums(cf(th, TRUE)$score)
+    nu <- vapply(seq_along(th), function(j) {
+      h <- 1e-6; e <- replace(numeric(5), j, h)
+      (sum(cf(th + e, FALSE)$ll) - sum(cf(th - e, FALSE)$ll)) / (2 * h)
+    }, numeric(1))
+    expect_equal(an, nu, tolerance = 1e-6)
+  }
+})

@@ -9,8 +9,8 @@ using namespace RcppParallel;
 
 // Adaptive Gauss-Hermite quadrature for random-intercept models whose
 // observations depend on the individual effect u_i ~ N(0, sigma^2) only
-// through e_it = x_it'beta + u_i: binomial (logit, probit) and ordered
-// (logit, probit) outcomes.
+// through e_it = x_it'beta + u_i: binomial (logit, probit), ordered
+// (logit, probit) and censored normal (Tobit) outcomes.
 //
 // For individual i let
 //   h(u) = sum_t log p(y_it | x_it'beta + u) + log phi(u; 0, sigma).
@@ -25,12 +25,14 @@ using namespace RcppParallel;
 // converges to the maximizer of the approximate likelihood.
 //
 // Parameters: theta = (beta [k], cuts [m], log sigma); m = 0 for the
-// binomial model. Output: one log-likelihood and one score row per
-// individual.
+// binomial model. For the Tobit model the single "cut" parameter is
+// log sigma_e and the censoring limits are `left` and `right`, so that
+// theta = (beta, log sigma_e, log sigma_u). Output: one log-likelihood and
+// one score row per individual.
 
 namespace {
 
-enum Kind { BIN_LOGIT = 0, BIN_PROBIT = 1, ORD_LOGIT = 2, ORD_PROBIT = 3 };
+enum Kind { BIN_LOGIT = 0, BIN_PROBIT = 1, ORD_LOGIT = 2, ORD_PROBIT = 3, TOBIT = 4 };
 
 struct ObsDeriv {
   double lp, d1, d2, d3;   // log p and its derivatives in e
@@ -40,12 +42,26 @@ struct ObsDeriv {
 };
 
 // log Phi(q) and its first three derivatives in q
+// For q < -25, q + lambda(q) comes from its asymptotic series in x = -q
+// (the difference cancels and the ratio of logged densities loses digits).
+inline double mills_tail(double x) {
+  double x2 = x * x;
+  return (1 - (2 - (10 - (74 - (706 - (8162 - 110410 / x2) / x2) / x2) / x2) / x2) / x2) / x;
+}
+
 inline void log_phi_derivs(double q, double& l, double& l1, double& l2, double& l3) {
   l = R::pnorm(q, 0.0, 1.0, 1, 1);
-  double lam = std::exp(R::dnorm(q, 0.0, 1.0, 1) - l);
+  double lam, shift;
+  if (q < -25.0) {
+    shift = mills_tail(-q);
+    lam = shift - q;
+  } else {
+    lam = std::exp(R::dnorm(q, 0.0, 1.0, 1) - l);
+    shift = q + lam;
+  }
   l1 = lam;
-  l2 = -lam * (q + lam);
-  l3 = -(l2 * (q + lam) + lam * (1.0 + l2));
+  l2 = -lam * shift;
+  l3 = -(l2 * shift + lam * (1.0 + l2));
 }
 
 // density f and its first two derivatives at x (zero at +-Inf)
@@ -69,9 +85,41 @@ inline double cdf(double x, bool logit) {
   return logit ? 1.0 / (1.0 + std::exp(-x)) : R::pnorm(x, 0.0, 1.0, 1, 0);
 }
 
-inline ObsDeriv obs_deriv(int kind, double y, double e, const std::vector<double>& cuts) {
+inline ObsDeriv obs_deriv(int kind, double y, double e, const std::vector<double>& cuts,
+                          double left = 0.0, double right = 0.0) {
   ObsDeriv o;
   o.nc = 0;
+  if (kind == TOBIT) {
+    // cuts[0] = log sigma_e; derivatives in e and in s = log sigma_e
+    const double se = std::exp(cuts[0]);
+    o.nc = 1;
+    o.ci[0] = 0;
+    if (y > left && y < right) {
+      const double r = (y - e) / se;
+      o.lp = -0.5 * std::log(2.0 * M_PI) - cuts[0] - 0.5 * r * r;
+      o.d1 = r / se;
+      o.d2 = -1.0 / (se * se);
+      o.d3 = 0.0;
+      o.lc[0] = r * r - 1.0;
+      o.lce[0] = -2.0 * r / se;
+      o.lcee[0] = 2.0 / (se * se);
+    } else {
+      // left-censored: log Phi((left - e) / se); right: log Phi((e - right) / se)
+      const bool lower = (y <= left);
+      const double sg = lower ? -1.0 : 1.0;
+      const double z = lower ? (left - e) / se : (e - right) / se;
+      double l, l1, l2, l3;
+      log_phi_derivs(z, l, l1, l2, l3);
+      o.lp = l;
+      o.d1 = sg * l1 / se;
+      o.d2 = l2 / (se * se);
+      o.d3 = sg * l3 / (se * se * se);
+      o.lc[0] = -z * l1;
+      o.lce[0] = -sg * (z * l2 + l1) / se;
+      o.lcee[0] = -(z * l3 + 2.0 * l2) / (se * se);
+    }
+    return o;
+  }
   if (kind == BIN_LOGIT) {
     // log mu = -log(1 + exp(-e)), log(1 - mu) = -log(1 + exp(e))
     double lmu = (e > 0) ? -std::log1p(std::exp(-e)) : e - std::log1p(std::exp(e));
@@ -137,15 +185,21 @@ struct AGQWorker : public Worker {
   const std::vector<double>& z;
   const std::vector<double>& logc; // log(w_q sqrt(pi)) + z_q^2
   int kind;
+  double left, right;
+  const RVector<double> mode0; // starting modes (length 0: start at 0)
   RVector<double> ll;
+  RVector<double> mode;
   RMatrix<double> score;
 
   AGQWorker(const NumericMatrix& X, const NumericVector& y, const IntegerVector& gstart,
             const IntegerVector& gsize, const std::vector<double>& beta,
             const std::vector<double>& cuts, double sigma, const std::vector<double>& z,
-            const std::vector<double>& logc, int kind, NumericVector ll, NumericMatrix score)
+            const std::vector<double>& logc, int kind, double left, double right,
+            const NumericVector& mode0, NumericVector ll, NumericVector mode,
+            NumericMatrix score)
     : X(X), y(y), gstart(gstart), gsize(gsize), beta(beta), cuts(cuts), sigma(sigma),
-      z(z), logc(logc), kind(kind), ll(ll), score(score) {}
+      z(z), logc(logc), kind(kind), left(left), right(right), mode0(mode0), ll(ll),
+      mode(mode), score(score) {}
 
   void operator()(std::size_t begin, std::size_t end) {
     const std::size_t k = X.ncol();
@@ -167,38 +221,49 @@ struct AGQWorker : public Worker {
         for (std::size_t j = 0; j < k; ++j) s += X(st + t, j) * beta[j];
         eta[t] = s;
       }
-      auto hval = [&](double u) {
-        double s = lnorm - 0.5 * u * u / s2;
-        for (int t = 0; t < T; ++t) s += obs_deriv(kind, y[st + t], eta[t] + u, cuts).lp;
-        return s;
-      };
-      // mode of the strictly concave h by damped Newton
-      double u = 0.0, hu_cur = hval(u);
-      for (int it = 0; it < 200; ++it) {
-        double g1 = -u / s2, g2 = -1.0 / s2;
+      // h and its first two derivatives in u, in one pass over the rows
+      auto heval = [&](double u, double& h, double& g1, double& g2) {
+        h = lnorm - 0.5 * u * u / s2; g1 = -u / s2; g2 = -1.0 / s2;
         for (int t = 0; t < T; ++t) {
-          ObsDeriv o = obs_deriv(kind, y[st + t], eta[t] + u, cuts);
-          g1 += o.d1; g2 += o.d2;
+          ObsDeriv o = obs_deriv(kind, y[st + t], eta[t] + u, cuts, left, right);
+          h += o.lp; g1 += o.d1; g2 += o.d2;
         }
+      };
+      // mode of the strictly concave h by damped Newton, from the mode of
+      // the previous call when there is one (it moves little between the
+      // nearby parameter values of an optimizer, so one or two steps do)
+      double u = (mode0.length() == (R_xlen_t) gstart.length() && std::isfinite(mode0[g]))
+        ? mode0[g] : 0.0;
+      const double lim = 10.0 * std::max(1.0, sigma);
+      double hu_cur, g1, g2;
+      heval(u, hu_cur, g1, g2);
+      if (u != 0.0 && (!std::isfinite(hu_cur) || std::fabs(u) > lim)) {
+        // a far or invalid start: keep it only if it beats u = 0
+        double h0, a1, a2;
+        heval(0.0, h0, a1, a2);
+        if (!std::isfinite(hu_cur) || h0 >= hu_cur) { u = 0.0; hu_cur = h0; g1 = a1; g2 = a2; }
+      }
+      for (int it = 0; it < 200; ++it) {
         double step = g1 / g2;
         if (!std::isfinite(step)) break;
-        double lim = 10.0 * std::max(1.0, sigma);
         if (step > lim) step = lim;
         if (step < -lim) step = -lim;
-        double un = u - step, hn = hval(un);
+        double un = u - step, hn, gn1, gn2;
+        heval(un, hn, gn1, gn2);
         int halv = 0;
         while ((!std::isfinite(hn) || hn < hu_cur - 1e-12 * std::fabs(hu_cur)) && halv < 40) {
-          step /= 2.0; un = u - step; hn = hval(un); ++halv;
+          step /= 2.0; un = u - step; heval(un, hn, gn1, gn2); ++halv;
         }
-        u = un; hu_cur = hn;
+        u = un; hu_cur = hn; g1 = gn1; g2 = gn2;
         if (std::fabs(step) < 1e-11 * (1.0 + std::fabs(u))) break;
       }
+      mode[g] = u;
       // derivatives at the mode
       double H2 = -1.0 / s2, H3 = 0.0;
       std::fill(Hu_t.begin(), Hu_t.end(), 0.0);
       std::fill(Huu_t.begin(), Huu_t.end(), 0.0);
       for (int t = 0; t < T; ++t) {
-        ObsDeriv o = obs_deriv(kind, y[st + t], eta[t] + u, cuts);
+        ObsDeriv o = obs_deriv(kind, y[st + t], eta[t] + u, cuts, left, right);
         H2 += o.d2; H3 += o.d3;
         for (std::size_t j = 0; j < k; ++j) {
           double x = X(st + t, j);
@@ -223,7 +288,7 @@ struct AGQWorker : public Worker {
         std::vector<double>& ht = htq[q];
         std::fill(ht.begin(), ht.end(), 0.0);
         for (int t = 0; t < T; ++t) {
-          ObsDeriv o = obs_deriv(kind, y[st + t], eta[t] + b, cuts);
+          ObsDeriv o = obs_deriv(kind, y[st + t], eta[t] + b, cuts, left, right);
           h += o.lp; hu += o.d1;
           for (std::size_t j = 0; j < k; ++j) ht[j] += o.d1 * X(st + t, j);
           for (int c = 0; c < o.nc; ++c) ht[k + o.ci[c]] += o.lc[c];
@@ -256,7 +321,9 @@ struct AGQWorker : public Worker {
 List random_agq_cpp(NumericVector beta, NumericVector cuts, double sigma,
                     NumericMatrix X, NumericVector y,
                     IntegerVector group_start, IntegerVector group_size,
-                    NumericVector nodes, NumericVector weights, int kind) {
+                    NumericVector nodes, NumericVector weights, int kind,
+                    double left = 0.0, double right = 0.0,
+                    NumericVector start_mode = NumericVector(0)) {
   const int G = group_start.size();
   const int p = X.ncol() + cuts.size() + 1;
   std::vector<double> b(beta.begin(), beta.end()), c(cuts.begin(), cuts.end());
@@ -264,9 +331,14 @@ List random_agq_cpp(NumericVector beta, NumericVector cuts, double sigma,
   for (int q = 0; q < nodes.size(); ++q) {
     logc[q] = std::log(weights[q] * std::sqrt(M_PI)) + z[q] * z[q];
   }
-  NumericVector ll(G);
+  NumericVector ll(G), mode(G);
   NumericMatrix score(G, p);
-  AGQWorker worker(X, y, group_start, group_size, b, c, sigma, z, logc, kind, ll, score);
+  if (!std::isfinite(sigma) || sigma <= 0.0) {
+    std::fill(ll.begin(), ll.end(), R_NegInf);
+    return List::create(Named("ll") = ll, Named("score") = score, Named("mode") = mode);
+  }
+  AGQWorker worker(X, y, group_start, group_size, b, c, sigma, z, logc, kind, left, right,
+                   start_mode, ll, mode, score);
   parallelFor(0, G, worker, panglm::grain(G));
-  return List::create(Named("ll") = ll, Named("score") = score);
+  return List::create(Named("ll") = ll, Named("score") = score, Named("mode") = mode);
 }

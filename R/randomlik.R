@@ -75,12 +75,23 @@ agq_contrib <- function(kind, X, y, group_start, group_size, R, m = 0L) {
   X <- unname(as.matrix(X)); storage.mode(X) <- "double"
   y <- as.numeric(y)
   group_start <- as.integer(group_start); group_size <- as.integer(group_size)
+  G <- length(group_size)
+  modes <- agq_mode_cache(G)
   function(theta, score) {
+    # sigma below 1e-11 or above 7e10: no fit lives there, and the mode
+    # search at such values (the first quasi-Newton steps can go there)
+    # costs hundreds of likelihood evaluations
+    ls <- theta[k + m + 1L]
+    if (!is.finite(ls) || abs(ls) > 25) {
+      return(list(ll = rep(-Inf, G), score = matrix(0, G, length(theta))))
+    }
     cp <- theta[k + seq_len(m)]
     cuts <- if (m) ordered_cuts(cp) else numeric(0)
     if (m > 1L && any(diff(cuts) <= 0)) stop("cutpoints are not increasing", call. = FALSE)
-    res <- random_agq_cpp(theta[seq_len(k)], cuts, exp(theta[k + m + 1L]), X, y,
-                          group_start, group_size, gh$nodes, gh$weights, kind)
+    res <- random_agq_cpp(theta[seq_len(k)], cuts, exp(ls), X, y,
+                          group_start, group_size, gh$nodes, gh$weights, kind,
+                          start_mode = modes$get())
+    modes$set(res)
     out <- list(ll = res$ll)
     if (score) {
       sc <- res$score
@@ -89,6 +100,22 @@ agq_contrib <- function(kind, X, y, group_start, group_size, R, m = 0L) {
     }
     out
   }
+}
+
+#' Modes of the previous adaptive quadrature call, the next call's start
+#'
+#' Kept only when every contribution is finite, so that a call at extreme
+#' parameter values does not leave far-away starting points.
+#'
+#' @keywords internal
+#' @noRd
+agq_mode_cache <- function(G) {
+  env <- new.env(parent = emptyenv())
+  env$mode <- numeric(0)
+  list(get = function() env$mode,
+       set = function(res) {
+         if (all(is.finite(res$ll)) && length(res$mode) == G) env$mode <- res$mode
+       })
 }
 
 agq_kind <- function(family, ordered = FALSE) {
