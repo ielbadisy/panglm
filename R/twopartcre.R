@@ -9,7 +9,9 @@
 #' intercept likelihood with shifted residuals); the remaining integral over
 #' `u1` uses adaptive Gauss-Hermite quadrature around the exact mode (the
 #' integrand is log-concave in `u1`). The likelihood is on the cost scale
-#' (it includes the Jacobian `-sum(log y)`).
+#' (it includes the Jacobian `-sum(log y)`). The contributions and their
+#' exact gradient (including the dependence of the mode and the curvature
+#' on the parameters) are computed in C++ (`src/twopart_cre.cpp`).
 #'
 #' `theta = (gamma, beta, log sigma1, log sigma2, log sigma_e, atanh rho)`.
 #'
@@ -19,64 +21,22 @@ twopart_cre_contrib <- function(Xb, d, group_b, Xp, ly, group_p, link, R) {
   kb <- ncol(Xb); kp <- ncol(Xp); G <- max(group_b)
   gh <- gauss_hermite_quadrature(R)
   log_w <- log(gh$weights * sqrt(pi)) + gh$nodes^2
-  m <- tabulate(group_p, nbins = G)
-  # group sums over the positive observations, zero for individuals without any
-  psum <- function(v) {
-    out <- numeric(G)
-    if (length(v)) { s <- rowsum(v, group_p); out[as.integer(rownames(s))] <- s }
-    out
-  }
-  sly <- psum(ly)
-  sgn <- 2 * d - 1
-  if (link == "probit") {
-    logF <- function(z) stats::pnorm(z, log.p = TRUE)
-    d1 <- function(z) exp(stats::dnorm(z, log = TRUE) - stats::pnorm(z, log.p = TRUE))
-    d2 <- function(z) { r <- d1(z); -r * (z + r) }
-  } else {
-    logF <- function(z) stats::plogis(z, log.p = TRUE)
-    d1 <- function(z) stats::plogis(-z)
-    d2 <- function(z) { p <- stats::plogis(z); -p * (1 - p) }
-  }
-  fac <- factor(group_b, levels = seq_len(G))
+  storage.mode(Xb) <- "double"; storage.mode(Xp) <- "double"
+  sgn <- as.numeric(2 * d - 1)
+  ly <- as.numeric(ly)
+  group_b <- as.integer(group_b); group_p <- as.integer(group_p)
+  probit <- link == "probit"
   function(theta, score) {
     lim <- theta[kb + kp + 1:4]
     if (any(!is.finite(lim)) || any(abs(lim[1:3]) > 15) || abs(lim[4]) > 7) {
       return(list(ll = rep(-Inf, G)))
     }
-    a <- as.numeric(Xb %*% theta[seq_len(kb)])
-    r <- ly - as.numeric(Xp %*% theta[kb + seq_len(kp)])
-    s1 <- exp(lim[1]); s2 <- exp(lim[2]); se2 <- exp(2 * lim[3]); rho <- tanh(lim[4])
-    cc <- rho * s2 / s1
-    tau2 <- s2^2 * (1 - rho^2)
-    R1 <- psum(r); R2 <- psum(r^2)
-    k <- tau2 / (se2 + m * tau2)
-    has <- m > 0
-    const <- ifelse(has, -0.5 * (m * log(2 * pi) + (m - 1) * log(se2) + log(se2 + m * tau2)) -
-                      0.5 * (R2 - k * R1^2) / se2 - sly, 0)
-    lin <- ifelse(has, cc * R1 * (1 - k * m) / se2, 0)
-    quad <- ifelse(has, cc^2 * m * (1 - k * m) / se2, 0)
-    # h(u) = binary(u) + const + lin u - quad u^2 / 2 + log phi(u; s1)
-    h <- function(u) {
-      as.numeric(rowsum(logF(sgn * (a + u[group_b])), fac)) + const + lin * u -
-        0.5 * quad * u^2 + stats::dnorm(u, 0, s1, log = TRUE)
+    out <- twopart_cre_cpp(Xb, sgn, group_b, Xp, ly, group_p, G, as.numeric(theta),
+                           probit, gh$nodes, log_w, isTRUE(score))
+    if (score && is.null(out$score)) {
+      out$score <- matrix(0, G, length(theta))
     }
-    u <- rep(0, G)
-    for (step in seq_len(100L)) {
-      z <- sgn * (a + u[group_b])
-      g1 <- as.numeric(rowsum(sgn * d1(z), fac)) + lin - quad * u - u / s1^2
-      g2 <- as.numeric(rowsum(d2(z), fac)) - quad - 1 / s1^2
-      delta <- pmax(-3, pmin(3, g1 / g2))
-      if (anyNA(delta)) return(list(ll = rep(-Inf, G)))
-      u <- u - delta
-      if (max(abs(delta)) < 1e-10) break
-    }
-    z <- sgn * (a + u[group_b])
-    tau_u <- 1 / sqrt(-(as.numeric(rowsum(d2(z), fac)) - quad - 1 / s1^2))
-    terms <- vapply(seq_along(gh$nodes), function(q) {
-      log_w[q] + h(u + sqrt(2) * tau_u * gh$nodes[q])
-    }, numeric(G))
-    if (!is.matrix(terms)) terms <- matrix(terms, nrow = G)
-    list(ll = log(sqrt(2) * tau_u) + log_row_sum_exp(terms))
+    out
   }
 }
 

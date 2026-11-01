@@ -96,3 +96,19 @@ test_that("correlated two-part argument checks", {
   expect_error(twopart(cost ~ x, d, c("id", "t"), model = "random", positive = "lognormal",
                        correlated = TRUE, vcov = "HC1"))
 })
+
+test_that("correlated two-part score is the exact gradient of the quadrature likelihood", {
+  set.seed(5)
+  G <- 40; T <- 4
+  id <- rep(seq_len(G), each = T); x <- rnorm(G * T)
+  d <- as.numeric(0.2 + 0.5 * x + rnorm(G)[id] + rnorm(G * T) > 0)
+  d[id <= 2] <- 0  # individuals without positive outcomes
+  Xb <- cbind(1, x); Xp <- cbind(1, x[d == 1]); ly <- 5 + 0.3 * x[d == 1] + rnorm(sum(d))
+  th <- c(0.1, 0.4, 5.1, 0.2, log(0.9), log(0.7), log(0.6), atanh(-0.4))
+  for (link in c("probit", "logit")) for (R in c(1, 9)) {
+    f <- twopart_cre_contrib(Xb, d, id, Xp, ly, id[d == 1], link, R)
+    res <- f(th, TRUE)
+    expect_equal(dim(res$score), c(G, length(th)))
+    expect_equal(res$score, ml_numeric_scores(f, th), tolerance = 1e-6)
+  }
+})
