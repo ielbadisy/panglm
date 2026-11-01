@@ -141,13 +141,13 @@ fit_truncated_negbin_dummy <- function(X, y, group, maxit, tol) {
   objective <- function(par) {
     eta <- pmin(pmax(as.numeric(Xa %*% par[seq_len(k + G)]), -30), 30)
     mu <- exp(eta)
-    theta <- exp(par[k + G + 1L])
-    log_p0 <- theta * (log(theta) - log(theta + mu))
-    log_nonzero <- numeric(length(log_p0))
-    small_p0 <- log_p0 < -log(2)
-    log_nonzero[small_p0] <- log1p(-exp(log_p0[small_p0]))
-    log_nonzero[!small_p0] <- log(-expm1(log_p0[!small_p0]))
-    -sum(stats::dnbinom(y, size = theta, mu = mu, log = TRUE) - log_nonzero)
+    theta <- exp(min(par[k + G + 1L], log(1e8)))
+    # log P(Y = 0) = -theta * log(1 + mu / theta): finite for any theta,
+    # where theta * (log(theta) - log(theta + mu)) is NaN once theta overflows
+    log_p0 <- -theta * log1p(mu / theta)
+    log_nonzero <- log(-expm1(log_p0))
+    value <- -sum(stats::dnbinom(y, size = theta, mu = mu, log = TRUE) - log_nonzero)
+    if (is.finite(value)) value else Inf
   }
 
   opt <- stats::optim(
@@ -160,7 +160,7 @@ fit_truncated_negbin_dummy <- function(X, y, group, maxit, tol) {
 
   coefs <- opt$par[seq_len(k)]
   alpha_i <- opt$par[k + seq_len(G)]
-  theta <- exp(opt$par[k + G + 1L])
+  theta <- exp(min(opt$par[k + G + 1L], log(1e8)))
   names(coefs) <- colnames_X
 
   vcov_full <- tryCatch(
@@ -172,7 +172,7 @@ fit_truncated_negbin_dummy <- function(X, y, group, maxit, tol) {
 
   eta <- pmin(pmax(as.numeric(Xa %*% opt$par[seq_len(k + G)]), -30), 30)
   mu <- exp(eta)
-  p0 <- exp(theta * (log(theta) - log(theta + mu)))
+  p0 <- exp(-theta * log1p(mu / theta))
   fitted <- mu / pmax(1 - p0, .Machine$double.eps)
 
   list(coefficients = coefs, vcov = vcov, bread = vcov,

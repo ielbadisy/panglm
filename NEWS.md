@@ -98,6 +98,11 @@ panels ship with the package. Estimates are unchanged.
   the signed statistic is kept, the p-value is `NA` and a warning points
   to `method = "mundlak"`. The print method drops the stray space before
   commas.
+* `panhurdle(family = "negbin")` no longer stops with "NAs are not
+  allowed in subscripted assignments" when the NB2 shape parameter runs
+  off to infinity (counts no more dispersed than Poisson): `log P(Y = 0)`
+  is computed as `-theta * log1p(mu / theta)`, which stays finite, and
+  the fit then reaches the zero-truncated Poisson limit.
 
 # panglm 1.6.2
 

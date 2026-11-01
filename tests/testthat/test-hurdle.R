@@ -89,3 +89,20 @@ test_that("panhurdle() supports an NB2 positive-count component", {
   expect_true(is.finite(fit$count$theta) && fit$count$theta > 0)
   expect_true(is.finite(fit$count$coefficients["x1"]))
 })
+
+test_that("NB2 count part reaches the Poisson limit when the counts are underdispersed", {
+  # theta runs off to infinity here; the old log P(Y = 0) form turned NaN and
+  # the fit stopped with "NAs are not allowed in subscripted assignments"
+  set.seed(31)
+  n <- 300
+  x <- rnorm(n)
+  y <- pmin(stats::rpois(n, exp(1 + 0.3 * x)), 3)
+  keep <- y > 0
+  g <- rep(1:30, each = 10)
+  X <- matrix(x[keep], dimnames = list(NULL, "x"))
+  nb <- suppressWarnings(fit_truncated_negbin_dummy(X, y[keep], g[keep], 100, 1e-10))
+  po <- fit_truncated_poisson_dummy(X, y[keep], g[keep], 100, 1e-10)
+  expect_true(nb$theta > 1e6)
+  expect_equal(unname(nb$coefficients), unname(po$coefficients), tolerance = 1e-4)
+  expect_equal(nb$loglik, po$loglik, tolerance = 1e-6)
+})
