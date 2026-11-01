@@ -7,6 +7,53 @@ did_textwidth <- function(lab, cex) {
   graphics::strwidth(lab, cex = cex) + graphics::strwidth("mm", cex = cex)
 }
 
+#' Legend layout that fits the plot region
+#'
+#' Chooses between one horizontal row and a few columns so that a legend at
+#' the top of the plot region is never wider than the region (for example in
+#' a narrow panel of `par(mfrow = c(1, 2))`). Widths are measured in inches
+#' from the current device and margins, so this is called before the plot is
+#' drawn. Returns `ncol`, `nrow` and `height` (inches).
+#'
+#' @keywords internal
+#' @noRd
+did_leglayout <- function(lab, cex, seg.len = 1.2, x.intersp = 1) {
+  k <- length(lab)
+  xc <- cex * graphics::par("cin")[1]
+  yc <- cex * graphics::par("cin")[2]
+  item <- graphics::strwidth(lab, units = "inches", cex = cex) +
+    (seg.len + 2 * x.intersp + 0.5) * xc
+  avail <- 0.97 * graphics::par("pin")[1]
+  ncol <- if (sum(item) + xc <= avail) k else max(1L, min(k, floor(avail / max(item))))
+  nrow <- ceiling(k / ncol)
+  list(ncol = ncol, nrow = nrow, height = (nrow + 0.6) * yc)
+}
+
+#' Upper y limit with room for a top legend of a given layout
+#'
+#' @keywords internal
+#' @noRd
+did_legroom <- function(ylim, lay) {
+  pin <- graphics::par("pin")[2]
+  h <- min(lay$height, 0.6 * pin)
+  ylim[2] + diff(ylim) * h / max(0.92 * pin - h, 0.2 * pin)
+}
+
+#' Draw a top legend with a layout from did_leglayout()
+#'
+#' @keywords internal
+#' @noRd
+did_toplegend <- function(lab, lay, cex, ...) {
+  horiz <- lay$ncol == length(lab) && lay$nrow == 1L
+  tw <- if (horiz) did_textwidth(lab, cex) else {
+    if (getRversion() < "4.1.0") NULL else max(graphics::strwidth(lab, cex = cex))
+  }
+  if (!horiz && !is.null(tw)) tw <- tw + graphics::strwidth("m", cex = cex)
+  graphics::legend("top", legend = lab, horiz = horiz, ncol = if (horiz) 1 else lay$ncol,
+                   bty = "o", bg = "white", box.col = NA, cex = cex, text.width = tw, ...)
+  graphics::box()
+}
+
 #' Standard table for the event-study drawer
 #'
 #' Returns a data frame with `level`, `estimate`, `lower`, `upper`, `ref`
@@ -74,9 +121,16 @@ did_drawes <- function(tab, event = TRUE, xlab = NULL, ylab = NULL, main = NULL,
   }
   ref <- tab$ref & ok
   pre <- event & x < 0 & !ref
+  if (legend) {
+    pct <- paste0(format(100 * level), "% ")
+    lab <- c(if (event && any(pre)) "Pre-treatment", if (event) "Post-treatment" else "Estimate",
+             if (any(ref)) "Reference", paste0(pct, "pointwise CI"),
+             if (band) paste0(pct, "uniform band"))
+    lay <- did_leglayout(lab, 0.75, x.intersp = 0.6)
+  }
   if (is.null(ylim)) {
     ylim <- range(lo[ok], hi[ok], est[ok], 0, if (band) c(blo[ok], bhi[ok]))
-    if (legend) ylim[2] <- ylim[2] + 0.18 * diff(ylim)
+    if (legend) ylim[2] <- did_legroom(ylim, lay)
   }
   dx <- if (length(unique(x)) > 1L) min(diff(sort(unique(x)))) else 1
   dots <- list(...)
@@ -96,18 +150,12 @@ did_drawes <- function(tab, event = TRUE, xlab = NULL, ylab = NULL, main = NULL,
   graphics::points(x[ci], est[ci], pch = ifelse(pre[ci], 21, 19), bg = "white", cex = 1.1)
   if (any(ref)) graphics::points(x[ref], est[ref], pch = 23, bg = "white", cex = 1.1)
   if (legend) {
-    pct <- paste0(format(100 * level), "% ")
-    lab <- c(if (event && any(pre)) "Pre-treatment", if (event) "Post-treatment" else "Estimate",
-             if (any(ref)) "Reference", paste0(pct, "pointwise CI"),
-             if (band) paste0(pct, "uniform band"))
     pch <- c(if (event && any(pre)) 21, 19, if (any(ref)) 23, NA, if (band) 15)
     lty <- c(if (event && any(pre)) 0, 0, if (any(ref)) 0, 1, if (band) 0)
     col <- c(rep("black", length(lab) - band), if (band) "grey85")
-    graphics::legend("top", legend = lab, pch = pch, lty = lty, lwd = 1.5, col = col,
-                     pt.bg = "white", pt.cex = ifelse(seq_along(lab) == length(lab) & band,
-                                                      2, 1.1),
-                     horiz = TRUE, bty = "n", cex = 0.75, seg.len = 1.2,
-                     x.intersp = 0.6, text.width = did_textwidth(lab, 0.75))
+    did_toplegend(lab, lay, 0.75, pch = pch, lty = lty, lwd = 1.5, col = col,
+                  pt.bg = "white", pt.cex = ifelse(seq_along(lab) == length(lab) & band, 2, 1.1),
+                  seg.len = 1.2, x.intersp = 0.6)
   }
   attr(tab, "band") <- band
   invisible(tab)
@@ -280,9 +328,10 @@ eventplot <- function(..., labels = NULL, min_e = -Inf, max_e = Inf,
   shift <- (seq_len(k) - (k + 1) / 2) * offset
   all <- do.call(rbind, lapply(tabs, `[`, c("level", "estimate", "lower", "upper")))
   ok <- is.finite(all$estimate)
+  if (legend) lay <- did_leglayout(labels, 0.8)
   if (is.null(ylim)) {
     ylim <- range(all$lower[ok], all$upper[ok], all$estimate[ok], 0, na.rm = TRUE)
-    if (legend) ylim[2] <- ylim[2] + 0.12 * diff(ylim)
+    if (legend) ylim[2] <- did_legroom(ylim, lay)
   }
   xr <- range(all$level) + c(-1, 1) * max(abs(shift), 0.3)
   graphics::plot(NA, xlim = xr, ylim = ylim, xlab = xlab, ylab = ylab, main = main,
@@ -300,9 +349,7 @@ eventplot <- function(..., labels = NULL, min_e = -Inf, max_e = Inf,
     graphics::points(x[f], t$estimate[f], pch = p[f], col = col[j], bg = "white", cex = 1.1)
   }
   if (legend) {
-    graphics::legend("top", legend = labels, col = col, pch = pch, lty = 1, lwd = 1.5,
-                     horiz = TRUE, bty = "n", cex = 0.8, seg.len = 1.2,
-                     text.width = did_textwidth(labels, 0.8))
+    did_toplegend(labels, lay, 0.8, col = col, pch = pch, lty = 1, lwd = 1.5, seg.len = 1.2)
   }
   out <- do.call(rbind, lapply(seq_len(k), function(j) {
     data.frame(model = labels[j], event = tabs[[j]]$level, estimate = tabs[[j]]$estimate,
