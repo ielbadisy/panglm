@@ -6,22 +6,26 @@
 \usage{
 \method{plot}{twopart}(
   x,
-  which = c("both", "binary", "positive"),
+  which = c("both", "binary", "positive", "density"),
   parm = NULL,
   level = 0.95,
+  bw = "nrd0",
   ...
 )
 }
 \arguments{
 \item{x}{a fitted \code{"twopart"} object}
 
-\item{which}{\code{"both"} (default), \code{"binary"} or \code{"positive"}}
+\item{which}{\code{"both"} (default), \code{"binary"}, \code{"positive"} or \code{"density"}}
 
 \item{parm}{names or positions of the terms to plot; by default every
 term except \code{"(Intercept)"}. With \code{which = "both"}, names absent from
 one part are ignored in that part.}
 
 \item{level}{confidence level of the intervals}
+
+\item{bw}{bandwidth of the observed kernel density of the \code{"density"}
+view, passed to \code{\link[stats:density]{stats::density()}}}
 
 \item{...}{additional arguments passed to \code{\link[graphics:plot.default]{graphics::plot.default()}}}
 }
@@ -35,6 +39,23 @@ side by side, in the dot-and-whisker layout of \code{\link[=plot.panglm]{plot.pa
 intervals use \code{vcov()}, so that they are the joint-likelihood intervals of
 correlated two-part fits.
 }
+\details{
+\code{which = "density"} compares the observed outcome with the
+distribution implied by the model, a point mass at zero plus a density
+on the positive values. The bars at zero are the observed share of zeros
+(grey) and the predicted probability \code{mean_i (1 - p_i)} (orange, on the
+right-hand axis); the curves are the kernel density of the positive
+outcomes (\code{\link[stats:density]{stats::density()}}, bandwidth \code{bw}) scaled by their share
+(grey) and the implied density \verb{mean_i p_i g_i(t)} (orange), where \code{p_i}
+is the probability of a positive outcome and \code{g_i} the gamma density
+(shape \code{1 / phi}, \code{phi} the Pearson dispersion of the positive part) or
+the lognormal density (\code{sigma^2} the residual variance of \verb{log y}).
+Random-effects fits integrate over the random intercepts: independent
+intercepts by Gauss-Hermite quadrature (closed form for the lognormal
+part), correlated intercepts over their joint normal distribution.
+Skewed costs are drawn on a logarithmic axis (densities of \code{log(y)}, the
+bars at zero left of the axis) unless \code{log = ""} is passed.
+}
 \examples{
 data(copd)
 set.seed(1)
@@ -44,6 +65,7 @@ tp <- twopart(cost ~ treatment + age + crp, data = copd,
               index = c("id", "visit"), positive = "gamma")
 plot(tp)
 plot(tp, which = "positive", parm = "crp")
+plot(tp, which = "density")
 }
 \seealso{
 Other twopart methods: 

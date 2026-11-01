@@ -36,10 +36,39 @@
 #'   binomial with size `d` for the Poisson-gamma model, beta-negative
 #'   binomial for the Hausman-Hall-Griliches negative binomial model.
 #'   Random-slope fits have no closed-form marginal and are not supported.
+#' * `"density"` (Gaussian, gamma, beta and Tobit families): the kernel
+#'   density of the observed outcome ([stats::density()], bandwidth `bw`,
+#'   grey) against the model-implied marginal density (orange), the average
+#'   over observations of the density of a single outcome at the fitted
+#'   parameters, `f(t) = mean_i f(t | x_i)`. Gaussian:
+#'   `dnorm(t, eta_i, sigma)` with `sigma^2` the residual variance; gamma:
+#'   `dgamma(t, shape = 1 / phi, rate = 1 / (phi mu_i))` with `phi` the
+#'   Pearson dispersion of the fit (the `stats::glm()` convention, also
+#'   used in the paper); beta: `dbeta(t, mu_i phi, (1 - mu_i) phi)` with
+#'   `phi` the precision; Tobit: the normal density on `(left, right)` plus
+#'   point masses `P(y = left) = mean_i pnorm((left - eta_i) / sigma)` (and
+#'   likewise at `right`), drawn as bars on the right-hand axis, observed
+#'   share (grey) beside predicted probability (orange). For the Tobit
+#'   family the observed kernel density uses the uncensored outcomes and is
+#'   scaled by their share, so that both curves integrate with the masses
+#'   to one. Random-effects fits use the marginal density, integrated over
+#'   the random effect: in closed form for the Gaussian and Tobit families
+#'   (variance `sigma_e^2 + sigma_u^2`, or `sigma_e^2 + z' Sigma z` with
+#'   random slopes) and by Gauss-Hermite quadrature (at least 21 nodes) for
+#'   the gamma and beta families (the gamma random-intercept fit uses its
+#'   maximum likelihood shape). Fixed-effects fits condition on the
+#'   estimated individual effects (the fitted means include them), so the
+#'   implied density is the in-sample fit with `n + G` parameters; between
+#'   fits are refused. A positive outcome whose 99th percentile exceeds 20
+#'   times its median is drawn on a logarithmic axis (`log = "x"` forces
+#'   it, `log = ""` turns it off): both curves are then densities of
+#'   `log(y)`, the implied one `exp(s) f(exp(s))`, and point masses at zero
+#'   sit left of the axis. Count families are refused in favour of
+#'   `which = "rootogram"`.
 #'
 #' @param x a fitted `"panglm"` object
 #' @param which one of `"coefficients"`, `"residuals"`, `"fitted"`, `"qq"`,
-#'   `"calibration"` or `"rootogram"`
+#'   `"calibration"`, `"rootogram"` or `"density"`
 #' @param level confidence level for coefficient and calibration intervals
 #' @param parm names or positions of the terms of the coefficient plot; by
 #'   default every term except `"(Intercept)"`
@@ -48,6 +77,8 @@
 #' @param bins number of quantile bins of the calibration plot
 #' @param max largest count of the rootogram; by default the 99th
 #'   percentile of the outcome
+#' @param bw bandwidth of the observed kernel density of the `"density"`
+#'   view, passed to [stats::density()]
 #' @param main optional plot title
 #' @param xlab optional horizontal-axis label
 #' @param ... additional arguments passed to [graphics::plot.default()]
@@ -72,11 +103,17 @@
 #'                            data = copd, index = c("id", "visit"),
 #'                            model = "pooling", family = "binomial")
 #' plot(any_exacerbation, which = "calibration", bins = 5)
+#'
+#' plot(fit, which = "density")
+#' censored <- panglm(pmax(fev1, 1.5) ~ crp + treatment, data = copd,
+#'                    index = c("id", "visit"), model = "pooling",
+#'                    family = tobitfamily(left = 1.5))
+#' plot(censored, which = "density")
 #' @export
 plot.panglm <- function(x, which = c("coefficients", "residuals", "fitted", "qq",
-                                     "calibration", "rootogram"),
+                                     "calibration", "rootogram", "density"),
                         level = 0.95, parm = NULL, type = c("pearson", "response"),
-                        bins = 10, max = NULL, main = NULL, xlab = NULL, ...) {
+                        bins = 10, max = NULL, bw = "nrd0", main = NULL, xlab = NULL, ...) {
   which <- match.arg(which)
   type <- match.arg(type)
 
@@ -97,7 +134,8 @@ plot.panglm <- function(x, which = c("coefficients", "residuals", "fitted", "qq"
     fitted = .panglm_plot_fitted(x, main, xlab, ...),
     qq = .panglm_plot_qq(x, main, ...),
     calibration = .panglm_plot_calibration(x, bins, level, main, xlab, ...),
-    rootogram = .panglm_plot_rootogram(x, max, main, xlab, ...)
+    rootogram = .panglm_plot_rootogram(x, max, main, xlab, ...),
+    density = .panglm_plot_density(panglm_outcome_density(x), bw, main, xlab, ...)
   )
   invisible(x)
 }

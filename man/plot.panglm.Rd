@@ -6,12 +6,14 @@
 \usage{
 \method{plot}{panglm}(
   x,
-  which = c("coefficients", "residuals", "fitted", "qq", "calibration", "rootogram"),
+  which = c("coefficients", "residuals", "fitted", "qq", "calibration", "rootogram",
+    "density"),
   level = 0.95,
   parm = NULL,
   type = c("pearson", "response"),
   bins = 10,
   max = NULL,
+  bw = "nrd0",
   main = NULL,
   xlab = NULL,
   ...
@@ -21,7 +23,7 @@
 \item{x}{a fitted \code{"panglm"} object}
 
 \item{which}{one of \code{"coefficients"}, \code{"residuals"}, \code{"fitted"}, \code{"qq"},
-\code{"calibration"} or \code{"rootogram"}}
+\code{"calibration"}, \code{"rootogram"} or \code{"density"}}
 
 \item{level}{confidence level for coefficient and calibration intervals}
 
@@ -35,6 +37,9 @@ or \code{"response"}}
 
 \item{max}{largest count of the rootogram; by default the 99th
 percentile of the outcome}
+
+\item{bw}{bandwidth of the observed kernel density of the \code{"density"}
+view, passed to \code{\link[stats:density]{stats::density()}}}
 
 \item{main}{optional plot title}
 
@@ -84,6 +89,35 @@ distribution whose frequencies the rootogram compares: negative
 binomial with size \code{d} for the Poisson-gamma model, beta-negative
 binomial for the Hausman-Hall-Griliches negative binomial model.
 Random-slope fits have no closed-form marginal and are not supported.
+\item \code{"density"} (Gaussian, gamma, beta and Tobit families): the kernel
+density of the observed outcome (\code{\link[stats:density]{stats::density()}}, bandwidth \code{bw},
+grey) against the model-implied marginal density (orange), the average
+over observations of the density of a single outcome at the fitted
+parameters, \verb{f(t) = mean_i f(t | x_i)}. Gaussian:
+\code{dnorm(t, eta_i, sigma)} with \code{sigma^2} the residual variance; gamma:
+\verb{dgamma(t, shape = 1 / phi, rate = 1 / (phi mu_i))} with \code{phi} the
+Pearson dispersion of the fit (the \code{stats::glm()} convention, also
+used in the paper); beta: \verb{dbeta(t, mu_i phi, (1 - mu_i) phi)} with
+\code{phi} the precision; Tobit: the normal density on \verb{(left, right)} plus
+point masses \verb{P(y = left) = mean_i pnorm((left - eta_i) / sigma)} (and
+likewise at \code{right}), drawn as bars on the right-hand axis, observed
+share (grey) beside predicted probability (orange). For the Tobit
+family the observed kernel density uses the uncensored outcomes and is
+scaled by their share, so that both curves integrate with the masses
+to one. Random-effects fits use the marginal density, integrated over
+the random effect: in closed form for the Gaussian and Tobit families
+(variance \code{sigma_e^2 + sigma_u^2}, or \verb{sigma_e^2 + z' Sigma z} with
+random slopes) and by Gauss-Hermite quadrature (at least 21 nodes) for
+the gamma and beta families (the gamma random-intercept fit uses its
+maximum likelihood shape). Fixed-effects fits condition on the
+estimated individual effects (the fitted means include them), so the
+implied density is the in-sample fit with \code{n + G} parameters; between
+fits are refused. A positive outcome whose 99th percentile exceeds 20
+times its median is drawn on a logarithmic axis (\code{log = "x"} forces
+it, \code{log = ""} turns it off): both curves are then densities of
+\code{log(y)}, the implied one \verb{exp(s) f(exp(s))}, and point masses at zero
+sit left of the axis. Count families are refused in favour of
+\code{which = "rootogram"}.
 }
 }
 \examples{
@@ -105,6 +139,12 @@ any_exacerbation <- panglm(I(exacerbations > 0) ~ crp + treatment,
                            data = copd, index = c("id", "visit"),
                            model = "pooling", family = "binomial")
 plot(any_exacerbation, which = "calibration", bins = 5)
+
+plot(fit, which = "density")
+censored <- panglm(pmax(fev1, 1.5) ~ crp + treatment, data = copd,
+                   index = c("id", "visit"), model = "pooling",
+                   family = tobitfamily(left = 1.5))
+plot(censored, which = "density")
 }
 \seealso{
 Other panglm methods: 

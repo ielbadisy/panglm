@@ -6,12 +6,30 @@
 #' intervals use `vcov()`, so that they are the joint-likelihood intervals of
 #' correlated two-part fits.
 #'
+#' `which = "density"` compares the observed outcome with the
+#' distribution implied by the model, a point mass at zero plus a density
+#' on the positive values. The bars at zero are the observed share of zeros
+#' (grey) and the predicted probability `mean_i (1 - p_i)` (orange, on the
+#' right-hand axis); the curves are the kernel density of the positive
+#' outcomes ([stats::density()], bandwidth `bw`) scaled by their share
+#' (grey) and the implied density `mean_i p_i g_i(t)` (orange), where `p_i`
+#' is the probability of a positive outcome and `g_i` the gamma density
+#' (shape `1 / phi`, `phi` the Pearson dispersion of the positive part) or
+#' the lognormal density (`sigma^2` the residual variance of `log y`).
+#' Random-effects fits integrate over the random intercepts: independent
+#' intercepts by Gauss-Hermite quadrature (closed form for the lognormal
+#' part), correlated intercepts over their joint normal distribution.
+#' Skewed costs are drawn on a logarithmic axis (densities of `log(y)`, the
+#' bars at zero left of the axis) unless `log = ""` is passed.
+#'
 #' @param x a fitted `"twopart"` object
-#' @param which `"both"` (default), `"binary"` or `"positive"`
+#' @param which `"both"` (default), `"binary"`, `"positive"` or `"density"`
 #' @param parm names or positions of the terms to plot; by default every
 #'   term except `"(Intercept)"`. With `which = "both"`, names absent from
 #'   one part are ignored in that part.
 #' @param level confidence level of the intervals
+#' @param bw bandwidth of the observed kernel density of the `"density"`
+#'   view, passed to [stats::density()]
 #' @param ... additional arguments passed to [graphics::plot.default()]
 #' @return `x`, invisibly
 #' @family twopart methods
@@ -24,10 +42,15 @@
 #'               index = c("id", "visit"), positive = "gamma")
 #' plot(tp)
 #' plot(tp, which = "positive", parm = "crp")
+#' plot(tp, which = "density")
 #' @export
-plot.twopart <- function(x, which = c("both", "binary", "positive"), parm = NULL,
-                         level = 0.95, ...) {
+plot.twopart <- function(x, which = c("both", "binary", "positive", "density"), parm = NULL,
+                         level = 0.95, bw = "nrd0", ...) {
   which <- match.arg(which)
+  if (which == "density") {
+    .panglm_plot_density(twopart_outcome_density(x), bw = bw, ...)
+    return(invisible(x))
+  }
   est <- stats::coef(x)
   se <- .panglm_coef_se(est, stats::vcov(x))
   parts <- if (which == "both") c("binary", "positive") else which
