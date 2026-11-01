@@ -82,8 +82,12 @@ binomial_re <- function(formula, data, label, links = c("logit", "probit"),
       V <- solve(numDeriv::hessian(dev, c(getME(g, "theta"), fixef(g))) / 2)
       b <- names(fixef(g))
       # probit: glmer scales the nodes by the expected curvature, panglm by
-      # the observed one, so the two 21-node rules differ slightly
-      tq <- if (lk == "logit") 1e-5 else 5e-5
+      # the observed one, so the two 21-node rules differ slightly. The HIE
+      # logit likelihood is flat along the intercept: glmer with bobyqa and
+      # with a tight nloptwrap reach the same deviance to 1e-9 but differ by
+      # 1e-4 in the intercept, so coefficients are compared at 1e-4 and the
+      # logLik at 1e-7
+      tq <- if (lk == "logit") 1e-4 else 5e-5
       out <- c(out, list(
         vcompare(model, label, "coef (R = 21)", coef(f)[b], list(`lme4::glmer nAGQ=21` = fixef(g)), tq),
         vcompare(model, label, "sigma_u (R = 21)", f$sigma,
