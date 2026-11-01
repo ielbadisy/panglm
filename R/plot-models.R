@@ -174,7 +174,7 @@ plot.panselect <- function(x, which = c("both", "outcome", "selection"), parm = 
       list(est = b, se = stats::setNames(rep(NA_real_, length(b)), names(b)))
     })
     names(sel_parts) <- paste("Period", names(probit))
-    panels$selection <- list(main = "Selection equation (probits)", parts = sel_parts)
+    panels$selection <- list(main = "Selection probits", parts = sel_parts)
   }
   if (which %in% c("both", "outcome")) {
     est <- stats::coef(x)
