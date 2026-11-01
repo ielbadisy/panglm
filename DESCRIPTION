@@ -32,7 +32,6 @@ Imports:
     Rcpp,
     grDevices,
     graphics,
-    grDevices,
     stats
 LinkingTo:
     Rcpp,
