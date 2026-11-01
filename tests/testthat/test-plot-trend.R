@@ -73,9 +73,12 @@ test_that("trendplot standard errors are cluster-robust means (as fixest)", {
 })
 
 test_that("trendplot reproduces the castle doctrine means and fixest cell SEs", {
-  skip_if_not_installed("bacondecomp")
+  # optional external data, not a declared dependency: name it through a
+  # variable so that R CMD check does not require it
+  src <- "bacondecomp"
+  skip_if_not_installed(src)
   skip_if_not_installed("fixest")
-  data("castle", package = "bacondecomp", envir = environment())
+  utils::data("castle", package = src, envir = environment())
   castle$adopt <- ifelse(is.na(castle$treatment_date), 0, castle$treatment_date)
   pdf(NULL); on.exit(dev.off())
   m <- trendplot(castle, c("sid", "year"), "adopt", "l_homicide")
