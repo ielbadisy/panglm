@@ -6,9 +6,10 @@
 \usage{
 \method{plot}{panfmm}(
   x,
-  which = c("coefficients", "posterior"),
+  which = c("coefficients", "posterior", "correlation"),
   parm = NULL,
   level = 0.95,
+  cells = FALSE,
   main = NULL,
   xlab = NULL,
   ...
@@ -17,12 +18,16 @@
 \arguments{
 \item{x}{a fitted \code{"panfmm"} object}
 
-\item{which}{\code{"coefficients"} (default) or \code{"posterior"}}
+\item{which}{\code{"coefficients"} (default), \code{"posterior"} or
+\code{"correlation"}}
 
 \item{parm}{names or positions of the terms to plot (without the class
-prefix); by default every term except \code{"(Intercept)"}}
+prefix); by default every term except \code{"(Intercept)"}. For
+\code{"correlation"}, names as in \code{coef(x)}.}
 
 \item{level}{confidence level of the intervals}
+
+\item{cells}{for \code{"correlation"}, print the correlation in each cell}
 
 \item{main}{optional plot title}
 
@@ -42,6 +47,8 @@ diagnostic: the histogram of each individual's largest posterior class
 probability. Mass close to one means well-separated classes; the
 subtitle reports its mean and the relative entropy
 \verb{1 - sum(-p log p) / (N log k)} (one for a perfect classification).
+\code{which = "correlation"} draws the heatmap of the correlation matrix of
+all the estimates, \code{cov2cor(vcov(x))} (see \code{\link[=plot.panglm]{plot.panglm()}}).
 }
 \examples{
 data(copd)
@@ -50,6 +57,7 @@ fit <- panfmm(exacerbations ~ crp + treatment, data = copd,
               nstart = 2, seed = 1)
 plot(fit)
 plot(fit, which = "posterior")
+plot(fit, which = "correlation", cells = TRUE)
 }
 \seealso{
 Other panfmm methods: 

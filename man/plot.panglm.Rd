@@ -7,13 +7,14 @@
 \method{plot}{panglm}(
   x,
   which = c("coefficients", "residuals", "fitted", "qq", "calibration", "rootogram",
-    "density", "effects"),
+    "density", "effects", "correlation"),
   level = 0.95,
   parm = NULL,
   type = c("pearson", "response"),
   bins = 10,
   max = NULL,
   bw = "nrd0",
+  cells = FALSE,
   main = NULL,
   xlab = NULL,
   ...
@@ -23,12 +24,13 @@
 \item{x}{a fitted \code{"panglm"} object}
 
 \item{which}{one of \code{"coefficients"}, \code{"residuals"}, \code{"fitted"}, \code{"qq"},
-\code{"calibration"}, \code{"rootogram"}, \code{"density"} or \code{"effects"}}
+\code{"calibration"}, \code{"rootogram"}, \code{"density"}, \code{"effects"} or
+\code{"correlation"}}
 
 \item{level}{confidence level for coefficient and calibration intervals}
 
-\item{parm}{names or positions of the terms of the coefficient plot; by
-default every term except \code{"(Intercept)"}}
+\item{parm}{names or positions of the terms of the coefficient and
+correlation plots; by default every term except \code{"(Intercept)"}}
 
 \item{type}{residuals of the \code{"residuals"} view, \code{"pearson"} (default)
 or \code{"response"}}
@@ -40,6 +42,8 @@ percentile of the outcome}
 
 \item{bw}{bandwidth of the kernel densities of the \code{"density"} and
 \code{"effects"} views, passed to \code{\link[stats:density]{stats::density()}}}
+
+\item{cells}{for \code{"correlation"}, print the correlation in each cell}
 
 \item{main}{optional plot title}
 
@@ -134,6 +138,12 @@ several modes do suggest a non-normal effect distribution. With random
 slopes there is one panel per effect, then the intercept plotted
 against each slope with the 95\% contour of the estimated normal
 distribution.
+\item \code{"correlation"}: heatmap of the correlation matrix of the estimates,
+\code{cov2cor(vcov(x))}, with a diverging palette centred at zero (blue
+negative, red positive, on the fixed range \verb{[-1, 1]}) and a colour key;
+\code{cells = TRUE} prints the values. Strong correlations flag nearly
+collinear terms whose separate estimates are imprecise. \code{parm} selects
+the terms (by default all except \code{"(Intercept)"}).
 }
 }
 \examples{
@@ -167,6 +177,8 @@ hosp <- panglm(hospitalized ~ crp + treatment, data = copd,
                index = c("id", "visit"), model = "random",
                family = "binomial")
 plot(hosp, which = "effects")
+
+plot(fit, which = "correlation", cells = TRUE)
 }
 \seealso{
 \code{\link[=fixef]{fixef()}} and \code{\link[=ranef]{ranef()}} for the individual effects.

@@ -30,6 +30,7 @@ Encoding: UTF-8
 Depends: R (>= 3.6.0)
 Imports:
     Rcpp,
+    grDevices,
     graphics,
     stats
 LinkingTo:

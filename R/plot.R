@@ -81,13 +81,20 @@
 #'   slopes there is one panel per effect, then the intercept plotted
 #'   against each slope with the 95% contour of the estimated normal
 #'   distribution.
+#' * `"correlation"`: heatmap of the correlation matrix of the estimates,
+#'   `cov2cor(vcov(x))`, with a diverging palette centred at zero (blue
+#'   negative, red positive, on the fixed range `[-1, 1]`) and a colour key;
+#'   `cells = TRUE` prints the values. Strong correlations flag nearly
+#'   collinear terms whose separate estimates are imprecise. `parm` selects
+#'   the terms (by default all except `"(Intercept)"`).
 #'
 #' @param x a fitted `"panglm"` object
 #' @param which one of `"coefficients"`, `"residuals"`, `"fitted"`, `"qq"`,
-#'   `"calibration"`, `"rootogram"`, `"density"` or `"effects"`
+#'   `"calibration"`, `"rootogram"`, `"density"`, `"effects"` or
+#'   `"correlation"`
 #' @param level confidence level for coefficient and calibration intervals
-#' @param parm names or positions of the terms of the coefficient plot; by
-#'   default every term except `"(Intercept)"`
+#' @param parm names or positions of the terms of the coefficient and
+#'   correlation plots; by default every term except `"(Intercept)"`
 #' @param type residuals of the `"residuals"` view, `"pearson"` (default)
 #'   or `"response"`
 #' @param bins number of quantile bins of the calibration plot
@@ -95,6 +102,7 @@
 #'   percentile of the outcome
 #' @param bw bandwidth of the kernel densities of the `"density"` and
 #'   `"effects"` views, passed to [stats::density()]
+#' @param cells for `"correlation"`, print the correlation in each cell
 #' @param main optional plot title
 #' @param xlab optional horizontal-axis label
 #' @param ... additional arguments passed to [graphics::plot.default()]
@@ -132,11 +140,15 @@
 #'                index = c("id", "visit"), model = "random",
 #'                family = "binomial")
 #' plot(hosp, which = "effects")
+#'
+#' plot(fit, which = "correlation", cells = TRUE)
 #' @export
 plot.panglm <- function(x, which = c("coefficients", "residuals", "fitted", "qq",
-                                     "calibration", "rootogram", "density", "effects"),
+                                     "calibration", "rootogram", "density", "effects",
+                                     "correlation"),
                         level = 0.95, parm = NULL, type = c("pearson", "response"),
-                        bins = 10, max = NULL, bw = "nrd0", main = NULL, xlab = NULL, ...) {
+                        bins = 10, max = NULL, bw = "nrd0", cells = FALSE, main = NULL,
+                        xlab = NULL, ...) {
   which <- match.arg(which)
   type <- match.arg(type)
 
@@ -147,6 +159,10 @@ plot.panglm <- function(x, which = c("coefficients", "residuals", "fitted", "qq"
     )
     .panglm_dotwhisker(tab, main = main %||% "Coefficient estimates",
                        xlab = xlab %||% "Estimate", ...)
+    return(invisible(x))
+  }
+  if (which == "correlation") {
+    .panglm_corrplot(stats::vcov(x), parm, cells, main, ...)
     return(invisible(x))
   }
   if (which == "effects") {
@@ -421,13 +437,18 @@ panglm_rootogram <- function(object, max = NULL) {
 #'
 #' Displays coefficient estimates and Wald confidence intervals for the
 #' binary hurdle component, the positive-count component, or both, in the
-#' dot-and-whisker layout of [plot.panglm()].
+#' dot-and-whisker layout of [plot.panglm()]. `which = "correlation"` draws
+#' the heatmap of the correlation matrix of all the estimates (see
+#' [plot.panglm()]); the two parts are estimated separately, so the
+#' between-part block is zero.
 #'
 #' @param x a fitted `"panglm_hurdle"` object
-#' @param which one of `"both"`, `"zero"`, or `"count"`
+#' @param which one of `"both"`, `"zero"`, `"count"` or `"correlation"`
 #' @param level confidence level for coefficient intervals
 #' @param parm names or positions of the terms to plot; by default every
-#'   term except `"(Intercept)"`
+#'   term except `"(Intercept)"`. For `"correlation"`, names as in
+#'   `coef(x)` (with the `zero:` and `count:` prefixes).
+#' @param cells for `"correlation"`, print the correlation in each cell
 #' @param ... additional arguments passed to [graphics::plot.default()]
 #' @return `x`, invisibly
 #' @family panhurdle methods
@@ -436,10 +457,15 @@ panglm_rootogram <- function(object, max = NULL) {
 #' fit <- panhurdle(exacerbations ~ crp, data = copd,
 #'                      index = c("id", "visit"))
 #' plot(fit)
+#' plot(fit, which = "correlation")
 #' @export
-plot.panglm_hurdle <- function(x, which = c("both", "zero", "count"),
-                               level = 0.95, parm = NULL, ...) {
+plot.panglm_hurdle <- function(x, which = c("both", "zero", "count", "correlation"),
+                               level = 0.95, parm = NULL, cells = FALSE, ...) {
   which <- match.arg(which)
+  if (which == "correlation") {
+    .panglm_corrplot(stats::vcov(x), parm, cells, ...)
+    return(invisible(x))
+  }
   parts <- if (which == "both") c("zero", "count") else which
   titles <- c(zero = "Positive-outcome component",
               count = paste("Positive count:",
