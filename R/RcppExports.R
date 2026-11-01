@@ -49,6 +49,10 @@ panglm_num_threads_cpp <- function() {
     .Call(`_panglm_panglm_num_threads_cpp`)
 }
 
+twopart_cre_cpp <- function(Xb, sgn, group_b, Xp, ly, group_p, G, theta, probit, nodes, log_w, score) {
+    .Call(`_panglm_twopart_cre_cpp`, Xb, sgn, group_b, Xp, ly, group_p, G, theta, probit, nodes, log_w, score)
+}
+
 twoway_demean_cpp <- function(M, id_code, time_code, n_id, n_time, maxit = 10000L, tol = 1e-10) {
     .Call(`_panglm_twoway_demean_cpp`, M, id_code, time_code, n_id, n_time, maxit, tol)
 }

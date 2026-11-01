@@ -96,3 +96,50 @@ test_that("correlated two-part argument checks", {
   expect_error(twopart(cost ~ x, d, c("id", "t"), model = "random", positive = "lognormal",
                        correlated = TRUE, vcov = "HC1"))
 })
+
+test_that("correlated two-part score is the exact gradient of the quadrature likelihood", {
+  set.seed(5)
+  G <- 40; T <- 4
+  id <- rep(seq_len(G), each = T); x <- rnorm(G * T)
+  d <- as.numeric(0.2 + 0.5 * x + rnorm(G)[id] + rnorm(G * T) > 0)
+  d[id <= 2] <- 0  # individuals without positive outcomes
+  Xb <- cbind(1, x); Xp <- cbind(1, x[d == 1]); ly <- 5 + 0.3 * x[d == 1] + rnorm(sum(d))
+  th <- c(0.1, 0.4, 5.1, 0.2, log(0.9), log(0.7), log(0.6), atanh(-0.4))
+  for (link in c("probit", "logit")) for (R in c(1, 9)) {
+    f <- twopart_cre_contrib(Xb, d, id, Xp, ly, id[d == 1], link, R)
+    res <- f(th, TRUE)
+    expect_equal(dim(res$score), c(G, length(th)))
+    expect_equal(res$score, ml_numeric_scores(f, th), tolerance = 1e-6)
+  }
+})
+
+test_that("correlated two-part fit matches GLMMadaptive hurdle.lognormal", {
+  skip_on_cran()
+  skip_if_not_installed("GLMMadaptive")
+  set.seed(7)
+  N <- 120; T <- 4
+  d <- data.frame(id = rep(seq_len(N), each = T), t = rep(seq_len(T), N))
+  d$x <- rnorm(N * T)
+  U <- MASS::mvrnorm(N, c(0, 0), matrix(c(0.64, 0.336, 0.336, 0.49), 2))
+  d$cost <- ifelse(-0.2 + 0.5 * d$x + U[d$id, 1] + stats::rlogis(N * T) > 0,
+                   exp(6 + 0.3 * d$x + U[d$id, 2] + rnorm(N * T, sd = 0.5)), 0)
+  tc <- twopart(cost ~ x, d, c("id", "t"), model = "random", positive = "lognormal",
+                link = "logit", correlated = TRUE)
+  gm <- suppressWarnings(GLMMadaptive::mixed_model(
+    cost ~ x, random = ~ 1 | id, data = d, family = GLMMadaptive::hurdle.lognormal(),
+    zi_fixed = ~ x, zi_random = ~ 1 | id, nAGQ = 21,
+    initial_values = list(betas = unname(coef(tc)[3:4]), gammas = -unname(coef(tc)[1:2]))))
+  D <- gm$D
+  # GLMMadaptive models P(y = 0), on the log scale without the Jacobian
+  th_g <- c(-gm$gammas, GLMMadaptive::fixef(gm), log(sqrt(D[2, 2])), log(sqrt(D[1, 1])),
+            gm$phis, atanh(-D[1, 2] / sqrt(D[1, 1] * D[2, 2])))
+  ll_g <- as.numeric(stats::logLik(gm)) - sum(log(d$cost[d$cost > 0]))
+  pos <- d$cost > 0
+  f <- twopart_cre_contrib(cbind(1, d$x), as.numeric(pos), d$id, cbind(1, d$x[pos]),
+                           log(d$cost[pos]), d$id[pos], "logit", 21)
+  expect_equal(sum(f(th_g, FALSE)$ll), ll_g, tolerance = 1e-8)
+  expect_gte(as.numeric(logLik(tc)), ll_g - 1e-6)
+  expect_equal(unname(coef(tc)), unname(th_g[1:4]), tolerance = 5e-3)
+  expect_equal(unname(tc$joint$variance_params[["rho"]]),
+               -D[1, 2] / sqrt(D[1, 1] * D[2, 2]), tolerance = 0.02)
+})

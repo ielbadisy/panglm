@@ -81,7 +81,9 @@
 #' also check that the pooled two-part prediction is the product of the two
 #' `stats::glm()` fits, the smearing retransformation of the lognormal part,
 #' and the correlated random-intercept likelihood against two-dimensional
-#' numerical integration.
+#' numerical integration and against `GLMMadaptive::mixed_model()` with the
+#' `hurdle.lognormal()` family (logit link, correlated random intercepts),
+#' whose log-likelihood it reproduces at the same parameters.
 #' @examples
 #' data(copd)
 #' set.seed(1)

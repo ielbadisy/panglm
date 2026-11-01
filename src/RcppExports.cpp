@@ -195,6 +195,28 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// twopart_cre_cpp
+List twopart_cre_cpp(const NumericMatrix& Xb, const NumericVector& sgn, const IntegerVector& group_b, const NumericMatrix& Xp, const NumericVector& ly, const IntegerVector& group_p, int G, const NumericVector& theta, bool probit, const NumericVector& nodes, const NumericVector& log_w, bool score);
+RcppExport SEXP _panglm_twopart_cre_cpp(SEXP XbSEXP, SEXP sgnSEXP, SEXP group_bSEXP, SEXP XpSEXP, SEXP lySEXP, SEXP group_pSEXP, SEXP GSEXP, SEXP thetaSEXP, SEXP probitSEXP, SEXP nodesSEXP, SEXP log_wSEXP, SEXP scoreSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type Xb(XbSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type sgn(sgnSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type group_b(group_bSEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type Xp(XpSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type ly(lySEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type group_p(group_pSEXP);
+    Rcpp::traits::input_parameter< int >::type G(GSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< bool >::type probit(probitSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type nodes(nodesSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type log_w(log_wSEXP);
+    Rcpp::traits::input_parameter< bool >::type score(scoreSEXP);
+    rcpp_result_gen = Rcpp::wrap(twopart_cre_cpp(Xb, sgn, group_b, Xp, ly, group_p, G, theta, probit, nodes, log_w, score));
+    return rcpp_result_gen;
+END_RCPP
+}
 // twoway_demean_cpp
 List twoway_demean_cpp(NumericMatrix M, IntegerVector id_code, IntegerVector time_code, int n_id, int n_time, int maxit, double tol);
 RcppExport SEXP _panglm_twoway_demean_cpp(SEXP MSEXP, SEXP id_codeSEXP, SEXP time_codeSEXP, SEXP n_idSEXP, SEXP n_timeSEXP, SEXP maxitSEXP, SEXP tolSEXP) {
@@ -304,6 +326,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_panglm_random_negbin_fit_cpp", (DL_FUNC) &_panglm_random_negbin_fit_cpp, 6},
     {"_panglm_random_poisson_fit_cpp", (DL_FUNC) &_panglm_random_poisson_fit_cpp, 8},
     {"_panglm_panglm_num_threads_cpp", (DL_FUNC) &_panglm_panglm_num_threads_cpp, 0},
+    {"_panglm_twopart_cre_cpp", (DL_FUNC) &_panglm_twopart_cre_cpp, 12},
     {"_panglm_twoway_demean_cpp", (DL_FUNC) &_panglm_twoway_demean_cpp, 7},
     {"_panglm_twoway_demean_weighted_cpp", (DL_FUNC) &_panglm_twoway_demean_weighted_cpp, 8},
     {"_panglm_conditional_logit_loglik_grad_cpp", (DL_FUNC) &_panglm_conditional_logit_loglik_grad_cpp, 5},

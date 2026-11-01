@@ -115,6 +115,17 @@ panels ship with the package. Estimates are unchanged.
   Hansen statistic, through a generalized inverse as in `plm::pgmm()`.
   Two-step fits keep the warning.
 
+## Performance
+
+* `twopart(correlated = TRUE)` is much faster: the joint likelihood and
+  its exact gradient (including the dependence of the adaptive quadrature
+  mode and scale on the parameters) are computed in C++, replacing
+  numerical differences of an R likelihood. A `meps` fit on 6,000
+  person-years takes about 5 seconds instead of 5 minutes. Estimates are
+  unchanged up to the optimizer tolerance, and the likelihood matches
+  `GLMMadaptive::mixed_model(family = hurdle.lognormal())` at the same
+  parameters.
+
 # panglm 1.6.2
 
 Speed release for large panels. Estimates are unchanged: the
