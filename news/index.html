@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">panglm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.6.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.7.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -25,6 +25,7 @@
     <li><a class="dropdown-item" href="../articles/panglm-endogeneity.html">Endogeneity: IV, Hausman-Taylor, GMM and selection</a></li>
     <li><a class="dropdown-item" href="../articles/panglm-policy.html">Policy evaluation: DiD, event studies and staggered adoption</a></li>
     <li><a class="dropdown-item" href="../articles/panglm-heterogeneity.html">Heterogeneity: random slopes, latent classes and quantiles</a></li>
+    <li><a class="dropdown-item" href="../articles/panglm-datasets.html">Health-economics datasets for teaching panel models</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Technical reference</h6></li>
     <li><a class="dropdown-item" href="../articles/panglm-methods.html">Technical reference: models, estimators and inference</a></li>
@@ -51,6 +52,57 @@
       <small>Source: <a href="https://github.com/ielbadisy/panglm/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.7.0" id="panglm-170">panglm 1.7.0<a class="anchor" aria-label="anchor" href="#panglm-170"></a></h2>
+<p>Plotting and teaching release: every fitted object has a plot method, the diagnostics, marginal effects and difference-in-differences results can be drawn directly with base graphics, and five real health economics panels ship with the package. Estimates are unchanged.</p>
+<div class="section level3">
+<h3 id="diagnostics-and-coefficients-1-7-0">Diagnostics and coefficients<a class="anchor" aria-label="anchor" href="#diagnostics-and-coefficients-1-7-0"></a></h3>
+<ul><li>
+<code><a href="../reference/plot.panglm.html">plot.panglm()</a></code> gains <code>which = "qq"</code> (normal Q-Q plot of the Pearson residuals), <code>"calibration"</code> (observed proportion against the mean predicted probability in quantile bins, for binary outcomes) and <code>"rootogram"</code> (hanging rootogram for Poisson and negative binomial fits, including random-intercept fits through the marginal count distribution). The residual view uses Pearson residuals by default (<code>type</code>), adds a smooth, and uses a log axis for log-link models. Coefficient plots take <code>parm</code>, omit the intercept by default and size the margin to the term names.</li>
+<li>
+<code><a href="../reference/residuals.panglm.html">residuals.panglm()</a></code> gains <code>type = c("response", "pearson")</code>.</li>
+<li>New <code><a href="../reference/coefplot.html">coefplot()</a></code> compares the coefficients of several fitted models in one figure.</li>
+<li>New plot methods for <code><a href="../reference/twopart.html">twopart()</a></code>, <code><a href="../reference/panfmm.html">panfmm()</a></code> (coefficients by class and the posterior class probabilities), <code><a href="../reference/pangmm.html">pangmm()</a></code>, <code><a href="../reference/paniv.html">paniv()</a></code> and <code><a href="../reference/panselect.html">panselect()</a></code> fits; <code><a href="../reference/plot.panglm_hurdle.html">plot.panglm_hurdle()</a></code> gains <code>parm</code>.</li>
+<li>
+<code><a href="../reference/plot.panglm.html">plot.panglm()</a></code> gains <code>which = "density"</code>: the observed kernel density against the model-implied density, with the point masses of Tobit censoring and two-part zeros; also for <code><a href="../reference/twopart.html">twopart()</a></code> fits.</li>
+<li>
+<code><a href="../reference/plot.panglm.html">plot.panglm()</a></code> gains <code>which = "effects"</code>: the distribution of the estimated individual effects against the assumed mixing distribution, with an intercept-slope scatter for random slopes.</li>
+<li>
+<code>which = "correlation"</code> draws the correlation matrix of the estimates as a heat map, for <code><a href="../reference/panglm.html">panglm()</a></code>, <code><a href="../reference/twopart.html">twopart()</a></code>, <code><a href="../reference/panfmm.html">panfmm()</a></code> and <code><a href="../reference/panhurdle.html">panhurdle()</a></code> fits.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="individual-effects-1-7-0">Individual effects<a class="anchor" aria-label="anchor" href="#individual-effects-1-7-0"></a></h3>
+<ul><li>New <code><a href="../reference/fixef.html">fixef()</a></code> returns the estimated fixed effects of within fits, and <code><a href="../reference/fixef.html">ranef()</a></code> the posterior means or modes of the random effects of random fits, for random intercepts in every family and for random slopes. The methods also register on the <code>nlme</code> generics.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="marginal-effects-1-7-0">Marginal effects<a class="anchor" aria-label="anchor" href="#marginal-effects-1-7-0"></a></h3>
+<ul><li>New plot method for <code><a href="../reference/partialeffects.html">partialeffects()</a></code> results.</li>
+<li>
+<code><a href="../reference/effectcurve.html">effectcurve()</a></code> gains <code>scale = c("link", "response", "slope")</code>: the average predicted outcome, or the average marginal effect, as the regressor varies, with delta-method bands, also for factor regressors; and <code>by</code>, curves for each level of a factor. The plot adds a rug of the observed values.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="difference-in-differences-1-7-0">Difference-in-differences<a class="anchor" aria-label="anchor" href="#difference-in-differences-1-7-0"></a></h3>
+<ul><li>
+<code><a href="../reference/attgt.html">attgt()</a></code>, <code><a href="../reference/etwfe.html">etwfe()</a></code> and <code><a href="../reference/eventstudy.html">eventstudy()</a></code> plots share one event-study layout, with uniform confidence bands drawn as visible bars behind the pointwise intervals. All three take <code>min_e</code>, <code>max_e</code>, <code>ylim</code>, <code>main</code> and <code>legend</code>.</li>
+<li>Event-study plots and <code><a href="../reference/eventplot.html">eventplot()</a></code> gain <code>style = c("classic", "points", "line")</code>. The default classic style draws the estimates with capped intervals, the reference period as an open circle at zero and a dashed line labelled “Intervention” at event time 0; <code>"line"</code> joins the estimates over a shaded band. The arguments <code>ref</code>, <code>onset</code>, <code>onset_label</code> and <code>caps</code> control the markers.</li>
+<li>
+<code>plot(&lt;attgt&gt;)</code> and <code>plot(&lt;etwfe&gt;)</code> gain <code>type = "heatmap"</code>: the ATT(g, t) estimates by cohort and period on a diverging scale, with pre-treatment cells hatched and, with <code>cells = TRUE</code>, the estimates printed.</li>
+<li>
+<code>plot(&lt;attgt&gt;, type = "gt")</code> draws the group-time effects, one panel per cohort.</li>
+<li>New <code><a href="../reference/treatmentplot.html">treatmentplot()</a></code> shows the treatment timing of a staggered design.</li>
+<li>New <code><a href="../reference/eventplot.html">eventplot()</a></code> compares event studies from several estimators on one axis. Legends wrap into columns when the panel is narrow.</li>
+<li>New <code><a href="../reference/trendplot.html">trendplot()</a></code> draws the raw mean outcome by adoption cohort, by treated versus never treated, or on the event-time axis, with cluster-robust bands.</li>
+<li>New <code><a href="../reference/panelplot.html">panelplot()</a></code> draws a unit by period heat map of a panel: the observation pattern, a numeric or categorical variable, and units sorted by adoption cohort.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="data-1-7-0">Data<a class="anchor" aria-label="anchor" href="#data-1-7-0"></a></h3>
+<ul><li>
+<code>copd</code> gains clinics, staggered adoption of a care programme, annual costs with structural zeros, a medication adherence proportion and an ordered symptom score, all simulated with known parameters.</li>
+<li>New real panels for teaching: <code>docvisits</code> (German health care demand, Riphahn, Wambach and Million 2003), <code>meps</code> (two-year Medical Expenditure Panel Survey spending), <code>medicaid</code> (US states, Affordable Care Act Medicaid expansion and uninsurance, 2009-2019), <code>healthspend</code> (countries, health expenditure from the World Development Indicators) and <code>cigar</code> (US states, cigarette demand, Baltagi). Each help page states the source, the licence and the questions the data can teach.</li>
+<li>New vignette <code><a href="../articles/panglm-datasets.html">vignette("panglm-datasets")</a></code>.</li>
+<li>Lazy-loaded data are compressed with xz.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.6.2" id="panglm-162">panglm 1.6.2<a class="anchor" aria-label="anchor" href="#panglm-162"></a></h2>
 <p>Speed release for large panels. Estimates are unchanged: the optimizations either reproduce the previous computations exactly or change results only at the level of floating-point rounding, and the tests and validation scripts pass unchanged.</p>

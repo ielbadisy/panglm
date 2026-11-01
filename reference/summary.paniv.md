@@ -30,6 +30,7 @@ an object of class `"summary.paniv"`: a list with the coefficient table
 ## See also
 
 Other paniv methods:
+[`plot.pangmm()`](https://elbadisyimad.com/panglm/reference/plot.pangmm.md),
 [`predict.paniv()`](https://elbadisyimad.com/panglm/reference/predict.paniv.md),
 [`vcov.paniv()`](https://elbadisyimad.com/panglm/reference/vcov.paniv.md)
 

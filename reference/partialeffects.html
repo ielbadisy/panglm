@@ -23,7 +23,7 @@ factor codings are handled automatically."><meta property="og:image" content="ht
 
     <a class="navbar-brand me-2" href="../index.html">panglm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.6.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.7.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -41,6 +41,7 @@ factor codings are handled automatically."><meta property="og:image" content="ht
     <li><a class="dropdown-item" href="../articles/panglm-endogeneity.html">Endogeneity: IV, Hausman-Taylor, GMM and selection</a></li>
     <li><a class="dropdown-item" href="../articles/panglm-policy.html">Policy evaluation: DiD, event studies and staggered adoption</a></li>
     <li><a class="dropdown-item" href="../articles/panglm-heterogeneity.html">Heterogeneity: random slopes, latent classes and quantiles</a></li>
+    <li><a class="dropdown-item" href="../articles/panglm-datasets.html">Health-economics datasets for teaching panel models</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Technical reference</h6></li>
     <li><a class="dropdown-item" href="../articles/panglm-methods.html">Technical reference: models, estimators and inference</a></li>
@@ -167,18 +168,24 @@ Inference for Econometric Models</em>, Cambridge University Press.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="effectcurve.html">effectcurve()</a></code> for the effect of a spline term across its range.</p>
+    <div class="dont-index"><p><code><a href="plot.panglm_ape.html">plot.panglm_ape()</a></code> for a dot-and-whisker chart, and <code><a href="effectcurve.html">effectcurve()</a></code>
+for the effect of a regressor across its range on the link, response or
+slope scale.</p>
 <p>Other panglm methods:
+<code><a href="coefplot.html">coefplot()</a></code>,
 <code><a href="confint.panglm.html">confint.panglm()</a></code>,
 <code><a href="effectcurve.html">effectcurve()</a></code>,
 <code><a href="fitted.panglm.html">fitted.panglm()</a></code>,
+<code><a href="fixef.html">fixef()</a></code>,
 <code><a href="glance.panglm.html">glance.panglm()</a></code>,
 <code><a href="logLik.panglm.html">logLik.panglm()</a></code>,
 <code><a href="model.matrix.panglm.html">model.matrix.panglm()</a></code>,
 <code><a href="plot.panglm.html">plot.panglm()</a></code>,
+<code><a href="plot.panglm_ape.html">plot.panglm_ape()</a></code>,
 <code><a href="plot.panglm_effectcurve.html">plot.panglm_effectcurve()</a></code>,
 <code><a href="predict.panglm.html">predict.panglm()</a></code>,
 <code><a href="predict.panordered.html">predict.panordered()</a></code>,
+<code><a href="residuals.panglm.html">residuals.panglm()</a></code>,
 <code><a href="summary.panglm.html">summary.panglm()</a></code>,
 <code><a href="tidy.panglm.html">tidy.panglm()</a></code>,
 <code><a href="vcov.panglm.html">vcov.panglm()</a></code></p></div>
@@ -190,7 +197,8 @@ Inference for Econometric Models</em>, Cambridge University Press.</p>
 <span class="r-in"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="panglm.html">panglm</a></span><span class="op">(</span><span class="va">hospitalized</span> <span class="op">~</span> <span class="va">treatment</span> <span class="op">+</span> <span class="va">age</span> <span class="op">+</span> <span class="va">crp</span>, data <span class="op">=</span> <span class="va">copd</span>,</span></span>
 <span class="r-in"><span>              index <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"visit"</span><span class="op">)</span>, model <span class="op">=</span> <span class="st">"random"</span>,</span></span>
 <span class="r-in"><span>              family <span class="op">=</span> <span class="st">"probit"</span>, cre <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu">partialeffects</span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">ape</span> <span class="op">&lt;-</span> <span class="fu">partialeffects</span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">ape</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Average partial effects</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Delta-method standard errors, vcov: classical </span>
@@ -200,6 +208,8 @@ Inference for Econometric Models</em>, Cambridge University Press.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>        age    dY/dX  0.01161  0.003042     3.815 0.0001361  0.005644   0.01757</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>        crp    dY/dX  0.01713  0.013100     1.308 0.1909000 -0.008539   0.04280</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">ape</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="partialeffects-1.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

@@ -35,6 +35,7 @@ information (`call`, `label`, `vcov_type`, `nobs`, `n_groups`,
 ## See also
 
 Other pangmm methods:
+[`plot.pangmm()`](https://elbadisyimad.com/panglm/reference/plot.pangmm.md),
 [`predict.pangmm()`](https://elbadisyimad.com/panglm/reference/predict.pangmm.md),
 [`vcov.pangmm()`](https://elbadisyimad.com/panglm/reference/vcov.pangmm.md)
 

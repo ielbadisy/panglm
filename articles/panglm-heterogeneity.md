@@ -78,9 +78,9 @@ summary(rs)
 #> Residual df: 596  Iterations: 16
 head(rs$ranef, 3)
 #>   (Intercept)        year
-#> 1  0.24559342 -0.02712744
-#> 2 -0.32250431  0.10527656
-#> 3  0.05620226  0.01557889
+#> 1  0.24559340 -0.02712743
+#> 2 -0.32250423  0.10527653
+#> 3  0.05620227  0.01557888
 ```
 
 The average decline is 47 mL a year, 17 mL faster in smokers. The SD of

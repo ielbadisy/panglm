@@ -76,6 +76,7 @@ suite; see the validation article on the package website.
 ## See also
 
 Other panselect methods:
+[`plot.pangmm()`](https://elbadisyimad.com/panglm/reference/plot.pangmm.md),
 [`summary.panselect()`](https://elbadisyimad.com/panglm/reference/summary.panselect.md),
 [`vcov.panselect()`](https://elbadisyimad.com/panglm/reference/vcov.panselect.md)
 

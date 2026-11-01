@@ -42,6 +42,14 @@ estimators.
   Group-time average treatment effects for staggered adoption
 - [`etwfe()`](https://elbadisyimad.com/panglm/reference/etwfe.md) :
   Extended two-way fixed-effects difference-in-differences
+- [`trendplot()`](https://elbadisyimad.com/panglm/reference/trendplot.md)
+  : Plot raw outcome trends of a difference-in-differences design
+- [`treatmentplot()`](https://elbadisyimad.com/panglm/reference/treatmentplot.md)
+  : Plot the treatment timing of a staggered design
+- [`panelplot()`](https://elbadisyimad.com/panglm/reference/panelplot.md)
+  : Plot a panel as a unit by period heat map
+- [`eventplot()`](https://elbadisyimad.com/panglm/reference/eventplot.md)
+  : Compare event studies on one plot
 
 ## Endogeneity
 
@@ -105,12 +113,21 @@ then for the other model classes.
   : Extract the model log-likelihood
 - [`model.matrix(`*`<panglm>`*`)`](https://elbadisyimad.com/panglm/reference/model.matrix.panglm.md)
   : Design matrix of a panglm fit
+- [`residuals(`*`<panglm>`*`)`](https://elbadisyimad.com/panglm/reference/residuals.panglm.md)
+  : Extract residuals from a panglm model
+- [`fixef()`](https://elbadisyimad.com/panglm/reference/fixef.md)
+  [`ranef()`](https://elbadisyimad.com/panglm/reference/fixef.md) :
+  Individual effects of a panel model
 - [`plot(`*`<panglm>`*`)`](https://elbadisyimad.com/panglm/reference/plot.panglm.md)
   : Plot a fitted panglm model
+- [`coefplot()`](https://elbadisyimad.com/panglm/reference/coefplot.md)
+  : Compare coefficient estimates of several fitted models
 - [`partialeffects()`](https://elbadisyimad.com/panglm/reference/partialeffects.md)
   : Average partial effects
+- [`plot(`*`<panglm_ape>`*`)`](https://elbadisyimad.com/panglm/reference/plot.panglm_ape.md)
+  : Plot average partial effects
 - [`effectcurve()`](https://elbadisyimad.com/panglm/reference/effectcurve.md)
-  : Estimated effect curve of a continuous regressor
+  : Estimated effect curve of a regressor
 - [`plot(`*`<panglm_effectcurve>`*`)`](https://elbadisyimad.com/panglm/reference/plot.panglm_effectcurve.md)
   : Plot an effect curve
 
@@ -120,6 +137,8 @@ then for the other model classes.
   : Predict from a two-part model
 - [`confint(`*`<twopart>`*`)`](https://elbadisyimad.com/panglm/reference/confint.twopart.md)
   : Confidence intervals for a two-part model
+- [`plot(`*`<twopart>`*`)`](https://elbadisyimad.com/panglm/reference/plot.twopart.md)
+  : Plot a two-part model
 - [`coef(`*`<panglm_hurdle>`*`)`](https://elbadisyimad.com/panglm/reference/hurdle-methods.md)
   [`vcov(`*`<panglm_hurdle>`*`)`](https://elbadisyimad.com/panglm/reference/hurdle-methods.md)
   [`nobs(`*`<panglm_hurdle>`*`)`](https://elbadisyimad.com/panglm/reference/hurdle-methods.md)
@@ -160,6 +179,10 @@ then for the other model classes.
   : Covariance of a pangmm fit
 - [`predict(`*`<pangmm>`*`)`](https://elbadisyimad.com/panglm/reference/predict.pangmm.md)
   : Predictions from a dynamic panel GMM fit
+- [`plot(`*`<pangmm>`*`)`](https://elbadisyimad.com/panglm/reference/plot.pangmm.md)
+  [`plot(`*`<paniv>`*`)`](https://elbadisyimad.com/panglm/reference/plot.pangmm.md)
+  [`plot(`*`<panselect>`*`)`](https://elbadisyimad.com/panglm/reference/plot.pangmm.md)
+  : Plot the coefficients of a GMM, IV or selection model
 - [`summary(`*`<panselect>`*`)`](https://elbadisyimad.com/panglm/reference/summary.panselect.md)
   : Summarize a panselect fit
 - [`vcov(`*`<panselect>`*`)`](https://elbadisyimad.com/panglm/reference/vcov.panselect.md)
@@ -178,6 +201,8 @@ then for the other model classes.
   : Covariance of a panfmm fit
 - [`predict(`*`<panfmm>`*`)`](https://elbadisyimad.com/panglm/reference/predict.panfmm.md)
   : Predictions from a latent class panel model
+- [`plot(`*`<panfmm>`*`)`](https://elbadisyimad.com/panglm/reference/plot.panfmm.md)
+  : Plot a latent class (finite mixture) model
 
 ### Tidiers
 
@@ -215,8 +240,23 @@ then for the other model classes.
 
 ## Data
 
+Health economics panels for teaching: one simulated panel with known
+truth and five real public panels.
+
 - [`copd`](https://elbadisyimad.com/panglm/reference/copd.md) :
-  Synthetic COPD follow-up panel
+  Synthetic COPD follow-up panel with costs and a staggered programme
+- [`docvisits`](https://elbadisyimad.com/panglm/reference/docvisits.md)
+  : German health-care demand panel (doctor and hospital visits, GSOEP)
+- [`meps`](https://elbadisyimad.com/panglm/reference/meps.md) : Health
+  care expenditure and use of US adults, MEPS panel 23 (2018-2019)
+- [`medicaid`](https://elbadisyimad.com/panglm/reference/medicaid.md) :
+  Health insurance coverage and the ACA Medicaid expansion, US states
+  2009-2019
+- [`healthspend`](https://elbadisyimad.com/panglm/reference/healthspend.md)
+  : Health expenditure, income and population health: a country-year
+  panel
+- [`cigar`](https://elbadisyimad.com/panglm/reference/cigar.md) :
+  Cigarette demand in US states, 1963-1992 (Baltagi and Levin)
 
 ## Deprecated
 

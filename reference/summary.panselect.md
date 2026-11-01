@@ -30,6 +30,7 @@ information.
 ## See also
 
 Other panselect methods:
+[`plot.pangmm()`](https://elbadisyimad.com/panglm/reference/plot.pangmm.md),
 [`predict.panselect()`](https://elbadisyimad.com/panglm/reference/predict.panselect.md),
 [`vcov.panselect()`](https://elbadisyimad.com/panglm/reference/vcov.panselect.md)
 

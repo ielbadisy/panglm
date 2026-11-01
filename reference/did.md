@@ -119,7 +119,11 @@ methods for the fitted model.
 Other policy evaluation:
 [`attgt()`](https://elbadisyimad.com/panglm/reference/attgt.md),
 [`etwfe()`](https://elbadisyimad.com/panglm/reference/etwfe.md),
-[`eventstudy()`](https://elbadisyimad.com/panglm/reference/eventstudy.md)
+[`eventplot()`](https://elbadisyimad.com/panglm/reference/eventplot.md),
+[`eventstudy()`](https://elbadisyimad.com/panglm/reference/eventstudy.md),
+[`panelplot()`](https://elbadisyimad.com/panglm/reference/panelplot.md),
+[`treatmentplot()`](https://elbadisyimad.com/panglm/reference/treatmentplot.md),
+[`trendplot()`](https://elbadisyimad.com/panglm/reference/trendplot.md)
 
 ## Examples
 

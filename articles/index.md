@@ -15,6 +15,8 @@
   adoption](https://elbadisyimad.com/panglm/articles/panglm-policy.md):
 - [Heterogeneity: random slopes, latent classes and
   quantiles](https://elbadisyimad.com/panglm/articles/panglm-heterogeneity.md):
+- [Health-economics datasets for teaching panel
+  models](https://elbadisyimad.com/panglm/articles/panglm-datasets.md):
 
 ### Technical reference
 

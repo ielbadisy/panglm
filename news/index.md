@@ -1,5 +1,131 @@
 # Changelog
 
+## panglm 1.7.0
+
+Plotting and teaching release: every fitted object has a plot method,
+the diagnostics, marginal effects and difference-in-differences results
+can be drawn directly with base graphics, and five real health economics
+panels ship with the package. Estimates are unchanged.
+
+### Diagnostics and coefficients
+
+- [`plot.panglm()`](https://elbadisyimad.com/panglm/reference/plot.panglm.md)
+  gains `which = "qq"` (normal Q-Q plot of the Pearson residuals),
+  `"calibration"` (observed proportion against the mean predicted
+  probability in quantile bins, for binary outcomes) and `"rootogram"`
+  (hanging rootogram for Poisson and negative binomial fits, including
+  random-intercept fits through the marginal count distribution). The
+  residual view uses Pearson residuals by default (`type`), adds a
+  smooth, and uses a log axis for log-link models. Coefficient plots
+  take `parm`, omit the intercept by default and size the margin to the
+  term names.
+- [`residuals.panglm()`](https://elbadisyimad.com/panglm/reference/residuals.panglm.md)
+  gains `type = c("response", "pearson")`.
+- New
+  [`coefplot()`](https://elbadisyimad.com/panglm/reference/coefplot.md)
+  compares the coefficients of several fitted models in one figure.
+- New plot methods for
+  [`twopart()`](https://elbadisyimad.com/panglm/reference/twopart.md),
+  [`panfmm()`](https://elbadisyimad.com/panglm/reference/panfmm.md)
+  (coefficients by class and the posterior class probabilities),
+  [`pangmm()`](https://elbadisyimad.com/panglm/reference/pangmm.md),
+  [`paniv()`](https://elbadisyimad.com/panglm/reference/paniv.md) and
+  [`panselect()`](https://elbadisyimad.com/panglm/reference/panselect.md)
+  fits;
+  [`plot.panglm_hurdle()`](https://elbadisyimad.com/panglm/reference/plot.panglm_hurdle.md)
+  gains `parm`.
+- [`plot.panglm()`](https://elbadisyimad.com/panglm/reference/plot.panglm.md)
+  gains `which = "density"`: the observed kernel density against the
+  model-implied density, with the point masses of Tobit censoring and
+  two-part zeros; also for
+  [`twopart()`](https://elbadisyimad.com/panglm/reference/twopart.md)
+  fits.
+- [`plot.panglm()`](https://elbadisyimad.com/panglm/reference/plot.panglm.md)
+  gains `which = "effects"`: the distribution of the estimated
+  individual effects against the assumed mixing distribution, with an
+  intercept-slope scatter for random slopes.
+- `which = "correlation"` draws the correlation matrix of the estimates
+  as a heat map, for
+  [`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md),
+  [`twopart()`](https://elbadisyimad.com/panglm/reference/twopart.md),
+  [`panfmm()`](https://elbadisyimad.com/panglm/reference/panfmm.md) and
+  [`panhurdle()`](https://elbadisyimad.com/panglm/reference/panhurdle.md)
+  fits.
+
+### Individual effects
+
+- New [`fixef()`](https://elbadisyimad.com/panglm/reference/fixef.md)
+  returns the estimated fixed effects of within fits, and
+  [`ranef()`](https://elbadisyimad.com/panglm/reference/fixef.md) the
+  posterior means or modes of the random effects of random fits, for
+  random intercepts in every family and for random slopes. The methods
+  also register on the `nlme` generics.
+
+### Marginal effects
+
+- New plot method for
+  [`partialeffects()`](https://elbadisyimad.com/panglm/reference/partialeffects.md)
+  results.
+- [`effectcurve()`](https://elbadisyimad.com/panglm/reference/effectcurve.md)
+  gains `scale = c("link", "response", "slope")`: the average predicted
+  outcome, or the average marginal effect, as the regressor varies, with
+  delta-method bands, also for factor regressors; and `by`, curves for
+  each level of a factor. The plot adds a rug of the observed values.
+
+### Difference-in-differences
+
+- [`attgt()`](https://elbadisyimad.com/panglm/reference/attgt.md),
+  [`etwfe()`](https://elbadisyimad.com/panglm/reference/etwfe.md) and
+  [`eventstudy()`](https://elbadisyimad.com/panglm/reference/eventstudy.md)
+  plots share one event-study layout, with uniform confidence bands
+  drawn as visible bars behind the pointwise intervals. All three take
+  `min_e`, `max_e`, `ylim`, `main` and `legend`.
+- Event-study plots and
+  [`eventplot()`](https://elbadisyimad.com/panglm/reference/eventplot.md)
+  gain `style = c("classic", "points", "line")`. The default classic
+  style draws the estimates with capped intervals, the reference period
+  as an open circle at zero and a dashed line labelled “Intervention” at
+  event time 0; `"line"` joins the estimates over a shaded band. The
+  arguments `ref`, `onset`, `onset_label` and `caps` control the
+  markers.
+- `plot(<attgt>)` and `plot(<etwfe>)` gain `type = "heatmap"`: the
+  ATT(g, t) estimates by cohort and period on a diverging scale, with
+  pre-treatment cells hatched and, with `cells = TRUE`, the estimates
+  printed.
+- `plot(<attgt>, type = "gt")` draws the group-time effects, one panel
+  per cohort.
+- New
+  [`treatmentplot()`](https://elbadisyimad.com/panglm/reference/treatmentplot.md)
+  shows the treatment timing of a staggered design.
+- New
+  [`eventplot()`](https://elbadisyimad.com/panglm/reference/eventplot.md)
+  compares event studies from several estimators on one axis. Legends
+  wrap into columns when the panel is narrow.
+- New
+  [`trendplot()`](https://elbadisyimad.com/panglm/reference/trendplot.md)
+  draws the raw mean outcome by adoption cohort, by treated versus never
+  treated, or on the event-time axis, with cluster-robust bands.
+- New
+  [`panelplot()`](https://elbadisyimad.com/panglm/reference/panelplot.md)
+  draws a unit by period heat map of a panel: the observation pattern, a
+  numeric or categorical variable, and units sorted by adoption cohort.
+
+### Data
+
+- `copd` gains clinics, staggered adoption of a care programme, annual
+  costs with structural zeros, a medication adherence proportion and an
+  ordered symptom score, all simulated with known parameters.
+- New real panels for teaching: `docvisits` (German health care demand,
+  Riphahn, Wambach and Million 2003), `meps` (two-year Medical
+  Expenditure Panel Survey spending), `medicaid` (US states, Affordable
+  Care Act Medicaid expansion and uninsurance, 2009-2019), `healthspend`
+  (countries, health expenditure from the World Development Indicators)
+  and `cigar` (US states, cigarette demand, Baltagi). Each help page
+  states the source, the licence and the questions the data can teach.
+- New vignette
+  [`vignette("panglm-datasets")`](https://elbadisyimad.com/panglm/articles/panglm-datasets.md).
+- Lazy-loaded data are compressed with xz.
+
 ## panglm 1.6.2
 
 Speed release for large panels. Estimates are unchanged: the

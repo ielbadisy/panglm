@@ -36,6 +36,7 @@ the covariance matrix of the coefficients
 ## See also
 
 Other paniv methods:
+[`plot.pangmm()`](https://elbadisyimad.com/panglm/reference/plot.pangmm.md),
 [`predict.paniv()`](https://elbadisyimad.com/panglm/reference/predict.paniv.md),
 [`summary.paniv()`](https://elbadisyimad.com/panglm/reference/summary.paniv.md)
 

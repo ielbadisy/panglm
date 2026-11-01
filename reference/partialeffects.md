@@ -95,20 +95,27 @@ Econometric Models*, Cambridge University Press.
 
 ## See also
 
+[`plot.panglm_ape()`](https://elbadisyimad.com/panglm/reference/plot.panglm_ape.md)
+for a dot-and-whisker chart, and
 [`effectcurve()`](https://elbadisyimad.com/panglm/reference/effectcurve.md)
-for the effect of a spline term across its range.
+for the effect of a regressor across its range on the link, response or
+slope scale.
 
 Other panglm methods:
+[`coefplot()`](https://elbadisyimad.com/panglm/reference/coefplot.md),
 [`confint.panglm()`](https://elbadisyimad.com/panglm/reference/confint.panglm.md),
 [`effectcurve()`](https://elbadisyimad.com/panglm/reference/effectcurve.md),
 [`fitted.panglm()`](https://elbadisyimad.com/panglm/reference/fitted.panglm.md),
+[`fixef()`](https://elbadisyimad.com/panglm/reference/fixef.md),
 [`glance.panglm()`](https://elbadisyimad.com/panglm/reference/glance.panglm.md),
 [`logLik.panglm()`](https://elbadisyimad.com/panglm/reference/logLik.panglm.md),
 [`model.matrix.panglm()`](https://elbadisyimad.com/panglm/reference/model.matrix.panglm.md),
 [`plot.panglm()`](https://elbadisyimad.com/panglm/reference/plot.panglm.md),
+[`plot.panglm_ape()`](https://elbadisyimad.com/panglm/reference/plot.panglm_ape.md),
 [`plot.panglm_effectcurve()`](https://elbadisyimad.com/panglm/reference/plot.panglm_effectcurve.md),
 [`predict.panglm()`](https://elbadisyimad.com/panglm/reference/predict.panglm.md),
 [`predict.panordered()`](https://elbadisyimad.com/panglm/reference/predict.panordered.md),
+[`residuals.panglm()`](https://elbadisyimad.com/panglm/reference/residuals.panglm.md),
 [`summary.panglm()`](https://elbadisyimad.com/panglm/reference/summary.panglm.md),
 [`tidy.panglm()`](https://elbadisyimad.com/panglm/reference/tidy.panglm.md),
 [`vcov.panglm()`](https://elbadisyimad.com/panglm/reference/vcov.panglm.md)
@@ -120,7 +127,8 @@ data(copd)
 fit <- panglm(hospitalized ~ treatment + age + crp, data = copd,
               index = c("id", "visit"), model = "random",
               family = "probit", cre = TRUE)
-partialeffects(fit)
+ape <- partialeffects(fit)
+ape
 #> 
 #> Average partial effects
 #> Delta-method standard errors, vcov: classical 
@@ -130,4 +138,5 @@ partialeffects(fit)
 #>        age    dY/dX  0.01161  0.003042     3.815 0.0001361  0.005644   0.01757
 #>        crp    dY/dX  0.01713  0.013100     1.308 0.1909000 -0.008539   0.04280
 #> 
+plot(ape)
 ```

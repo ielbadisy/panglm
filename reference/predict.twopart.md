@@ -38,7 +38,8 @@ a numeric vector with one prediction per row of `newdata`
 ## See also
 
 Other twopart methods:
-[`confint.twopart()`](https://elbadisyimad.com/panglm/reference/confint.twopart.md)
+[`confint.twopart()`](https://elbadisyimad.com/panglm/reference/confint.twopart.md),
+[`plot.twopart()`](https://elbadisyimad.com/panglm/reference/plot.twopart.md)
 
 ## Examples
 

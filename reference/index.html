@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">panglm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.6.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.7.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -25,6 +25,7 @@
     <li><a class="dropdown-item" href="../articles/panglm-endogeneity.html">Endogeneity: IV, Hausman-Taylor, GMM and selection</a></li>
     <li><a class="dropdown-item" href="../articles/panglm-policy.html">Policy evaluation: DiD, event studies and staggered adoption</a></li>
     <li><a class="dropdown-item" href="../articles/panglm-heterogeneity.html">Heterogeneity: random slopes, latent classes and quantiles</a></li>
+    <li><a class="dropdown-item" href="../articles/panglm-datasets.html">Health-economics datasets for teaching panel models</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Technical reference</h6></li>
     <li><a class="dropdown-item" href="../articles/panglm-methods.html">Technical reference: models, estimators and inference</a></li>
@@ -140,6 +141,34 @@
 
         </dt>
         <dd>Extended two-way fixed-effects difference-in-differences</dd>
+
+        <dt>
+
+          <code><a href="trendplot.html">trendplot()</a></code>
+
+        </dt>
+        <dd>Plot raw outcome trends of a difference-in-differences design</dd>
+
+        <dt>
+
+          <code><a href="treatmentplot.html">treatmentplot()</a></code>
+
+        </dt>
+        <dd>Plot the treatment timing of a staggered design</dd>
+
+        <dt>
+
+          <code><a href="panelplot.html">panelplot()</a></code>
+
+        </dt>
+        <dd>Plot a panel as a unit by period heat map</dd>
+
+        <dt>
+
+          <code><a href="eventplot.html">eventplot()</a></code>
+
+        </dt>
+        <dd>Compare event studies on one plot</dd>
       </dl></div><div class="section level2">
       <h2 id="endogeneity">Endogeneity<a class="anchor" aria-label="anchor" href="#endogeneity"></a></h2>
 
@@ -310,10 +339,31 @@
 
         <dt>
 
+          <code><a href="residuals.panglm.html">residuals(<i>&lt;panglm&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Extract residuals from a panglm model</dd>
+
+        <dt>
+
+          <code><a href="fixef.html">fixef()</a></code> <code><a href="fixef.html">ranef()</a></code>
+
+        </dt>
+        <dd>Individual effects of a panel model</dd>
+
+        <dt>
+
           <code><a href="plot.panglm.html">plot(<i>&lt;panglm&gt;</i>)</a></code>
 
         </dt>
         <dd>Plot a fitted panglm model</dd>
+
+        <dt>
+
+          <code><a href="coefplot.html">coefplot()</a></code>
+
+        </dt>
+        <dd>Compare coefficient estimates of several fitted models</dd>
 
         <dt>
 
@@ -324,10 +374,17 @@
 
         <dt>
 
+          <code><a href="plot.panglm_ape.html">plot(<i>&lt;panglm_ape&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Plot average partial effects</dd>
+
+        <dt>
+
           <code><a href="effectcurve.html">effectcurve()</a></code>
 
         </dt>
-        <dd>Estimated effect curve of a continuous regressor</dd>
+        <dd>Estimated effect curve of a regressor</dd>
 
         <dt>
 
@@ -358,6 +415,13 @@
 
         </dt>
         <dd>Confidence intervals for a two-part model</dd>
+
+        <dt>
+
+          <code><a href="plot.twopart.html">plot(<i>&lt;twopart&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Plot a two-part model</dd>
 
         <dt>
 
@@ -459,6 +523,13 @@
 
         <dt>
 
+          <code><a href="plot.pangmm.html">plot(<i>&lt;pangmm&gt;</i>)</a></code> <code><a href="plot.pangmm.html">plot(<i>&lt;paniv&gt;</i>)</a></code> <code><a href="plot.pangmm.html">plot(<i>&lt;panselect&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Plot the coefficients of a GMM, IV or selection model</dd>
+
+        <dt>
+
           <code><a href="summary.panselect.html">summary(<i>&lt;panselect&gt;</i>)</a></code>
 
         </dt>
@@ -519,6 +590,13 @@
 
         </dt>
         <dd>Predictions from a latent class panel model</dd>
+
+        <dt>
+
+          <code><a href="plot.panfmm.html">plot(<i>&lt;panfmm&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Plot a latent class (finite mixture) model</dd>
       </dl></div><div class="section level2">
 
       <h3 id="tidiers">Tidiers<a class="anchor" aria-label="anchor" href="#tidiers"></a></h3>
@@ -552,7 +630,7 @@
       </dl></div><div class="section level2">
       <h2 id="data">Data<a class="anchor" aria-label="anchor" href="#data"></a></h2>
 
-
+      <div class="section-desc"><p>Health economics panels for teaching: one simulated panel with known truth and five real public panels.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -564,7 +642,42 @@
           <code><a href="copd.html">copd</a></code>
 
         </dt>
-        <dd>Synthetic COPD follow-up panel</dd>
+        <dd>Synthetic COPD follow-up panel with costs and a staggered programme</dd>
+
+        <dt>
+
+          <code><a href="docvisits.html">docvisits</a></code>
+
+        </dt>
+        <dd>German health-care demand panel (doctor and hospital visits, GSOEP)</dd>
+
+        <dt>
+
+          <code><a href="meps.html">meps</a></code>
+
+        </dt>
+        <dd>Health care expenditure and use of US adults, MEPS panel 23 (2018-2019)</dd>
+
+        <dt>
+
+          <code><a href="medicaid.html">medicaid</a></code>
+
+        </dt>
+        <dd>Health insurance coverage and the ACA Medicaid expansion, US states 2009-2019</dd>
+
+        <dt>
+
+          <code><a href="healthspend.html">healthspend</a></code>
+
+        </dt>
+        <dd>Health expenditure, income and population health: a country-year panel</dd>
+
+        <dt>
+
+          <code><a href="cigar.html">cigar</a></code>
+
+        </dt>
+        <dd>Cigarette demand in US states, 1963-1992 (Baltagi and Levin)</dd>
       </dl></div><div class="section level2">
       <h2 id="deprecated">Deprecated<a class="anchor" aria-label="anchor" href="#deprecated"></a></h2>
 

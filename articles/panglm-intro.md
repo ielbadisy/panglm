@@ -42,13 +42,20 @@ obstructive pulmonary disease (COPD) seen at 5 visits.
 library(panglm)
 data(copd)
 head(copd)
-#>   id visit treatment age smoker  bmi crp fev1 exacerbations hospitalized
-#> 1  1     1         1  70      0 28.5 5.9 2.61             2            0
-#> 2  1     2         1  70      0 28.5 0.1 3.19             3            0
-#> 3  1     3         1  70      0 28.5 4.1 2.88             5            1
-#> 4  1     4         1  70      0 28.5 5.1 3.12             1            0
-#> 5  1     5         1  70      0 28.5 3.3 2.91             3            0
-#> 6  2     1         1  64      0 24.0 4.2 2.81             0            0
+#>   id visit treatment age smoker  bmi crp fev1 exacerbations hospitalized clinic
+#> 1  1     1         1  70      0 28.5 5.9 2.61             2            0      6
+#> 2  1     2         1  70      0 28.5 0.1 3.19             3            0      6
+#> 3  1     3         1  70      0 28.5 4.1 2.88             5            1      6
+#> 4  1     4         1  70      0 28.5 5.1 3.12             1            0      6
+#> 5  1     5         1  70      0 28.5 3.3 2.91             3            0      6
+#> 6  2     1         1  64      0 24.0 4.2 2.81             0            0      4
+#>   adopt programme   cost adherence symptoms
+#> 1     0         0 385.73     0.891     mild
+#> 2     0         0   0.00     0.889     mild
+#> 3     0         0 717.19     0.716     none
+#> 4     0         0   0.00     0.834     mild
+#> 5     0         0 454.76     0.708     mild
+#> 6     4         0   0.00     0.762   severe
 ```
 
 `treatment`, `age`, `smoker` and `bmi` are fixed at baseline; C-reactive

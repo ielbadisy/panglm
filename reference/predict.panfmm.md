@@ -63,6 +63,7 @@ a numeric vector (`"response"`), an integer vector of class labels
 ## See also
 
 Other panfmm methods:
+[`plot.panfmm()`](https://elbadisyimad.com/panglm/reference/plot.panfmm.md),
 [`summary.panfmm()`](https://elbadisyimad.com/panglm/reference/summary.panfmm.md),
 [`vcov.panfmm()`](https://elbadisyimad.com/panglm/reference/vcov.panfmm.md)
 

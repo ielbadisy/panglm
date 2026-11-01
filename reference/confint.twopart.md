@@ -39,6 +39,7 @@ a two-column matrix
 ## See also
 
 Other twopart methods:
+[`plot.twopart()`](https://elbadisyimad.com/panglm/reference/plot.twopart.md),
 [`predict.twopart()`](https://elbadisyimad.com/panglm/reference/predict.twopart.md)
 
 ## Examples
@@ -54,6 +55,6 @@ confint(fit)
 #> binary:treatment     -4.799854e-01 1.997329e-01
 #> binary:crp           -7.260436e-02 8.511146e-02
 #> positive:(Intercept)  6.000000e+00 6.000000e+00
-#> positive:treatment    8.387221e-14 1.298222e-13
+#> positive:treatment    8.425852e-14 1.294359e-13
 #> positive:crp          1.000000e-01 1.000000e-01
 ```

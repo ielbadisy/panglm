@@ -219,7 +219,11 @@ for the TWFE versions.
 Other policy evaluation:
 [`attgt()`](https://elbadisyimad.com/panglm/reference/attgt.md),
 [`did()`](https://elbadisyimad.com/panglm/reference/did.md),
-[`eventstudy()`](https://elbadisyimad.com/panglm/reference/eventstudy.md)
+[`eventplot()`](https://elbadisyimad.com/panglm/reference/eventplot.md),
+[`eventstudy()`](https://elbadisyimad.com/panglm/reference/eventstudy.md),
+[`panelplot()`](https://elbadisyimad.com/panglm/reference/panelplot.md),
+[`treatmentplot()`](https://elbadisyimad.com/panglm/reference/treatmentplot.md),
+[`trendplot()`](https://elbadisyimad.com/panglm/reference/trendplot.md)
 
 ## Examples
 

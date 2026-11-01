@@ -62,6 +62,7 @@ suite; see the validation article on the package website.
 ## See also
 
 Other paniv methods:
+[`plot.pangmm()`](https://elbadisyimad.com/panglm/reference/plot.pangmm.md),
 [`summary.paniv()`](https://elbadisyimad.com/panglm/reference/summary.paniv.md),
 [`vcov.paniv()`](https://elbadisyimad.com/panglm/reference/vcov.paniv.md)
 

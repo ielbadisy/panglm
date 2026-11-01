@@ -140,7 +140,11 @@ for `tidy()` and `glance()`.
 Other policy evaluation:
 [`attgt()`](https://elbadisyimad.com/panglm/reference/attgt.md),
 [`did()`](https://elbadisyimad.com/panglm/reference/did.md),
-[`etwfe()`](https://elbadisyimad.com/panglm/reference/etwfe.md)
+[`etwfe()`](https://elbadisyimad.com/panglm/reference/etwfe.md),
+[`eventplot()`](https://elbadisyimad.com/panglm/reference/eventplot.md),
+[`panelplot()`](https://elbadisyimad.com/panglm/reference/panelplot.md),
+[`treatmentplot()`](https://elbadisyimad.com/panglm/reference/treatmentplot.md),
+[`trendplot()`](https://elbadisyimad.com/panglm/reference/trendplot.md)
 
 ## Examples
 

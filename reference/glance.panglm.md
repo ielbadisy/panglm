@@ -48,16 +48,20 @@ Gaussian-style pseudo-R-squared measures, not likelihood based.
 for the other model classes.
 
 Other panglm methods:
+[`coefplot()`](https://elbadisyimad.com/panglm/reference/coefplot.md),
 [`confint.panglm()`](https://elbadisyimad.com/panglm/reference/confint.panglm.md),
 [`effectcurve()`](https://elbadisyimad.com/panglm/reference/effectcurve.md),
 [`fitted.panglm()`](https://elbadisyimad.com/panglm/reference/fitted.panglm.md),
+[`fixef()`](https://elbadisyimad.com/panglm/reference/fixef.md),
 [`logLik.panglm()`](https://elbadisyimad.com/panglm/reference/logLik.panglm.md),
 [`model.matrix.panglm()`](https://elbadisyimad.com/panglm/reference/model.matrix.panglm.md),
 [`partialeffects.panordered()`](https://elbadisyimad.com/panglm/reference/partialeffects.md),
 [`plot.panglm()`](https://elbadisyimad.com/panglm/reference/plot.panglm.md),
+[`plot.panglm_ape()`](https://elbadisyimad.com/panglm/reference/plot.panglm_ape.md),
 [`plot.panglm_effectcurve()`](https://elbadisyimad.com/panglm/reference/plot.panglm_effectcurve.md),
 [`predict.panglm()`](https://elbadisyimad.com/panglm/reference/predict.panglm.md),
 [`predict.panordered()`](https://elbadisyimad.com/panglm/reference/predict.panordered.md),
+[`residuals.panglm()`](https://elbadisyimad.com/panglm/reference/residuals.panglm.md),
 [`summary.panglm()`](https://elbadisyimad.com/panglm/reference/summary.panglm.md),
 [`tidy.panglm()`](https://elbadisyimad.com/panglm/reference/tidy.panglm.md),
 [`vcov.panglm()`](https://elbadisyimad.com/panglm/reference/vcov.panglm.md)

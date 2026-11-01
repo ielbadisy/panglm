@@ -65,6 +65,7 @@ suite; see the validation article on the package website.
 ## See also
 
 Other pangmm methods:
+[`plot.pangmm()`](https://elbadisyimad.com/panglm/reference/plot.pangmm.md),
 [`summary.pangmm()`](https://elbadisyimad.com/panglm/reference/summary.pangmm.md),
 [`vcov.pangmm()`](https://elbadisyimad.com/panglm/reference/vcov.pangmm.md)
 
