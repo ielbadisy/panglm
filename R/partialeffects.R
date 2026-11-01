@@ -43,7 +43,9 @@
 #'   estimation of average partial effects. In *Identification and
 #'   Inference for Econometric Models*, Cambridge University Press.
 #' @family panglm methods
-#' @seealso [effectcurve()] for the effect of a spline term across its range.
+#' @seealso [plot.panglm_ape()] for a dot-and-whisker chart, and [effectcurve()]
+#'   for the effect of a regressor across its range on the link, response or
+#'   slope scale.
 #' @section Validation:
 #' Numerical accuracy is checked in the package tests and in the validation
 #' suite; see the validation article on the package website.
@@ -52,7 +54,9 @@
 #' fit <- panglm(hospitalized ~ treatment + age + crp, data = copd,
 #'               index = c("id", "visit"), model = "random",
 #'               family = "probit", cre = TRUE)
-#' partialeffects(fit)
+#' ape <- partialeffects(fit)
+#' ape
+#' plot(ape)
 #' @export
 partialeffects <- function(object, ...) UseMethod("partialeffects")
 
