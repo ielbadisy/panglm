@@ -166,9 +166,9 @@ effects, nested in the clusters, count as one), as <code>fixest</code> does.</p>
 <dd><p>optional sampling weights: the name of a column of <code>data</code>
 or a non-negative numeric vector with one value per row (rows with a
 missing weight are dropped). They weight the quasi-likelihood (as
-<code>weights = ~w</code> in <code><a href="http://grantmcdermott.com/etwfe/reference/etwfe.html" class="external-link">etwfe::etwfe()</a></code> and <code>fixest</code>) and the averages of
+<code>weights = ~w</code> in <code><a href="https://grantmcdermott.com/etwfe/reference/etwfe.html" class="external-link">etwfe::etwfe()</a></code> and <code>fixest</code>) and the averages of
 the treatment effects over the treated observations in
-<code><a href="summary.panglm_etwfe.html">summary.panglm_etwfe()</a></code> (as <code>wts</code> in <code><a href="http://grantmcdermott.com/etwfe/reference/emfx.html" class="external-link">etwfe::emfx()</a></code>). The centring
+<code><a href="summary.panglm_etwfe.html">summary.panglm_etwfe()</a></code> (as <code>wts</code> in <code><a href="https://grantmcdermott.com/etwfe/reference/emfx.html" class="external-link">etwfe::emfx()</a></code>). The centring
 of the controls at their cohort means (and of <code>xvar</code> at its cell
 means) is unweighted, as in <code>etwfe</code>. Unlike in <code><a href="attgt.html">attgt()</a></code>, the weights
 need not be constant within individuals: the model is a weighted
@@ -236,7 +236,7 @@ cell dummies with the control variables centred at their cohort means,
 as in Wooldridge (2021) and the <code>etwfe</code> package, so that the cell
 effects can vary with the controls.</p>
 <p>With <code>ivar = TRUE</code> (linear model only) individual fixed effects replace
-the cohort effects, as <code>ivar</code> in <code><a href="http://grantmcdermott.com/etwfe/reference/etwfe.html" class="external-link">etwfe::etwfe()</a></code>: they are swept out by
+the cohort effects, as <code>ivar</code> in <code><a href="https://grantmcdermott.com/etwfe/reference/etwfe.html" class="external-link">etwfe::etwfe()</a></code>: they are swept out by
 within-individual demeaning (weighted when there are weights). On a
 balanced panel without time-varying controls the cell effects and ATTs
 are the same as with cohort effects. They differ with time-varying
@@ -248,14 +248,14 @@ Nonlinear models keep the cohort effects (with few periods, individual
 effects in a logit model suffer from the incidental parameters problem;
 the pooled Poisson and logit quasi-likelihoods with cohort effects are
 the estimators of Wooldridge 2023), and <code>ivar = TRUE</code> is an error there,
-whereas <code><a href="http://grantmcdermott.com/etwfe/reference/etwfe.html" class="external-link">etwfe::etwfe()</a></code> ignores <code>ivar</code> for nonlinear families.</p>
+whereas <code><a href="https://grantmcdermott.com/etwfe/reference/etwfe.html" class="external-link">etwfe::etwfe()</a></code> ignores <code>ivar</code> for nonlinear families.</p>
     </div>
     <div class="section level2">
     <h2 id="heterogeneity-by-a-covariate">Heterogeneity by a covariate<a class="anchor" aria-label="anchor" href="#heterogeneity-by-a-covariate"></a></h2>
 
 
 <p><code>xvar</code> names a covariate by which the treatment effects may vary, as
-<code>xvar</code> in <code><a href="http://grantmcdermott.com/etwfe/reference/etwfe.html" class="external-link">etwfe::etwfe()</a></code> (typically a time-invariant indicator, such
+<code>xvar</code> in <code><a href="https://grantmcdermott.com/etwfe/reference/etwfe.html" class="external-link">etwfe::etwfe()</a></code> (typically a time-invariant indicator, such
 as sex, rural residence or a baseline risk group). The covariate is
 centred at its cohort by period cell means and enters through its
 interactions with the period dummies (except the first period) and with

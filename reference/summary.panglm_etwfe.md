@@ -8,7 +8,7 @@ observations (`"simple"`), by cohort (`"group"`), by calendar period
 standard errors. With sampling weights in
 [`etwfe()`](https://elbadisyimad.com/panglm/reference/etwfe.md), the
 averages are weighted. They correspond to
-[`etwfe::emfx()`](http://grantmcdermott.com/etwfe/reference/emfx.md).
+[`etwfe::emfx()`](https://grantmcdermott.com/etwfe/reference/emfx.html).
 With `control = "never"`, the event study also reports the pre-treatment
 placebo effects, with event time `-1` as the reference (zero).
 

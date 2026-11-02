@@ -83,12 +83,12 @@ etwfe(
   non-negative numeric vector with one value per row (rows with a
   missing weight are dropped). They weight the quasi-likelihood (as
   `weights = ~w` in
-  [`etwfe::etwfe()`](http://grantmcdermott.com/etwfe/reference/etwfe.md)
+  [`etwfe::etwfe()`](https://grantmcdermott.com/etwfe/reference/etwfe.html)
   and `fixest`) and the averages of the treatment effects over the
   treated observations in
   [`summary.panglm_etwfe()`](https://elbadisyimad.com/panglm/reference/summary.panglm_etwfe.md)
   (as `wts` in
-  [`etwfe::emfx()`](http://grantmcdermott.com/etwfe/reference/emfx.md)).
+  [`etwfe::emfx()`](https://grantmcdermott.com/etwfe/reference/emfx.html)).
   The centring of the controls at their cohort means (and of `xvar` at
   its cell means) is unweighted, as in `etwfe`. Unlike in
   [`attgt()`](https://elbadisyimad.com/panglm/reference/attgt.md), the
@@ -157,7 +157,7 @@ effects can vary with the controls.
 
 With `ivar = TRUE` (linear model only) individual fixed effects replace
 the cohort effects, as `ivar` in
-[`etwfe::etwfe()`](http://grantmcdermott.com/etwfe/reference/etwfe.md):
+[`etwfe::etwfe()`](https://grantmcdermott.com/etwfe/reference/etwfe.html):
 they are swept out by within-individual demeaning (weighted when there
 are weights). On a balanced panel without time-varying controls the cell
 effects and ATTs are the same as with cohort effects. They differ with
@@ -170,14 +170,14 @@ a logit model suffer from the incidental parameters problem; the pooled
 Poisson and logit quasi-likelihoods with cohort effects are the
 estimators of Wooldridge 2023), and `ivar = TRUE` is an error there,
 whereas
-[`etwfe::etwfe()`](http://grantmcdermott.com/etwfe/reference/etwfe.md)
+[`etwfe::etwfe()`](https://grantmcdermott.com/etwfe/reference/etwfe.html)
 ignores `ivar` for nonlinear families.
 
 ## Heterogeneity by a covariate
 
 `xvar` names a covariate by which the treatment effects may vary, as
 `xvar` in
-[`etwfe::etwfe()`](http://grantmcdermott.com/etwfe/reference/etwfe.md)
+[`etwfe::etwfe()`](https://grantmcdermott.com/etwfe/reference/etwfe.html)
 (typically a time-invariant indicator, such as sex, rural residence or a
 baseline risk group). The covariate is centred at its cohort by period
 cell means and enters through its interactions with the period dummies
