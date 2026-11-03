@@ -14,7 +14,8 @@ panglm fits regression models for panel data (pooled, fixed effects,
 random effects and the estimators built on them) for the outcomes and
 designs of applied health econometrics, from one formula interface and
 one set of post-estimation tools (robust and cluster covariances,
-partial effects, specification tests, prediction and tidy output).
+partial effects, specification tests, prediction, `tidy()`/`glance()`
+output and base-graphics plots for every fitted object).
 
 ## Installation
 
@@ -29,20 +30,27 @@ remotes::install_github("ielbadisy/panglm")
 
 ## What it fits
 
-| Task                                                                                                                  | Function                                                             |
-|-----------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------|
-| Continuous, binary, count, ordered, positive, bounded and censored outcomes (pooled, within, between, random effects) | `panglm()`                                                           |
-| Random slopes                                                                                                         | `panglm(model = "random", random = ~ x)`                             |
-| Costs with zeros (two-part model)                                                                                     | `twopart()`                                                          |
-| Counts with structural zeros                                                                                          | `panhurdle()`                                                        |
-| Difference-in-differences and event studies                                                                           | `did()`, `eventstudy()`                                              |
-| Staggered adoption                                                                                                    | `attgt()`, `etwfe()`                                                 |
-| Instrumental variables and Hausman-Taylor                                                                             | `paniv()`                                                            |
-| Dynamic panels (difference and system GMM)                                                                            | `pangmm()`                                                           |
-| Sample selection                                                                                                      | `panselect()`                                                        |
-| Quantile regression                                                                                                   | `panqr()`                                                            |
-| Latent classes                                                                                                        | `panfmm()`, `panfmmselect()`                                         |
-| Specification tests                                                                                                   | `panhausman()`, `pandispersiontest()`, `jointtest()`, `lineartest()` |
+| Task                                                                                                                  | Function                                                                                       |
+|-----------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------|
+| Continuous, binary, count, ordered, positive, bounded and censored outcomes (pooled, within, between, random effects) | `panglm()`                                                                                     |
+| Random slopes                                                                                                         | `panglm(model = "random", random = ~ x)`                                                       |
+| Costs with zeros (two-part model)                                                                                     | `twopart()`                                                                                    |
+| Counts with structural zeros                                                                                          | `panhurdle()`                                                                                  |
+| Difference-in-differences and event studies                                                                           | `did()`, `eventstudy()`                                                                        |
+| Staggered adoption                                                                                                    | `attgt()`, `etwfe()`                                                                           |
+| Instrumental variables and Hausman-Taylor                                                                             | `paniv()`                                                                                      |
+| Dynamic panels (difference and system GMM)                                                                            | `pangmm()`                                                                                     |
+| Sample selection                                                                                                      | `panselect()`                                                                                  |
+| Quantile regression                                                                                                   | `panqr()`                                                                                      |
+| Latent classes                                                                                                        | `panfmm()`, `panfmmselect()`                                                                   |
+| Specification tests                                                                                                   | `panhausman()`, `pandispersiontest()`, `jointtest()`, `lineartest()`                           |
+| Marginal effects and individual effects                                                                               | `partialeffects()`, `effectcurve()`, `fixef()`, `ranef()`                                      |
+| Plots                                                                                                                 | `plot()` methods, `coefplot()`, `eventplot()`, `trendplot()`, `treatmentplot()`, `panelplot()` |
+
+Families: `gaussianfamily()`, `binomialfamily()`, `poissonfamily()`,
+`negbinfamily()`, `orderedfamily()`, `gammafamily()`, `betafamily()` and
+`tobitfamily()`. Names with underscores (`poisson_family()`,
+`panglm_hausman()`, ...) are deprecated; see `?"panglm-deprecated"`.
 
 Numerical accuracy is documented in the [validation
 article](https://elbadisyimad.com/panglm/articles/validation.html).
@@ -68,7 +76,7 @@ summary(re)
 #>     vcov = "cluster")
 #> 
 #> Family: poisson  Link: log  Model: random  Effect: individual 
-#> N = 300  groups = 60  vcov: cluster 
+#> n = 300  groups = 60  vcov: cluster 
 #> 
 #> Coefficients:
 #>              Estimate Std. Error z value Pr(>|z|)    
@@ -89,7 +97,7 @@ panhausman(fe, re)
 #> 
 #>  Hausman specification test (fixed vs. random effects)
 #> 
-#> chisq = 3.211 , df = 1 , p-value = 0.07312 
+#> chisq = 3.211, df = 1, p-value = 0.07312
 #> alternative hypothesis: one model is inconsistent
 
 partialeffects(re)
@@ -103,6 +111,32 @@ partialeffects(re)
 #>        age    dY/dX  0.08031   0.01837     4.372 0.0000123  0.044310   0.11630
 ```
 
+Every fitted object has a `plot()` method. Here, a hanging rootogram
+checks the count distribution, and `effectcurve()` traces the average
+predicted count as CRP varies:
+
+``` r
+op <- par(mfrow = c(1, 2))
+plot(re, which = "rootogram")
+plot(effectcurve(re, "crp", scale = "response"))
+```
+
+<img src="man/figures/README-plots-1.png" alt="" width="100%" />
+
+``` r
+par(op)
+```
+
+## Datasets
+
+`copd` is a simulated panel with known parameters (counts, costs with
+zeros, an ordered score, a proportion and a staggered care programme).
+Five real health economics panels ship for teaching: `docvisits` (German
+health care demand), `meps` (Medical Expenditure Panel Survey spending),
+`medicaid` (US states, Medicaid expansion), `healthspend` (countries,
+health expenditure) and `cigar` (US states, cigarette demand). Each help
+page gives the source, the licence and the questions the data can teach.
+
 ## Learn more
 
 - [Getting started with
@@ -115,6 +149,8 @@ partialeffects(re)
   etwfe](https://elbadisyimad.com/panglm/articles/panglm-policy.html)
 - [Heterogeneity: random slopes, latent classes and quantile
   regression](https://elbadisyimad.com/panglm/articles/panglm-heterogeneity.html)
+- [Teaching
+  datasets](https://elbadisyimad.com/panglm/articles/panglm-datasets.html)
 - [Technical
   reference](https://elbadisyimad.com/panglm/articles/panglm-methods.html)
 - [Function reference](https://elbadisyimad.com/panglm/reference/)
