@@ -68,7 +68,7 @@
 #'
 #'   Licence: Creative Commons Attribution 4.0 (CC BY 4.0). The WDI catalog
 #'   entry
-#'   (<https://datacatalog.worldbank.org/search/dataset/0037712/World-Development-Indicators>)
+#'   (<https://datatopics.worldbank.org/world-development-indicators/>)
 #'   states "This dataset is licensed under Creative Commons Attribution
 #'   4.0", and the metadata of each of the nine series used carries
 #'   `License_Type` "CC BY-4.0". Attribution: "World Bank, World
@@ -77,7 +77,7 @@
 #'
 #' @references
 #' World Bank (2026). World Development Indicators. Washington, DC: The
-#' World Bank. <https://datacatalog.worldbank.org/search/dataset/0037712>
+#' World Bank. <https://datatopics.worldbank.org/world-development-indicators/>
 #'
 #' World Health Organization (2025). Global Health Expenditure Database.
 #' <https://apps.who.int/nha/database>
