@@ -1,3 +1,14 @@
+## Resubmission
+
+This is a resubmission of 1.7.0. The incoming pre-tests flagged a World Bank
+data catalog URL in `man/healthspend.Rd` that now redirects. It is replaced by
+the official World Development Indicators page, and `urlchecker::url_check()`
+reports all URLs as correct.
+
+The possibly misspelled words in DESCRIPTION (Baetschmann, Staub, Winkelmann,
+Cribari, Neto, Mundlak, Wooldridge, Duan, Ourti, et al.) are author names in
+citations.
+
 ## Update submission (1.1.4 -> 1.7.0)
 
 This update adds new panel estimators (between, Tobit, ordered, beta,
