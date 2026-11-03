@@ -192,7 +192,7 @@ round(rbind(OLS = coef(ols)[-1], Within = coef(fe),
 lr <- function(b) b[["lnp"]] / (1 - b[[1]])
 c(within = lr(coef(fe)), gmm = lr(coef(ab1)))
 #>    within       gmm 
-#> -1.792118 -2.400698 
+#> -1.792118 -2.400697 
 
 ## collapsed instruments: system GMM, two-step, Windmeijer errors
 sys <- pangmm(lnc ~ lag(lnc, 1) + lnp + lnpn + lny | lag(lnc, 2:99),
@@ -212,7 +212,7 @@ summary(sys)
 #> Coefficients:
 #>             Estimate Std. Error z value Pr(>|z|)    
 #> lag(lnc, 1)  0.75944    0.09332   8.138 4.03e-16 ***
-#> lnp         -0.34842    0.06377  -5.464 4.66e-08 ***
+#> lnp         -0.34842    0.06377  -5.464 4.65e-08 ***
 #> lnpn         0.02046    0.05601   0.365    0.715    
 #> lny          0.07448    0.05270   1.413    0.158    
 #> ---

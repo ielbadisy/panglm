@@ -118,8 +118,7 @@ Inter-agency Group for Child Mortality Estimation; GDP: World Bank
 International Comparison Program; all via WDI.
 
 Licence: Creative Commons Attribution 4.0 (CC BY 4.0). The WDI catalog
-entry
-(<https://datacatalog.worldbank.org/search/dataset/0037712/World-Development-Indicators>)
+entry (<https://datatopics.worldbank.org/world-development-indicators/>)
 states "This dataset is licensed under Creative Commons Attribution
 4.0", and the metadata of each of the nine series used carries
 `License_Type` "CC BY-4.0". Attribution: "World Bank, World Development
@@ -172,7 +171,8 @@ Take logs first, e.g.
 ## References
 
 World Bank (2026). World Development Indicators. Washington, DC: The
-World Bank. <https://datacatalog.worldbank.org/search/dataset/0037712>
+World Bank.
+<https://datatopics.worldbank.org/world-development-indicators/>
 
 World Health Organization (2025). Global Health Expenditure Database.
 <https://apps.who.int/nha/database>
@@ -308,7 +308,7 @@ summary(br)
 #> (Intercept)  1.77971    0.68937   2.582 0.009833 ** 
 #> lgdp        -0.19501    0.10056  -1.939 0.052476 .  
 #> pop65       -0.04780    0.01323  -3.613 0.000302 ***
-#> mean_lgdp   -0.08168    0.12642  -0.646 0.518234    
+#> mean_lgdp   -0.08168    0.12642  -0.646 0.518236    
 #> mean_pop65   0.04828    0.01724   2.801 0.005101 ** 
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
@@ -317,7 +317,7 @@ summary(br)
 #> Dispersion parameter: 0.02356 
 #> Random-intercept SD: 0.9156 
 #> Mundlak test (individual means jointly zero): chi2(2) = 8.734, p = 0.01269
-#> Residual df: 909  Iterations: 84
+#> Residual df: 909  Iterations: 83
 #> 
 
 ## country-specific income slopes (centre the regressor first)
