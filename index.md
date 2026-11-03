@@ -4,7 +4,8 @@ panglm fits regression models for panel data (pooled, fixed effects,
 random effects and the estimators built on them) for the outcomes and
 designs of applied health econometrics, from one formula interface and
 one set of post-estimation tools (robust and cluster covariances,
-partial effects, specification tests, prediction and tidy output).
+partial effects, specification tests, prediction, `tidy()`/`glance()`
+output and base-graphics plots for every fitted object).
 
 ## Installation
 
@@ -34,6 +35,24 @@ remotes::install_github("ielbadisy/panglm")
 | Quantile regression | [`panqr()`](https://elbadisyimad.com/panglm/reference/panqr.md) |
 | Latent classes | [`panfmm()`](https://elbadisyimad.com/panglm/reference/panfmm.md), [`panfmmselect()`](https://elbadisyimad.com/panglm/reference/panfmmselect.md) |
 | Specification tests | [`panhausman()`](https://elbadisyimad.com/panglm/reference/panhausman.md), [`pandispersiontest()`](https://elbadisyimad.com/panglm/reference/pandispersiontest.md), [`jointtest()`](https://elbadisyimad.com/panglm/reference/jointtest.md), [`lineartest()`](https://elbadisyimad.com/panglm/reference/lineartest.md) |
+| Marginal effects and individual effects | [`partialeffects()`](https://elbadisyimad.com/panglm/reference/partialeffects.md), [`effectcurve()`](https://elbadisyimad.com/panglm/reference/effectcurve.md), [`fixef()`](https://elbadisyimad.com/panglm/reference/fixef.md), [`ranef()`](https://elbadisyimad.com/panglm/reference/fixef.md) |
+| Plots | [`plot()`](https://rdrr.io/r/graphics/plot.default.html) methods, [`coefplot()`](https://elbadisyimad.com/panglm/reference/coefplot.md), [`eventplot()`](https://elbadisyimad.com/panglm/reference/eventplot.md), [`trendplot()`](https://elbadisyimad.com/panglm/reference/trendplot.md), [`treatmentplot()`](https://elbadisyimad.com/panglm/reference/treatmentplot.md), [`panelplot()`](https://elbadisyimad.com/panglm/reference/panelplot.md) |
+
+Families:
+[`gaussianfamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md),
+[`binomialfamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md),
+[`poissonfamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md),
+[`negbinfamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md),
+[`orderedfamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md),
+[`gammafamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md),
+[`betafamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md)
+and
+[`tobitfamily()`](https://elbadisyimad.com/panglm/reference/panglm-families.md).
+Names with underscores
+([`poisson_family()`](https://elbadisyimad.com/panglm/reference/panglm-deprecated.md),
+[`panglm_hausman()`](https://elbadisyimad.com/panglm/reference/panglm-deprecated.md),
+…) are deprecated; see
+[`?"panglm-deprecated"`](https://elbadisyimad.com/panglm/reference/panglm-deprecated.md).
 
 Numerical accuracy is documented in the [validation
 article](https://elbadisyimad.com/panglm/articles/validation.html).
@@ -60,7 +79,7 @@ summary(re)
 #>     vcov = "cluster")
 #> 
 #> Family: poisson  Link: log  Model: random  Effect: individual 
-#> N = 300  groups = 60  vcov: cluster 
+#> n = 300  groups = 60  vcov: cluster 
 #> 
 #> Coefficients:
 #>              Estimate Std. Error z value Pr(>|z|)    
@@ -81,7 +100,7 @@ panhausman(fe, re)
 #> 
 #>  Hausman specification test (fixed vs. random effects)
 #> 
-#> chisq = 3.211 , df = 1 , p-value = 0.07312 
+#> chisq = 3.211, df = 1, p-value = 0.07312
 #> alternative hypothesis: one model is inconsistent
 
 partialeffects(re)
@@ -95,6 +114,36 @@ partialeffects(re)
 #>        age    dY/dX  0.08031   0.01837     4.372 0.0000123  0.044310   0.11630
 ```
 
+Every fitted object has a
+[`plot()`](https://rdrr.io/r/graphics/plot.default.html) method. Here, a
+hanging rootogram checks the count distribution, and
+[`effectcurve()`](https://elbadisyimad.com/panglm/reference/effectcurve.md)
+traces the average predicted count as CRP varies:
+
+``` r
+
+op <- par(mfrow = c(1, 2))
+plot(re, which = "rootogram")
+plot(effectcurve(re, "crp", scale = "response"))
+```
+
+![](reference/figures/README-plots-1.png)
+
+``` r
+
+par(op)
+```
+
+## Datasets
+
+`copd` is a simulated panel with known parameters (counts, costs with
+zeros, an ordered score, a proportion and a staggered care programme).
+Five real health economics panels ship for teaching: `docvisits` (German
+health care demand), `meps` (Medical Expenditure Panel Survey spending),
+`medicaid` (US states, Medicaid expansion), `healthspend` (countries,
+health expenditure) and `cigar` (US states, cigarette demand). Each help
+page gives the source, the licence and the questions the data can teach.
+
 ## Learn more
 
 - [Getting started with
@@ -107,6 +156,8 @@ partialeffects(re)
   etwfe](https://elbadisyimad.com/panglm/articles/panglm-policy.html)
 - [Heterogeneity: random slopes, latent classes and quantile
   regression](https://elbadisyimad.com/panglm/articles/panglm-heterogeneity.html)
+- [Teaching
+  datasets](https://elbadisyimad.com/panglm/articles/panglm-datasets.html)
 - [Technical
   reference](https://elbadisyimad.com/panglm/articles/panglm-methods.html)
 - [Function reference](https://elbadisyimad.com/panglm/reference/)

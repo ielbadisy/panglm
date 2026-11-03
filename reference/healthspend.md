@@ -308,7 +308,7 @@ summary(br)
 #> (Intercept)  1.77971    0.68937   2.582 0.009833 ** 
 #> lgdp        -0.19501    0.10056  -1.939 0.052476 .  
 #> pop65       -0.04780    0.01323  -3.613 0.000302 ***
-#> mean_lgdp   -0.08168    0.12642  -0.646 0.518236    
+#> mean_lgdp   -0.08168    0.12642  -0.646 0.518234    
 #> mean_pop65   0.04828    0.01724   2.801 0.005101 ** 
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
@@ -317,7 +317,7 @@ summary(br)
 #> Dispersion parameter: 0.02356 
 #> Random-intercept SD: 0.9156 
 #> Mundlak test (individual means jointly zero): chi2(2) = 8.734, p = 0.01269
-#> Residual df: 909  Iterations: 83
+#> Residual df: 909  Iterations: 84
 #> 
 
 ## country-specific income slopes (centre the regressor first)
