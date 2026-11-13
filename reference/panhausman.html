@@ -11,7 +11,7 @@ alternative that only the fixed-effects estimator is consistent."><meta property
 
     <a class="navbar-brand me-2" href="../index.html">panglm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.7.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.7.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -107,7 +107,8 @@ required for <code>method = "classical"</code>, ignored for <code>"mundlak"</cod
 <code>distribution</code> (<code>"chisq"</code> or <code>"F"</code>), <code>pos_def</code> (<code>"classical"</code> only:
 whether <code>V_fe - V_re</code> is positive definite), and the compared coefficient
 vectors (<code>coef_fe</code>, <code>coef_re</code> for <code>"classical"</code>; <code>coef_mean</code> for
-<code>"mundlak"</code>)</p>
+<code>"mundlak"</code>). For <code>"mundlak"</code> also <code>wald</code> and <code>wald_p.value</code>, the Wald
+chi-square statistic and its chi-square(k) p-value</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -128,9 +129,19 @@ version of the same test (Mundlak 1978; Wooldridge 2010, section 10.7.3),
 valid under heteroskedasticity and serial correlation. The pooled model
 <code>y ~ x + xbar</code> is fit with the individual means <code>xbar</code> of the time-varying
 regressors of <code>fe</code>, and the null <code>coef(xbar) = 0</code> is tested with a Wald
-statistic using the <code>vcov</code> covariance. With <code>vcov = "cluster"</code> the
-reference is <code>F(k, G - 1)</code> (<code>G</code> individuals), otherwise chi-square(k).
-Gaussian family only.</p>
+statistic <code>W</code> using the <code>vcov</code> covariance. With <code>vcov = "cluster"</code> the
+reported statistic is <code>F = W / k</code> with reference <code>F(k, G - 1)</code> (<code>G</code>
+individuals), a small-sample correction for few clusters; otherwise it
+is <code>W</code> with reference chi-square(k). Gaussian family only.</p>
+<p>The Wald chi-square <code>W</code> and its chi-square p-value are always returned
+(<code>wald</code>, <code>wald_p.value</code>) and printed. <code>W</code> is the statistic that the
+summary of a <code>cre = TRUE</code> fit reports (<code>summary(fit)$cre_test</code>, a Wald
+chi-square with the covariance stored on that fit): the two are equal for
+<code>panglm(..., model = "pooling", family = "gaussian", cre = TRUE)</code> fit
+with the same <code>vcov</code>, and close but not equal for a <code>model = "random"</code>
+CRE fit, whose coefficients are GLS rather than pooled estimates. The
+p-values differ only through the <code>F(k, G - 1)</code> reference used here with
+<code>vcov = "cluster"</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="validation">Validation<a class="anchor" aria-label="anchor" href="#validation"></a></h2>
@@ -142,7 +153,7 @@ suite; see the validation article on the package website.</p>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="panglm.html">panglm()</a></code> with <code>cre = TRUE</code>, whose summary reports the Mundlak
-test.</p>
+test as a Wald chi-square (see Details).</p>
 <p>Other tests:
 <code><a href="jointtest.html">jointtest()</a></code>,
 <code><a href="lineartest.html">lineartest()</a></code>,
@@ -168,6 +179,7 @@ test.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 	Mundlak specification test (fixed vs. random effects), vcov: cluster</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> F = 0.1647, df = 1, 59, p-value = 0.6864</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Wald chisq = 0.1647, df = 1, p-value = 0.6849</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> alternative hypothesis: one model is inconsistent</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 </code></pre></div>

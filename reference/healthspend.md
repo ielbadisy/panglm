@@ -215,6 +215,7 @@ panhausman(fe, method = "mundlak", data = hs)
 #>  Mundlak specification test (fixed vs. random effects), vcov: cluster
 #> 
 #> F = 1.463, df = 1, 185, p-value = 0.228
+#> Wald chisq = 1.463, df = 1, p-value = 0.2264
 #> alternative hypothesis: one model is inconsistent
 #> 
 
@@ -316,7 +317,7 @@ summary(br)
 #> Log-likelihood: 911.1 
 #> Dispersion parameter: 0.02356 
 #> Random-intercept SD: 0.9156 
-#> Mundlak test (individual means jointly zero): chi2(2) = 8.734, p = 0.01269
+#> Mundlak test (individual means jointly zero, Wald, vcov: cluster): chi2(2) = 8.734, p = 0.01269
 #> Residual df: 909  Iterations: 83
 #> 
 

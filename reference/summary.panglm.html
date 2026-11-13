@@ -9,7 +9,7 @@ Pr(&amp;gt;|z|)) in the style of summary.glm()."><meta property="og:image" conte
 
     <a class="navbar-brand me-2" href="../index.html">panglm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.7.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.7.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -98,8 +98,11 @@ fixed-effects fits, from the observed information at the fitted means,
 as in <code><a href="https://rdrr.io/pkg/MASS/man/glm.nb.html" class="external-link">MASS::glm.nb()</a></code>), or <code>negbin_ab</code>, the beta mixing parameters
 <code>a</code> and <code>b</code> of the random-intercept model, and, for
 <code>cre = TRUE</code> fits, <code>cre_test</code>: the Wald (Mundlak) test that the
-individual-mean coefficients are jointly zero, computed with the
-covariance stored on the fit.</p>
+individual-mean coefficients are jointly zero, a chi-square(k)
+statistic computed with the covariance stored on the fit (its <code>vcov</code>
+type is printed). It is the <code>wald</code> component of
+<code><a href="panhausman.html">panhausman()</a></code><code>(method = "mundlak")</code>, which with <code>vcov = "cluster"</code>
+reports <code>F = W / k</code> on <code>F(k, G - 1)</code> instead; see <code><a href="panhausman.html">panhausman()</a></code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

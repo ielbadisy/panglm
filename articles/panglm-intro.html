@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">panglm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.7.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.7.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -315,7 +315,7 @@ and <code>smoker</code> stay in the model.</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Log-likelihood: -22.56 </span></span>
 <span><span class="co">#&gt; Dispersion parameter: 0.0359 </span></span>
-<span><span class="co">#&gt; Mundlak test (individual means jointly zero): chi2(1) = 0.04127, p = 0.839</span></span>
+<span><span class="co">#&gt; Mundlak test (individual means jointly zero, Wald, vcov: cluster): chi2(1) = 0.04127, p = 0.839</span></span>
 <span><span class="co">#&gt; Residual df: 294  Iterations: 2</span></span></code></pre></div>
 </div>
 <div class="section level2">
@@ -343,6 +343,7 @@ correlation, so it is the one to report.</p>
 <span><span class="co">#&gt;  Mundlak specification test (fixed vs. random effects), vcov: cluster</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; F = 0.1647, df = 1, 59, p-value = 0.6864</span></span>
+<span><span class="co">#&gt; Wald chisq = 0.1647, df = 1, p-value = 0.6849</span></span>
 <span><span class="co">#&gt; alternative hypothesis: one model is inconsistent</span></span></code></pre></div>
 <p>Neither test rejects: in these data CRP is unrelated to the stable
 part of lung function, and random effects is acceptable. When the test

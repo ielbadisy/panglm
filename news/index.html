@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">panglm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.7.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.7.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -52,6 +52,14 @@
       <small>Source: <a href="https://github.com/ielbadisy/panglm/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.7.1" id="panglm-171">panglm 1.7.1<a class="anchor" aria-label="anchor" href="#panglm-171"></a></h2>
+<ul><li>Fixed-effects Poisson: individuals with an all-zero outcome, which carry no information and are dropped from the estimation, are no longer counted in <code>n</code> and <code>G</code> for the HC1 and cluster small-sample corrections. Robust standard errors now equal <code><a href="https://lrberge.github.io/fixest/reference/feglm.html" class="external-link">fixest::fepois()</a></code> with <code>ssc(K.fixef = "none")</code>, also when such individuals are present.</li>
+<li>
+<code><a href="../reference/did.html">did()</a></code>, <code><a href="../reference/eventstudy.html">eventstudy()</a></code>, <code><a href="../reference/attgt.html">attgt()</a></code> and <code><a href="../reference/etwfe.html">etwfe()</a></code> accept a 0/1 (or logical) treatment status in <code>treat</code>: when it varies within individuals and never switches off it is converted, with a message, to each individual’s first treated period. A status that switches off, or a 0/1 treated-group indicator that is constant within individuals, now stops with a message explaining the expected input instead of “must be constant within individuals”.</li>
+<li>
+<code>panhausman(method = "mundlak")</code> also returns and prints the Wald chi-square (<code>wald</code>, <code>wald_p.value</code>), the statistic reported by the summary of a <code>cre = TRUE</code> fit; with <code>vcov = "cluster"</code> its main statistic remains <code>F = W / k</code> on <code>F(k, G - 1)</code>. The summary of a CRE fit now names the test as a Wald chi-square and prints its covariance type. Both help pages state which statistic each reports.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.7.0" id="panglm-170">panglm 1.7.0<a class="anchor" aria-label="anchor" href="#panglm-170"></a></h2><p class="text-muted">CRAN release: 2026-11-03</p>
 <p>Plotting and teaching release: every fitted object has a plot method, the diagnostics, marginal effects and difference-in-differences results can be drawn directly with base graphics, and five real health economics panels ship with the package. Estimates are unchanged.</p>

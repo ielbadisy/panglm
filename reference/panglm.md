@@ -393,7 +393,7 @@ summary(fit_cre)
 #> Log-likelihood: -159.8 
 #> Dispersion parameter: 1 
 #> Random-intercept SD: 0.2689 
-#> Mundlak test (individual means jointly zero): chi2(1) = 1.243, p = 0.2649
+#> Mundlak test (individual means jointly zero, Wald, vcov: classical): chi2(1) = 1.243, p = 0.2649
 #> Residual df: 294  Iterations: 30
 #> 
 

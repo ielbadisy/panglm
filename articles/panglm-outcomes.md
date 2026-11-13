@@ -68,7 +68,7 @@ summary(fe_pois)
 #> 
 #> Coefficients:
 #>         Estimate Std. Error z value Pr(>|z|)    
-#> chronic  0.50872    0.08120   6.265 3.72e-10 ***
+#> chronic  0.50872    0.08120   6.265 3.73e-10 ***
 #> age      0.01126    0.02643   0.426     0.67    
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1

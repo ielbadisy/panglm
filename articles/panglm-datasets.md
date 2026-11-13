@@ -239,6 +239,7 @@ panhausman(fe, method = "mundlak", data = hs)
 #>  Mundlak specification test (fixed vs. random effects), vcov: cluster
 #> 
 #> F = 1.463, df = 1, 185, p-value = 0.228
+#> Wald chisq = 1.463, df = 1, p-value = 0.2264
 #> alternative hypothesis: one model is inconsistent
 ```
 

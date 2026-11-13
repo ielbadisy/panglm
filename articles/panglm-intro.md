@@ -197,7 +197,7 @@ summary(fit_cre)
 #> 
 #> Log-likelihood: -22.56 
 #> Dispersion parameter: 0.0359 
-#> Mundlak test (individual means jointly zero): chi2(1) = 0.04127, p = 0.839
+#> Mundlak test (individual means jointly zero, Wald, vcov: cluster): chi2(1) = 0.04127, p = 0.839
 #> Residual df: 294  Iterations: 2
 ```
 
@@ -225,6 +225,7 @@ panhausman(fit_fe, method = "mundlak", data = copd)
 #>  Mundlak specification test (fixed vs. random effects), vcov: cluster
 #> 
 #> F = 0.1647, df = 1, 59, p-value = 0.6864
+#> Wald chisq = 0.1647, df = 1, p-value = 0.6849
 #> alternative hypothesis: one model is inconsistent
 ```
 

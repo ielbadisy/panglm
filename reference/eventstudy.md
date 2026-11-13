@@ -49,7 +49,10 @@ eventstudy(
 
   name of the column holding each individual's first treated period (in
   the units of the time index); `NA`, `0` or `Inf` for units that are
-  never treated
+  never treated. A 0/1 treatment status that varies within individuals
+  and never switches off (`1(t >= first treated period)`) is also
+  accepted and converted, with a message, to the first period with
+  status 1; a status that switches off is an error
 
 - leads, lags:
 

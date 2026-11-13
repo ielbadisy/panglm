@@ -54,7 +54,10 @@ etwfe(
 - treat:
 
   name of the column holding each individual's first treated period;
-  `NA`, `0` or `Inf` for units that are never treated
+  `NA`, `0` or `Inf` for units that are never treated. An absorbing 0/1
+  treatment status is also accepted and converted to the first treated
+  period, as in
+  [`did()`](https://elbadisyimad.com/panglm/reference/did.md)
 
 - family:
 

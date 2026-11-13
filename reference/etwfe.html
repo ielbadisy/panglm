@@ -37,7 +37,7 @@ binary outcomes."><meta property="og:image" content="https://elbadisyimad.com/pa
 
     <a class="navbar-brand me-2" href="../index.html">panglm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.7.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.7.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -138,7 +138,8 @@ individual identifies the clusters for the standard errors.</p></dd>
 
 <dt id="arg-treat">treat<a class="anchor" aria-label="anchor" href="#arg-treat"></a></dt>
 <dd><p>name of the column holding each individual's first treated
-period; <code>NA</code>, <code>0</code> or <code>Inf</code> for units that are never treated</p></dd>
+period; <code>NA</code>, <code>0</code> or <code>Inf</code> for units that are never treated. An absorbing 0/1 treatment status is
+also accepted and converted to the first treated period, as in <code><a href="did.html">did()</a></code></p></dd>
 
 
 <dt id="arg-family">family<a class="anchor" aria-label="anchor" href="#arg-family"></a></dt>

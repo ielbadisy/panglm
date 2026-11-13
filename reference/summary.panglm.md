@@ -42,8 +42,13 @@ means, as in
 [`MASS::glm.nb()`](https://rdrr.io/pkg/MASS/man/glm.nb.html)), or
 `negbin_ab`, the beta mixing parameters `a` and `b` of the
 random-intercept model, and, for `cre = TRUE` fits, `cre_test`: the Wald
-(Mundlak) test that the individual-mean coefficients are jointly zero,
-computed with the covariance stored on the fit.
+(Mundlak) test that the individual-mean coefficients are jointly zero, a
+chi-square(k) statistic computed with the covariance stored on the fit
+(its `vcov` type is printed). It is the `wald` component of
+[`panhausman()`](https://elbadisyimad.com/panglm/reference/panhausman.md)`(method = "mundlak")`,
+which with `vcov = "cluster"` reports `F = W / k` on `F(k, G - 1)`
+instead; see
+[`panhausman()`](https://elbadisyimad.com/panglm/reference/panhausman.md).
 
 ## See also
 

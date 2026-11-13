@@ -29,7 +29,7 @@ by cohort or by calendar period with summary.panglm_attgt()."><meta property="og
 
     <a class="navbar-brand me-2" href="../index.html">panglm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.7.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.7.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -132,7 +132,8 @@ parallel trends (covariates are taken in the base period)</p></dd>
 <dt id="arg-treat">treat<a class="anchor" aria-label="anchor" href="#arg-treat"></a></dt>
 <dd><p>name of the column holding each individual's first treated
 period (in the units of the time index); <code>NA</code>, <code>0</code> or <code>Inf</code> for units
-that are never treated</p></dd>
+that are never treated. An absorbing 0/1 treatment status is
+also accepted and converted to the first treated period, as in <code><a href="did.html">did()</a></code></p></dd>
 
 
 <dt id="arg-control">control<a class="anchor" aria-label="anchor" href="#arg-control"></a></dt>

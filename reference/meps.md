@@ -475,7 +475,7 @@ summary(cre)
 #> Log-likelihood: -1756 
 #> Dispersion parameter: 1 
 #> Random-intercept SD: 1.275 
-#> Mundlak test (individual means jointly zero): chi2(6) = 21.37, p = 0.001572
+#> Mundlak test (individual means jointly zero, Wald, vcov: classical): chi2(6) = 21.37, p = 0.001572
 #> Residual df: 5984  Iterations: 6
 #> 
 
