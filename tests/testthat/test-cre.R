@@ -67,3 +67,17 @@ test_that("exact collinearity drops the same columns as lm()", {
                                  model = "random", cre = TRUE))
   expect_setequal(fit$aliased, na_lm)
 })
+
+test_that("panhausman(mundlak) returns the Wald chi-square of the CRE summary", {
+  data(copd, package = "panglm")
+  fe <- panglm(fev1 ~ crp, data = copd, index = c("id", "visit"), model = "within")
+  cre <- panglm(fev1 ~ crp, data = copd, index = c("id", "visit"), model = "pooling",
+                cre = TRUE, vcov = "cluster")
+  h <- panhausman(fe, method = "mundlak", data = copd, vcov = "cluster")
+  s <- summary(cre)
+  expect_equal(h$wald, s$cre_test$statistic, tolerance = 1e-8)
+  expect_equal(h$wald_p.value, s$cre_test$p.value, tolerance = 1e-8)
+  expect_equal(h$statistic, h$wald / length(h$coef_mean))
+  expect_output(print(h), "Wald chisq")
+  expect_output(print(s), "Wald, vcov: cluster")
+})

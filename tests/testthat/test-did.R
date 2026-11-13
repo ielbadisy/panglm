@@ -168,3 +168,33 @@ test_that("did() and eventstudy() summaries show the user's call, not the intern
   expect_match(paste(capture.output(summary(es$fit)), collapse = "\n"),
                "eventstudy(formula = y ~ x", fixed = TRUE)
 })
+
+test_that("a 0/1 treatment status is converted to the first treated period", {
+  set.seed(21)
+  d <- expand.grid(year = 2010:2017, id = 1:120)
+  first <- sample(c(2013, 2015, NA), 120, replace = TRUE)
+  d$first <- first[d$id]
+  d$status <- as.numeric(!is.na(d$first) & d$year >= d$first)
+  a <- rnorm(120)
+  d$y <- a[d$id] + 0.1 * d$year + 2 * d$status + rnorm(nrow(d))
+  ref <- did(y ~ 1, data = d, index = c("id", "year"), treat = "first")
+  expect_message(fit <- did(y ~ 1, data = d, index = c("id", "year"), treat = "status"),
+                 "0/1 treatment status")
+  expect_equal(coef(fit), coef(ref))
+  expect_equal(vcov(fit), vcov(ref))
+  d$lstatus <- d$status == 1
+  expect_equal(coef(suppressMessages(did(y ~ 1, data = d, index = c("id", "year"),
+                                         treat = "lstatus"))), coef(ref))
+  att_ref <- attgt(y ~ 1, data = d, index = c("id", "year"), treat = "first")
+  att <- suppressMessages(attgt(y ~ 1, data = d, index = c("id", "year"), treat = "status"))
+  expect_equal(att$estimates, att_ref$estimates)
+  # a status that switches off has no adoption date
+  d$off <- d$status
+  d$off[d$id == which(!is.na(first))[1] & d$year == 2017] <- 0
+  expect_error(did(y ~ 1, data = d, index = c("id", "year"), treat = "off"),
+               "switches off")
+  # a constant 0/1 group indicator is not a first treated period
+  d$group <- as.numeric(!is.na(d$first))
+  expect_error(did(y ~ 1, data = d, index = c("id", "year"), treat = "group"),
+               "treated-group indicator")
+})

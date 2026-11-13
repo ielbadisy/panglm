@@ -23,8 +23,11 @@
 #'   as in `MASS::glm.nb()`), or `negbin_ab`, the beta mixing parameters
 #'   `a` and `b` of the random-intercept model, and, for
 #'   `cre = TRUE` fits, `cre_test`: the Wald (Mundlak) test that the
-#'   individual-mean coefficients are jointly zero, computed with the
-#'   covariance stored on the fit.
+#'   individual-mean coefficients are jointly zero, a chi-square(k)
+#'   statistic computed with the covariance stored on the fit (its `vcov`
+#'   type is printed). It is the `wald` component of
+#'   [panhausman()]`(method = "mundlak")`, which with `vcov = "cluster"`
+#'   reports `F = W / k` on `F(k, G - 1)` instead; see [panhausman()].
 #' @family panglm methods
 #' @examples
 #' data(copd)
@@ -99,7 +102,8 @@ print.summary.panglm <- function(x, digits = max(3, getOption("digits") - 3), ..
   }
   if (isTRUE(x$weighted)) cat("Observation weights: yes (weighted pseudo-likelihood)\n")
   if (!is.null(x$cre_test)) {
-    cat("Mundlak test (individual means jointly zero): chi2(", x$cre_test$df, ") = ",
+    cat("Mundlak test (individual means jointly zero, Wald, vcov: ", x$vcov_type %||% "classical",
+        "): chi2(", x$cre_test$df, ") = ",
         format(x$cre_test$statistic, digits = digits), ", p = ",
         format.pval(x$cre_test$p.value, digits = digits), "\n", sep = "")
   }

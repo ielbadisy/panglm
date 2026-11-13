@@ -22,9 +22,20 @@
 #' valid under heteroskedasticity and serial correlation. The pooled model
 #' `y ~ x + xbar` is fit with the individual means `xbar` of the time-varying
 #' regressors of `fe`, and the null `coef(xbar) = 0` is tested with a Wald
-#' statistic using the `vcov` covariance. With `vcov = "cluster"` the
-#' reference is `F(k, G - 1)` (`G` individuals), otherwise chi-square(k).
-#' Gaussian family only.
+#' statistic `W` using the `vcov` covariance. With `vcov = "cluster"` the
+#' reported statistic is `F = W / k` with reference `F(k, G - 1)` (`G`
+#' individuals), a small-sample correction for few clusters; otherwise it
+#' is `W` with reference chi-square(k). Gaussian family only.
+#'
+#' The Wald chi-square `W` and its chi-square p-value are always returned
+#' (`wald`, `wald_p.value`) and printed. `W` is the statistic that the
+#' summary of a `cre = TRUE` fit reports (`summary(fit)$cre_test`, a Wald
+#' chi-square with the covariance stored on that fit): the two are equal for
+#' `panglm(..., model = "pooling", family = "gaussian", cre = TRUE)` fit
+#' with the same `vcov`, and close but not equal for a `model = "random"`
+#' CRE fit, whose coefficients are GLS rather than pooled estimates. The
+#' p-values differ only through the `F(k, G - 1)` reference used here with
+#' `vcov = "cluster"`.
 #'
 #' @param fe a `"panglm"` fit with `model = "within"`
 #' @param re a `"panglm"` fit with `model = "random"`, same formula/data/family;
@@ -38,10 +49,11 @@
 #'   `distribution` (`"chisq"` or `"F"`), `pos_def` (`"classical"` only:
 #'   whether `V_fe - V_re` is positive definite), and the compared coefficient
 #'   vectors (`coef_fe`, `coef_re` for `"classical"`; `coef_mean` for
-#'   `"mundlak"`)
+#'   `"mundlak"`). For `"mundlak"` also `wald` and `wald_p.value`, the Wald
+#'   chi-square statistic and its chi-square(k) p-value
 #' @family tests
 #' @seealso [panglm()] with `cre = TRUE`, whose summary reports the Mundlak
-#'   test.
+#'   test as a Wald chi-square (see Details).
 #' @section Validation:
 #' Numerical accuracy is checked in the package tests and in the validation
 #' suite; see the validation article on the package website.
@@ -145,7 +157,8 @@ hausman_mundlak <- function(fe, data, vcov) {
     dist <- "chisq"
   }
   out <- list(statistic = stat, parameter = df, p.value = pval, method = "mundlak",
-              distribution = dist, vcov_type = vcov, coef_mean = b, common = slopes)
+              distribution = dist, vcov_type = vcov, coef_mean = b, common = slopes,
+              wald = W, wald_p.value = stats::pchisq(W, k, lower.tail = FALSE))
   class(out) <- "panglm_hausman"
   out
 }
@@ -169,6 +182,10 @@ print.panglm_hausman <- function(x, digits = max(3, getOption("digits") - 3), ..
     cat("F = ", format(x$statistic, digits = digits),
         ", df = ", paste(x$parameter, collapse = ", "),
         ", p-value = ", format.pval(x$p.value, digits = digits), "\n", sep = "")
+    if (!is.null(x$wald)) {
+      cat("Wald chisq = ", format(x$wald, digits = digits), ", df = ", x$parameter[1],
+          ", p-value = ", format.pval(x$wald_p.value, digits = digits), "\n", sep = "")
+    }
   } else {
     cat("chisq = ", format(x$statistic, digits = digits),
         ", df = ", x$parameter,

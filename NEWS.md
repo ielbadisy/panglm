@@ -1,3 +1,24 @@
+# panglm 1.7.1
+
+* Fixed-effects Poisson: individuals with an all-zero outcome, which carry
+  no information and are dropped from the estimation, are no longer counted
+  in `n` and `G` for the HC1 and cluster small-sample corrections. Robust
+  standard errors now equal `fixest::fepois()` with
+  `ssc(K.fixef = "none")`, also when such individuals are present.
+* `did()`, `eventstudy()`, `attgt()` and `etwfe()` accept a 0/1 (or
+  logical) treatment status in `treat`: when it varies within individuals
+  and never switches off it is converted, with a message, to each
+  individual's first treated period. A status that switches off, or a 0/1
+  treated-group indicator that is constant within individuals, now stops
+  with a message explaining the expected input instead of "must be
+  constant within individuals".
+* `panhausman(method = "mundlak")` also returns and prints the Wald
+  chi-square (`wald`, `wald_p.value`), the statistic reported by the
+  summary of a `cre = TRUE` fit; with `vcov = "cluster"` its main statistic
+  remains `F = W / k` on `F(k, G - 1)`. The summary of a CRE fit now names
+  the test as a Wald chi-square and prints its covariance type. Both help
+  pages state which statistic each reports.
+
 # panglm 1.7.0
 
 Plotting and teaching release: every fitted object has a plot method,

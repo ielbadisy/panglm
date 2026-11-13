@@ -75,7 +75,8 @@
 #' @param index `c(individual, time)`; the time index must be numeric
 #' @param treat name of the column holding each individual's first treated
 #'   period (in the units of the time index); `NA`, `0` or `Inf` for units
-#'   that are never treated
+#'   that are never treated. An absorbing 0/1 treatment status is
+#'   also accepted and converted to the first treated period, as in [did()]
 #' @param control comparison group: `"never"` (never-treated individuals)
 #'   or `"notyet"` (never treated or not yet treated, nor anticipating
 #'   treatment, at both periods compared)
@@ -197,7 +198,7 @@ attgt <- function(formula, data, index, treat, control = c("never", "notyet"),
   for (v in intersect(c(index, if (is.character(cluster)) cluster), names(data))) {
     if (is.factor(data[[v]])) data[[v]] <- droplevels(data[[v]])
   }
-  did_timing(data, index, treat)
+  data[[treat]] <- did_timing(data, index, treat)$treat_col
   wv <- did_weights(weights, data)
   cv <- did_cluster(cluster, data)
   stop_panel_calls(formula, what = "attgt()")

@@ -85,7 +85,8 @@
 #' @param index `c(individual, time)`; the time index must be numeric. The
 #'   individual identifies the clusters for the standard errors.
 #' @param treat name of the column holding each individual's first treated
-#'   period; `NA`, `0` or `Inf` for units that are never treated
+#'   period; `NA`, `0` or `Inf` for units that are never treated. An absorbing 0/1 treatment status is
+#'   also accepted and converted to the first treated period, as in [did()]
 #' @param family `"gaussian"` (linear), `"poisson"` (counts, log link) or
 #'   `"binomial"` (binary, logit link; `"logit"` is accepted)
 #' @param control `"notyet"` or `"never"`; see Specification
@@ -178,7 +179,7 @@ etwfe <- function(formula, data, index, treat,
   control <- match.arg(control)
   vcov <- match.arg(vcov)
   data <- as.data.frame(data)
-  did_timing(data, index, treat)
+  data[[treat]] <- did_timing(data, index, treat)$treat_col
   formula <- stats::as.formula(formula)
   if (length(formula) != 3L) stop("'formula' must have an outcome, e.g. y ~ 1", call. = FALSE)
   stop_panel_calls(formula, what = "etwfe()")

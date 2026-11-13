@@ -89,6 +89,14 @@ vcov.panglm <- function(object, type = NULL, cluster = NULL, ...) {
   bread <- object$bread
   # zero-weight observations carry no information and do not count in n
   positive <- if (is.null(object$weights)) rep(TRUE, nrow(score)) else object$weights > 0
+  # FE Poisson: individuals with an all-zero outcome are dropped from the
+  # estimation (their fixed effect is -Inf and their score is zero), so they
+  # do not count in n or G either, as in fixest::fepois
+  if (object$model == "within" && object$family$family == "poisson") {
+    panel <- rep(seq_along(object$group_size), object$group_size)
+    y_pos <- as.numeric(object$y) * positive
+    positive <- positive & (rowsum(y_pos, panel)[, 1] > 0)[panel]
+  }
   score <- score[positive, , drop = FALSE]
 
   if (type == "HC1") {
