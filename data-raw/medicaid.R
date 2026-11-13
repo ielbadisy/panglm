@@ -65,7 +65,7 @@
 #   tables cut at 1.00 and 1.50), so uninslow is NA in 2009-2010.
 # * No sampling: all 51 jurisdictions, all years (balanced, 561 rows).
 
-raw_dir <- "/home/imad-el-badisy/Desktop/BIOSTAT/PROJECTS/SOFTWARE/project-panglm/archive/raw/datasets-2026-11-01/medicaid"
+raw_dir <- "/home/imad-el-badisy/Desktop/BIOSTAT/PROJECTS/ACTIVE/software-panglm/archive/raw/datasets-2026-11-01/medicaid"
 dir.create(raw_dir, recursive = TRUE, showWarnings = FALSE)
 base_url <- "https://www2.census.gov/programs-surveys/acs/summary_file"
 years <- 2009:2019

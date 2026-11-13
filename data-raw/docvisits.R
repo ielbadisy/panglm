@@ -43,7 +43,7 @@
 raw_dir <- file.path("..", "..", "archive", "raw", "datasets-2026-11-01", "docvisits")
 # absolute fallback used when building from the maintainer's machine
 if (!dir.exists(raw_dir)) {
-  raw_dir <- "/home/imad-el-badisy/Desktop/BIOSTAT/PROJECTS/SOFTWARE/project-panglm/archive/raw/datasets-2026-11-01/docvisits"
+  raw_dir <- "/home/imad-el-badisy/Desktop/BIOSTAT/PROJECTS/ACTIVE/software-panglm/archive/raw/datasets-2026-11-01/docvisits"
 }
 dir.create(raw_dir, recursive = TRUE, showWarnings = FALSE)
 
