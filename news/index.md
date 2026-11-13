@@ -2,6 +2,8 @@
 
 ## panglm 1.7.0
 
+CRAN release: 2026-11-03
+
 Plotting and teaching release: every fitted object has a plot method,
 the diagnostics, marginal effects and difference-in-differences results
 can be drawn directly with base graphics, and five real health economics
