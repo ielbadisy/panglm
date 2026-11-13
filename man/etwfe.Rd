@@ -27,7 +27,8 @@ etwfe(
 individual identifies the clusters for the standard errors.}
 
 \item{treat}{name of the column holding each individual's first treated
-period; \code{NA}, \code{0} or \code{Inf} for units that are never treated}
+period; \code{NA}, \code{0} or \code{Inf} for units that are never treated. An absorbing 0/1 treatment status is
+also accepted and converted to the first treated period, as in \code{\link[=did]{did()}}}
 
 \item{family}{\code{"gaussian"} (linear), \code{"poisson"} (counts, log link) or
 \code{"binomial"} (binary, logit link; \code{"logit"} is accepted)}

@@ -11,16 +11,60 @@ did_timing <- function(data, index, treat) {
   time <- data[[index[2]]]
   if (!is.numeric(time)) stop("the time index must be numeric to define event time", call. = FALSE)
   first <- data[[treat]]
+  if (is.logical(first)) first <- as.numeric(first)
   if (!is.numeric(first)) {
     stop("'", treat, "' must hold the first treated period (numeric; NA, 0 or Inf for ",
          "never-treated units)", call. = FALSE)
   }
-  first[!is.finite(first) | first == 0] <- NA
   # unused levels of a factor index (e.g. after subset()) are empty groups
   id <- data[[index[1]]]
   if (is.factor(id)) id <- droplevels(id)
-  if (varies_within(first, id)) stop("'", treat, "' must be constant within individuals", call. = FALSE)
-  list(time = time, first = first, rel = time - first, ever = !is.na(first))
+  if (all(first[!is.na(first)] %in% c(0, 1)) && varies_within(first, id)) {
+    first <- did_indicator_to_first(first, id, time, treat)
+  }
+  first[!is.finite(first) | first == 0] <- NA
+  if (varies_within(first, id)) {
+    stop("'", treat, "' must hold each individual's first treated period, so it must be ",
+         "constant within individuals (NA, 0 or Inf for never-treated units)", call. = FALSE)
+  }
+  if (any(!is.na(first)) && all(first[!is.na(first)] == 1) && !any(time == 1, na.rm = TRUE)) {
+    stop("'", treat, "' is a 0/1 variable constant within individuals, which reads as a ",
+         "treated-group indicator, not a first treated period (period 1 is not observed); ",
+         "pass the first treated period of each individual in the units of the time ",
+         "index, or a 0/1 treatment status that switches on in that period", call. = FALSE)
+  }
+  list(time = time, first = first, rel = time - first, ever = !is.na(first),
+       treat_col = ifelse(is.na(first), 0, first))
+}
+
+#' Convert a 0/1 treatment status into the first treated period
+#'
+#' A 0/1 `treat` that varies within individuals is read as the status
+#' `1(t >= first treated period)`. It is converted when it is absorbing
+#' (once 1, it stays 1 in later periods); otherwise there is no single
+#' adoption date and the function stops.
+#'
+#' @keywords internal
+#' @noRd
+did_indicator_to_first <- function(d, id, time, treat) {
+  ok <- !is.na(d) & !is.na(id) & !is.na(time)
+  o <- which(ok)[order(id[ok], time[ok])]
+  ido <- id[o]
+  do <- d[o]
+  same <- c(FALSE, ido[-1L] == ido[-length(ido)])
+  if (any(same & do < c(NA, do[-length(do)]), na.rm = TRUE)) {
+    stop("'", treat, "' is a 0/1 treatment status that switches off within some ",
+         "individuals; did() needs a staggered (absorbing) design, given as each ",
+         "individual's first treated period (NA, 0 or Inf for never-treated units)",
+         call. = FALSE)
+  }
+  on <- do == 1
+  first_by_id <- tapply(time[o][on], as.character(ido[on]), min)
+  out <- unname(first_by_id[as.character(id)])
+  out[is.na(id)] <- NA
+  message("'", treat, "' is a 0/1 treatment status; using each individual's first ",
+          "period with status 1 as the first treated period")
+  as.numeric(out)
 }
 
 #' Does `x` take more than one value within some individual?
@@ -88,7 +132,10 @@ varies_within <- function(x, id) {
 #' @param index `c(individual, time)`; the time index must be numeric
 #' @param treat name of the column holding each individual's first treated
 #'   period (in the units of the time index); `NA`, `0` or `Inf` for units
-#'   that are never treated
+#'   that are never treated. A 0/1 treatment status that varies within
+#'   individuals and never switches off (`1(t >= first treated period)`) is
+#'   also accepted and converted, with a message, to the first period with
+#'   status 1; a status that switches off is an error
 #' @param family `"gaussian"`, `"poisson"`, `"negbin"` or `"binomial"`
 #'   (conditional logit, logit link only; see Details)
 #' @param vcov covariance type, cluster-robust by individual by default

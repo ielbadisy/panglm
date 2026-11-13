@@ -33,7 +33,8 @@ parallel trends (covariates are taken in the base period)}
 
 \item{treat}{name of the column holding each individual's first treated
 period (in the units of the time index); \code{NA}, \code{0} or \code{Inf} for units
-that are never treated}
+that are never treated. An absorbing 0/1 treatment status is
+also accepted and converted to the first treated period, as in \code{\link[=did]{did()}}}
 
 \item{control}{comparison group: \code{"never"} (never-treated individuals)
 or \code{"notyet"} (never treated or not yet treated, nor anticipating

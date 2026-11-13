@@ -31,7 +31,8 @@ a list with class \code{"panglm_hausman"}: \code{statistic}, \code{parameter}
 \code{distribution} (\code{"chisq"} or \code{"F"}), \code{pos_def} (\code{"classical"} only:
 whether \code{V_fe - V_re} is positive definite), and the compared coefficient
 vectors (\code{coef_fe}, \code{coef_re} for \code{"classical"}; \code{coef_mean} for
-\code{"mundlak"})
+\code{"mundlak"}). For \code{"mundlak"} also \code{wald} and \code{wald_p.value}, the Wald
+chi-square statistic and its chi-square(k) p-value
 }
 \description{
 Tests the null that the random-effects estimator is consistent (i.e.
@@ -57,9 +58,20 @@ version of the same test (Mundlak 1978; Wooldridge 2010, section 10.7.3),
 valid under heteroskedasticity and serial correlation. The pooled model
 \code{y ~ x + xbar} is fit with the individual means \code{xbar} of the time-varying
 regressors of \code{fe}, and the null \code{coef(xbar) = 0} is tested with a Wald
-statistic using the \code{vcov} covariance. With \code{vcov = "cluster"} the
-reference is \code{F(k, G - 1)} (\code{G} individuals), otherwise chi-square(k).
-Gaussian family only.
+statistic \code{W} using the \code{vcov} covariance. With \code{vcov = "cluster"} the
+reported statistic is \code{F = W / k} with reference \code{F(k, G - 1)} (\code{G}
+individuals), a small-sample correction for few clusters; otherwise it
+is \code{W} with reference chi-square(k). Gaussian family only.
+
+The Wald chi-square \code{W} and its chi-square p-value are always returned
+(\code{wald}, \code{wald_p.value}) and printed. \code{W} is the statistic that the
+summary of a \code{cre = TRUE} fit reports (\code{summary(fit)$cre_test}, a Wald
+chi-square with the covariance stored on that fit): the two are equal for
+\code{panglm(..., model = "pooling", family = "gaussian", cre = TRUE)} fit
+with the same \code{vcov}, and close but not equal for a \code{model = "random"}
+CRE fit, whose coefficients are GLS rather than pooled estimates. The
+p-values differ only through the \code{F(k, G - 1)} reference used here with
+\code{vcov = "cluster"}.
 }
 \section{Validation}{
 
@@ -78,7 +90,7 @@ panhausman(fit_fe, method = "mundlak", data = copd)
 }
 \seealso{
 \code{\link[=panglm]{panglm()}} with \code{cre = TRUE}, whose summary reports the Mundlak
-test.
+test as a Wald chi-square (see Details).
 
 Other tests: 
 \code{\link{jointtest}()},

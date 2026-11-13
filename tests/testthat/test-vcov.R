@@ -222,3 +222,24 @@ test_that("within poisson HC1 and cluster vcov match fixest::fepois", {
                vcov(fx, vcov = ~time, ssc = no_fe),
                tolerance = 1e-6, ignore_attr = TRUE)
 })
+
+test_that("within poisson vcov excludes all-zero individuals from n and G", {
+  skip_if_missing("fixest")
+  set.seed(12)
+  d <- expand.grid(time = 1:4, id = 1:60)
+  a <- rnorm(60, 0, 0.5)
+  d$x1 <- rnorm(nrow(d))
+  d$count <- rpois(nrow(d), exp(0.5 + a[d$id] + 0.4 * d$x1))
+  d$count[d$id %in% 1:6] <- 0L
+  f <- suppressMessages(panglm(count ~ x1, data = d, index = c("id", "time"),
+                               model = "within", family = "poisson"))
+  fx <- suppressMessages(fixest::fepois(count ~ x1 | id, data = d))
+  no_fe <- fixest::ssc(K.fixef = "none")
+  expect_equal(vcov(f, type = "HC1"), vcov(fx, vcov = "hetero", ssc = no_fe),
+               tolerance = 1e-6, ignore_attr = TRUE)
+  expect_equal(vcov(f, type = "cluster"), vcov(fx, vcov = ~id, ssc = no_fe),
+               tolerance = 1e-6, ignore_attr = TRUE)
+  expect_equal(vcov(f, type = "cluster", cluster = d$time),
+               vcov(fx, vcov = ~time, ssc = no_fe),
+               tolerance = 1e-6, ignore_attr = TRUE)
+})

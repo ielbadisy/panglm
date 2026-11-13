@@ -30,8 +30,11 @@ fixed-effects fits, from the observed information at the fitted means,
 as in \code{MASS::glm.nb()}), or \code{negbin_ab}, the beta mixing parameters
 \code{a} and \code{b} of the random-intercept model, and, for
 \code{cre = TRUE} fits, \code{cre_test}: the Wald (Mundlak) test that the
-individual-mean coefficients are jointly zero, computed with the
-covariance stored on the fit.
+individual-mean coefficients are jointly zero, a chi-square(k)
+statistic computed with the covariance stored on the fit (its \code{vcov}
+type is printed). It is the \code{wald} component of
+\code{\link[=panhausman]{panhausman()}}\code{(method = "mundlak")}, which with \code{vcov = "cluster"}
+reports \code{F = W / k} on \code{F(k, G - 1)} instead; see \code{\link[=panhausman]{panhausman()}}.
 }
 \description{
 Produces a classic coefficient table (Estimate, Std. Error, z value,
