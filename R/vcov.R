@@ -198,7 +198,7 @@ panglm_score <- function(object, full = FALSE) {
   beta <- object$coefficients
 
   if (object$model == "pooling") {
-    eta <- as.numeric(X %*% beta)
+    eta <- as.numeric(X %*% beta) + (object$offset %||% 0)
     mu <- linkinv_r(eta, object$family$link_id)
     w <- object$weights %||% rep(1, length(y))
     if (object$family$family == "negbin") {

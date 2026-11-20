@@ -41,9 +41,9 @@ poissonfamily <- function(link = "log") {
 
 #' @rdname panglm-families
 #' @export
-binomialfamily <- function(link = c("logit", "probit")) {
+binomialfamily <- function(link = c("logit", "probit", "log")) {
   link <- match.arg(link)
-  link_id <- if (link == "logit") 2L else 3L
+  link_id <- c(logit = 2L, probit = 3L, log = 1L)[[link]]
   list(family = "binomial", link = link, family_id = 2L, link_id = link_id)
 }
 
@@ -54,6 +54,15 @@ negbinfamily <- function(link = "log") {
   list(family = "negbin", link = link, family_id = 1L, link_id = 1L)
 }
 
+#' @details `binomialfamily("log")` is the log-binomial model, whose
+#'   coefficients are log risk ratios, for `model = "pooling"` only. Fitted
+#'   risks must stay below 1, so the IRLS steps are halved until they do
+#'   (and until the log-likelihood does not decrease), starting from the
+#'   intercept-only fit when the usual start is not admissible. When the
+#'   maximum likelihood estimate lies on the boundary (a fitted risk of 1)
+#'   the iterations stall and a warning reports the largest fitted risk;
+#'   the modified Poisson model (`family = "poisson"`, `vcov = "HC1"`)
+#'   estimates the same risk ratios without that constraint.
 #' @details `gammafamily()` is the gamma GLM with a log link, the usual
 #'   choice for skewed positive outcomes such as health care costs: the
 #'   variance is proportional to the squared mean and the coefficients act
@@ -171,13 +180,13 @@ stats_family_to_panglm <- function(family) {
          "(NB2, theta estimated) instead (see ?`panglm-families`)", call. = FALSE)
   }
   hint <- switch(fam,
-    binomial = "binomialfamily(\"logit\") or binomialfamily(\"probit\")",
+    binomial = "binomialfamily(\"logit\"), binomialfamily(\"probit\") or binomialfamily(\"log\")",
     poisson = "poissonfamily()", Gamma = "gammafamily()", gaussian = "gaussianfamily()",
     "one of gaussianfamily(), poissonfamily(), binomialfamily(), negbinfamily(), gammafamily()")
   ok <- switch(fam,
     gaussian = link == "identity",
     poisson = link == "log",
-    binomial = link %in% c("logit", "probit"),
+    binomial = link %in% c("logit", "probit", "log"),
     Gamma = link == "log",
     FALSE)
   if (!ok) {

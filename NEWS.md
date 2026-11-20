@@ -1,3 +1,23 @@
+# panglm 1.7.2
+
+* `panglm()` gains `method = c("swar", "ml", "reml")` for the Gaussian
+  random-intercept model. `"ml"` and `"reml"` estimate it by (restricted)
+  maximum likelihood, so `logLik()` is the exact value of
+  `lme4::lmer(REML = FALSE / TRUE)` and can enter a likelihood ratio test
+  against a `random = ~ time` fit. The default `"swar"` is unchanged.
+* `offset =` (and `offset()` in the formula) now works for `model = "pooling"`
+  with the gaussian, poisson, binomial, negbin and gamma families, matching
+  `glm()` and `MASS::glm.nb()`, including robust covariances, `predict()` and
+  `partialeffects()`. Other models stop with a clear error, and the
+  documentation says so.
+* `binomialfamily("log")` (or `binomial("log")`) fits the pooled log-binomial
+  model for risk ratios. Its IRLS halves steps so that every fitted risk stays
+  below 1, and a non-convergence warning reports the largest fitted risk and
+  suggests a larger `maxit` or the modified Poisson model.
+* `fixef()` and `ranef()` gain default methods that hand other objects to the
+  nlme generics, so `fixef()` and `ranef()` of lme4, nlme and glmmTMB fits work
+  when panglm is attached after lme4.
+
 # panglm 1.7.1
 
 * Fixed-effects Poisson: individuals with an all-zero outcome, which carry

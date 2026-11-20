@@ -165,7 +165,7 @@ panglm_index_predictor <- function(object, hold_cre = TRUE) {
          "use model = 'random' with cre = TRUE instead", call. = FALSE)
   }
   shift <- 0
-  if (object$model == "within") {
+  if (object$model == "within" || !is.null(object$offset)) {
     shift <- as.numeric(object$linear.predictors - object$X %*% object$coefficients)
   }
   cre_columns <- object$cre_columns %||% character(0)

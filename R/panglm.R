@@ -54,7 +54,7 @@
 #'   individual, e.g. a baseline sampling weight) and the fit maximizes
 #'   the weighted sum of the individual integrated log-likelihoods; the
 #'   Gaussian model is then estimated by maximum likelihood instead of
-#'   Swamy-Arora FGLS. Use `vcov = "cluster"` for design-based standard
+#'   Swamy-Arora FGLS (as `method = "ml"`). Use `vcov = "cluster"` for design-based standard
 #'   errors. Weighted fixed-effects fits are rejected.
 #' @param offset optional model offset (the name of a column of `data` or a
 #'   numeric vector with one value per row of `data`). Nonzero offsets, including offsets
@@ -164,6 +164,23 @@
 #'   when `R^q` exceeds 2000.
 #' @param maxit maximum IRLS/Newton iterations
 #' @param tol convergence tolerance
+#' @param method estimator of the Gaussian random-intercept model
+#'   (`model = "random"`, `family = "gaussian"`, `random = ~ 1`): `"swar"`
+#'   (default) is Swamy-Arora feasible GLS, as `plm(model = "random")`;
+#'   `"ml"` and `"reml"` are maximum likelihood and restricted maximum
+#'   likelihood, as `lme4::lmer(REML = FALSE)` and `lmer(REML = TRUE)`:
+#'   the variance ratio `sigma_mu2 / sigma_v2` is found by a profile
+#'   likelihood search (boundary 0 included), the coefficients are its GLS
+#'   estimate and `vcov()` is `sigma_v2 (X' V^-1 X)^-1`. `logLik()` is then
+#'   the exact (restricted) log-likelihood. The ML value can be compared by
+#'   a likelihood ratio test with a random-slopes fit (`random = ~ time`,
+#'   always ML), or with a fit with other fixed effects; REML values can
+#'   only be compared between fits with the same fixed effects. The
+#'   log-likelihood of `"swar"` is the Gaussian likelihood evaluated at the
+#'   Swamy-Arora estimates, slightly below the ML value. Weighted and
+#'   random-slopes Gaussian fits are always ML (`"reml"` is not available
+#'   for them); other models and families accept `"swar"` only. The
+#'   estimator used is stored as `fit$method`.
 #' @return an object of class `"panglm"` (with the additional class
 #'   `"panordered"` for the ordered families): a list with `coefficients`,
 #'   `vcov`, `vcov_type`, `fitted.values`, `linear.predictors`, `loglik`, the
@@ -198,6 +215,23 @@
 #' fit_re <- panglm(fev1 ~ treatment + age + smoker + crp, data = copd,
 #'                   index = c("id", "visit"), model = "random", family = "gaussian")
 #' coef(fit_re)
+#'
+#' # the same model by maximum likelihood, and a likelihood ratio test of a
+#' # random slope of visit (variance on the boundary: 50:50 chi-square mixture)
+#' fit_ml <- panglm(fev1 ~ visit + treatment, data = copd, index = c("id", "visit"),
+#'                  model = "random", method = "ml")
+#' fit_rs1 <- panglm(fev1 ~ visit + treatment, data = copd, index = c("id", "visit"),
+#'                   model = "random", random = ~ visit)
+#' lr <- as.numeric(2 * (logLik(fit_rs1) - logLik(fit_ml)))
+#' c(lr = lr, p = 0.5 * pchisq(lr, 1, lower.tail = FALSE) +
+#'     0.5 * pchisq(lr, 2, lower.tail = FALSE))
+#'
+#' # pooled Poisson rate model with a log follow-up offset
+#' copd$years <- 0.5 + copd$visit / 2
+#' fit_rate <- panglm(exacerbations ~ treatment + smoker, data = copd,
+#'                    index = c("id", "visit"), family = "poisson",
+#'                    offset = log(copd$years), vcov = "cluster")
+#' exp(coef(fit_rate))
 #'
 #' # fixed-effects Poisson on exacerbation counts
 #' fit_pois <- panglm(exacerbations ~ crp, data = copd,
@@ -245,14 +279,24 @@ panglm <- function(formula, data, index,
                     effect = c("individual", "twoways"),
                     vcov = c("classical", "HC1", "cluster"),
                     cre = dynamic, dynamic = FALSE, random = ~ 1,
-                    R = 21, maxit = 100, tol = 1e-10) {
+                    R = 21, maxit = 100, tol = 1e-10, method = c("swar", "ml", "reml")) {
   model <- match.arg(model)
+  method <- match.arg(method)
   effect <- match.arg(effect)
   vcov <- match.arg(vcov)
   family <- resolve_family(family)
+  if (method != "swar" && (model != "random" || family$family != "gaussian")) {
+    stop("method = '", method, "' applies to model = 'random' with family = 'gaussian'",
+         call. = FALSE)
+  }
   weights <- data_column(weights, data, "weights")
+  offset_arg <- offset
   offset <- data_column(offset, data, "offset")
   slopes <- random_slopes_requested(random)
+  if (method == "reml" && slopes) {
+    stop("method = 'reml' is available for the unweighted random intercept (random = ~ 1)",
+         call. = FALSE)
+  }
   if (slopes) {
     if (model != "random") {
       stop("'random' with slope variables applies to model = 'random'", call. = FALSE)
@@ -277,6 +321,12 @@ panglm <- function(formula, data, index,
     }
   }
   is_ordered <- identical(family$family, "ordered")
+  log_binomial <- family$family == "binomial" && family$link == "log"
+  if (log_binomial && model != "pooling") {
+    stop("the log-binomial model (binomialfamily(\"log\")) is available for model = 'pooling' ",
+         "only; for risk ratios in panels use family = 'poisson' with vcov = 'cluster'",
+         call. = FALSE)
+  }
   if (is_ordered && model == "within" && family$link != "logit") {
     stop("the fixed-effects ordered model is available for the logit link only ",
          "(blow-up and cluster); use model = 'random' with cre = TRUE for the probit",
@@ -397,6 +447,10 @@ panglm <- function(formula, data, index,
       stop("at least one observation weight must be positive", call. = FALSE)
     }
   }
+  if (method == "reml" && !is.null(used_weights)) {
+    stop("method = 'reml' is available for the unweighted random intercept (random = ~ 1)",
+         call. = FALSE)
+  }
   formula_offset <- stats::model.offset(mf)
   if (!is.null(offset)) {
     if (!is.numeric(offset) || length(offset) != nrow(data) || any(!is.finite(offset))) {
@@ -405,8 +459,11 @@ panglm <- function(formula, data, index,
     }
     formula_offset <- (formula_offset %||% 0) + offset[model_rows]
   }
-  if (!is.null(formula_offset) && any(formula_offset != 0)) {
-    stop("nonzero offsets are not supported", call. = FALSE)
+  if (!is.null(formula_offset) && all(formula_offset == 0)) formula_offset <- NULL
+  if (!is.null(formula_offset) && (model != "pooling" ||
+      !family$family %in% c("gaussian", "poisson", "binomial", "negbin", "gamma"))) {
+    stop("nonzero offsets are supported for model = 'pooling' with family = 'gaussian', ",
+         "'poisson', 'binomial', 'negbin' or 'gamma' only", call. = FALSE)
   }
   y <- stats::model.response(mf)
   ordered_levels <- NULL
@@ -511,7 +568,12 @@ panglm <- function(formula, data, index,
   } else if (family$family == "tobit") {
     fit_tobit(X_full, y, family, model, group_start, group_size, prior_weights, R, maxit, tol)
   } else switch(model,
-    pooling = fit_pooled(X_full, y, family, maxit, tol, prior_weights),
+    pooling = if (is.null(formula_offset) && !log_binomial) {
+      fit_pooled(X_full, y, family, maxit, tol, prior_weights)
+    } else {
+      fit_pooled_r(X_full, y, family, (formula_offset %||% numeric(length(y)))[ord], prior_weights,
+                   maxit, tol)
+    },
     between = fit_between(X_full, y, group_start, group_size),
     within  = if (effect == "twoways" && family$family == "gaussian") {
       fit_within_twoways_gaussian(X_noint, y, group_start, group_size, time_id, maxit, tol,
@@ -527,6 +589,8 @@ panglm <- function(formula, data, index,
     },
     random  = if (slopes) {
       fit_random_slopes(X_full, y, Z_random, family, group_size, R, maxit, tol)
+    } else if (is.null(prior_weights) && method != "swar") {
+      fit_random_gaussian_lik(X_full, y, group_start, group_size, method == "reml")
     } else if (is.null(prior_weights)) {
       fit_random(X_full, y, family, group_start, group_size, R, maxit, tol)
     } else {
@@ -538,6 +602,14 @@ panglm <- function(formula, data, index,
   fit$X <- if (model %in% c("pooling", "random", "between")) X_full else X_noint
   fit$y <- y
   fit$weights <- prior_weights
+  if (model == "random" && family$family == "gaussian") {
+    fit$method <- if (method == "swar" && (slopes || !is.null(prior_weights))) "ml" else method
+  }
+  fit$offset <- if (!is.null(formula_offset)) formula_offset[ord]
+  # NA: an offset vector, which cannot be rebuilt for newdata
+  fit$offset_column <- if (!is.null(formula_offset) && !is.null(offset_arg)) {
+    if (is.character(offset_arg)) offset_arg else NA_character_
+  }
   fit$cre <- cre
   fit$dynamic <- dynamic_info
   fit$cre_columns <- intersect(cre_columns, colnames(fit$X))

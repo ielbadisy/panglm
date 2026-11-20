@@ -16,7 +16,7 @@ gaussianfamily(link = "identity")
 
 poissonfamily(link = "log")
 
-binomialfamily(link = c("logit", "probit"))
+binomialfamily(link = c("logit", "probit", "log"))
 
 negbinfamily(link = "log")
 
@@ -42,6 +42,16 @@ Lightweight family objects used by \code{\link[=panglm]{panglm()}}, analogous in
 expects (see \code{src/families.h}).
 }
 \details{
+\code{binomialfamily("log")} is the log-binomial model, whose
+coefficients are log risk ratios, for \code{model = "pooling"} only. Fitted
+risks must stay below 1, so the IRLS steps are halved until they do
+(and until the log-likelihood does not decrease), starting from the
+intercept-only fit when the usual start is not admissible. When the
+maximum likelihood estimate lies on the boundary (a fitted risk of 1)
+the iterations stall and a warning reports the largest fitted risk;
+the modified Poisson model (\code{family = "poisson"}, \code{vcov = "HC1"})
+estimates the same risk ratios without that constraint.
+
 \code{gammafamily()} is the gamma GLM with a log link, the usual
 choice for skewed positive outcomes such as health care costs: the
 variance is proportional to the squared mean and the coefficients act
