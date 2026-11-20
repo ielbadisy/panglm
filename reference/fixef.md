@@ -11,6 +11,12 @@ fixef(object, ...)
 
 ranef(object, ...)
 
+# Default S3 method
+fixef(object, ...)
+
+# Default S3 method
+ranef(object, ...)
+
 # S3 method for class 'panglm'
 fixef(object, ...)
 
@@ -134,7 +140,13 @@ The generics `fixef()` and `ranef()` are also defined by nlme, whose
 generics lme4 and fixest re-export. panglm exports its own generics so
 that it does not depend on nlme, and when nlme is loaded it also
 registers its methods for nlme's generics: whichever package is attached
-last, `fixef(fit)` and `ranef(fit)` dispatch to the panglm methods.
+last, `fixef(fit)` and `ranef(fit)` dispatch to the panglm methods. The
+other way round, the panglm generics hand any object without a panglm
+method (an [`lme4::lmer()`](https://rdrr.io/pkg/lme4/man/lmer.html),
+[`nlme::lme()`](https://rdrr.io/pkg/nlme/man/lme.html) or
+[`glmmTMB::glmmTMB()`](https://rdrr.io/pkg/glmmTMB/man/glmmTMB.html)
+fit) to nlme's generics, so `fixef()` and `ranef()` of those fits also
+work when panglm is attached last and masks them.
 
 ## See also
 

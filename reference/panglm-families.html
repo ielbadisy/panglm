@@ -11,7 +11,7 @@ expects (see src/families.h)."><meta property="og:image" content="https://elbadi
 
     <a class="navbar-brand me-2" href="../index.html">panglm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.7.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.7.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,7 +69,7 @@ expects (see <code>src/families.h</code>).</p>
 <span></span>
 <span><span class="fu">poissonfamily</span><span class="op">(</span>link <span class="op">=</span> <span class="st">"log"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">binomialfamily</span><span class="op">(</span>link <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"logit"</span>, <span class="st">"probit"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu">binomialfamily</span><span class="op">(</span>link <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"logit"</span>, <span class="st">"probit"</span>, <span class="st">"log"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">negbinfamily</span><span class="op">(</span>link <span class="op">=</span> <span class="st">"log"</span><span class="op">)</span></span>
 <span></span>
@@ -100,7 +100,16 @@ expects (see <code>src/families.h</code>).</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p><code>gammafamily()</code> is the gamma GLM with a log link, the usual
+    <p><code>binomialfamily("log")</code> is the log-binomial model, whose
+coefficients are log risk ratios, for <code>model = "pooling"</code> only. Fitted
+risks must stay below 1, so the IRLS steps are halved until they do
+(and until the log-likelihood does not decrease), starting from the
+intercept-only fit when the usual start is not admissible. When the
+maximum likelihood estimate lies on the boundary (a fitted risk of 1)
+the iterations stall and a warning reports the largest fitted risk;
+the modified Poisson model (<code>family = "poisson"</code>, <code>vcov = "HC1"</code>)
+estimates the same risk ratios without that constraint.</p>
+<p><code>gammafamily()</code> is the gamma GLM with a log link, the usual
 choice for skewed positive outcomes such as health care costs: the
 variance is proportional to the squared mean and the coefficients act
 multiplicatively on the mean, with no retransformation needed.</p>

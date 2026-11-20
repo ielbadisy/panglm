@@ -11,7 +11,7 @@ package vignette for the estimators currently implemented per family."><meta pro
 
     <a class="navbar-brand me-2" href="../index.html">panglm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.7.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.7.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -81,7 +81,8 @@ package vignette for the estimators currently implemented per family.</p>
 <span>  random <span class="op">=</span> <span class="op">~</span><span class="fl">1</span>,</span>
 <span>  R <span class="op">=</span> <span class="fl">21</span>,</span>
 <span>  maxit <span class="op">=</span> <span class="fl">100</span>,</span>
-<span>  tol <span class="op">=</span> <span class="fl">1e-10</span></span>
+<span>  tol <span class="op">=</span> <span class="fl">1e-10</span>,</span>
+<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"swar"</span>, <span class="st">"ml"</span>, <span class="st">"reml"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -141,7 +142,7 @@ the weights must be constant within individuals (one weight per
 individual, e.g. a baseline sampling weight) and the fit maximizes
 the weighted sum of the individual integrated log-likelihoods; the
 Gaussian model is then estimated by maximum likelihood instead of
-Swamy-Arora FGLS. Use <code>vcov = "cluster"</code> for design-based standard
+Swamy-Arora FGLS (as <code>method = "ml"</code>). Use <code>vcov = "cluster"</code> for design-based standard
 errors. Weighted fixed-effects fits are rejected.</p></dd>
 
 
@@ -282,6 +283,26 @@ when <code>R^q</code> exceeds 2000.</p></dd>
 <dt id="arg-tol">tol<a class="anchor" aria-label="anchor" href="#arg-tol"></a></dt>
 <dd><p>convergence tolerance</p></dd>
 
+
+<dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
+<dd><p>estimator of the Gaussian random-intercept model
+(<code>model = "random"</code>, <code>family = "gaussian"</code>, <code>random = ~ 1</code>): <code>"swar"</code>
+(default) is Swamy-Arora feasible GLS, as <code>plm(model = "random")</code>;
+<code>"ml"</code> and <code>"reml"</code> are maximum likelihood and restricted maximum
+likelihood, as <code>lme4::lmer(REML = FALSE)</code> and <code>lmer(REML = TRUE)</code>:
+the variance ratio <code>sigma_mu2 / sigma_v2</code> is found by a profile
+likelihood search (boundary 0 included), the coefficients are its GLS
+estimate and <code><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov()</a></code> is <code>sigma_v2 (X' V^-1 X)^-1</code>. <code><a href="https://rdrr.io/r/stats/logLik.html" class="external-link">logLik()</a></code> is then
+the exact (restricted) log-likelihood. The ML value can be compared by
+a likelihood ratio test with a random-slopes fit (<code>random = ~ time</code>,
+always ML), or with a fit with other fixed effects; REML values can
+only be compared between fits with the same fixed effects. The
+log-likelihood of <code>"swar"</code> is the Gaussian likelihood evaluated at the
+Swamy-Arora estimates, slightly below the ML value. Weighted and
+random-slopes Gaussian fits are always ML (<code>"reml"</code> is not available
+for them); other models and families accept <code>"swar"</code> only. The
+estimator used is stored as <code>fit$method</code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -381,6 +402,28 @@ model, <a href="tidy-methods.html">tidy-methods</a> for <code>tidy()</code> and 
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit_re</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)   treatment         age      smoker         crp </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  4.10943890  0.20549733 -0.01430869 -0.35583462 -0.03519775 </span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># the same model by maximum likelihood, and a likelihood ratio test of a</span></span></span>
+<span class="r-in"><span><span class="co"># random slope of visit (variance on the boundary: 50:50 chi-square mixture)</span></span></span>
+<span class="r-in"><span><span class="va">fit_ml</span> <span class="op">&lt;-</span> <span class="fu">panglm</span><span class="op">(</span><span class="va">fev1</span> <span class="op">~</span> <span class="va">visit</span> <span class="op">+</span> <span class="va">treatment</span>, data <span class="op">=</span> <span class="va">copd</span>, index <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"visit"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>                 model <span class="op">=</span> <span class="st">"random"</span>, method <span class="op">=</span> <span class="st">"ml"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">fit_rs1</span> <span class="op">&lt;-</span> <span class="fu">panglm</span><span class="op">(</span><span class="va">fev1</span> <span class="op">~</span> <span class="va">visit</span> <span class="op">+</span> <span class="va">treatment</span>, data <span class="op">=</span> <span class="va">copd</span>, index <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"visit"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>                  model <span class="op">=</span> <span class="st">"random"</span>, random <span class="op">=</span> <span class="op">~</span> <span class="va">visit</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>the random-effects covariance matrix is singular (on the boundary of the parameter space): the variance of 'visit' given the preceding random effects is estimated at zero; consider a simpler 'random' formula</span>
+<span class="r-in"><span><span class="va">lr</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fl">2</span> <span class="op">*</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/logLik.html" class="external-link">logLik</a></span><span class="op">(</span><span class="va">fit_rs1</span><span class="op">)</span> <span class="op">-</span> <span class="fu"><a href="https://rdrr.io/r/stats/logLik.html" class="external-link">logLik</a></span><span class="op">(</span><span class="va">fit_ml</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>lr <span class="op">=</span> <span class="va">lr</span>, p <span class="op">=</span> <span class="fl">0.5</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/stats/Chisquare.html" class="external-link">pchisq</a></span><span class="op">(</span><span class="va">lr</span>, <span class="fl">1</span>, lower.tail <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span> <span class="op">+</span></span></span>
+<span class="r-in"><span>    <span class="fl">0.5</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/stats/Chisquare.html" class="external-link">pchisq</a></span><span class="op">(</span><span class="va">lr</span>, <span class="fl">2</span>, lower.tail <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         lr          p </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.03890444 0.91218692 </span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># pooled Poisson rate model with a log follow-up offset</span></span></span>
+<span class="r-in"><span><span class="va">copd</span><span class="op">$</span><span class="va">years</span> <span class="op">&lt;-</span> <span class="fl">0.5</span> <span class="op">+</span> <span class="va">copd</span><span class="op">$</span><span class="va">visit</span> <span class="op">/</span> <span class="fl">2</span></span></span>
+<span class="r-in"><span><span class="va">fit_rate</span> <span class="op">&lt;-</span> <span class="fu">panglm</span><span class="op">(</span><span class="va">exacerbations</span> <span class="op">~</span> <span class="va">treatment</span> <span class="op">+</span> <span class="va">smoker</span>, data <span class="op">=</span> <span class="va">copd</span>,</span></span>
+<span class="r-in"><span>                   index <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"visit"</span><span class="op">)</span>, family <span class="op">=</span> <span class="st">"poisson"</span>,</span></span>
+<span class="r-in"><span>                   offset <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">copd</span><span class="op">$</span><span class="va">years</span><span class="op">)</span>, vcov <span class="op">=</span> <span class="st">"cluster"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit_rate</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)   treatment      smoker </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   0.9601358   0.6603985   1.7772669 </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># fixed-effects Poisson on exacerbation counts</span></span></span>
 <span class="r-in"><span><span class="va">fit_pois</span> <span class="op">&lt;-</span> <span class="fu">panglm</span><span class="op">(</span><span class="va">exacerbations</span> <span class="op">~</span> <span class="va">crp</span>, data <span class="op">=</span> <span class="va">copd</span>,</span></span>

@@ -13,7 +13,7 @@ gaussianfamily(link = "identity")
 
 poissonfamily(link = "log")
 
-binomialfamily(link = c("logit", "probit"))
+binomialfamily(link = c("logit", "probit", "log"))
 
 negbinfamily(link = "log")
 
@@ -41,6 +41,16 @@ tobitfamily(left = 0, right = Inf)
 a list with `family`, `link`, `family_id`, `link_id`
 
 ## Details
+
+`binomialfamily("log")` is the log-binomial model, whose coefficients
+are log risk ratios, for `model = "pooling"` only. Fitted risks must
+stay below 1, so the IRLS steps are halved until they do (and until the
+log-likelihood does not decrease), starting from the intercept-only fit
+when the usual start is not admissible. When the maximum likelihood
+estimate lies on the boundary (a fitted risk of 1) the iterations stall
+and a warning reports the largest fitted risk; the modified Poisson
+model (`family = "poisson"`, `vcov = "HC1"`) estimates the same risk
+ratios without that constraint.
 
 `gammafamily()` is the gamma GLM with a log link, the usual choice for
 skewed positive outcomes such as health care costs: the variance is

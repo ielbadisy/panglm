@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">panglm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.7.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.7.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -52,6 +52,17 @@
       <small>Source: <a href="https://github.com/ielbadisy/panglm/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.7.2" id="panglm-172">panglm 1.7.2<a class="anchor" aria-label="anchor" href="#panglm-172"></a></h2>
+<ul><li>
+<code><a href="../reference/panglm.html">panglm()</a></code> gains <code>method = c("swar", "ml", "reml")</code> for the Gaussian random-intercept model. <code>"ml"</code> and <code>"reml"</code> estimate it by (restricted) maximum likelihood, so <code><a href="https://rdrr.io/r/stats/logLik.html" class="external-link">logLik()</a></code> is the exact value of <code>lme4::lmer(REML = FALSE / TRUE)</code> and can enter a likelihood ratio test against a <code>random = ~ time</code> fit. The default <code>"swar"</code> is unchanged.</li>
+<li>
+<code>offset =</code> (and <code><a href="https://rdrr.io/r/stats/offset.html" class="external-link">offset()</a></code> in the formula) now works for <code>model = "pooling"</code> with the gaussian, poisson, binomial, negbin and gamma families, matching <code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm()</a></code> and <code><a href="https://rdrr.io/pkg/MASS/man/glm.nb.html" class="external-link">MASS::glm.nb()</a></code>, including robust covariances, <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code> and <code><a href="../reference/partialeffects.html">partialeffects()</a></code>. Other models stop with a clear error, and the documentation says so.</li>
+<li>
+<code>binomialfamily("log")</code> (or <code>binomial("log")</code>) fits the pooled log-binomial model for risk ratios. Its IRLS halves steps so that every fitted risk stays below 1, and a non-convergence warning reports the largest fitted risk and suggests a larger <code>maxit</code> or the modified Poisson model.</li>
+<li>
+<code><a href="../reference/fixef.html">fixef()</a></code> and <code><a href="../reference/fixef.html">ranef()</a></code> gain default methods that hand other objects to the nlme generics, so <code><a href="../reference/fixef.html">fixef()</a></code> and <code><a href="../reference/fixef.html">ranef()</a></code> of lme4, nlme and glmmTMB fits work when panglm is attached after lme4.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.7.1" id="panglm-171">panglm 1.7.1<a class="anchor" aria-label="anchor" href="#panglm-171"></a></h2>
 <ul><li>Fixed-effects Poisson: individuals with an all-zero outcome, which carry no information and are dropped from the estimation, are no longer counted in <code>n</code> and <code>G</code> for the HC1 and cluster small-sample corrections. Robust standard errors now equal <code><a href="https://lrberge.github.io/fixest/reference/feglm.html" class="external-link">fixest::fepois()</a></code> with <code>ssc(K.fixef = "none")</code>, also when such individuals are present.</li>

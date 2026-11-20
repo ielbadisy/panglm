@@ -23,7 +23,8 @@ panglm(
   random = ~1,
   R = 21,
   maxit = 100,
-  tol = 1e-10
+  tol = 1e-10,
+  method = c("swar", "ml", "reml")
 )
 ```
 
@@ -96,9 +97,9 @@ panglm(
   constant within individuals (one weight per individual, e.g. a
   baseline sampling weight) and the fit maximizes the weighted sum of
   the individual integrated log-likelihoods; the Gaussian model is then
-  estimated by maximum likelihood instead of Swamy-Arora FGLS. Use
-  `vcov = "cluster"` for design-based standard errors. Weighted
-  fixed-effects fits are rejected.
+  estimated by maximum likelihood instead of Swamy-Arora FGLS (as
+  `method = "ml"`). Use `vcov = "cluster"` for design-based standard
+  errors. Weighted fixed-effects fits are rejected.
 
 - offset:
 
@@ -249,6 +250,28 @@ panglm(
 
   convergence tolerance
 
+- method:
+
+  estimator of the Gaussian random-intercept model (`model = "random"`,
+  `family = "gaussian"`, `random = ~ 1`): `"swar"` (default) is
+  Swamy-Arora feasible GLS, as `plm(model = "random")`; `"ml"` and
+  `"reml"` are maximum likelihood and restricted maximum likelihood, as
+  `lme4::lmer(REML = FALSE)` and `lmer(REML = TRUE)`: the variance ratio
+  `sigma_mu2 / sigma_v2` is found by a profile likelihood search
+  (boundary 0 included), the coefficients are its GLS estimate and
+  [`vcov()`](https://rdrr.io/r/stats/vcov.html) is
+  `sigma_v2 (X' V^-1 X)^-1`.
+  [`logLik()`](https://rdrr.io/r/stats/logLik.html) is then the exact
+  (restricted) log-likelihood. The ML value can be compared by a
+  likelihood ratio test with a random-slopes fit (`random = ~ time`,
+  always ML), or with a fit with other fixed effects; REML values can
+  only be compared between fits with the same fixed effects. The
+  log-likelihood of `"swar"` is the Gaussian likelihood evaluated at the
+  Swamy-Arora estimates, slightly below the ML value. Weighted and
+  random-slopes Gaussian fits are always ML (`"reml"` is not available
+  for them); other models and families accept `"swar"` only. The
+  estimator used is stored as `fit$method`.
+
 ## Value
 
 an object of class `"panglm"` (with the additional class `"panordered"`
@@ -358,6 +381,28 @@ fit_re <- panglm(fev1 ~ treatment + age + smoker + crp, data = copd,
 coef(fit_re)
 #> (Intercept)   treatment         age      smoker         crp 
 #>  4.10943890  0.20549733 -0.01430869 -0.35583462 -0.03519775 
+
+# the same model by maximum likelihood, and a likelihood ratio test of a
+# random slope of visit (variance on the boundary: 50:50 chi-square mixture)
+fit_ml <- panglm(fev1 ~ visit + treatment, data = copd, index = c("id", "visit"),
+                 model = "random", method = "ml")
+fit_rs1 <- panglm(fev1 ~ visit + treatment, data = copd, index = c("id", "visit"),
+                  model = "random", random = ~ visit)
+#> Warning: the random-effects covariance matrix is singular (on the boundary of the parameter space): the variance of 'visit' given the preceding random effects is estimated at zero; consider a simpler 'random' formula
+lr <- as.numeric(2 * (logLik(fit_rs1) - logLik(fit_ml)))
+c(lr = lr, p = 0.5 * pchisq(lr, 1, lower.tail = FALSE) +
+    0.5 * pchisq(lr, 2, lower.tail = FALSE))
+#>         lr          p 
+#> 0.03890444 0.91218692 
+
+# pooled Poisson rate model with a log follow-up offset
+copd$years <- 0.5 + copd$visit / 2
+fit_rate <- panglm(exacerbations ~ treatment + smoker, data = copd,
+                   index = c("id", "visit"), family = "poisson",
+                   offset = log(copd$years), vcov = "cluster")
+exp(coef(fit_rate))
+#> (Intercept)   treatment      smoker 
+#>   0.9601358   0.6603985   1.7772669 
 
 # fixed-effects Poisson on exacerbation counts
 fit_pois <- panglm(exacerbations ~ crp, data = copd,

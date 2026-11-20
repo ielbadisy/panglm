@@ -142,7 +142,7 @@ two-part prediction is the product of the two
 retransformation of the lognormal part, and the correlated
 random-intercept likelihood against two-dimensional numerical
 integration and against
-[`GLMMadaptive::mixed_model()`](https://drizopoulos.github.io/GLMMadaptive/reference/mixed_model.html)
+[`GLMMadaptive::mixed_model()`](https://rdrr.io/pkg/GLMMadaptive/man/mixed_model.html)
 with the `hurdle.lognormal()` family (logit link, correlated random
 intercepts), whose log-likelihood it reproduces at the same parameters.
 
