@@ -2,10 +2,9 @@
 #'
 #' Used for the pooled fits the compiled IRLS does not cover: a nonzero
 #' offset (any family) and the log-binomial model. Each step is halved until
-#' the linear index is admissible (fitted risks below 1 for the log-binomial
-#' model) and the log-likelihood does not decrease, so the iterates stay in
-#' the parameter space. NB2 alternates IRLS for beta with a one-dimensional
-#' maximization in theta, as MASS::glm.nb.
+#' the log-likelihood does not decrease. NB2 alternates IRLS for beta with a
+#' one-dimensional maximization in theta, as MASS::glm.nb. The log-binomial
+#' model is fitted by logbin_newton().
 #'
 #' @keywords internal
 #' @noRd
@@ -37,8 +36,12 @@ fit_pooled_r <- function(X, y, family, off, w, maxit, tol) {
     }
   }
   eta <- as.numeric(X %*% beta + off); mu <- linkinv(eta); ll <- llfun(mu)
-  conv <- FALSE
-  for (it in seq_len(maxit)) {
+  conv <- FALSE; nbound <- 0L
+  if (logbin) {
+    nf <- logbin_newton(X, y, w, off, beta, maxit)
+    beta <- nf$beta; eta <- nf$eta; mu <- linkinv(eta); it <- nf$it; conv <- nf$conv
+    nbound <- nf$nbound; ll <- nf$ll
+  } else for (it in seq_len(maxit)) {
     if (nb) {
       theta <- exp(stats::optimize(function(lt) { theta <<- exp(lt); llfun(mu) }, c(-10, 15),
                                    maximum = TRUE, tol = 1e-12)$maximum)
@@ -63,16 +66,20 @@ fit_pooled_r <- function(X, y, family, off, w, maxit, tol) {
   }
   if (!conv) {
     warning("the pooled ", fam, " (", family$link, " link) fit did not converge in ", it,
-            " IRLS iterations",
-            if (logbin) paste0("; the largest fitted risk is ", format(max(mu[pos]), digits = 6),
-                               ". Steps are halved to keep the risks below 1, which slows the ",
-                               "iterations when they approach 1: raise maxit (e.g. 1000). If a ",
-                               "risk tends to 1 the estimate lies on the boundary of the ",
-                               "parameter space; the modified Poisson model (family = ",
-                               "\"poisson\", vcov = \"HC1\") estimates the same risk ratios"),
+            if (logbin) " Newton" else " IRLS", " iterations",
+            if (logbin) paste0("; the largest fitted risk is ", format(max(mu[pos]), digits = 6)),
             call. = FALSE)
   }
-  ww <- w * mu_eta_r(eta, lid)^2 / vfun(mu)
+  if (conv && nbound > 0L) {
+    warning("the log-binomial fit reached its maximum on the parameter boundary (fitted risk at 1) ",
+            "for ", nbound, " observation", if (nbound > 1L) "s", ": the estimates are the constrained ",
+            "maximum, but the standard errors assume an interior maximum and are not reliable. ",
+            "The modified Poisson model (family = \"poisson\", vcov = \"HC1\") estimates the ",
+            "risk ratios without that constraint", call. = FALSE)
+  }
+  # at the boundary the expected information is infinite (risk 1): use the observed one there
+  if (logbin) mu <- pmin(mu, 1 - 1e-10)
+  ww <- if (nbound > 0L) w * (1 - y) * mu / (1 - mu)^2 else w * mu_eta_r(eta, lid)^2 / vfun(mu)
   bread <- chol2inv(chol(crossprod(X * sqrt(ww))))
   n_pos <- sum(pos); r <- (y - mu)[pos]
   phi <- switch(fam, gaussian = sum((w * (y - mu)^2)[pos]) / max(1, n_pos - k),
@@ -86,5 +93,61 @@ fit_pooled_r <- function(X, y, family, off, w, maxit, tol) {
   dimnames(bread) <- list(colnames(X), colnames(X))
   list(coefficients = beta, vcov = bread * phi, bread = bread, fitted.values = mu,
        linear.predictors = eta, loglik = ll, dispersion = phi,
-       theta = if (nb) theta, df.residual = n_pos - k - nb, iterations = it, converged = conv)
+       theta = if (nb) theta, df.residual = n_pos - k - nb, iterations = it, converged = conv,
+       boundary = if (logbin) nbound > 0L)
+}
+
+#' Log-binomial maximum likelihood by active-set Newton
+#'
+#' Maximizes the log-binomial log-likelihood, which is concave in beta, under
+#' the constraints eta_i <= 0 (fitted risk at most 1); only observations with
+#' y = 1 can reach the bound, since a risk of 1 for y = 0 has likelihood 0.
+#' Newton steps use the exact Hessian and stay in the null space of the
+#' active constraints, are cut at the first blocking constraint, which then
+#' becomes active, and are halved until the log-likelihood does not
+#' decrease. At a stationary point an active constraint with a negative
+#' Lagrange multiplier is released. Without active constraints this is
+#' plain Newton-Raphson, so an interior maximum is the glm() estimate.
+#' Returns nbound, the number of observations with a fitted risk of 1.
+#'
+#' @keywords internal
+#' @noRd
+logbin_newton <- function(X, y, w, off, beta, maxit) {
+  pos <- w > 0; one <- pos & y == 1; zer <- pos & y < 1; k <- ncol(X); n <- length(y)
+  ll_of <- function(e) if (any(e[zer] >= 0) || any(e[one] > 1e-10)) -Inf else
+    sum((w * y * pmin(e, 0))[pos]) + sum((w * (1 - y) * log1p(-exp(e)))[zer])
+  eta <- as.numeric(X %*% beta + off); ll <- ll_of(eta)
+  act <- released <- integer(); conv <- FALSE
+  for (it in seq_len(maxit)) {
+    mu <- exp(eta); g <- hw <- numeric(n)
+    g[pos] <- (w * y)[pos]; g[zer] <- g[zer] - (w * (1 - y) * mu / (1 - mu))[zer]
+    hw[zer] <- (w * (1 - y) * mu / (1 - mu)^2)[zer]
+    g <- crossprod(X, g)[, 1]
+    act <- union(act, setdiff(which(one & eta > -1e-9), released)); released <- integer()
+    Z <- if (length(act)) {
+      q <- qr(t(X[act, , drop = FALSE]))
+      qr.Q(q, complete = TRUE)[, -seq_len(q$rank), drop = FALSE]
+    } else diag(k)
+    d <- if (ncol(Z)) {
+      XZ <- (X %*% Z) * sqrt(hw)
+      as.numeric(Z %*% qr.solve(crossprod(XZ), crossprod(Z, g), tol = 1e-12))
+    } else numeric(k)
+    if (max(abs(d)) < 1e-8 * (1 + max(abs(beta)))) {
+      if (!length(act)) { conv <- TRUE; break }
+      lam <- qr.coef(qr(t(X[act, , drop = FALSE])), g); lam[is.na(lam)] <- 0
+      if (all(lam >= -1e-6 * (1 + max(abs(g))))) { conv <- TRUE; break }
+      released <- act[which.min(lam)]; act <- setdiff(act, released)
+      next
+    }
+    xd <- as.numeric(X %*% d); blk <- one & xd > 0 & !(seq_len(n) %in% act)
+    t <- min(1, if (any(blk)) min(-eta[blk] / xd[blk]))
+    for (h in 0:50) {
+      e_new <- pmin(as.numeric(X %*% (beta + t * d) + off), ifelse(one, 0, Inf))
+      if ((ll_new <- ll_of(e_new)) >= ll - 1e-12 * abs(ll)) break
+      t <- t / 2
+    }
+    if (h == 50L) break
+    beta <- beta + t * d; eta <- e_new; ll <- ll_new
+  }
+  list(beta = beta, eta = eta, ll = ll, it = it, conv = conv, nbound = sum(one & eta > -1e-9))
 }
