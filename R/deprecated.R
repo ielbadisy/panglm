@@ -81,7 +81,7 @@ gaussian_family <- function(link = "identity") {
 #' @export
 binomial_family <- function(link = c("logit", "probit")) {
   deprecate_once("binomial_family()", "binomialfamily()")
-  binomialfamily(link = link)
+  binomialfamily(link = match.arg(link))
 }
 
 #' @rdname panglm-deprecated

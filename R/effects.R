@@ -72,7 +72,10 @@
 #' that it does not depend on nlme, and when nlme is loaded it also
 #' registers its methods for nlme's generics: whichever package is
 #' attached last, `fixef(fit)` and `ranef(fit)` dispatch to the panglm
-#' methods.
+#' methods. The other way round, the panglm generics hand any object
+#' without a panglm method (an `lme4::lmer()`, `nlme::lme()` or
+#' `glmmTMB::glmmTMB()` fit) to nlme's generics, so `fixef()` and `ranef()`
+#' of those fits also work when panglm is attached last and masks them.
 #'
 #' @param object a fitted [panglm()] model (or a [panhurdle()] fit for
 #'   `fixef()`)
@@ -107,6 +110,24 @@ fixef <- function(object, ...) UseMethod("fixef")
 #' @rdname fixef
 #' @export
 ranef <- function(object, ...) UseMethod("ranef")
+
+#' @rdname fixef
+#' @export
+fixef.default <- function(object, ...) nlme_dispatch("fixef", object, ...)
+
+#' @rdname fixef
+#' @export
+ranef.default <- function(object, ...) nlme_dispatch("ranef", object, ...)
+
+# Objects of other packages (lme4, nlme, glmmTMB) go to nlme's generic,
+# where those packages register their methods. The call is evaluated in
+# nlme's namespace so that dispatch cannot find these default methods again.
+nlme_dispatch <- function(name, object, ...) {
+  if (!requireNamespace("nlme", quietly = TRUE)) {
+    stop("no ", name, "() method for an object of class ", class(object)[1], call. = FALSE)
+  }
+  do.call(getExportedValue("nlme", name), list(object, ...), envir = asNamespace("nlme"))
+}
 
 #' @rdname fixef
 #' @export

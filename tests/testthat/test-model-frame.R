@@ -97,12 +97,12 @@ test_that("unsupported weights and offsets are rejected explicitly", {
     "nonnegative"
   )
   expect_error(
-    panglm(y ~ x + offset(x), d, index = c("id", "time")),
-    "offsets are not supported"
+    panglm(y ~ x + offset(x), d, index = c("id", "time"), model = "within"),
+    "offsets are supported for model = 'pooling'"
   )
   expect_error(
-    panglm(y ~ x, d, index = c("id", "time"), offset = d$x),
-    "offsets are not supported"
+    panglm(y ~ x, d, index = c("id", "time"), model = "random", offset = d$x),
+    "offsets are supported for model = 'pooling'"
   )
 })
 

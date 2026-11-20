@@ -3,6 +3,8 @@
 \name{fixef}
 \alias{fixef}
 \alias{ranef}
+\alias{fixef.default}
+\alias{ranef.default}
 \alias{fixef.panglm}
 \alias{fixef.panglm_hurdle}
 \alias{ranef.panglm}
@@ -11,6 +13,10 @@
 fixef(object, ...)
 
 ranef(object, ...)
+
+\method{fixef}{default}(object, ...)
+
+\method{ranef}{default}(object, ...)
 
 \method{fixef}{panglm}(object, ...)
 
@@ -116,7 +122,10 @@ generics lme4 and fixest re-export. panglm exports its own generics so
 that it does not depend on nlme, and when nlme is loaded it also
 registers its methods for nlme's generics: whichever package is
 attached last, \code{fixef(fit)} and \code{ranef(fit)} dispatch to the panglm
-methods.
+methods. The other way round, the panglm generics hand any object
+without a panglm method (an \code{lme4::lmer()}, \code{nlme::lme()} or
+\code{glmmTMB::glmmTMB()} fit) to nlme's generics, so \code{fixef()} and \code{ranef()}
+of those fits also work when panglm is attached last and masks them.
 }
 
 \examples{

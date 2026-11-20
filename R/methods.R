@@ -183,6 +183,7 @@ predict.panglm <- function(object, newdata = NULL,
 
   X <- panglm_design(object, newdata)
   eta <- as.numeric(X %*% object$coefficients)
+  if (!is.null(object$offset)) eta <- eta + panglm_newdata_offset(object, newdata)
 
   if (object$model == "within") {
     id_name <- object$index[1]
@@ -242,6 +243,29 @@ predict.panglm <- function(object, newdata = NULL,
       eta, object$sigma, object$family, object$quadrature_nodes %||% 21L
     )
   )
+}
+
+#' Offset of a fitted panglm model for new data
+#'
+#' The `offset()` terms of the formula are evaluated in `newdata`, plus the
+#' `offset` argument when it named a column.
+#'
+#' @keywords internal
+#' @noRd
+panglm_newdata_offset <- function(object, newdata) {
+  tt <- stats::delete.response(object$terms)
+  off <- if (is.null(attr(tt, "offset"))) 0 else
+    stats::model.offset(stats::model.frame(tt, newdata, xlev = object$xlevels,
+                                           na.action = stats::na.pass))
+  col <- object$offset_column
+  if (is.null(col)) return(off)
+  if (is.na(col)) {
+    stop("the offset was given as a numeric vector; give it as a column name or as ",
+         "offset() in the formula to predict for newdata", call. = FALSE)
+  }
+  if (!col %in% names(newdata)) stop("newdata must contain the offset column '", col, "'",
+                                     call. = FALSE)
+  off + newdata[[col]]
 }
 
 #' Design matrix of a fitted panglm model for new data

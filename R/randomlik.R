@@ -331,3 +331,39 @@ robust_vcov_random <- function(object, cluster) {
   dimnames(v) <- dimnames(object$vcov)
   v
 }
+
+#' Gaussian random intercept by maximum likelihood or REML
+#'
+#' With `lambda = sigma_mu2 / sigma_v2`, `beta` is the GLS estimate of the
+#' quasi-demeaned regression and `sigma_v2` its residual sum of squares over
+#' `n` (ML) or `n - p` (REML), so the (restricted) log-likelihood is
+#' profiled to a function of `lambda` alone, maximized on the scale of
+#' `sqrt(lambda)` (the relative standard deviation of `lme4::lmer()`),
+#' boundary 0 included. The covariance is `sigma_v2 (X' V^-1 X)^-1`, as in
+#' `vcov()` of an `lmer()` fit.
+#'
+#' @keywords internal
+#' @noRd
+fit_random_gaussian_lik <- function(X, y, group_start, group_size, reml) {
+  n <- nrow(X); p <- ncol(X); Ti <- group_size; m <- n - reml * p
+  prof <- function(s) {
+    th <- 1 - 1 / sqrt(1 + Ti * s^2)
+    qd <- quasi_demean_cpp(X, y, group_start, group_size, th)
+    R <- chol(crossprod(qd$X))
+    b <- backsolve(R, forwardsolve(t(R), crossprod(qd$X, qd$y)))
+    rss <- sum((qd$y - qd$X %*% b)^2)
+    list(ll = -0.5 * (sum(log1p(Ti * s^2)) + m * (1 + log(2 * pi * rss / m)) +
+                        reml * 2 * sum(log(diag(R)))),
+         b = as.numeric(b), R = R, rss = rss, th = th)
+  }
+  opt <- stats::optimize(function(l) prof(exp(l))$ll, c(-15, 8), maximum = TRUE, tol = 1e-12)
+  s <- if (prof(0)$ll > opt$objective) 0 else exp(opt$maximum)
+  f <- prof(s)
+  sigma_v2 <- f$rss / m
+  vcov <- sigma_v2 * chol2inv(f$R)
+  names(f$b) <- colnames(X)
+  dimnames(vcov) <- list(colnames(X), colnames(X))
+  list(coefficients = f$b, vcov = vcov, fitted.values = as.numeric(X %*% f$b), loglik = f$ll,
+       dispersion = sigma_v2, sigma_v2 = sigma_v2, sigma_mu2 = s^2 * sigma_v2, theta = f$th,
+       df.residual = n - p, iterations = NA_integer_)
+}

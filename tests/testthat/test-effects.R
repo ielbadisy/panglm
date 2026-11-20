@@ -142,3 +142,12 @@ test_that("panglm's generics dispatch through nlme's", {
   fit <- panglm(fev1 ~ crp, data = copd, index = c("id", "visit"), model = "within")
   expect_equal(nlme::fixef(fit), fixef(fit))
 })
+
+test_that("fixef() and ranef() of lme4 fits work when panglm masks them", {
+  skip_if_missing("lme4")
+  data(copd)
+  m <- lme4::lmer(fev1 ~ crp + (1 | id), copd)
+  expect_identical(fixef(m), lme4::fixef(m))
+  expect_identical(ranef(m), lme4::ranef(m))
+  expect_error(fixef(1), "no applicable method")
+})

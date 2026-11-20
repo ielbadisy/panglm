@@ -20,7 +20,8 @@ panglm(
   random = ~1,
   R = 21,
   maxit = 100,
-  tol = 1e-10
+  tol = 1e-10,
+  method = c("swar", "ml", "reml")
 )
 }
 \arguments{
@@ -65,7 +66,7 @@ the weights must be constant within individuals (one weight per
 individual, e.g. a baseline sampling weight) and the fit maximizes
 the weighted sum of the individual integrated log-likelihoods; the
 Gaussian model is then estimated by maximum likelihood instead of
-Swamy-Arora FGLS. Use \code{vcov = "cluster"} for design-based standard
+Swamy-Arora FGLS (as \code{method = "ml"}). Use \code{vcov = "cluster"} for design-based standard
 errors. Weighted fixed-effects fits are rejected.}
 
 \item{offset}{optional model offset (the name of a column of \code{data} or a
@@ -185,6 +186,24 @@ when \code{R^q} exceeds 2000.}
 \item{maxit}{maximum IRLS/Newton iterations}
 
 \item{tol}{convergence tolerance}
+
+\item{method}{estimator of the Gaussian random-intercept model
+(\code{model = "random"}, \code{family = "gaussian"}, \code{random = ~ 1}): \code{"swar"}
+(default) is Swamy-Arora feasible GLS, as \code{plm(model = "random")};
+\code{"ml"} and \code{"reml"} are maximum likelihood and restricted maximum
+likelihood, as \code{lme4::lmer(REML = FALSE)} and \code{lmer(REML = TRUE)}:
+the variance ratio \code{sigma_mu2 / sigma_v2} is found by a profile
+likelihood search (boundary 0 included), the coefficients are its GLS
+estimate and \code{vcov()} is \verb{sigma_v2 (X' V^-1 X)^-1}. \code{logLik()} is then
+the exact (restricted) log-likelihood. The ML value can be compared by
+a likelihood ratio test with a random-slopes fit (\code{random = ~ time},
+always ML), or with a fit with other fixed effects; REML values can
+only be compared between fits with the same fixed effects. The
+log-likelihood of \code{"swar"} is the Gaussian likelihood evaluated at the
+Swamy-Arora estimates, slightly below the ML value. Weighted and
+random-slopes Gaussian fits are always ML (\code{"reml"} is not available
+for them); other models and families accept \code{"swar"} only. The
+estimator used is stored as \code{fit$method}.}
 }
 \value{
 an object of class \code{"panglm"} (with the additional class
@@ -243,6 +262,23 @@ coef(fit_fe)
 fit_re <- panglm(fev1 ~ treatment + age + smoker + crp, data = copd,
                   index = c("id", "visit"), model = "random", family = "gaussian")
 coef(fit_re)
+
+# the same model by maximum likelihood, and a likelihood ratio test of a
+# random slope of visit (variance on the boundary: 50:50 chi-square mixture)
+fit_ml <- panglm(fev1 ~ visit + treatment, data = copd, index = c("id", "visit"),
+                 model = "random", method = "ml")
+fit_rs1 <- panglm(fev1 ~ visit + treatment, data = copd, index = c("id", "visit"),
+                  model = "random", random = ~ visit)
+lr <- as.numeric(2 * (logLik(fit_rs1) - logLik(fit_ml)))
+c(lr = lr, p = 0.5 * pchisq(lr, 1, lower.tail = FALSE) +
+    0.5 * pchisq(lr, 2, lower.tail = FALSE))
+
+# pooled Poisson rate model with a log follow-up offset
+copd$years <- 0.5 + copd$visit / 2
+fit_rate <- panglm(exacerbations ~ treatment + smoker, data = copd,
+                   index = c("id", "visit"), family = "poisson",
+                   offset = log(copd$years), vcov = "cluster")
+exp(coef(fit_rate))
 
 # fixed-effects Poisson on exacerbation counts
 fit_pois <- panglm(exacerbations ~ crp, data = copd,
