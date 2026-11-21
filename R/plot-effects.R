@@ -66,7 +66,7 @@ plot.panglm_ape <- function(x, labels = NULL, xlab = NULL, main = NULL, col = "b
 #' @keywords internal
 #' @noRd
 response_curve <- function(object, variable, values, vcov, level, scale, by, contrast = FALSE,
-                           at = NULL) {
+                           at = NULL, type = "marginal") {
   data <- object$data
   if (is.null(data)) {
     stop("this fit does not store its data; re-fit it with the current panglm", call. = FALSE)
@@ -116,6 +116,15 @@ response_curve <- function(object, variable, values, vcov, level, scale, by, con
   parts <- panglm_index_predictor(object)
   # the link-scale contrast averages the linear index itself
   if (scale == "link") parts$meanfun <- function(d) identity
+  fam <- object$family
+  if (scale != "link" && type == "conditional" && object$model == "random") {
+    cmean <- if (fam$family == "tobit") {
+      function(eta) tobit_censored_mean(eta, object$sigma_e, fam$left, fam$right)
+    } else function(eta) linkinv_r(eta, fam$link_id)
+    parts$meanfun <- function(d) cmean
+  }
+  # response band on the link scale (back-transformed) so it stays in the range of the mean
+  lid <- if (scale == "response" && !contrast && fam$family != "tobit") fam$link_id else 0L
   base <- parts$meanfun(data)(as.numeric(parts$design(data) %*% theta) + parts$shift)
   w <- object$weights %||% rep(1, nrow(data))
   use <- is.finite(base) & w > 0
@@ -171,9 +180,10 @@ response_curve <- function(object, variable, values, vcov, level, scale, by, con
     G <- curves[[j]]$G
     estimate <- curves[[j]]$estimate
     se <- sqrt(pmax(rowSums((G %*% V) * G), 0))
+    e <- linkfun_r(estimate, lid); h <- crit * se / mu_eta_r(e, lid)
     out <- data.frame(value = if (discrete) factor(values, levels = values) else values,
                       estimate = estimate, se = se,
-                      lower = estimate - crit * se, upper = estimate + crit * se)
+                      lower = linkinv_r(e - h, lid), upper = linkinv_r(e + h, lid))
     if (!is.null(by)) out <- cbind(out[1L], by = labs[j], out[-1L])
     out
   })
@@ -187,6 +197,7 @@ response_curve <- function(object, variable, values, vcov, level, scale, by, con
   attr(out, "discrete") <- discrete
   attr(out, "contrast") <- contrast
   attr(out, "at") <- at
+  attr(out, "type") <- if (object$model == "random") type else "marginal"
   attr(out, "rug") <- if (!discrete) curve_rug(x)
   class(out) <- c("panglm_effectcurve", "data.frame")
   out

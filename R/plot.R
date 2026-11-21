@@ -22,7 +22,9 @@
 #'   proportion against mean predicted probability in `bins` quantile bins
 #'   of the predicted probability, with exact (Clopper-Pearson) binomial
 #'   confidence intervals and the 45-degree line; `counts = TRUE` prints
-#'   the number of observations of each bin above its interval.
+#'   the number of observations of each bin above its interval (a label is
+#'   lifted when it would overlap its neighbour), or a single "n per bin"
+#'   note in the top-left corner when all bins have the same size.
 #' * `"rootogram"` (Poisson and negative binomial families): hanging
 #'   rootogram. The curve is `sqrt(E_k)`, the expected frequency of count
 #'   `k` summed over observations, `E_k = sum_i P(y_i = k)`; the bars of
@@ -273,8 +275,28 @@ plot.panglm <- function(x, which = c("coefficients", "residuals", "fitted", "qq"
                      lwd = 1.5)
   graphics::points(cal$predicted, cal$observed, pch = 19, col = "#0072B2")
   graphics::rug(cal$predicted, ticksize = 0.02, col = "grey40")
-  if (counts) graphics::text(cal$predicted, cal$upper, cal$n, pos = 3, offset = 0.3, cex = 0.7,
-                             col = "grey30", xpd = NA)
+  if (counts) calibration_counts(cal)
+}
+
+# bin sizes: one note when all bins are equal, otherwise each count above its interval,
+# lifted a row when it would overlap the label to its left (crowded low-risk bins)
+calibration_counts <- function(cal) {
+  if (length(unique(cal$n)) == 1L) {
+    graphics::text(0, 1, paste(cal$n[1], "per bin"), adj = c(0, 1), cex = 0.8, col = "grey30")
+    return(invisible())
+  }
+  lab <- as.character(cal$n)
+  wd <- graphics::strwidth(lab, cex = 0.7); ht <- 1.3 * graphics::strheight("0", cex = 0.7)
+  y <- cal$upper + ht
+  o <- order(cal$predicted)
+  for (j in seq_along(o)[-1L]) {
+    i <- o[j]; prev <- o[seq_len(j - 1L)]
+    clash <- function(yi) any(abs(cal$predicted[prev] - cal$predicted[i]) < (wd[prev] + wd[i]) / 2 &
+                                abs(y[prev] - yi) < ht)
+    while (clash(y[i])) y[i] <- y[i] + ht
+  }
+  graphics::text(cal$predicted, y, lab, cex = 0.7, col = "grey30", xpd = NA)
+  invisible(y)
 }
 
 .panglm_plot_rootogram <- function(x, max, main, xlab, ylim = NULL, ...) {

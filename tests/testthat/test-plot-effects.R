@@ -150,3 +150,55 @@ test_that("every effect plot path draws and returns invisibly", {
     expect_equal(graphics::par("mai"), mai)
   })
 })
+
+test_that("effectcurve response band is on the link scale and stays in [0, 1]", {
+  set.seed(3)
+  d <- data.frame(id = 1:400, t = 1, x = runif(400, 0, 10), g = factor(sample(c("a", "b"), 400, TRUE)))
+  d$y <- rbinom(400, 1, plogis(-6 + 0.5 * d$x + (d$g == "b")))
+  fit <- panglm(y ~ x + g, d, index = c("id", "t"), model = "pooling", family = "binomial")
+  ec <- effectcurve(fit, "x", values = c(0, 5, 10), at = list(g = "a"), scale = "response")
+  ref <- predict(glm(y ~ x + g, binomial, d), data.frame(x = c(0, 5, 10), g = "a"), se.fit = TRUE)
+  z <- qnorm(0.975)
+  expect_equal(ec$estimate, plogis(unname(ref$fit)), tolerance = 1e-6)
+  expect_equal(ec$lower, plogis(unname(ref$fit - z * ref$se.fit)), tolerance = 1e-3)
+  expect_equal(ec$upper, plogis(unname(ref$fit + z * ref$se.fit)), tolerance = 1e-3)
+  expect_true(all(ec$lower > 0 & ec$upper < 1))
+  # contrasts keep the symmetric band of the difference
+  cc <- effectcurve(fit, "x", values = 5, by = "g", contrast = TRUE, scale = "response")
+  expect_equal(cc$upper - cc$estimate, cc$estimate - cc$lower)
+})
+
+test_that("effectcurve type = 'conditional' gives the b_i = 0 curve of a random-effects fit", {
+  set.seed(4)
+  N <- 150; T <- 6
+  d <- data.frame(id = rep(1:N, each = T), t = rep(1:T, N), x = rnorm(N * T))
+  d$y <- rbinom(N * T, 1, plogis(-1 + 0.8 * d$x + rep(rnorm(N, sd = 1.5), each = T)))
+  fit <- panglm(y ~ x, d, index = c("id", "t"), model = "random", family = "binomial")
+  b <- coef(fit)
+  ec <- effectcurve(fit, "x", values = c(-1, 0, 1), scale = "response", type = "conditional")
+  eta <- b[1] + b[2] * c(-1, 0, 1)
+  expect_equal(ec$estimate, unname(plogis(eta)), tolerance = 1e-6)
+  X <- cbind(1, c(-1, 0, 1)); V <- vcov(fit)[1:2, 1:2]
+  se_eta <- sqrt(rowSums((X %*% V) * X))
+  expect_equal(ec$se, unname(plogis(eta) * (1 - plogis(eta)) * se_eta), tolerance = 1e-5)
+  expect_equal(ec$lower, unname(plogis(eta - qnorm(0.975) * se_eta)), tolerance = 1e-5)
+  # the marginal curve is flatter (attenuated towards 0.5) and stays the default
+  mc <- effectcurve(fit, "x", values = c(-1, 0, 1), scale = "response")
+  expect_true(all(abs(mc$estimate - 0.5) < abs(ec$estimate - 0.5)))
+  sl <- effectcurve(fit, "x", values = 0, scale = "slope", type = "conditional")
+  expect_equal(sl$estimate, unname(b[2] * plogis(b[1]) * (1 - plogis(b[1]))), tolerance = 1e-4)
+  # pooled fits: both types agree
+  fp <- panglm(y ~ x, d, index = c("id", "t"), model = "pooling", family = "binomial")
+  expect_equal(effectcurve(fp, "x", values = 0, scale = "response", type = "conditional")$estimate,
+               effectcurve(fp, "x", values = 0, scale = "response")$estimate)
+})
+
+test_that("calibration counts do not overlap", {
+  cal <- data.frame(predicted = c(0.02, 0.03, 0.05, 0.4), observed = c(0.02, 0.03, 0.05, 0.4),
+                    lower = c(0, 0, 0, 0.3), upper = c(0.1, 0.1, 0.12, 0.5), n = c(40, 41, 42, 43))
+  pdf(NULL); on.exit(dev.off())
+  plot(0:1, 0:1, type = "n")
+  y <- calibration_counts(cal)
+  expect_equal(length(unique(round(y[1:3], 6))), 3)
+  expect_null(calibration_counts(transform(cal, n = 40)))
+})

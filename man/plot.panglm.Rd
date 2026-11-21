@@ -83,7 +83,9 @@ lumpy by construction and mainly shows skewness and outliers.
 proportion against mean predicted probability in \code{bins} quantile bins
 of the predicted probability, with exact (Clopper-Pearson) binomial
 confidence intervals and the 45-degree line; \code{counts = TRUE} prints
-the number of observations of each bin above its interval.
+the number of observations of each bin above its interval (a label is
+lifted when it would overlap its neighbour), or a single "n per bin"
+note in the top-left corner when all bins have the same size.
 \item \code{"rootogram"} (Poisson and negative binomial families): hanging
 rootogram. The curve is \code{sqrt(E_k)}, the expected frequency of count
 \code{k} summed over observations, \verb{E_k = sum_i P(y_i = k)}; the bars of
