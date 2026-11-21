@@ -12,6 +12,8 @@
   rug = TRUE,
   col = NULL,
   legend = "auto",
+  main = NULL,
+  mar = NULL,
   ...
 )
 }
@@ -31,6 +33,13 @@ Okabe-Ito palette for curves by group by default}
 \item{legend}{position of the legend for curves by group: \code{"auto"} (the
 corner of the plot least covered by the curves and bands), a keyword
 accepted by \code{\link[graphics:legend]{graphics::legend()}}, or \code{FALSE} for none}
+
+\item{main}{plot title; \code{NULL} (default) for none}
+
+\item{mar}{margins in lines; by default compact ones (\code{c(4, 4, 1, 1)},
+the top larger with a title) when the current margins are R's
+defaults, the current ones otherwise. Margins set here are restored on
+exit, so to add layers after the call set \code{par(mar = )} beforehand.}
 
 \item{...}{passed to \code{\link[graphics:plot.default]{graphics::plot()}}}
 }

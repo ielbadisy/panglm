@@ -65,7 +65,8 @@ plot.panglm_ape <- function(x, labels = NULL, xlab = NULL, main = NULL, col = "b
 #'
 #' @keywords internal
 #' @noRd
-response_curve <- function(object, variable, values, vcov, level, scale, by) {
+response_curve <- function(object, variable, values, vcov, level, scale, by, contrast = FALSE,
+                           at = NULL) {
   data <- object$data
   if (is.null(data)) {
     stop("this fit does not store its data; re-fit it with the current panglm", call. = FALSE)
@@ -102,11 +103,19 @@ response_curve <- function(object, variable, values, vcov, level, scale, by) {
     }
     by_values <- as.list(curve_levels(z, object$xlevels[[by]]))
   }
+  if (contrast && length(by_values) < 2L) stop("'contrast' needs 'by' with two or more levels",
+                                               call. = FALSE)
+  if (length(at) && (is.null(names(at)) || !all(names(at) %in% names(data)) ||
+                     any(names(at) %in% c(variable, by)))) {
+    stop("'at' must be a named list of other regressors of the fit", call. = FALSE)
+  }
 
   theta <- object$coefficients
   V <- if (is.null(vcov)) stats::vcov(object) else stats::vcov(object, type = vcov)
   V <- V[names(theta), names(theta), drop = FALSE]
   parts <- panglm_index_predictor(object)
+  # the link-scale contrast averages the linear index itself
+  if (scale == "link") parts$meanfun <- function(d) identity
   base <- parts$meanfun(data)(as.numeric(parts$design(data) %*% theta) + parts$shift)
   w <- object$weights %||% rep(1, nrow(data))
   use <- is.finite(base) & w > 0
@@ -129,10 +138,11 @@ response_curve <- function(object, variable, values, vcov, level, scale, by) {
   if (scale == "slope" && (!is.finite(step) || step == 0)) {
     stop("'", variable, "' does not vary in the fitted data", call. = FALSE)
   }
+  for (n in names(at)) data[[n]] <- ape_set(data[[n]], at[[n]])
   point <- function(v, b) {
     d <- data
     if (!is.null(b)) d[[by]] <- ape_set(data[[by]], b)
-    if (scale == "response") {
+    if (scale != "slope") {
       d[[variable]] <- ape_set(x, v)
       return(average(d))
     }
@@ -145,27 +155,38 @@ response_curve <- function(object, variable, values, vcov, level, scale, by) {
   }
 
   crit <- stats::qnorm(1 - (1 - level) / 2)
-  rows <- lapply(by_values, function(b) {
+  curves <- lapply(by_values, function(b) {
     res <- lapply(values, point, b = b)
-    estimate <- vapply(res, `[[`, numeric(1), "estimate")
-    G <- do.call(rbind, lapply(res, `[[`, "gradient"))
+    list(estimate = vapply(res, `[[`, numeric(1), "estimate"),
+         G = do.call(rbind, lapply(res, `[[`, "gradient")))
+  })
+  labs <- vapply(by_values, function(b) if (is.null(b)) "" else as.character(b), character(1))
+  if (contrast) {
+    # each level minus the first: the gradients subtract, so the band is that of the difference
+    curves <- lapply(curves[-1L], function(cv) list(estimate = cv$estimate - curves[[1L]]$estimate,
+                                                    G = cv$G - curves[[1L]]$G))
+    labs <- paste(labs[-1L], "-", labs[1L])
+  }
+  rows <- lapply(seq_along(curves), function(j) {
+    G <- curves[[j]]$G
+    estimate <- curves[[j]]$estimate
     se <- sqrt(pmax(rowSums((G %*% V) * G), 0))
     out <- data.frame(value = if (discrete) factor(values, levels = values) else values,
                       estimate = estimate, se = se,
                       lower = estimate - crit * se, upper = estimate + crit * se)
-    if (!is.null(b)) out <- cbind(out[1L], by = as.character(b), out[-1L])
+    if (!is.null(by)) out <- cbind(out[1L], by = labs[j], out[-1L])
     out
   })
   out <- do.call(rbind, rows)
-  if (!is.null(by)) {
-    out$by <- factor(out$by, levels = vapply(by_values, as.character, character(1)))
-  }
+  if (!is.null(by)) out$by <- factor(out$by, levels = labs)
   rownames(out) <- NULL
   attr(out, "variable") <- variable
   attr(out, "level") <- level
   attr(out, "scale") <- scale
   attr(out, "by") <- by
   attr(out, "discrete") <- discrete
+  attr(out, "contrast") <- contrast
+  attr(out, "at") <- at
   attr(out, "rug") <- if (!discrete) curve_rug(x)
   class(out) <- c("panglm_effectcurve", "data.frame")
   out

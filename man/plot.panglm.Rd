@@ -17,6 +17,7 @@
   cells = FALSE,
   main = NULL,
   xlab = NULL,
+  counts = FALSE,
   ...
 )
 }
@@ -45,11 +46,14 @@ percentile of the outcome}
 
 \item{cells}{for \code{"correlation"}, print the correlation in each cell}
 
-\item{main}{optional plot title}
+\item{main}{optional plot title; \code{""} for none}
 
 \item{xlab}{optional horizontal-axis label}
 
-\item{...}{additional arguments passed to \code{\link[graphics:plot.default]{graphics::plot.default()}}}
+\item{counts}{for \code{"calibration"}, print the bin sizes}
+
+\item{...}{additional arguments passed to \code{\link[graphics:plot.default]{graphics::plot.default()}},
+e.g. \code{ylim} to give two rootograms the same scale}
 }
 \value{
 \code{x}, invisibly
@@ -78,7 +82,8 @@ lumpy by construction and mainly shows skewness and outliers.
 \item \code{"calibration"} (binomial families, logit or probit): observed
 proportion against mean predicted probability in \code{bins} quantile bins
 of the predicted probability, with exact (Clopper-Pearson) binomial
-confidence intervals and the 45-degree line.
+confidence intervals and the 45-degree line; \code{counts = TRUE} prints
+the number of observations of each bin above its interval.
 \item \code{"rootogram"} (Poisson and negative binomial families): hanging
 rootogram. The curve is \code{sqrt(E_k)}, the expected frequency of count
 \code{k} summed over observations, \verb{E_k = sum_i P(y_i = k)}; the bars of

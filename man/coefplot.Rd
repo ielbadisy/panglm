@@ -10,10 +10,13 @@ coefplot(
   level = 0.95,
   labels = NULL,
   main = "Coefficient estimates",
-  xlab = "Estimate",
+  xlab = NULL,
   col = NULL,
   pch = NULL,
-  ref = 0
+  ref = if (exponentiate) 1 else 0,
+  exponentiate = FALSE,
+  terms = NULL,
+  vcov = NULL
 )
 }
 \arguments{
@@ -29,15 +32,30 @@ across the models) of the terms to plot; by default every term except
 \item{labels}{legend labels of the models; by default the argument names,
 or the deparsed arguments}
 
-\item{main}{plot title}
+\item{main}{plot title; \code{NULL} for none (the top margin then shrinks)}
 
-\item{xlab}{horizontal-axis label}
+\item{xlab}{horizontal-axis label; default \code{"Estimate"}, or
+\code{"exp(Estimate)"} with \code{exponentiate = TRUE}}
 
 \item{col}{colours of the models, recycled}
 
 \item{pch}{plotting symbols of the models, recycled}
 
-\item{ref}{position of the dashed reference line; \code{NULL} for none}
+\item{ref}{position of the dashed reference line (default 0, or 1 with
+\code{exponentiate = TRUE}); \code{NULL} for none}
+
+\item{exponentiate}{if \code{TRUE}, plot \code{exp()} of the estimates and
+confidence limits on a log axis}
+
+\item{terms}{new term labels: a character vector named by the
+coefficient names (unnamed terms keep their name), or an unnamed vector
+with one label per plotted term}
+
+\item{vcov}{covariance of each model: \code{NULL} (the \code{vcov()} of the fit), a
+type passed to \code{vcov(model, type = )} (e.g. \code{"HC3"} for a \code{\link[=panglm]{panglm()}}
+fit), a covariance matrix, or a function of the model; a list or
+character vector gives one entry per model, or several entries for a
+single model (see Details)}
 }
 \value{
 the models, invisibly, as a named list
@@ -58,6 +76,13 @@ Any fitted object with \code{coef()} and \code{vcov()} methods can be used, e.g.
 \code{\link[=panglm]{panglm()}}, \code{\link[=paniv]{paniv()}}, \code{\link[=pangmm]{pangmm()}}, \code{\link[=panfmm]{panfmm()}} or \code{\link[=twopart]{twopart()}} fits, and
 also \code{\link[stats:glm]{stats::glm()}} fits. When \code{vcov()} fails or has no entry for a term,
 only the estimate is drawn.
+
+\code{vcov} compares variance estimators: with one model and several entries,
+the model is drawn once per entry (legend labels from the names of \code{vcov}
+or the types), so classical, HC1, HC3 and cluster intervals sit side by
+side. \code{exponentiate = TRUE} draws \code{exp()} of the estimates and limits on
+a logarithmic axis with the reference line at 1: odds ratios, rate
+ratios, or hazard ratios of a \code{\link[survival:coxph]{survival::coxph()}} fit.
 }
 \examples{
 data(copd)
@@ -69,6 +94,9 @@ re <- panglm(f, data = copd, index = c("id", "visit"),
 cre <- panglm(f, data = copd, index = c("id", "visit"),
               model = "random", family = "poisson", cre = TRUE)
 coefplot(Pooled = pool, RE = re, CRE = cre)
+coefplot(pool, vcov = c(Classical = "classical", HC3 = "HC3", Cluster = "cluster"),
+         exponentiate = TRUE, main = NULL, xlab = "Rate ratio",
+         terms = c(crp = "CRP (mg/L)", treatment = "Treatment", age = "Age (years)"))
 }
 \seealso{
 Other panglm methods: 

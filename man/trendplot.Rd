@@ -7,7 +7,7 @@
 trendplot(
   data,
   index,
-  treat,
+  treat = NULL,
   outcome,
   type = c("cohort", "treated", "event"),
   weights = NULL,
@@ -21,6 +21,7 @@ trendplot(
   ylab = NULL,
   main = NULL,
   ylim = NULL,
+  group = NULL,
   ...
 )
 }
@@ -31,7 +32,7 @@ trendplot(
 
 \item{treat}{name of the column with the first treated period, as in
 \code{\link[=attgt]{attgt()}} and \code{\link[=treatmentplot]{treatmentplot()}} (\code{0}, \code{NA} or \code{Inf} for never-treated
-units)}
+units); may be omitted when \code{group} is given}
 
 \item{outcome}{name of the outcome column (numeric or logical)}
 
@@ -56,6 +57,10 @@ the never treated.}
 \item{xlab, ylab, main}{axis labels and title}
 
 \item{ylim}{y-axis limits}
+
+\item{group}{optional name of a column with a group fixed from the start
+(e.g. the trial arm); one line per level, \code{treat} and \code{type} are then
+ignored}
 
 \item{...}{passed to \code{\link[graphics:plot.default]{graphics::plot()}}}
 }
@@ -89,6 +94,13 @@ studies). The treated mean at each event time pools cohorts observed
 in different calendar periods, so its composition changes with \code{e}.
 }
 
+For groups that are assigned from the start and never switch, such as
+the arms of a randomized trial, give \code{group} (a column naming the arm)
+instead of \code{treat}: one line per level of \code{group}, labelled by its
+levels, with no adoption line. With \code{treat} and a single cohort treated
+from the first period, \code{type = "treated"} labels the lines
+\code{"Always treated"} and \code{"Never treated"} and draws no adoption line.
+
 Means are weighted by \code{weights} when given. The standard error of each
 mean is cluster-robust by individual,
 \deqn{\widehat{se}(\bar y_c) = \sqrt{\frac{G_c}{G_c - 1} \sum_{g}
@@ -112,6 +124,8 @@ trendplot(d, index = c("id", "t"), treat = "first", outcome = "y")
 trendplot(d, c("id", "t"), "first", "y", type = "treated", band = TRUE)
 m <- trendplot(d, c("id", "t"), "first", "y", type = "event")
 head(m)
+d$arm <- factor(ifelse(d$id \%\% 2 == 0, "drug", "placebo"), c("placebo", "drug"))
+trendplot(d, c("id", "t"), outcome = "y", group = "arm", band = TRUE)
 }
 \seealso{
 \code{\link[=treatmentplot]{treatmentplot()}} for the treatment timing, \code{\link[=panelplot]{panelplot()}} for the

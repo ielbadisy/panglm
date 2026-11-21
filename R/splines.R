@@ -8,7 +8,8 @@
 #' @noRd
 variable_columns <- function(object, variable) {
   labels <- attr(object$terms, "term.labels")
-  vars <- lapply(labels, function(l) all.vars(stats::reformulate(l)))
+  # only data columns count: a symbol such as the knots in ns(x, knots = K) is not a regressor
+  vars <- lapply(labels, function(l) intersect(all.vars(stats::reformulate(l)), names(object$data)))
   own <- labels[vapply(vars, function(v) identical(v, variable), logical(1))]
   mixed <- labels[vapply(vars, function(v) variable %in% v && length(v) > 1L, logical(1))]
   if (length(mixed)) {
@@ -75,6 +76,17 @@ variable_basis <- function(object, variable, values, columns) {
 #' dispersion and fixed-effect intercepts as fixed, as in
 #' [partialeffects()].
 #'
+#' With `by` and `contrast = TRUE` the curve is the difference between each
+#' level of `by` and its first level, with the delta-method band of the
+#' difference itself (not two overlapping bands): for example the effect of
+#' smoking on birth weight as a function of maternal age in a model with a
+#' spline-by-smoking interaction. On the link scale this is the average
+#' difference in the linear predictor (a log odds ratio or log rate ratio
+#' curve); on the response and slope scales the difference of the average
+#' predictions or slopes. `at` fixes other regressors at given values for
+#' every observation, so that with all of them fixed the curve is the
+#' prediction for one covariate profile (a typical patient).
+#'
 #' @param object a `"panglm"` fit
 #' @param variable name of the regressor
 #' @param values values at which to evaluate the curve; default: 100 points
@@ -88,10 +100,15 @@ variable_basis <- function(object, variable, values, columns) {
 #' @param scale `"link"`, `"response"` or `"slope"`, see Details
 #' @param by optional name of a discrete variable (factor, character,
 #'   logical, or at most 10 distinct values) giving one curve per level;
-#'   response and slope scales only
+#'   response and slope scales, or every scale with `contrast = TRUE`
+#' @param contrast if `TRUE` (with `by`), the difference curve of each
+#'   level of `by` minus the first level, with its own confidence band
+#' @param at optional named list of other regressors, each set to the given
+#'   value for every observation (response, slope and contrast curves)
 #' @return a data frame of class `"panglm_effectcurve"` with columns
 #'   `value`, `estimate`, `se`, `lower` and `upper` (and `by` when `by` is
-#'   given). The attributes record the variable, scale, reference value and
+#'   given; with `contrast = TRUE` its levels read `"level - first"`). The
+#'   attributes record the variable, scale, reference value and
 #'   the percentiles of the observed regressor used for the rug.
 #' @family panglm methods
 #' @section Validation:
@@ -114,15 +131,21 @@ variable_basis <- function(object, variable, values, columns) {
 #' plot(effectcurve(pois, "smoker", scale = "response"))
 #' @export
 effectcurve <- function(object, variable, values = NULL, ref = NULL, vcov = NULL, level = 0.95,
-                        scale = c("link", "response", "slope"), by = NULL) {
+                        scale = c("link", "response", "slope"), by = NULL, contrast = FALSE,
+                        at = NULL) {
   scale <- match.arg(scale)
   if (!inherits(object, "panglm")) stop("'object' must be a panglm fit", call. = FALSE)
-  if (scale != "link") return(response_curve(object, variable, values, vcov, level, scale, by))
+  if (contrast && is.null(by)) stop("'contrast' needs 'by'", call. = FALSE)
+  if (scale != "link" || contrast) {
+    return(response_curve(object, variable, values, vcov, level, scale, by, contrast, at))
+  }
   if (!is.null(by)) {
-    stop("'by' needs scale = \"response\" or \"slope\"; on the link scale the curve ",
-         "of a variable without interactions does not depend on the other regressors",
+    stop("'by' needs scale = \"response\" or \"slope\", or contrast = TRUE; on the link scale ",
+         "the curve of a variable without interactions does not depend on the other regressors",
          call. = FALSE)
   }
+  if (length(at)) stop("'at' needs scale = \"response\" or \"slope\", or contrast = TRUE",
+                       call. = FALSE)
   x <- object$data[[variable]]
   if (is.null(x) || !is.numeric(x)) stop("'", variable, "' is not a numeric regressor of the fit",
                                          call. = FALSE)
@@ -169,6 +192,11 @@ effectcurve <- function(object, variable, values = NULL, ref = NULL, vcov = NULL
 #' @param legend position of the legend for curves by group: `"auto"` (the
 #'   corner of the plot least covered by the curves and bands), a keyword
 #'   accepted by [graphics::legend()], or `FALSE` for none
+#' @param main plot title; `NULL` (default) for none
+#' @param mar margins in lines; by default compact ones (`c(4, 4, 1, 1)`,
+#'   the top larger with a title) when the current margins are R's
+#'   defaults, the current ones otherwise. Margins set here are restored on
+#'   exit, so to add layers after the call set `par(mar = )` beforehand.
 #' @param ... passed to [graphics::plot()]
 #' @return `x`, invisibly
 #' @family panglm methods
@@ -180,15 +208,23 @@ effectcurve <- function(object, variable, values = NULL, ref = NULL, vcov = NULL
 #' @export
 plot.panglm_effectcurve <- function(x, xlab = attr(x, "variable"), ylab = NULL,
                                     band_col = "grey85", rug = TRUE, col = NULL,
-                                    legend = "auto", ...) {
+                                    legend = "auto", main = NULL, mar = NULL, ...) {
   scale <- attr(x, "scale") %||% "link"
   variable <- attr(x, "variable")
-  ylab <- ylab %||% switch(scale,
+  contrast <- isTRUE(attr(x, "contrast"))
+  ylab <- ylab %||% if (contrast) {
+    switch(scale, link = "Difference in the linear predictor",
+           response = "Difference in average predicted outcome",
+           slope = paste("Difference in average marginal effect of", variable))
+  } else switch(scale,
     link = "Effect on the linear predictor",
     response = "Average predicted outcome",
     slope = paste("Average marginal effect of", variable)
   )
-  groups <- if (is.null(x$by)) NULL else levels(x$by)
+  op <- panglm_compact_mar(mar, if (is.null(main)) 1 else 2.5)
+  on.exit(if (!is.null(op)) graphics::par(op), add = TRUE)
+  # a single difference curve is drawn like a single curve
+  groups <- if (is.null(x$by) || (contrast && nlevels(x$by) == 1L)) NULL else levels(x$by)
   k <- max(1L, length(groups))
   col <- col %||% if (is.null(groups)) "black" else curve_palette(k)
   col <- rep_len(col, k)
@@ -199,7 +235,7 @@ plot.panglm_effectcurve <- function(x, xlab = attr(x, "variable"), ylab = NULL,
     lev <- levels(x$value)
     offset <- if (k > 1L) seq(-0.15, 0.15, length.out = k) else 0
     graphics::plot(c(0.5, length(lev) + 0.5), ylim, type = "n", xaxt = "n",
-                   xlab = xlab, ylab = ylab, ...)
+                   xlab = xlab, ylab = ylab, main = main, ...)
     graphics::axis(1, at = seq_along(lev), labels = lev)
     for (g in seq_len(k)) {
       r <- group_rows[[g]]
@@ -208,7 +244,8 @@ plot.panglm_effectcurve <- function(x, xlab = attr(x, "variable"), ylab = NULL,
       graphics::points(at, x$estimate[r], pch = 19, col = col[g])
     }
   } else {
-    graphics::plot(range(x$value), ylim, type = "n", xlab = xlab, ylab = ylab, ...)
+    graphics::plot(range(x$value), ylim, type = "n", xlab = xlab, ylab = ylab, main = main,
+                   ...)
     fill <- if (is.null(groups)) band_col else curve_translucent(col)
     for (g in seq_len(k)) {
       r <- group_rows[[g]]
@@ -222,9 +259,9 @@ plot.panglm_effectcurve <- function(x, xlab = attr(x, "variable"), ylab = NULL,
     marks <- attr(x, "rug")
     marks <- marks[marks >= min(x$value) & marks <= max(x$value)]
     if (rug && length(marks)) graphics::rug(marks, ticksize = 0.02, col = "grey40")
-    if (scale == "link") graphics::abline(v = attr(x, "ref"), lty = 3)
+    if (scale == "link" && !contrast) graphics::abline(v = attr(x, "ref"), lty = 3)
   }
-  if (scale != "response") graphics::abline(h = 0, lty = 3)
+  if (scale != "response" || contrast) graphics::abline(h = 0, lty = 3)
   if (!is.null(groups) && !isFALSE(legend)) {
     discrete <- isTRUE(attr(x, "discrete"))
     if (identical(legend, "auto")) {
@@ -236,6 +273,15 @@ plot.panglm_effectcurve <- function(x, xlab = attr(x, "variable"), ylab = NULL,
                      title = attr(x, "by"))
   }
   invisible(x)
+}
+
+# Compact single-panel margins when the user kept R's defaults; returns the old par (or NULL)
+panglm_compact_mar <- function(mar = NULL, top = 1) {
+  if (is.null(mar)) {
+    if (!isTRUE(all.equal(graphics::par("mar"), c(5.1, 4.1, 4.1, 2.1)))) return(NULL)
+    mar <- c(4, 4, top, 1)
+  }
+  graphics::par(mar = mar)
 }
 
 #' Test whether the effect of a regressor is linear

@@ -120,6 +120,9 @@ test_that("every diagnostic view draws and returns the fit", {
     }
     expect_invisible(plot(pois, which = "rootogram"))
     expect_invisible(plot(fe, which = "rootogram", max = 5))
+    expect_invisible(plot(pois, which = "rootogram", ylim = c(-2, 20), main = ""))
+    expect_invisible(plot(bin, which = "calibration", bins = 4, counts = TRUE, main = ""))
+    expect_equal(par("mar"), c(5.1, 4.1, 4.1, 2.1))
     expect_identical(plot(bin, which = "calibration"), bin)
     expect_invisible(plot(bin, which = "calibration", bins = 3, level = 0.9))
     expect_error(plot(gau, which = "calibration"), "binomial")

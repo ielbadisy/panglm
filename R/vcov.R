@@ -3,7 +3,15 @@
 #' With `type = NULL` (the default) the covariance the object was fit with
 #' is returned (set by the `vcov` argument of [panglm()]).
 #' `type = "classical"` returns the model-based covariance, also for a fit
-#' made with a robust `vcov`. `type = "HC1"` (heteroskedasticity-robust / White) and
+#' made with a robust `vcov`. `type = "HC3"` is the jackknife-type sandwich of
+#' MacKinnon and White (1985), the scores divided by `1 - h_i` with `h_i` the
+#' leverage of the weighted IRLS fit; it is the small-sample choice for
+#' pooled GLMs (gaussian, binomial, Poisson, negative binomial, gamma) and is
+#' also available for the one-way Gaussian within model, where the leverage
+#' includes the individual dummies (`h_i` of the demeaned regression plus
+#' `1 / T_i`). It equals `sandwich::vcovHC(type = "HC3")` of the matching
+#' `stats::glm()`, `MASS::glm.nb()` or dummy-variable `stats::lm()` fit.
+#' `type = "HC1"` (heteroskedasticity-robust / White) and
 #' `type = "cluster"` (cluster-robust sandwich, clustered by the panel
 #' individual unless `cluster` is given) are available for pooled and
 #' fixed-effects models. For random-effects models only `"cluster"` is
@@ -26,7 +34,7 @@
 #'
 #' @param object a `"panglm"` fit
 #' @param type `NULL` (the covariance stored on the fit) or one of
-#'   `"classical"`, `"HC1"`, `"cluster"`
+#'   `"classical"`, `"HC1"`, `"HC3"`, `"cluster"`
 #' @param cluster optional vector giving the clustering variable (one value
 #'   per original observation, i.e. `nrow(data)` long); defaults to the
 #'   panel individual identifier used to fit the model
@@ -45,8 +53,9 @@
 #' @export
 vcov.panglm <- function(object, type = NULL, cluster = NULL, ...) {
   if (is.null(type)) return(object$vcov)
-  type <- match.arg(type, c("classical", "HC1", "cluster"))
+  type <- match.arg(type, c("classical", "HC1", "HC3", "cluster"))
   if (type == "classical") return(object$vcov_classical %||% object$vcov)
+  if (type == "HC3") return(vcov_hc3(object))
 
   if (object$family$family %in% c("beta", "tobit")) {
     if (object$model == "random" && type == "HC1") {
@@ -112,6 +121,33 @@ vcov.panglm <- function(object, type = NULL, cluster = NULL, ...) {
     v <- bread %*% meat %*% bread
     v <- v * (G / (G - 1)) * ((n - 1) / (n - k))
   }
+  dimnames(v) <- dimnames(object$vcov)
+  v
+}
+
+# HC3: scores over (1 - leverage), leverage of the weighted IRLS (or dummy-variable) fit
+vcov_hc3 <- function(object) {
+  fam <- object$family$family
+  pooled <- object$model == "pooling" && fam %in% c("gaussian", "poisson", "binomial", "negbin", "gamma")
+  within <- object$model == "within" && fam == "gaussian" && !identical(object$effect, "twoways") &&
+    is.null(object$weights)
+  if (!pooled && !within) {
+    stop("type = 'HC3' is available for pooled gaussian, binomial, Poisson, negative binomial and ",
+         "gamma fits and the one-way unweighted Gaussian within model", call. = FALSE)
+  }
+  X <- object$X; B <- object$bread
+  if (pooled) {
+    eta <- as.numeric(X %*% object$coefficients) + (object$offset %||% 0)
+    mu <- linkinv_r(eta, object$family$link_id)
+    v <- if (fam == "negbin") mu + mu^2 / object$theta else variance_r(mu, object$family$family_id)
+    W <- (object$weights %||% 1) * mu_eta_r(eta, object$family$link_id)^2 / v
+    h <- W * rowSums((X %*% B) * X)
+  } else {
+    X <- within_demean_cpp(X, object$y, object$group_start, object$group_size)$X
+    h <- rowSums((X %*% B) * X) + rep(1 / object$group_size, object$group_size)
+  }
+  u <- panglm_score(object) / (1 - pmin(h, 1 - 1e-12))
+  v <- B %*% crossprod(u) %*% B
   dimnames(v) <- dimnames(object$vcov)
   v
 }

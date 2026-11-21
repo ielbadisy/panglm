@@ -24,6 +24,8 @@ test_that("the effects view draws fixed and random effects", {
     expect_identical(plot(re, which = "effects", main = "RE"), re)
     expect_identical(plot(hb, which = "effects"), hb)
     expect_identical(plot(pr, which = "effects"), pr)
+    expect_invisible(plot(re, which = "effects", main = ""))
+    expect_invisible(plot(fe, which = "effects", main = "", xlab = "Individual effect"))
     expect_equal(graphics::par(c("mfrow", "mar")), old)
     expect_error(plot(po, which = "effects"), "within")
     expect_error(plot(cl, which = "effects"), "conditional logit")

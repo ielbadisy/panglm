@@ -1,3 +1,39 @@
+# panglm 1.7.4
+
+* New `vcov = "HC3"` (in `panglm()` and `vcov(type = "HC3")`): the jackknife-type
+  heteroskedasticity-consistent variance, for pooled Gaussian, Poisson, binomial,
+  negative binomial and gamma fits and for the one-way unweighted within Gaussian
+  model. It equals `sandwich::vcovHC(type = "HC3")` on `lm()`, `glm()`,
+  `MASS::glm.nb()` and the dummy-variable `lm()`. The default variance is unchanged.
+* `effectcurve()` no longer reads `ns()` or `bs()` knots held in a variable
+  (`ns(age, knots = K)`) as an interaction with `K`.
+* `effectcurve()` gains `contrast` and `at`. With `by` and `contrast = TRUE` it
+  returns each level's average predicted curve minus the first level's, with a
+  delta-method band (on the link or response scale). `at` holds other covariates
+  at given values (a fixed covariate profile) instead of averaging over the data.
+* `coefplot()` gains `exponentiate` (odds, rate or hazard ratios on a log axis,
+  reference line at 1, including `survival::coxph()` fits), `terms` to relabel
+  terms, and `vcov` to draw one model under several variance estimators in one
+  call (e.g. `vcov = c(Classical = "classical", HC3 = "HC3", Cluster = "cluster")`).
+  The top margin now holds just the title (or nothing with `main = NULL`) and the
+  legend no longer touches its neighbours.
+* `trendplot()` gains `group`, for arms assigned from the start (such as a
+  randomized trial): one line per level with the level names, and no adoption
+  line. `treat` may then be omitted. With `treat` and a single cohort treated
+  from the first period, `type = "treated"` labels it "Always treated" and draws
+  no adoption line.
+* `plot(which = "rootogram")` accepts `ylim`; before it failed with "formal
+  argument 'ylim' matched by multiple actual arguments".
+* `plot(which = "calibration")` gains `counts = TRUE` to print the bin sizes,
+  fills the plot region instead of a small square, and uses compact margins.
+* Plot look (bug fixes, results unchanged): the random-effects view no longer
+  overlaps title and subtitle and no longer clips the x label (now "Random
+  intercept", with the scale added for non-identity links); the effects,
+  calibration and `effectcurve()` plots use compact margins when `par("mar")`
+  is R's default and restore it on exit, so set `par(mar = )` yourself before a
+  plot you add layers to. `plot()` of a contrast `effectcurve()` labels the
+  y axis as a difference and draws the zero line.
+
 # panglm 1.7.3
 
 * `binomialfamily("log")`: the pooled log-binomial fit now maximizes the

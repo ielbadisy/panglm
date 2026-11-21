@@ -75,7 +75,9 @@
 #'   standard errors are in `fit$time_effects` and `fit$time_effects_se`,
 #'   and the classical and robust covariances of the slopes account for
 #'   their estimation.
-#' @param vcov one of `"classical"`, `"HC1"` (heteroskedasticity-robust) or
+#' @param vcov one of `"classical"`, `"HC1"` (heteroskedasticity-robust),
+#'   `"HC3"` (its small-sample jackknife version, pooled GLMs and the
+#'   Gaussian within model, see [vcov.panglm()]) or
 #'   `"cluster"` (cluster-robust, clustered by the panel individual by
 #'   default). For `model = "random"` only `"classical"` and `"cluster"`
 #'   are available; the cluster covariance uses the individual scores of
@@ -277,7 +279,7 @@ panglm <- function(formula, data, index,
                     weights = NULL, offset = NULL,
                     na.action = stats::na.omit,
                     effect = c("individual", "twoways"),
-                    vcov = c("classical", "HC1", "cluster"),
+                    vcov = c("classical", "HC1", "cluster", "HC3"),
                     cre = dynamic, dynamic = FALSE, random = ~ 1,
                     R = 21, maxit = 100, tol = 1e-10, method = c("swar", "ml", "reml")) {
   model <- match.arg(model)

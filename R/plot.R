@@ -21,7 +21,8 @@
 #' * `"calibration"` (binomial families, logit or probit): observed
 #'   proportion against mean predicted probability in `bins` quantile bins
 #'   of the predicted probability, with exact (Clopper-Pearson) binomial
-#'   confidence intervals and the 45-degree line.
+#'   confidence intervals and the 45-degree line; `counts = TRUE` prints
+#'   the number of observations of each bin above its interval.
 #' * `"rootogram"` (Poisson and negative binomial families): hanging
 #'   rootogram. The curve is `sqrt(E_k)`, the expected frequency of count
 #'   `k` summed over observations, `E_k = sum_i P(y_i = k)`; the bars of
@@ -103,9 +104,11 @@
 #' @param bw bandwidth of the kernel densities of the `"density"` and
 #'   `"effects"` views, passed to [stats::density()]
 #' @param cells for `"correlation"`, print the correlation in each cell
-#' @param main optional plot title
+#' @param main optional plot title; `""` for none
 #' @param xlab optional horizontal-axis label
-#' @param ... additional arguments passed to [graphics::plot.default()]
+#' @param counts for `"calibration"`, print the bin sizes
+#' @param ... additional arguments passed to [graphics::plot.default()],
+#'   e.g. `ylim` to give two rootograms the same scale
 #' @return `x`, invisibly
 #' @family panglm methods
 #' @seealso [fixef()] and [ranef()] for the individual effects.
@@ -148,7 +151,7 @@ plot.panglm <- function(x, which = c("coefficients", "residuals", "fitted", "qq"
                                      "correlation"),
                         level = 0.95, parm = NULL, type = c("pearson", "response"),
                         bins = 10, max = NULL, bw = "nrd0", cells = FALSE, main = NULL,
-                        xlab = NULL, ...) {
+                        xlab = NULL, counts = FALSE, ...) {
   which <- match.arg(which)
   type <- match.arg(type)
 
@@ -176,7 +179,7 @@ plot.panglm <- function(x, which = c("coefficients", "residuals", "fitted", "qq"
     residuals = .panglm_plot_residuals(x, type, main, xlab, ...),
     fitted = .panglm_plot_fitted(x, main, xlab, ...),
     qq = .panglm_plot_qq(x, main, ...),
-    calibration = .panglm_plot_calibration(x, bins, level, main, xlab, ...),
+    calibration = .panglm_plot_calibration(x, bins, level, main, xlab, counts, ...),
     rootogram = .panglm_plot_rootogram(x, max, main, xlab, ...),
     density = .panglm_plot_density(panglm_outcome_density(x), bw, main, xlab, ...)
   )
@@ -248,18 +251,20 @@ plot.panglm <- function(x, which = c("coefficients", "residuals", "fitted", "qq"
   stats::qqline(res, col = "#D55E00", lwd = 2)
 }
 
-.panglm_plot_calibration <- function(x, bins, level, main, xlab, ...) {
+.panglm_plot_calibration <- function(x, bins, level, main, xlab, counts = FALSE, ...) {
   if (!identical(x$family$family, "binomial")) {
     stop("the calibration plot is available for binomial (logit or probit) fits",
          call. = FALSE)
   }
   tidy_check_level(level)
   cal <- panglm_calibration(x$y, x$fitted.values, bins, level)
-  op <- graphics::par(pty = "s")
-  on.exit(graphics::par(op), add = TRUE)
+  # no square region and compact margins: at small figure sizes they left a tiny plot
+  main <- main %||% "Calibration"
+  op <- panglm_compact_mar(NULL, if (nzchar(main)) 2.5 else if (counts) 1.5 else 1)
+  on.exit(if (!is.null(op)) graphics::par(op), add = TRUE)
   graphics::plot.default(
     NA, NA, xlim = c(0, 1), ylim = c(0, 1),
-    main = main %||% "Calibration",
+    main = main,
     xlab = xlab %||% "Mean predicted probability", ylab = "Observed proportion", ...
   )
   graphics::abline(a = 0, b = 1, lty = 2, col = "grey40")
@@ -268,14 +273,16 @@ plot.panglm <- function(x, which = c("coefficients", "residuals", "fitted", "qq"
                      lwd = 1.5)
   graphics::points(cal$predicted, cal$observed, pch = 19, col = "#0072B2")
   graphics::rug(cal$predicted, ticksize = 0.02, col = "grey40")
+  if (counts) graphics::text(cal$predicted, cal$upper, cal$n, pos = 3, offset = 0.3, cex = 0.7,
+                             col = "grey30", xpd = NA)
 }
 
-.panglm_plot_rootogram <- function(x, max, main, xlab, ...) {
+.panglm_plot_rootogram <- function(x, max, main, xlab, ylim = NULL, ...) {
   rg <- panglm_rootogram(x, max)
   k <- rg$count
   top <- sqrt(rg$expected)
   bottom <- top - sqrt(rg$observed)
-  ylim <- range(c(0, top, bottom), finite = TRUE)
+  ylim <- ylim %||% range(c(0, top, bottom), finite = TRUE)
   fam <- x$family$family
   graphics::plot.default(
     NA, NA, xlim = range(k) + c(-0.6, 0.6), ylim = ylim,

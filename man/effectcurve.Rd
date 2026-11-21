@@ -12,7 +12,9 @@ effectcurve(
   vcov = NULL,
   level = 0.95,
   scale = c("link", "response", "slope"),
-  by = NULL
+  by = NULL,
+  contrast = FALSE,
+  at = NULL
 )
 }
 \arguments{
@@ -36,12 +38,19 @@ of the regressor}
 
 \item{by}{optional name of a discrete variable (factor, character,
 logical, or at most 10 distinct values) giving one curve per level;
-response and slope scales only}
+response and slope scales, or every scale with \code{contrast = TRUE}}
+
+\item{contrast}{if \code{TRUE} (with \code{by}), the difference curve of each
+level of \code{by} minus the first level, with its own confidence band}
+
+\item{at}{optional named list of other regressors, each set to the given
+value for every observation (response, slope and contrast curves)}
 }
 \value{
 a data frame of class \code{"panglm_effectcurve"} with columns
 \code{value}, \code{estimate}, \code{se}, \code{lower} and \code{upper} (and \code{by} when \code{by} is
-given). The attributes record the variable, scale, reference value and
+given; with \code{contrast = TRUE} its levels read \code{"level - first"}). The
+attributes record the variable, scale, reference value and
 the percentiles of the observed regressor used for the rug.
 }
 \description{
@@ -82,6 +91,17 @@ and \code{by} gives one curve per level of a second variable, set to that
 level for every observation. Standard errors treat variance components,
 dispersion and fixed-effect intercepts as fixed, as in
 \code{\link[=partialeffects]{partialeffects()}}.
+
+With \code{by} and \code{contrast = TRUE} the curve is the difference between each
+level of \code{by} and its first level, with the delta-method band of the
+difference itself (not two overlapping bands): for example the effect of
+smoking on birth weight as a function of maternal age in a model with a
+spline-by-smoking interaction. On the link scale this is the average
+difference in the linear predictor (a log odds ratio or log rate ratio
+curve); on the response and slope scales the difference of the average
+predictions or slopes. \code{at} fixes other regressors at given values for
+every observation, so that with all of them fixed the curve is the
+prediction for one covariate profile (a typical patient).
 }
 \section{Validation}{
 
