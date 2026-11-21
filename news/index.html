@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">panglm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.7.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.7.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -52,6 +52,15 @@
       <small>Source: <a href="https://github.com/ielbadisy/panglm/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.7.5" id="panglm-175">panglm 1.7.5<a class="anchor" aria-label="anchor" href="#panglm-175"></a></h2>
+<ul><li>
+<code>effectcurve(scale = "response")</code>: the pointwise band is now computed on the link scale of the family and back-transformed, so a probability band stays inside [0, 1] and a rate band above 0 (bug fix: the Wald band on the probability scale went below 0 for small risks). Estimates and <code>se</code> are unchanged; identity-link, Tobit and contrast curves keep the symmetric band. For one covariate profile of a pooled fit it equals the <code>predict(type = "link", se.fit = TRUE)</code> band of <code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm()</a></code>.</li>
+<li>
+<code><a href="../reference/effectcurve.html">effectcurve()</a></code> gains <code>type = c("marginal", "conditional")</code>. The default keeps the population-averaged curve of random-effects fits; <code>"conditional"</code> gives the curve of a typical individual with random effects at zero (<code>plogis(x'beta)</code> for a random-intercept logit), on the response and slope scales.</li>
+<li>
+<code>plot(which = "calibration", counts = TRUE)</code>: bin sizes no longer overlap. Equal-size bins get one “n per bin” note in the top-left corner; otherwise a count that would overlap its neighbour is lifted a row (bug fix).</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.7.4" id="panglm-174">panglm 1.7.4<a class="anchor" aria-label="anchor" href="#panglm-174"></a></h2>
 <ul><li>New <code>vcov = "HC3"</code> (in <code><a href="../reference/panglm.html">panglm()</a></code> and <code>vcov(type = "HC3")</code>): the jackknife-type heteroskedasticity-consistent variance, for pooled Gaussian, Poisson, binomial, negative binomial and gamma fits and for the one-way unweighted within Gaussian model. It equals <code>sandwich::vcovHC(type = "HC3")</code> on <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code>, <code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm()</a></code>, <code><a href="https://rdrr.io/pkg/MASS/man/glm.nb.html" class="external-link">MASS::glm.nb()</a></code> and the dummy-variable <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code>. The default variance is unchanged.</li>

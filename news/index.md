@@ -1,5 +1,26 @@
 # Changelog
 
+## panglm 1.7.5
+
+- `effectcurve(scale = "response")`: the pointwise band is now computed
+  on the link scale of the family and back-transformed, so a probability
+  band stays inside \[0, 1\] and a rate band above 0 (bug fix: the Wald
+  band on the probability scale went below 0 for small risks). Estimates
+  and `se` are unchanged; identity-link, Tobit and contrast curves keep
+  the symmetric band. For one covariate profile of a pooled fit it
+  equals the `predict(type = "link", se.fit = TRUE)` band of
+  [`glm()`](https://rdrr.io/r/stats/glm.html).
+- [`effectcurve()`](https://elbadisyimad.com/panglm/reference/effectcurve.md)
+  gains `type = c("marginal", "conditional")`. The default keeps the
+  population-averaged curve of random-effects fits; `"conditional"`
+  gives the curve of a typical individual with random effects at zero
+  (`plogis(x'beta)` for a random-intercept logit), on the response and
+  slope scales.
+- `plot(which = "calibration", counts = TRUE)`: bin sizes no longer
+  overlap. Equal-size bins get one “n per bin” note in the top-left
+  corner; otherwise a count that would overlap its neighbour is lifted a
+  row (bug fix).
+
 ## panglm 1.7.4
 
 - New `vcov = "HC3"` (in

@@ -11,7 +11,7 @@ fit. Use plot() to draw them."><meta property="og:image" content="https://elbadi
 
     <a class="navbar-brand me-2" href="../index.html">panglm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.7.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.7.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -75,7 +75,8 @@ fit. Use <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="ext
 <span>  scale <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"link"</span>, <span class="st">"response"</span>, <span class="st">"slope"</span><span class="op">)</span>,</span>
 <span>  by <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  contrast <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  at <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  at <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"marginal"</span>, <span class="st">"conditional"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -130,6 +131,12 @@ level of <code>by</code> minus the first level, with its own confidence band</p>
 <dd><p>optional named list of other regressors, each set to the given
 value for every observation (response, slope and contrast curves)</p></dd>
 
+
+<dt id="arg-type">type<a class="anchor" aria-label="anchor" href="#arg-type"></a></dt>
+<dd><p><code>"marginal"</code> (default: population-averaged) or
+<code>"conditional"</code> (a typical individual, random effects at zero) for
+response and slope curves of random-effects fits, see Details</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -181,6 +188,23 @@ curve); on the response and slope scales the difference of the average
 predictions or slopes. <code>at</code> fixes other regressors at given values for
 every observation, so that with all of them fixed the curve is the
 prediction for one covariate profile (a typical patient).</p>
+<p>On the response scale (without <code>contrast</code>) the band is computed on the
+link scale of the family and back-transformed, <code>g^-1(g(m) -/+ z se_g)</code>
+with <code>se_g = se / g'^-1(g(m))</code>, so that it stays inside the range of the
+mean (a probability band inside [0, 1], a rate band above 0); <code>se</code> is
+still the delta-method standard error on the response scale. For a
+single covariate profile of a pooled fit this is the usual
+<code>predict(type = "link", se.fit = TRUE)</code> band. Identity-link and Tobit
+fits keep the symmetric Wald band.</p>
+<p>For random-effects fits the response and slope curves are
+population-averaged by default (<code>type = "marginal"</code>): the mean is
+integrated over the random effects, as in <code><a href="partialeffects.html">partialeffects()</a></code>.
+<code>type = "conditional"</code> gives instead the curve of a typical individual,
+whose random effects are zero (<code>b_i = 0</code>): the inverse link of the fixed
+part of the linear predictor (the Tobit censored mean with the
+within-individual standard deviation). For a random-intercept logit fit
+at a single covariate profile it is <code>plogis(x'beta)</code>. Pooled and
+fixed-effects fits have no random effects, so both types agree.</p>
     </div>
     <div class="section level2">
     <h2 id="validation">Validation<a class="anchor" aria-label="anchor" href="#validation"></a></h2>
