@@ -19,6 +19,8 @@ plot(
   rug = TRUE,
   col = NULL,
   legend = "auto",
+  main = NULL,
+  mar = NULL,
   ...
 )
 ```
@@ -54,6 +56,17 @@ plot(
   the plot least covered by the curves and bands), a keyword accepted by
   [`graphics::legend()`](https://rdrr.io/r/graphics/legend.html), or
   `FALSE` for none
+
+- main:
+
+  plot title; `NULL` (default) for none
+
+- mar:
+
+  margins in lines; by default compact ones (`c(4, 4, 1, 1)`, the top
+  larger with a title) when the current margins are R's defaults, the
+  current ones otherwise. Margins set here are restored on exit, so to
+  add layers after the call set `par(mar = )` beforehand.
 
 - ...:
 

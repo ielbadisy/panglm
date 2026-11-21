@@ -1,5 +1,60 @@
 # Changelog
 
+## panglm 1.7.4
+
+- New `vcov = "HC3"` (in
+  [`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md) and
+  `vcov(type = "HC3")`): the jackknife-type
+  heteroskedasticity-consistent variance, for pooled Gaussian, Poisson,
+  binomial, negative binomial and gamma fits and for the one-way
+  unweighted within Gaussian model. It equals
+  `sandwich::vcovHC(type = "HC3")` on
+  [`lm()`](https://rdrr.io/r/stats/lm.html),
+  [`glm()`](https://rdrr.io/r/stats/glm.html),
+  [`MASS::glm.nb()`](https://rdrr.io/pkg/MASS/man/glm.nb.html) and the
+  dummy-variable [`lm()`](https://rdrr.io/r/stats/lm.html). The default
+  variance is unchanged.
+- [`effectcurve()`](https://elbadisyimad.com/panglm/reference/effectcurve.md)
+  no longer reads `ns()` or `bs()` knots held in a variable
+  (`ns(age, knots = K)`) as an interaction with `K`.
+- [`effectcurve()`](https://elbadisyimad.com/panglm/reference/effectcurve.md)
+  gains `contrast` and `at`. With `by` and `contrast = TRUE` it returns
+  each level’s average predicted curve minus the first level’s, with a
+  delta-method band (on the link or response scale). `at` holds other
+  covariates at given values (a fixed covariate profile) instead of
+  averaging over the data.
+- [`coefplot()`](https://elbadisyimad.com/panglm/reference/coefplot.md)
+  gains `exponentiate` (odds, rate or hazard ratios on a log axis,
+  reference line at 1, including
+  [`survival::coxph()`](https://rdrr.io/pkg/survival/man/coxph.html)
+  fits), `terms` to relabel terms, and `vcov` to draw one model under
+  several variance estimators in one call
+  (e.g. `vcov = c(Classical = "classical", HC3 = "HC3", Cluster = "cluster")`).
+  The top margin now holds just the title (or nothing with
+  `main = NULL`) and the legend no longer touches its neighbours.
+- [`trendplot()`](https://elbadisyimad.com/panglm/reference/trendplot.md)
+  gains `group`, for arms assigned from the start (such as a randomized
+  trial): one line per level with the level names, and no adoption line.
+  `treat` may then be omitted. With `treat` and a single cohort treated
+  from the first period, `type = "treated"` labels it “Always treated”
+  and draws no adoption line.
+- `plot(which = "rootogram")` accepts `ylim`; before it failed with
+  “formal argument ‘ylim’ matched by multiple actual arguments”.
+- `plot(which = "calibration")` gains `counts = TRUE` to print the bin
+  sizes, fills the plot region instead of a small square, and uses
+  compact margins.
+- Plot look (bug fixes, results unchanged): the random-effects view no
+  longer overlaps title and subtitle and no longer clips the x label
+  (now “Random intercept”, with the scale added for non-identity links);
+  the effects, calibration and
+  [`effectcurve()`](https://elbadisyimad.com/panglm/reference/effectcurve.md)
+  plots use compact margins when `par("mar")` is R’s default and restore
+  it on exit, so set `par(mar = )` yourself before a plot you add layers
+  to. [`plot()`](https://rdrr.io/r/graphics/plot.default.html) of a
+  contrast
+  [`effectcurve()`](https://elbadisyimad.com/panglm/reference/effectcurve.md)
+  labels the y axis as a difference and draws the zero line.
+
 ## panglm 1.7.3
 
 - `binomialfamily("log")`: the pooled log-binomial fit now maximizes the

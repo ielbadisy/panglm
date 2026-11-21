@@ -4,9 +4,20 @@ With `type = NULL` (the default) the covariance the object was fit with
 is returned (set by the `vcov` argument of
 [`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md)).
 `type = "classical"` returns the model-based covariance, also for a fit
-made with a robust `vcov`. `type = "HC1"` (heteroskedasticity-robust /
-White) and `type = "cluster"` (cluster-robust sandwich, clustered by the
-panel individual unless `cluster` is given) are available for pooled and
+made with a robust `vcov`. `type = "HC3"` is the jackknife-type sandwich
+of MacKinnon and White (1985), the scores divided by `1 - h_i` with
+`h_i` the leverage of the weighted IRLS fit; it is the small-sample
+choice for pooled GLMs (gaussian, binomial, Poisson, negative binomial,
+gamma) and is also available for the one-way Gaussian within model,
+where the leverage includes the individual dummies (`h_i` of the
+demeaned regression plus `1 / T_i`). It equals
+`sandwich::vcovHC(type = "HC3")` of the matching
+[`stats::glm()`](https://rdrr.io/r/stats/glm.html),
+[`MASS::glm.nb()`](https://rdrr.io/pkg/MASS/man/glm.nb.html) or
+dummy-variable [`stats::lm()`](https://rdrr.io/r/stats/lm.html) fit.
+`type = "HC1"` (heteroskedasticity-robust / White) and
+`type = "cluster"` (cluster-robust sandwich, clustered by the panel
+individual unless `cluster` is given) are available for pooled and
 fixed-effects models. For random-effects models only `"cluster"` is
 available: the units of the integrated likelihood are individuals, so
 the sandwich is built from individual scores (clusters must contain
@@ -40,7 +51,7 @@ vcov(object, type = NULL, cluster = NULL, ...)
 - type:
 
   `NULL` (the covariance stored on the fit) or one of `"classical"`,
-  `"HC1"`, `"cluster"`
+  `"HC1"`, `"HC3"`, `"cluster"`
 
 - cluster:
 

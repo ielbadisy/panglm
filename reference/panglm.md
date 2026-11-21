@@ -17,7 +17,7 @@ panglm(
   offset = NULL,
   na.action = stats::na.omit,
   effect = c("individual", "twoways"),
-  vcov = c("classical", "HC1", "cluster"),
+  vcov = c("classical", "HC1", "cluster", "HC3"),
   cre = dynamic,
   dynamic = FALSE,
   random = ~1,
@@ -134,8 +134,11 @@ panglm(
 
 - vcov:
 
-  one of `"classical"`, `"HC1"` (heteroskedasticity-robust) or
-  `"cluster"` (cluster-robust, clustered by the panel individual by
+  one of `"classical"`, `"HC1"` (heteroskedasticity-robust), `"HC3"`
+  (its small-sample jackknife version, pooled GLMs and the Gaussian
+  within model, see
+  [`vcov.panglm()`](https://elbadisyimad.com/panglm/reference/vcov.panglm.md))
+  or `"cluster"` (cluster-robust, clustered by the panel individual by
   default). For `model = "random"` only `"classical"` and `"cluster"`
   are available; the cluster covariance uses the individual scores of
   the integrated likelihood, so clusters must contain whole individuals.

@@ -16,7 +16,9 @@ effectcurve(
   vcov = NULL,
   level = 0.95,
   scale = c("link", "response", "slope"),
-  by = NULL
+  by = NULL,
+  contrast = FALSE,
+  at = NULL
 )
 ```
 
@@ -58,14 +60,25 @@ effectcurve(
 
   optional name of a discrete variable (factor, character, logical, or
   at most 10 distinct values) giving one curve per level; response and
-  slope scales only
+  slope scales, or every scale with `contrast = TRUE`
+
+- contrast:
+
+  if `TRUE` (with `by`), the difference curve of each level of `by`
+  minus the first level, with its own confidence band
+
+- at:
+
+  optional named list of other regressors, each set to the given value
+  for every observation (response, slope and contrast curves)
 
 ## Value
 
 a data frame of class `"panglm_effectcurve"` with columns `value`,
-`estimate`, `se`, `lower` and `upper` (and `by` when `by` is given). The
-attributes record the variable, scale, reference value and the
-percentiles of the observed regressor used for the rug.
+`estimate`, `se`, `lower` and `upper` (and `by` when `by` is given; with
+`contrast = TRUE` its levels read `"level - first"`). The attributes
+record the variable, scale, reference value and the percentiles of the
+observed regressor used for the rug.
 
 ## Details
 
@@ -104,6 +117,17 @@ and `by` gives one curve per level of a second variable, set to that
 level for every observation. Standard errors treat variance components,
 dispersion and fixed-effect intercepts as fixed, as in
 [`partialeffects()`](https://elbadisyimad.com/panglm/reference/partialeffects.md).
+
+With `by` and `contrast = TRUE` the curve is the difference between each
+level of `by` and its first level, with the delta-method band of the
+difference itself (not two overlapping bands): for example the effect of
+smoking on birth weight as a function of maternal age in a model with a
+spline-by-smoking interaction. On the link scale this is the average
+difference in the linear predictor (a log odds ratio or log rate ratio
+curve); on the response and slope scales the difference of the average
+predictions or slopes. `at` fixes other regressors at given values for
+every observation, so that with all of them fixed the curve is the
+prediction for one covariate profile (a typical patient).
 
 ## Validation
 

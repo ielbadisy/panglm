@@ -20,6 +20,7 @@ plot(
   cells = FALSE,
   main = NULL,
   xlab = NULL,
+  counts = FALSE,
   ...
 )
 ```
@@ -71,16 +72,21 @@ plot(
 
 - main:
 
-  optional plot title
+  optional plot title; `""` for none
 
 - xlab:
 
   optional horizontal-axis label
 
+- counts:
+
+  for `"calibration"`, print the bin sizes
+
 - ...:
 
   additional arguments passed to
-  [`graphics::plot.default()`](https://rdrr.io/r/graphics/plot.default.html)
+  [`graphics::plot.default()`](https://rdrr.io/r/graphics/plot.default.html),
+  e.g. `ylim` to give two rootograms the same scale
 
 ## Value
 
@@ -114,7 +120,8 @@ plot(
 - `"calibration"` (binomial families, logit or probit): observed
   proportion against mean predicted probability in `bins` quantile bins
   of the predicted probability, with exact (Clopper-Pearson) binomial
-  confidence intervals and the 45-degree line.
+  confidence intervals and the 45-degree line; `counts = TRUE` prints
+  the number of observations of each bin above its interval.
 
 - `"rootogram"` (Poisson and negative binomial families): hanging
   rootogram. The curve is `sqrt(E_k)`, the expected frequency of count

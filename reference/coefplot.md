@@ -19,10 +19,13 @@ coefplot(
   level = 0.95,
   labels = NULL,
   main = "Coefficient estimates",
-  xlab = "Estimate",
+  xlab = NULL,
   col = NULL,
   pch = NULL,
-  ref = 0
+  ref = if (exponentiate) 1 else 0,
+  exponentiate = FALSE,
+  terms = NULL,
+  vcov = NULL
 )
 ```
 
@@ -50,11 +53,12 @@ coefplot(
 
 - main:
 
-  plot title
+  plot title; `NULL` for none (the top margin then shrinks)
 
 - xlab:
 
-  horizontal-axis label
+  horizontal-axis label; default `"Estimate"`, or `"exp(Estimate)"` with
+  `exponentiate = TRUE`
 
 - col:
 
@@ -66,7 +70,29 @@ coefplot(
 
 - ref:
 
-  position of the dashed reference line; `NULL` for none
+  position of the dashed reference line (default 0, or 1 with
+  `exponentiate = TRUE`); `NULL` for none
+
+- exponentiate:
+
+  if `TRUE`, plot [`exp()`](https://rdrr.io/r/base/Log.html) of the
+  estimates and confidence limits on a log axis
+
+- terms:
+
+  new term labels: a character vector named by the coefficient names
+  (unnamed terms keep their name), or an unnamed vector with one label
+  per plotted term
+
+- vcov:
+
+  covariance of each model: `NULL` (the
+  [`vcov()`](https://rdrr.io/r/stats/vcov.html) of the fit), a type
+  passed to `vcov(model, type = )` (e.g. `"HC3"` for a
+  [`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md)
+  fit), a covariance matrix, or a function of the model; a list or
+  character vector gives one entry per model, or several entries for a
+  single model (see Details)
 
 ## Value
 
@@ -84,6 +110,15 @@ Any fitted object with [`coef()`](https://rdrr.io/r/stats/coef.html) and
 fits, and also [`stats::glm()`](https://rdrr.io/r/stats/glm.html) fits.
 When [`vcov()`](https://rdrr.io/r/stats/vcov.html) fails or has no entry
 for a term, only the estimate is drawn.
+
+`vcov` compares variance estimators: with one model and several entries,
+the model is drawn once per entry (legend labels from the names of
+`vcov` or the types), so classical, HC1, HC3 and cluster intervals sit
+side by side. `exponentiate = TRUE` draws
+[`exp()`](https://rdrr.io/r/base/Log.html) of the estimates and limits
+on a logarithmic axis with the reference line at 1: odds ratios, rate
+ratios, or hazard ratios of a
+[`survival::coxph()`](https://rdrr.io/pkg/survival/man/coxph.html) fit.
 
 ## See also
 
@@ -118,4 +153,8 @@ re <- panglm(f, data = copd, index = c("id", "visit"),
 cre <- panglm(f, data = copd, index = c("id", "visit"),
               model = "random", family = "poisson", cre = TRUE)
 coefplot(Pooled = pool, RE = re, CRE = cre)
+
+coefplot(pool, vcov = c(Classical = "classical", HC3 = "HC3", Cluster = "cluster"),
+         exponentiate = TRUE, main = NULL, xlab = "Rate ratio",
+         terms = c(crp = "CRP (mg/L)", treatment = "Treatment", age = "Age (years)"))
 ```

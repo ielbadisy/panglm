@@ -9,7 +9,7 @@ difference-in-differences design before any model is fitted.
 trendplot(
   data,
   index,
-  treat,
+  treat = NULL,
   outcome,
   type = c("cohort", "treated", "event"),
   weights = NULL,
@@ -23,6 +23,7 @@ trendplot(
   ylab = NULL,
   main = NULL,
   ylim = NULL,
+  group = NULL,
   ...
 )
 ```
@@ -42,7 +43,8 @@ trendplot(
   name of the column with the first treated period, as in
   [`attgt()`](https://elbadisyimad.com/panglm/reference/attgt.md) and
   [`treatmentplot()`](https://elbadisyimad.com/panglm/reference/treatmentplot.md)
-  (`0`, `NA` or `Inf` for never-treated units)
+  (`0`, `NA` or `Inf` for never-treated units); may be omitted when
+  `group` is given
 
 - outcome:
 
@@ -87,6 +89,11 @@ trendplot(
 
   y-axis limits
 
+- group:
+
+  optional name of a column with a group fixed from the start (e.g. the
+  trial arm); one line per level, `treat` and `type` are then ignored
+
 - ...:
 
   passed to
@@ -119,6 +126,13 @@ a data frame of the plotted means, invisibly: `group` (the line label),
   its own period (a calendar-matched comparison, as in stacked event
   studies). The treated mean at each event time pools cohorts observed
   in different calendar periods, so its composition changes with `e`.
+
+For groups that are assigned from the start and never switch, such as
+the arms of a randomized trial, give `group` (a column naming the arm)
+instead of `treat`: one line per level of `group`, labelled by its
+levels, with no adoption line. With `treat` and a single cohort treated
+from the first period, `type = "treated"` labels the lines
+`"Always treated"` and `"Never treated"` and draws no adoption line.
 
 Means are weighted by `weights` when given. The standard error of each
 mean is cluster-robust by individual, \$\$\widehat{se}(\bar y_c) =
@@ -173,4 +187,6 @@ head(m)
 #> 4 Treated   -2 0.6071081 0.2158302 60
 #> 5 Treated   -1 0.8873404 0.2011706 60
 #> 6 Treated    0 2.1941933 0.1964449 60
+d$arm <- factor(ifelse(d$id %% 2 == 0, "drug", "placebo"), c("placebo", "drug"))
+trendplot(d, c("id", "t"), outcome = "y", group = "arm", band = TRUE)
 ```
