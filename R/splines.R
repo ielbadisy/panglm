@@ -221,6 +221,8 @@ effectcurve <- function(object, variable, values = NULL, ref = NULL, vcov = NULL
 #'   the top larger with a title) when the current margins are R's
 #'   defaults, the current ones otherwise. Margins set here are restored on
 #'   exit, so to add layers after the call set `par(mar = )` beforehand.
+#' @param bylabel legend title for curves by group; the name of the `by`
+#'   column by default, `NULL` for none
 #' @param ... passed to [graphics::plot()]
 #' @return `x`, invisibly
 #' @family panglm methods
@@ -232,7 +234,8 @@ effectcurve <- function(object, variable, values = NULL, ref = NULL, vcov = NULL
 #' @export
 plot.panglm_effectcurve <- function(x, xlab = attr(x, "variable"), ylab = NULL,
                                     band_col = "grey85", rug = TRUE, col = NULL,
-                                    legend = "auto", main = NULL, mar = NULL, ...) {
+                                    legend = "auto", main = NULL, mar = NULL,
+                                    bylabel = attr(x, "by"), ...) {
   scale <- attr(x, "scale") %||% "link"
   variable <- attr(x, "variable")
   contrast <- isTRUE(attr(x, "contrast"))
@@ -297,7 +300,7 @@ plot.panglm_effectcurve <- function(x, xlab = attr(x, "variable"), ylab = NULL,
     }
     graphics::legend(legend, legend = groups, col = col, bty = "n",
                      lwd = if (discrete) 1.5 else 2, pch = if (discrete) 19 else NA,
-                     title = attr(x, "by"))
+                     title = bylabel)
   }
   invisible(x)
 }
