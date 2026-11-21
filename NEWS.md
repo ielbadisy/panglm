@@ -1,3 +1,8 @@
+# panglm 1.7.6
+
+* `plot()` of an `effectcurve()` gains `bylabel`, the legend title of curves by group
+  (default: the `by` column name, as before; `NULL` for none).
+
 # panglm 1.7.5
 
 * `effectcurve(scale = "response")`: the pointwise band is now computed on the link

@@ -14,6 +14,7 @@
   legend = "auto",
   main = NULL,
   mar = NULL,
+  bylabel = attr(x, "by"),
   ...
 )
 }
@@ -40,6 +41,9 @@ accepted by \code{\link[graphics:legend]{graphics::legend()}}, or \code{FALSE} f
 the top larger with a title) when the current margins are R's
 defaults, the current ones otherwise. Margins set here are restored on
 exit, so to add layers after the call set \code{par(mar = )} beforehand.}
+
+\item{bylabel}{legend title for curves by group; the name of the \code{by}
+column by default, \code{NULL} for none}
 
 \item{...}{passed to \code{\link[graphics:plot.default]{graphics::plot()}}}
 }

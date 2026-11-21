@@ -129,3 +129,15 @@ test_that("effectcurve(at =) fixes covariates at given values", {
   expect_equal(e$estimate, unname(predict(l, nd)), tolerance = 1e-8)
   expect_error(effectcurve(m, "x", values = 1, scale = "response", at = list(nope = 1)))
 })
+
+test_that("plot.effectcurve bylabel sets the legend title", {
+  d <- contrast_panel()
+  m <- panglm(y ~ g * splines::ns(x, knots = 2) + z, d, index = "id", model = "pooling")
+  e <- effectcurve(m, "x", values = seq(1, 3, 0.5), scale = "response", by = "g")
+  ev <- new.env(); ev$tl <- list()
+  trace("legend", bquote(assign("tl", c(.(ev)$tl, list(title)), envir = .(ev))), print = FALSE,
+        where = asNamespace("graphics"))
+  on.exit(untrace("legend", where = asNamespace("graphics")))
+  pdf(NULL); plot(e); plot(e, bylabel = "Group"); plot(e, bylabel = NULL); dev.off()
+  tl <- ev$tl; expect_equal(tl[1:2], list("g", "Group")); expect_length(tl, 3); expect_null(tl[[3]])
+})
