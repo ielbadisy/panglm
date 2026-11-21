@@ -123,3 +123,17 @@ test_that("trendplot options and input checks", {
   d$first <- 0
   expect_error(trendplot(d, c("id", "t"), "first", "y", type = "event"), "treated units")
 })
+
+test_that("trendplot(group =) draws arms assigned from the start", {
+  d <- trend_panel()
+  d$arm <- factor(ifelse(d$id %% 2 == 0, "drug", "placebo"), c("placebo", "drug"))
+  pdf(NULL); on.exit(dev.off())
+  m <- trendplot(d, c("id", "t"), outcome = "y", group = "arm", band = TRUE, ylab = "Mean y")
+  a <- aggregate(y ~ arm + t, d, mean)
+  mm <- merge(m, a, by.x = c("group", "time"), by.y = c("arm", "t"))
+  expect_equal(nrow(mm), nrow(m)); expect_equal(mm$mean, mm$y, tolerance = 1e-12)
+  expect_setequal(unique(m$group), c("placebo", "drug"))
+  expect_error(trendplot(d, c("id", "t"), outcome = "y"), "group")
+  d$first <- ifelse(d$arm == "drug", 1, 0)
+  expect_silent(trendplot(d, c("id", "t"), "first", "y", type = "treated"))
+})

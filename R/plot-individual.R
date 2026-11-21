@@ -12,8 +12,10 @@
   if (identical(x$model, "within")) {
     fe <- fixef(x)
     if (is.list(fe)) fe <- fe$individual
-    .panglm_effect_hist(fe, bw, density = NULL,
-                        main = main %||% "Estimated fixed effects",
+    main <- main %||% "Estimated fixed effects"
+    op <- panglm_compact_mar(NULL, if (nzchar(main)) 3 else 1.8)
+    on.exit(if (!is.null(op)) graphics::par(op), add = TRUE)
+    .panglm_effect_hist(fe, bw, density = NULL, main = main,
                         xlab = xlab %||% "Individual effect",
                         sub = sprintf("%d individuals, SD %.3g", length(fe), stats::sd(fe)), ...)
     return(invisible(NULL))
@@ -25,13 +27,15 @@
   re <- ranef(x)
   fam <- x$family$family
   if (ncol(re) == 1L) {
+    main <- main %||% "Predicted random effects"
+    op <- panglm_compact_mar(NULL, if (nzchar(main)) 3 else 1.8)
+    on.exit(if (!is.null(op)) graphics::par(op), add = TRUE)
     prior <- panglm_effect_prior(x)
     b <- re[, 1]
     .panglm_effect_hist(
       b, bw, density = prior$density,
-      main = main %||% "Predicted random effects",
-      xlab = xlab %||% prior$label,
-      sub = sprintf("%d individuals; SD of predictions %.3g, model SD %.3g (shrinkage)",
+      main = main, xlab = xlab %||% prior$label,
+      sub = sprintf("%d individuals; SD %.3g (predictions), %.3g (model)",
                     length(b), stats::sd(b), prior$sd), ...)
     return(invisible(NULL))
   }
@@ -88,8 +92,9 @@ panglm_effect_prior <- function(x) {
     label = "Random intercept, log(delta)"))
   }
   s <- if (fam == "gaussian") sqrt(x$sigma_mu2) else x$sigma
-  list(density = function(v) stats::dnorm(v, 0, s), sd = s,
-       label = "Random intercept (linear-predictor scale)")
+  scale <- switch(x$family$link %||% "identity", logit = " (log-odds scale)", probit = " (probit scale)",
+                  log = " (log scale)", "")
+  list(density = function(v) stats::dnorm(v, 0, s), sd = s, label = paste0("Random intercept", scale))
 }
 
 #' Histogram with kernel density and an optional reference density
@@ -116,8 +121,12 @@ panglm_effect_prior <- function(x) {
     ref$y[!is.finite(ref$y)] <- NA
   }
   top <- max(h$density, kd$y, ref$y, na.rm = TRUE) * 1.1
-  graphics::plot.default(NA, NA, xlim = xr, ylim = c(0, top), main = main, xlab = xlab,
+  graphics::plot.default(NA, NA, xlim = xr, ylim = c(0, top), main = "", xlab = xlab,
                          ylab = "Density", yaxs = "i", ...)
+  # the title sits above the subtitle line, not on it
+  if (length(main) && !is.na(main) && nzchar(main)) {
+    graphics::title(main = main, line = if (is.null(sub)) 1 else 1.4)
+  }
   graphics::rect(h$breaks[-length(h$breaks)], 0, h$breaks[-1L], h$density,
                  col = "grey80", border = "grey45")
   graphics::lines(kd$x, kd$y, col = "#0072B2", lwd = 2)

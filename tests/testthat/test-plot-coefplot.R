@@ -28,3 +28,26 @@ test_that("coefplot compares several models and returns them", {
   expect_equal(rownames(tab$est), c("crp", "treatment", "age"))
   expect_equal(unname(tab$lower[, "a"]), unname(confint.default(g)[-1, 1]), tolerance = 1e-3)
 })
+
+test_that("coefplot exponentiates, relabels terms and compares variance estimators", {
+  data(copd)
+  pool <- panglm(exacerbations ~ crp + treatment + age, data = copd, index = c("id", "visit"),
+                 model = "pooling", family = "poisson")
+  path <- tempfile(fileext = ".pdf"); grDevices::pdf(path)
+  on.exit({ grDevices::dev.off(); unlink(path) }, add = TRUE)
+  old <- graphics::par("mai")
+  out <- coefplot(pool, vcov = c(Classical = "classical", Cluster = "cluster", HC3 = "HC3"),
+                  exponentiate = TRUE, terms = c(crp = "CRP"), main = NULL)
+  expect_named(out, c("Classical", "Cluster", "HC3"))
+  expect_equal(graphics::par("mai"), old)
+  expect_invisible(coefplot(pool, terms = c("CRP", "Treatment", "Age")))
+  expect_error(coefplot(pool, terms = c("a", "b")), "terms")
+  expect_invisible(coefplot(pool, vcov = list(vcov(pool, type = "cluster"))))
+  # exponentiated intervals are exp() of the Wald limits
+  tab <- panglm:::.panglm_coef_matrices(list(a = list(est = coef(pool), se = sqrt(diag(vcov(pool))))),
+                                        parm = NULL, level = 0.95)
+  expect_equal(exp(unname(tab$lower[, "a"])), unname(exp(confint.default(pool)[-1, 1])), tolerance = 1e-8)
+  skip_if_missing("survival")
+  cx <- survival::coxph(survival::Surv(time, status) ~ age + sex, survival::lung)
+  expect_invisible(coefplot(cx, exponentiate = TRUE, xlab = "Hazard ratio"))
+})

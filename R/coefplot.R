@@ -15,6 +15,13 @@
 #' also [stats::glm()] fits. When `vcov()` fails or has no entry for a term,
 #' only the estimate is drawn.
 #'
+#' `vcov` compares variance estimators: with one model and several entries,
+#' the model is drawn once per entry (legend labels from the names of `vcov`
+#' or the types), so classical, HC1, HC3 and cluster intervals sit side by
+#' side. `exponentiate = TRUE` draws `exp()` of the estimates and limits on
+#' a logarithmic axis with the reference line at 1: odds ratios, rate
+#' ratios, or hazard ratios of a [survival::coxph()] fit.
+#'
 #' @param ... fitted models, or a single unclassed list of fitted models.
 #'   Argument names are used as legend labels.
 #' @param parm names or positions (in the order the terms first appear
@@ -23,11 +30,23 @@
 #' @param level confidence level of the intervals
 #' @param labels legend labels of the models; by default the argument names,
 #'   or the deparsed arguments
-#' @param main plot title
-#' @param xlab horizontal-axis label
+#' @param main plot title; `NULL` for none (the top margin then shrinks)
+#' @param xlab horizontal-axis label; default `"Estimate"`, or
+#'   `"exp(Estimate)"` with `exponentiate = TRUE`
 #' @param col colours of the models, recycled
 #' @param pch plotting symbols of the models, recycled
-#' @param ref position of the dashed reference line; `NULL` for none
+#' @param ref position of the dashed reference line (default 0, or 1 with
+#'   `exponentiate = TRUE`); `NULL` for none
+#' @param exponentiate if `TRUE`, plot `exp()` of the estimates and
+#'   confidence limits on a log axis
+#' @param terms new term labels: a character vector named by the
+#'   coefficient names (unnamed terms keep their name), or an unnamed vector
+#'   with one label per plotted term
+#' @param vcov covariance of each model: `NULL` (the `vcov()` of the fit), a
+#'   type passed to `vcov(model, type = )` (e.g. `"HC3"` for a [panglm()]
+#'   fit), a covariance matrix, or a function of the model; a list or
+#'   character vector gives one entry per model, or several entries for a
+#'   single model (see Details)
 #' @return the models, invisibly, as a named list
 #' @family panglm methods
 #' @examples
@@ -40,10 +59,14 @@
 #' cre <- panglm(f, data = copd, index = c("id", "visit"),
 #'               model = "random", family = "poisson", cre = TRUE)
 #' coefplot(Pooled = pool, RE = re, CRE = cre)
+#' coefplot(pool, vcov = c(Classical = "classical", HC3 = "HC3", Cluster = "cluster"),
+#'          exponentiate = TRUE, main = NULL, xlab = "Rate ratio",
+#'          terms = c(crp = "CRP (mg/L)", treatment = "Treatment", age = "Age (years)"))
 #' @export
 coefplot <- function(..., parm = NULL, level = 0.95, labels = NULL,
-                     main = "Coefficient estimates", xlab = "Estimate",
-                     col = NULL, pch = NULL, ref = 0) {
+                     main = "Coefficient estimates", xlab = NULL,
+                     col = NULL, pch = NULL, ref = if (exponentiate) 1 else 0,
+                     exponentiate = FALSE, terms = NULL, vcov = NULL) {
   models <- list(...)
   if (length(models) == 1L && is.list(models[[1L]]) && is.null(oldClass(models[[1L]]))) {
     models <- models[[1L]]
@@ -58,23 +81,53 @@ coefplot <- function(..., parm = NULL, level = 0.95, labels = NULL,
   }
   if (!length(models)) stop("supply at least one fitted model", call. = FALSE)
   if (is.null(default_labels)) default_labels <- paste("Model", seq_along(models))
+  if (!is.null(vcov)) {
+    vl <- if (is.list(vcov)) vcov else if (is.character(vcov)) as.list(vcov) else list(vcov)
+    if (length(models) == 1L && length(vl) > 1L) {
+      models <- rep(models, length(vl))
+      nm <- names(vl) %||% rep("", length(vl))
+      ty <- vapply(vl, function(v) if (is.character(v)) v else "", character(1))
+      default_labels <- ifelse(nzchar(nm), nm, ifelse(nzchar(ty), ty, paste("vcov", seq_along(vl))))
+    }
+    vl <- rep_len(vl, length(models))
+  }
   labels <- labels %||% default_labels
   if (length(labels) != length(models)) {
     stop("'labels' must have one entry per model", call. = FALSE)
   }
   names(models) <- labels
   tidy_check_level(level)
-  parts <- lapply(models, function(m) {
+  parts <- lapply(seq_along(models), function(i) {
+    m <- models[[i]]
     est <- tryCatch(stats::coef(m), error = function(e) NULL)
     if (!is.numeric(est) || is.null(names(est))) {
       stop("every model must have a named coef() vector", call. = FALSE)
     }
-    V <- tryCatch(stats::vcov(m), error = function(e) NULL)
+    v <- if (is.null(vcov)) NULL else vl[[i]]
+    V <- if (is.matrix(v)) v else if (is.function(v)) v(m) else if (is.character(v)) {
+      stats::vcov(m, type = v)
+    } else tryCatch(stats::vcov(m), error = function(e) NULL)
     list(est = est, se = .panglm_coef_se(est, V))
   })
+  names(parts) <- labels
   tab <- .panglm_coef_matrices(parts, parm, level)
-  .panglm_dotwhisker(tab, main = main, xlab = xlab, col = col, pch = pch, ref = ref)
+  if (exponentiate) tab <- lapply(tab, exp)
+  rownames(tab$est) <- .panglm_relabel(rownames(tab$est), terms)
+  .panglm_dotwhisker(tab, main = main, xlab = xlab %||% if (exponentiate) "exp(Estimate)" else "Estimate",
+                     col = col, pch = pch, ref = ref, log = if (exponentiate) "x" else "")
   invisible(models)
+}
+
+# new labels for terms: named by term (partial) or one per term (unnamed)
+.panglm_relabel <- function(terms, new) {
+  if (is.null(new)) return(terms)
+  if (is.null(names(new))) {
+    if (length(new) != length(terms)) stop("unnamed 'terms' must have one label per plotted term",
+                                           call. = FALSE)
+    return(as.character(new))
+  }
+  hit <- match(terms, names(new))
+  ifelse(is.na(hit), terms, new[hit])
 }
 
 #' Standard errors matched to the coefficient names
@@ -140,7 +193,7 @@ coefplot <- function(..., parm = NULL, level = 0.95, labels = NULL,
 #' @keywords internal
 #' @noRd
 .panglm_dotwhisker <- function(tab, main = NULL, xlab = "Estimate", col = NULL,
-                               pch = NULL, ref = 0, legend = NULL, ...) {
+                               pch = NULL, ref = 0, legend = NULL, log = "", ...) {
   est <- tab$est
   lower <- tab$lower
   upper <- tab$upper
@@ -164,8 +217,10 @@ coefplot <- function(..., parm = NULL, level = 0.95, labels = NULL,
   mai[2] <- min(max(mai[2], label_width + 0.25), 0.6 * fin)
   legend_rows <- 0L
   line_height <- graphics::par("csi")
+  # room for the title only when there is one (never more than the user's margin)
+  mai[3] <- min(mai[3], line_height * if (is.null(main) || !nzchar(main)) 0.6 else 2.3)
   if (legend) {
-    entry <- graphics::strwidth(colnames(est), units = "inches", cex = graphics::par("cex")) +
+    entry <- graphics::strwidth(paste0(colnames(est), "  "), units = "inches", cex = graphics::par("cex")) +
       0.45 * graphics::par("cex")
     # the legend may span the whole figure width, centred on the figure
     avail <- fin - 0.2
@@ -178,7 +233,7 @@ coefplot <- function(..., parm = NULL, level = 0.95, labels = NULL,
   positions <- rev(seq_len(K))
   offsets <- if (M == 1L) 0 else seq(0.28, -0.28, length.out = M)
   graphics::plot.default(NA, NA, xlim = xlim, ylim = c(0.5, K + 0.5), yaxt = "n",
-                         ylab = "", xlab = xlab, main = "", ...)
+                         ylab = "", xlab = xlab, main = "", log = log, ...)
   graphics::abline(h = positions, col = "grey92", lwd = 1)
   if (!is.null(ref)) graphics::abline(v = ref, lty = 2, col = "grey40")
   for (m in seq_len(M)) {
@@ -188,9 +243,9 @@ coefplot <- function(..., parm = NULL, level = 0.95, labels = NULL,
     graphics::points(est[, m], y, pch = pch[m], col = col[m], bg = col[m])
   }
   graphics::axis(2, at = positions, labels = terms, las = 1, tick = FALSE)
-  if (!is.null(main)) {
+  if (!is.null(main) && nzchar(main)) {
     # the legend occupies legend_rows * 1.1 margin lines above the plot
-    graphics::title(main = main, line = 1.5 + legend_rows * 1.1)
+    graphics::title(main = main, line = 0.7 + legend_rows * 1.1 + 0.3 * legend)
   }
   if (legend) {
     usr <- graphics::par("usr")
@@ -199,8 +254,9 @@ coefplot <- function(..., parm = NULL, level = 0.95, labels = NULL,
     width <- ceiling(M / legend_rows) * max(entry)
     at <- if (width <= fin - mai[2] - mai[4]) 0.5 * (plt[1] + plt[2]) else 0.5
     centre <- usr[1] + (at - plt[1]) / (plt[2] - plt[1]) * (usr[2] - usr[1])
+    if (graphics::par("xlog")) centre <- 10^centre
     graphics::par(xpd = NA)
-    graphics::legend(centre, usr[4], legend = colnames(est), col = col, pch = pch,
+    graphics::legend(centre, usr[4], legend = paste0(colnames(est), "  "), col = col, pch = pch,
                      lwd = 1.5, ncol = ceiling(M / legend_rows), bty = "n",
                      xjust = 0.5, yjust = 0, seg.len = 1.2, x.intersp = 0.6)
   }

@@ -86,3 +86,46 @@ test_that("spline helpers work for Poisson FE, CRE random effects and refuse bad
   expect_error(effectcurve(fi, "x"), "interaction")
   expect_error(effectcurve(fl, "nope"), "numeric regressor")
 })
+
+test_that("ns() knots held in a variable are not read as an interaction", {
+  set.seed(5)
+  d <- data.frame(id = 1:300, x = runif(300, 0, 4), z = rnorm(300))
+  d$y <- sin(d$x) + d$z + rnorm(300)
+  K <- 2
+  a <- panglm(y ~ splines::ns(x, knots = K) + z, d, index = "id", model = "pooling")
+  b <- panglm(y ~ splines::ns(x, knots = 2) + z, d, index = "id", model = "pooling")
+  expect_equal(effectcurve(a, "x", values = 1:3, ref = 2), effectcurve(b, "x", values = 1:3, ref = 2),
+               ignore_attr = TRUE)
+})
+
+contrast_panel <- function() {
+  set.seed(6)
+  d <- data.frame(id = 1:300, x = runif(300, 0, 4), g = factor(sample(c("a", "b"), 300, TRUE)),
+                  z = rnorm(300))
+  d$y <- sin(d$x) + (d$g == "b") * d$x / 2 + d$z + rnorm(300)
+  d
+}
+
+test_that("effectcurve(by, contrast = TRUE) equals a hand-built average contrast", {
+  d <- contrast_panel()
+  f <- y ~ g * splines::ns(x, knots = 2) + z
+  m <- panglm(f, d, index = "id", model = "pooling")
+  e <- effectcurve(m, "x", values = c(1, 3), scale = "response", by = "g", contrast = TRUE)
+  expect_true(attr(e, "contrast")); expect_equal(as.character(unique(e$by)), "b - a")
+  l <- lm(f, d); tt <- delete.response(terms(l))
+  X <- function(v, lv) model.matrix(tt, model.frame(tt, transform(d, x = v, g = factor(lv, levels(d$g)))))
+  L <- t(vapply(c(1, 3), function(v) colMeans(X(v, "b") - X(v, "a")), numeric(length(coef(l)))))
+  expect_equal(e$estimate, drop(L %*% coef(l)), tolerance = 1e-8)
+  expect_equal(e$se, sqrt(diag(L %*% vcov(l) %*% t(L))), tolerance = 1e-6)
+  expect_error(effectcurve(m, "x", values = 1, contrast = TRUE), "by")
+})
+
+test_that("effectcurve(at =) fixes covariates at given values", {
+  d <- contrast_panel()
+  m <- panglm(y ~ g * splines::ns(x, knots = 2) + z, d, index = "id", model = "pooling")
+  e <- effectcurve(m, "x", values = c(1, 3), scale = "response", by = "g", at = list(z = 0))
+  l <- lm(y ~ g * splines::ns(x, knots = 2) + z, d)
+  nd <- expand.grid(x = c(1, 3), g = factor(c("a", "b")), z = 0)
+  expect_equal(e$estimate, unname(predict(l, nd)), tolerance = 1e-8)
+  expect_error(effectcurve(m, "x", values = 1, scale = "response", at = list(nope = 1)))
+})

@@ -10,7 +10,7 @@
 \item{object}{a \code{"panglm"} fit}
 
 \item{type}{\code{NULL} (the covariance stored on the fit) or one of
-\code{"classical"}, \code{"HC1"}, \code{"cluster"}}
+\code{"classical"}, \code{"HC1"}, \code{"HC3"}, \code{"cluster"}}
 
 \item{cluster}{optional vector giving the clustering variable (one value
 per original observation, i.e. \code{nrow(data)} long); defaults to the
@@ -28,7 +28,15 @@ cluster-robust) covariance estimate of the same dimension.
 With \code{type = NULL} (the default) the covariance the object was fit with
 is returned (set by the \code{vcov} argument of \code{\link[=panglm]{panglm()}}).
 \code{type = "classical"} returns the model-based covariance, also for a fit
-made with a robust \code{vcov}. \code{type = "HC1"} (heteroskedasticity-robust / White) and
+made with a robust \code{vcov}. \code{type = "HC3"} is the jackknife-type sandwich of
+MacKinnon and White (1985), the scores divided by \code{1 - h_i} with \code{h_i} the
+leverage of the weighted IRLS fit; it is the small-sample choice for
+pooled GLMs (gaussian, binomial, Poisson, negative binomial, gamma) and is
+also available for the one-way Gaussian within model, where the leverage
+includes the individual dummies (\code{h_i} of the demeaned regression plus
+\code{1 / T_i}). It equals \code{sandwich::vcovHC(type = "HC3")} of the matching
+\code{stats::glm()}, \code{MASS::glm.nb()} or dummy-variable \code{stats::lm()} fit.
+\code{type = "HC1"} (heteroskedasticity-robust / White) and
 \code{type = "cluster"} (cluster-robust sandwich, clustered by the panel
 individual unless \code{cluster} is given) are available for pooled and
 fixed-effects models. For random-effects models only \code{"cluster"} is

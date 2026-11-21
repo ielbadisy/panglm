@@ -21,6 +21,13 @@
 #'   studies). The treated mean at each event time pools cohorts observed
 #'   in different calendar periods, so its composition changes with `e`.
 #'
+#' For groups that are assigned from the start and never switch, such as
+#' the arms of a randomized trial, give `group` (a column naming the arm)
+#' instead of `treat`: one line per level of `group`, labelled by its
+#' levels, with no adoption line. With `treat` and a single cohort treated
+#' from the first period, `type = "treated"` labels the lines
+#' `"Always treated"` and `"Never treated"` and draws no adoption line.
+#'
 #' Means are weighted by `weights` when given. The standard error of each
 #' mean is cluster-robust by individual,
 #' \deqn{\widehat{se}(\bar y_c) = \sqrt{\frac{G_c}{G_c - 1} \sum_{g}
@@ -38,7 +45,7 @@
 #' @param index `c(individual, time)`: column names, the time numeric
 #' @param treat name of the column with the first treated period, as in
 #'   [attgt()] and [treatmentplot()] (`0`, `NA` or `Inf` for never-treated
-#'   units)
+#'   units); may be omitted when `group` is given
 #' @param outcome name of the outcome column (numeric or logical)
 #' @param type `"cohort"`, `"treated"` or `"event"` (see Details)
 #' @param weights optional sampling weights: the name of a column of `data`
@@ -51,6 +58,9 @@
 #'   last). The default gives ordered colours to the cohorts and black to
 #'   the never treated.
 #' @param legend logical: add a legend
+#' @param group optional name of a column with a group fixed from the start
+#'   (e.g. the trial arm); one line per level, `treat` and `type` are then
+#'   ignored
 #' @param xlab,ylab,main axis labels and title
 #' @param ylim y-axis limits
 #' @param ... passed to [graphics::plot()]
@@ -71,14 +81,26 @@
 #' trendplot(d, c("id", "t"), "first", "y", type = "treated", band = TRUE)
 #' m <- trendplot(d, c("id", "t"), "first", "y", type = "event")
 #' head(m)
+#' d$arm <- factor(ifelse(d$id %% 2 == 0, "drug", "placebo"), c("placebo", "drug"))
+#' trendplot(d, c("id", "t"), outcome = "y", group = "arm", band = TRUE)
 #' @export
-trendplot <- function(data, index, treat, outcome, type = c("cohort", "treated", "event"),
+trendplot <- function(data, index, treat = NULL, outcome, type = c("cohort", "treated", "event"),
                       weights = NULL, band = FALSE, level = 0.95, min_e = -Inf, max_e = Inf,
                       col = NULL, legend = TRUE, xlab = NULL, ylab = NULL, main = NULL,
-                      ylim = NULL, ...) {
+                      ylim = NULL, group = NULL, ...) {
   type <- match.arg(type)
   data <- as.data.frame(data)
-  timing <- did_timing(data, index, treat)
+  if (!is.null(group)) {
+    if (!is.character(group) || length(group) != 1L || !group %in% names(data)) {
+      stop("'group' must be the name of one column of data", call. = FALSE)
+    }
+    if (!is.numeric(data[[index[2]]])) stop("the time index must be numeric", call. = FALSE)
+    type <- "group"
+    timing <- list(time = data[[index[2]]], first = rep(NA_real_, nrow(data)))
+  } else {
+    if (is.null(treat)) stop("give 'treat' (first treated period) or 'group'", call. = FALSE)
+    timing <- did_timing(data, index, treat)
+  }
   if (!is.character(outcome) || length(outcome) != 1L || !outcome %in% names(data)) {
     stop("'outcome' must be the name of one column of data", call. = FALSE)
   }
@@ -99,6 +121,8 @@ trendplot <- function(data, index, treat, outcome, type = c("cohort", "treated",
   if (is.null(w)) w <- rep(1, nrow(data))
   id <- data[[index[1]]]
   ok <- !is.na(y) & !is.na(w) & !is.na(id) & is.finite(timing$time)
+  if (type == "group") ok <- ok & !is.na(data[[group]])
+  arm <- if (type == "group") data[[group]][ok]
   id <- id[ok]
   y <- y[ok]
   w <- w[ok]
@@ -107,7 +131,11 @@ trendplot <- function(data, index, treat, outcome, type = c("cohort", "treated",
   if (!length(y)) stop("no observation with a non-missing outcome", call. = FALSE)
   never <- is.na(first)
   cohorts <- sort(unique(first[!never]))
-  if (type == "cohort") {
+  always <- type == "treated" && length(cohorts) == 1L && cohorts <= min(time)
+  if (type == "group") {
+    levs <- if (is.factor(arm)) levels(droplevels(arm)) else sort(unique(as.character(arm)))
+    tab <- did_cellmeans(y, w, id, as.character(arm), time)
+  } else if (type == "cohort") {
     key <- ifelse(never, "Never treated", as.character(first))
     levs <- c(as.character(cohorts), if (any(never)) "Never treated")
     tab <- did_cellmeans(y, w, id, key, time)
@@ -133,6 +161,7 @@ trendplot <- function(data, index, treat, outcome, type = c("cohort", "treated",
   tab <- tab[order(match(tab$group, levs), tab$time), , drop = FALSE]
   rownames(tab) <- NULL
   k <- length(levs)
+  if (is.null(col) && type == "group") col <- .panglm_palette[seq_len(k)]
   if (is.null(col)) {
     ncoh <- k - any(levs == "Never treated")
     ccol <- if (type == "cohort") {
@@ -146,11 +175,12 @@ trendplot <- function(data, index, treat, outcome, type = c("cohort", "treated",
   z <- stats::qnorm(1 - (1 - level) / 2)
   lo <- tab$mean - z * tab$se
   hi <- tab$mean + z * tab$se
-  ukey <- if (type == "cohort") ifelse(never, "Never treated", as.character(first)) else
-    ifelse(never, "Never treated", "Treated")
+  ukey <- if (type == "group") as.character(arm) else if (type == "cohort") {
+    ifelse(never, "Never treated", as.character(first))
+  } else ifelse(never, "Never treated", "Treated")
   sizes <- vapply(levs, function(g) length(unique(id[ukey == g])), numeric(1))
-  lab <- paste0(if (type == "cohort") ifelse(levs == "Never treated", "", "Cohort "), levs,
-                " (n = ", sizes, ")")
+  lab <- paste0(if (type == "cohort") ifelse(levs == "Never treated", "", "Cohort "),
+                if (always) sub("^Treated$", "Always treated", levs) else levs, " (n = ", sizes, ")")
   if (is.null(xlab)) xlab <- if (type == "event") "Event time" else "Period"
   if (is.null(ylab)) ylab <- paste0("Mean ", outcome)
   if (legend) lay <- did_leglayout(lab, 0.8)
@@ -164,7 +194,7 @@ trendplot <- function(data, index, treat, outcome, type = c("cohort", "treated",
   at <- if (length(xs) <= 20L) xs else pretty(xs)
   graphics::axis(1, at = at)
   if (type == "event") graphics::abline(v = -0.5, lty = 2, col = "grey40")
-  if (type == "treated" && length(cohorts)) {
+  if (type == "treated" && length(cohorts) && !always) {
     if (length(cohorts) == 1L) {
       graphics::abline(v = cohorts - 0.5, lty = 2, col = "grey40")
     } else {
@@ -181,7 +211,7 @@ trendplot <- function(data, index, treat, outcome, type = c("cohort", "treated",
     s <- tab$group == levs[j]
     tj <- tab$time[s]
     mj <- tab$mean[s]
-    nv <- levs[j] == "Never treated"
+    nv <- type != "group" && levs[j] == "Never treated"
     graphics::lines(tj, mj, col = col[j], lwd = 1.8)
     pre <- if (type == "cohort" && !nv) tj < as.numeric(levs[j]) else
       if (type == "event" && !nv) tj < 0 else rep(FALSE, length(tj))
@@ -189,8 +219,8 @@ trendplot <- function(data, index, treat, outcome, type = c("cohort", "treated",
                      bg = "white", cex = if (nv) 0.8 else 0.9)
   }
   if (legend) {
-    did_toplegend(lab, lay, 0.8, col = col, lwd = 1.8, pch = ifelse(levs == "Never treated",
-                                                                    15, 19),
+    did_toplegend(lab, lay, 0.8, col = col, lwd = 1.8,
+                  pch = ifelse(type != "group" & levs == "Never treated", 15, 19),
                   seg.len = 1.6)
   }
   invisible(tab)

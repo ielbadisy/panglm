@@ -14,7 +14,7 @@ panglm(
   offset = NULL,
   na.action = stats::na.omit,
   effect = c("individual", "twoways"),
-  vcov = c("classical", "HC1", "cluster"),
+  vcov = c("classical", "HC1", "cluster", "HC3"),
   cre = dynamic,
   dynamic = FALSE,
   random = ~1,
@@ -91,7 +91,9 @@ standard errors are in \code{fit$time_effects} and \code{fit$time_effects_se},
 and the classical and robust covariances of the slopes account for
 their estimation.}
 
-\item{vcov}{one of \code{"classical"}, \code{"HC1"} (heteroskedasticity-robust) or
+\item{vcov}{one of \code{"classical"}, \code{"HC1"} (heteroskedasticity-robust),
+\code{"HC3"} (its small-sample jackknife version, pooled GLMs and the
+Gaussian within model, see \code{\link[=vcov.panglm]{vcov.panglm()}}) or
 \code{"cluster"} (cluster-robust, clustered by the panel individual by
 default). For \code{model = "random"} only \code{"classical"} and \code{"cluster"}
 are available; the cluster covariance uses the individual scores of
