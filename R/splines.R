@@ -87,6 +87,25 @@ variable_basis <- function(object, variable, values, columns) {
 #' every observation, so that with all of them fixed the curve is the
 #' prediction for one covariate profile (a typical patient).
 #'
+#' On the response scale (without `contrast`) the band is computed on the
+#' link scale of the family and back-transformed, `g^-1(g(m) -/+ z se_g)`
+#' with `se_g = se / g'^-1(g(m))`, so that it stays inside the range of the
+#' mean (a probability band inside \[0, 1\], a rate band above 0); `se` is
+#' still the delta-method standard error on the response scale. For a
+#' single covariate profile of a pooled fit this is the usual
+#' `predict(type = "link", se.fit = TRUE)` band. Identity-link and Tobit
+#' fits keep the symmetric Wald band.
+#'
+#' For random-effects fits the response and slope curves are
+#' population-averaged by default (`type = "marginal"`): the mean is
+#' integrated over the random effects, as in [partialeffects()].
+#' `type = "conditional"` gives instead the curve of a typical individual,
+#' whose random effects are zero (`b_i = 0`): the inverse link of the fixed
+#' part of the linear predictor (the Tobit censored mean with the
+#' within-individual standard deviation). For a random-intercept logit fit
+#' at a single covariate profile it is `plogis(x'beta)`. Pooled and
+#' fixed-effects fits have no random effects, so both types agree.
+#'
 #' @param object a `"panglm"` fit
 #' @param variable name of the regressor
 #' @param values values at which to evaluate the curve; default: 100 points
@@ -105,6 +124,9 @@ variable_basis <- function(object, variable, values, columns) {
 #'   level of `by` minus the first level, with its own confidence band
 #' @param at optional named list of other regressors, each set to the given
 #'   value for every observation (response, slope and contrast curves)
+#' @param type `"marginal"` (default: population-averaged) or
+#'   `"conditional"` (a typical individual, random effects at zero) for
+#'   response and slope curves of random-effects fits, see Details
 #' @return a data frame of class `"panglm_effectcurve"` with columns
 #'   `value`, `estimate`, `se`, `lower` and `upper` (and `by` when `by` is
 #'   given; with `contrast = TRUE` its levels read `"level - first"`). The
@@ -132,12 +154,14 @@ variable_basis <- function(object, variable, values, columns) {
 #' @export
 effectcurve <- function(object, variable, values = NULL, ref = NULL, vcov = NULL, level = 0.95,
                         scale = c("link", "response", "slope"), by = NULL, contrast = FALSE,
-                        at = NULL) {
+                        at = NULL, type = c("marginal", "conditional")) {
   scale <- match.arg(scale)
+  type <- match.arg(type)
   if (!inherits(object, "panglm")) stop("'object' must be a panglm fit", call. = FALSE)
   if (contrast && is.null(by)) stop("'contrast' needs 'by'", call. = FALSE)
   if (scale != "link" || contrast) {
-    return(response_curve(object, variable, values, vcov, level, scale, by, contrast, at))
+    return(response_curve(object, variable, values, vcov, level, scale, by, contrast, at,
+                          type))
   }
   if (!is.null(by)) {
     stop("'by' needs scale = \"response\" or \"slope\", or contrast = TRUE; on the link scale ",
@@ -216,6 +240,9 @@ plot.panglm_effectcurve <- function(x, xlab = attr(x, "variable"), ylab = NULL,
     switch(scale, link = "Difference in the linear predictor",
            response = "Difference in average predicted outcome",
            slope = paste("Difference in average marginal effect of", variable))
+  } else if (identical(attr(x, "type"), "conditional")) {
+    switch(scale, response = "Predicted outcome (random effects at 0)",
+           slope = paste("Marginal effect of", variable, "(random effects at 0)"))
   } else switch(scale,
     link = "Effect on the linear predictor",
     response = "Average predicted outcome",

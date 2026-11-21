@@ -14,7 +14,8 @@ effectcurve(
   scale = c("link", "response", "slope"),
   by = NULL,
   contrast = FALSE,
-  at = NULL
+  at = NULL,
+  type = c("marginal", "conditional")
 )
 }
 \arguments{
@@ -45,6 +46,10 @@ level of \code{by} minus the first level, with its own confidence band}
 
 \item{at}{optional named list of other regressors, each set to the given
 value for every observation (response, slope and contrast curves)}
+
+\item{type}{\code{"marginal"} (default: population-averaged) or
+\code{"conditional"} (a typical individual, random effects at zero) for
+response and slope curves of random-effects fits, see Details}
 }
 \value{
 a data frame of class \code{"panglm_effectcurve"} with columns
@@ -102,6 +107,25 @@ curve); on the response and slope scales the difference of the average
 predictions or slopes. \code{at} fixes other regressors at given values for
 every observation, so that with all of them fixed the curve is the
 prediction for one covariate profile (a typical patient).
+
+On the response scale (without \code{contrast}) the band is computed on the
+link scale of the family and back-transformed, \verb{g^-1(g(m) -/+ z se_g)}
+with \verb{se_g = se / g'^-1(g(m))}, so that it stays inside the range of the
+mean (a probability band inside [0, 1], a rate band above 0); \code{se} is
+still the delta-method standard error on the response scale. For a
+single covariate profile of a pooled fit this is the usual
+\code{predict(type = "link", se.fit = TRUE)} band. Identity-link and Tobit
+fits keep the symmetric Wald band.
+
+For random-effects fits the response and slope curves are
+population-averaged by default (\code{type = "marginal"}): the mean is
+integrated over the random effects, as in \code{\link[=partialeffects]{partialeffects()}}.
+\code{type = "conditional"} gives instead the curve of a typical individual,
+whose random effects are zero (\code{b_i = 0}): the inverse link of the fixed
+part of the linear predictor (the Tobit censored mean with the
+within-individual standard deviation). For a random-intercept logit fit
+at a single covariate profile it is \verb{plogis(x'beta)}. Pooled and
+fixed-effects fits have no random effects, so both types agree.
 }
 \section{Validation}{
 
