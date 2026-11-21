@@ -17,7 +17,7 @@ confidence whiskers."><meta property="og:image" content="https://elbadisyimad.co
 
     <a class="navbar-brand me-2" href="../index.html">panglm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.7.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.7.6</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -85,6 +85,7 @@ confidence whiskers.</p>
 <span>  legend <span class="op">=</span> <span class="st">"auto"</span>,</span>
 <span>  main <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  mar <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  bylabel <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">x</span>, <span class="st">"by"</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -130,6 +131,11 @@ accepted by <code><a href="https://rdrr.io/r/graphics/legend.html" class="extern
 the top larger with a title) when the current margins are R's
 defaults, the current ones otherwise. Margins set here are restored on
 exit, so to add layers after the call set <code>par(mar = )</code> beforehand.</p></dd>
+
+
+<dt id="arg-bylabel">bylabel<a class="anchor" aria-label="anchor" href="#arg-bylabel"></a></dt>
+<dd><p>legend title for curves by group; the name of the <code>by</code>
+column by default, <code>NULL</code> for none</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

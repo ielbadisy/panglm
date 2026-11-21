@@ -21,6 +21,7 @@ plot(
   legend = "auto",
   main = NULL,
   mar = NULL,
+  bylabel = attr(x, "by"),
   ...
 )
 ```
@@ -67,6 +68,11 @@ plot(
   larger with a title) when the current margins are R's defaults, the
   current ones otherwise. Margins set here are restored on exit, so to
   add layers after the call set `par(mar = )` beforehand.
+
+- bylabel:
+
+  legend title for curves by group; the name of the `by` column by
+  default, `NULL` for none
 
 - ...:
 
