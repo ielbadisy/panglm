@@ -44,13 +44,20 @@ a list with `family`, `link`, `family_id`, `link_id`
 
 `binomialfamily("log")` is the log-binomial model, whose coefficients
 are log risk ratios, for `model = "pooling"` only. Fitted risks must
-stay below 1, so the IRLS steps are halved until they do (and until the
-log-likelihood does not decrease), starting from the intercept-only fit
-when the usual start is not admissible. When the maximum likelihood
-estimate lies on the boundary (a fitted risk of 1) the iterations stall
-and a warning reports the largest fitted risk; the modified Poisson
-model (`family = "poisson"`, `vcov = "HC1"`) estimates the same risk
-ratios without that constraint.
+stay at most 1, so the log-likelihood is maximized under that constraint
+by an active-set Newton method: steps stop at the first observation
+whose risk reaches 1, which then stays at 1 while the other coefficients
+move, unless releasing it raises the log-likelihood. It starts from the
+intercept-only fit when the usual start is not admissible. `maxit`
+bounds the Newton iterations. An interior maximum is the
+`glm(binomial("log"))` estimate, often reached where
+[`glm()`](https://rdrr.io/r/stats/glm.html) stalls. When the maximum
+lies on the parameter boundary (a fitted risk of 1) a warning says so:
+the estimates are the constrained maximum, as in
+[`logbin::logbin()`](https://rdrr.io/pkg/logbin/man/logbin.html), but
+the standard errors are not reliable, and the modified Poisson model
+(`family = "poisson"`, `vcov = "HC1"`) estimates the same risk ratios
+without that constraint.
 
 `gammafamily()` is the gamma GLM with a log link, the usual choice for
 skewed positive outcomes such as health care costs: the variance is

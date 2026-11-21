@@ -1,5 +1,21 @@
 # Changelog
 
+## panglm 1.7.3
+
+- `binomialfamily("log")`: the pooled log-binomial fit now maximizes the
+  log-likelihood by an active-set Newton method under the constraint
+  that every fitted risk is at most 1. Before, step-halving stalled when
+  a risk approached 1, so the fit stopped early (72 iterations on the
+  birthwt model, whatever `maxit`) or crept for thousands of iterations,
+  and the warning wrongly suggested a larger `maxit`. `maxit` is now
+  honoured, an interior maximum converges in a few iterations (and
+  matches [`glm()`](https://rdrr.io/r/stats/glm.html) started near it),
+  and a maximum on the boundary is reported as such: “maximum on the
+  parameter boundary (fitted risk at 1)”, with estimates equal to
+  [`logbin::logbin()`](https://rdrr.io/pkg/logbin/man/logbin.html) and a
+  note that the standard errors are not reliable there. The fit gains a
+  `boundary` element.
+
 ## panglm 1.7.2
 
 - [`panglm()`](https://elbadisyimad.com/panglm/reference/panglm.md)

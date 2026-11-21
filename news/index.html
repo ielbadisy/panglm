@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">panglm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.7.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.7.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -52,6 +52,11 @@
       <small>Source: <a href="https://github.com/ielbadisy/panglm/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.7.3" id="panglm-173">panglm 1.7.3<a class="anchor" aria-label="anchor" href="#panglm-173"></a></h2>
+<ul><li>
+<code>binomialfamily("log")</code>: the pooled log-binomial fit now maximizes the log-likelihood by an active-set Newton method under the constraint that every fitted risk is at most 1. Before, step-halving stalled when a risk approached 1, so the fit stopped early (72 iterations on the birthwt model, whatever <code>maxit</code>) or crept for thousands of iterations, and the warning wrongly suggested a larger <code>maxit</code>. <code>maxit</code> is now honoured, an interior maximum converges in a few iterations (and matches <code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm()</a></code> started near it), and a maximum on the boundary is reported as such: “maximum on the parameter boundary (fitted risk at 1)”, with estimates equal to <code><a href="https://rdrr.io/pkg/logbin/man/logbin.html" class="external-link">logbin::logbin()</a></code> and a note that the standard errors are not reliable there. The fit gains a <code>boundary</code> element.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.7.2" id="panglm-172">panglm 1.7.2<a class="anchor" aria-label="anchor" href="#panglm-172"></a></h2>
 <ul><li>
